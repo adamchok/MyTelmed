@@ -1,0 +1,17 @@
+{
+  "login-title": "Log Masuk Ke Akaun Anda",
+  "username": "Nama Pengguna",
+  "password": "Kata Laluan",
+  "login": "Log Masuk",
+  "loginSuccessMessage": "Berjaya Log Masuk",
+  "loginFailedMessage": "Log masuk gagal, sila cuba lagi",
+  "error": {
+    "invalidCredentials": "Nama pengguna atau kata laluan salah",
+    "emptyUsername": "Sila masukkan nama pengguna anda",
+    "emptyPassword": "Sila masukkan kata laluan anda"
+  },
+  "placeholder": {
+    "username": "Masukkan nama pengguna anda",
+    "password": "Masukkan kata laluan anda"
+  }
+}

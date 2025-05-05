@@ -1,0 +1,17 @@
+{
+  "login-title": "登录",
+  "userIc": "身份证号码",
+  "password": "密码",
+  "login": "登录",
+  "loginSuccessMessage": "登录成功",
+  "loginFailedMessage": "登录失败，请重试",
+  "error": {
+    "invalidCredentials": "用户名或密码错误",
+    "emptyUserIc": "请输入您的身份证号码",
+    "emptyPassword": "请输入您的密码"
+  },
+  "placeholder": {
+    "userIc": "请输入您的身份证号码",
+    "password": "请输入您的密码"
+  }
+}

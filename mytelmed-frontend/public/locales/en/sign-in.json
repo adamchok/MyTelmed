@@ -1,0 +1,17 @@
+{
+  "login-title": "Login",
+  "userIc": "IC Number",
+  "password": "Password",
+  "login": "Log In",
+  "loginSuccessMessage": "Successfully Sign In",
+  "loginFailedMessage": "Sign-in failed, please try again",
+  "error": {
+    "invalidCredentials": "Wrong username or password",
+    "emptyUserIc": "Please input your IC number",
+    "emptyPassword": "Please input your password"
+  },
+  "placeholder": {
+    "userIc": "Enter your IC number",
+    "password": "Enter your password"
+  }
+}

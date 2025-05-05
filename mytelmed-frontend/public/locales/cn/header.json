@@ -1,0 +1,9 @@
+{
+  "dashboard": "仪表板",
+  "language": "语言",
+  "signOut": "退出登录",
+  "logoutSuccessMessage": "登出成功",
+  "logoutErrorMessage": "發生錯誤：無法登出",
+  "logoutFailedMessage": "登出失敗，請再試一次",
+  "chineseTranslation": "語言已更改為中文 (CN)"
+}
