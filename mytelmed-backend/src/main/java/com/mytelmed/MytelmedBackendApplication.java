@@ -6,7 +6,6 @@ import org.springframework.data.web.config.EnableSpringDataWebSupport;
 
 
 @SpringBootApplication
-@EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
 public class MytelmedBackendApplication {
     public static void main(String[] args) {
         SpringApplication.run(MytelmedBackendApplication.class, args);
