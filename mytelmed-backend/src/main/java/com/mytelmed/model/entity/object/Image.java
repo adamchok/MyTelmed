@@ -52,17 +52,17 @@ public class Image {
     private Instant createdAt;
 
     @UpdateTimestamp
-    @Column(name = "last_updated")
-    private Instant lastUpdated;
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();
-        lastUpdated = Instant.now();
+        updatedAt = Instant.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        lastUpdated = Instant.now();
+        updatedAt = Instant.now();
     }
 }

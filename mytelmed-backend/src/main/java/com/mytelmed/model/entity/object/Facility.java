@@ -42,7 +42,7 @@ public class Facility {
     @Column(nullable = false)
     private FacilityType type;
 
-    @Column(nullable = false)
+    @Column(unique = true, nullable = false)
     private String telephone;
 
     @OneToOne
@@ -52,17 +52,17 @@ public class Facility {
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
-    @Column(name = "last_updated")
-    private Instant lastUpdated;
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();
-        lastUpdated = Instant.now();
+        updatedAt = Instant.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        lastUpdated = Instant.now();
+        updatedAt = Instant.now();
     }
 }
