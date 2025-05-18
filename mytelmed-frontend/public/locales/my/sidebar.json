@@ -1,0 +1,11 @@
+{
+  "dashboard": "Papan Pemuka",
+  "changeLanguage": "Tukar Bahasa",
+  "logout": "Log Keluar",
+  "logoutSuccessMessage": "Berjaya log keluar",
+  "logoutErrorMessage": "Ralat Berlaku: Tidak dapat log keluar",
+  "logoutFailedMessage": "Log keluar gagal, sila cuba lagi",
+  "login": "Log Masuk",
+  "knowledgeHub": "Pusat Pengetahuan",
+  "hospitals": "Hospital"
+}

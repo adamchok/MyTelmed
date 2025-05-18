@@ -1,7 +1,7 @@
 package com.mytelmed.config;
 
 import com.mytelmed.security.JwtAuthFilter;
-import com.mytelmed.service.UserService;
+import com.mytelmed.service.security.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -51,7 +51,11 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                         "/auth/login",
-                        "/auth/refresh-token"
+                        "/auth/refresh-token",
+                        "/auth/register",
+                        "/auth/verify/**",
+                        "/auth/password/reset/**",
+                        "/auth/email/reset/**"
                 ).permitAll().anyRequest().authenticated())
                 .userDetailsService(this.userService)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)

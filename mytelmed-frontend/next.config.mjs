@@ -7,17 +7,8 @@ const withPWA = withPWAInit({
   disable: false,
   swcMinify: true,
   reloadOnOnline: true,
-  swcMinify: true,
 });
 
 export default withPWA({
-  async redirects() {
-    return [
-      {
-        source: "/",
-        destination: "/dashboard",
-        permanent: true,
-      },
-    ];
-  },
+  output: "standalone",
 });

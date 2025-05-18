@@ -63,7 +63,7 @@ export default function RootLayout({
         <AntdRegistry>
           <StoreProvider>
             <React.Suspense fallback="Loading...">
-              <MainLayout pageProps={{ children }} router={{} as any} Component={{} as any}>
+              <MainLayout>
                 {children}
               </MainLayout>
             </React.Suspense>

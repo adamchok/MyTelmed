@@ -1,9 +1,0 @@
-{
-  "dashboard": "Dashboard",
-  "language": "Language",
-  "signOut": "Log Out",
-  "logoutSuccessMessage": "Log out successful",
-  "logoutErrorMessage": "Error Occurred: Unable to logout",
-  "logoutFailedMessage": "Logout failed, please try again",
-  "englishTranslation": "Language changed to English (EN)"
-}

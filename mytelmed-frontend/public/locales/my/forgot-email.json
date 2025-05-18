@@ -1,0 +1,27 @@
+{
+  "forgotEmailTitle": "Lupa Emel",
+  "forgotEmailInstructions": "Masukkan butiran anda untuk menerima pautan bagi menetapkan semula e-mel anda.",
+  "icNumber": "Nombor IC",
+  "fullName": "Nama Penuh",
+  "mobilePhone": "Nombor Telefon Bimbit",
+  "serialNumber": "Nombor Siri",
+  "email": "Alamat Emel",
+  "submit": "Hantar",
+  "placeholder": {
+    "icNumber": "Masukkan Nombor IC anda",
+    "fullName": "Masukkan Nama Penuh anda",
+    "mobilePhone": "cth. 012-3456789",
+    "serialNumber": "Masukkan Nombor Siri anda",
+    "email": "Masukkan Alamat Emel anda"
+  },
+  "error": {
+    "emptyIcNumber": "Sila masukkan Nombor IC anda",
+    "emptyFullName": "Sila masukkan Nama Penuh anda",
+    "emptyMobilePhone": "Sila masukkan Nombor Telefon Bimbit anda",
+    "invalidMobilePhone": "Sila masukkan nombor telefon Malaysia yang sah",
+    "emptySerialNumber": "Sila masukkan Nombor Siri anda",
+    "emptyEmail": "Sila masukkan Alamat Emel anda",
+    "invalidEmail": "Sila masukkan alamat emel yang sah"
+  },
+  "backToForgotPassword": "Kembali ke Lupa Kata Laluan"
+}

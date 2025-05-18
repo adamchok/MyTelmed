@@ -1,8 +1,8 @@
 package com.mytelmed.security;
 
-import com.mytelmed.model.entity.User;
-import com.mytelmed.service.JwtService;
-import com.mytelmed.service.UserService;
+import com.mytelmed.model.entity.security.User;
+import com.mytelmed.service.security.JwtService;
+import com.mytelmed.service.security.UserService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;

@@ -1,17 +1,19 @@
 {
-  "login-title": "登录",
-  "userIc": "身份证号码",
-  "password": "密码",
-  "login": "登录",
-  "loginSuccessMessage": "登录成功",
-  "loginFailedMessage": "登录失败，请重试",
+  "login-title": "登入",
+  "userIc": "身份證號碼",
+  "password": "密碼",
+  "login": "登入",
+  "forgotPassword": "忘記密碼？",
+  "loginSuccessMessage": "登入成功",
+  "loginFailedMessage": "登入失敗，請重試",
+  "register": "注册新的户口",
   "error": {
-    "invalidCredentials": "用户名或密码错误",
-    "emptyUserIc": "请输入您的身份证号码",
-    "emptyPassword": "请输入您的密码"
+    "invalidCredentials": "用戶名或密碼錯誤",
+    "emptyUserIc": "請輸入您的身份證號碼",
+    "emptyPassword": "請輸入您的密碼"
   },
   "placeholder": {
-    "userIc": "请输入您的身份证号码",
-    "password": "请输入您的密码"
+    "userIc": "輸入您的身份證號碼",
+    "password": "輸入您的密碼"
   }
 }

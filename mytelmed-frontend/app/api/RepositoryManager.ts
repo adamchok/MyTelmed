@@ -1,6 +1,12 @@
 import axios from "axios";
 import auth from "./auth";
 
+/**
+ * Repository is a custom axios instance that is used to make requests to the API.
+ * It sets the base URL for all API requests and adds a request interceptor to
+ * add the access token to the Authorization header. It also adds a response
+ * interceptor to handle 401 status codes and redirect to the login page.
+ */
 const repository = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_ENDPOINT,
   headers: {
@@ -9,11 +15,15 @@ const repository = axios.create({
   withCredentials: true,
 });
 
+/**
+ * Request interceptor to add the access token to the Authorization header.
+ * This is called before every request just to ensure valid access token is passed
+ */
 repository.interceptors.request.use(async (config) => {
   const accessToken = localStorage.getItem("accessToken");
   const isLogin = localStorage.getItem("isLogin") == "true";
-  const noNeedBearer = ["/auth/login", "/auth/refresh-token"];
-  if (accessToken && isLogin && !noNeedBearer.includes(config?.url || "")) {
+  const noNeedBearer = ["/auth/login", "/auth/refresh-token", "/auth/register", "/auth/verify-email"];
+  if (accessToken && isLogin && !noNeedBearer.includes(config?.url ?? "")) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   } else {
     config.headers.Authorization = undefined;
@@ -21,6 +31,10 @@ repository.interceptors.request.use(async (config) => {
   return config;
 });
 
+/**
+ * Response interceptor to handle 401 status codes and redirect to the login page.
+ * This is called after every request.
+ */
 repository.interceptors.response.use(
   (response) => response, // If the response is successful, return it
   async (error) => {
@@ -58,7 +72,7 @@ async function refreshSession() {
     console.log(err);
     localStorage.removeItem("isLogin");
     localStorage.removeItem("accessToken");
-    window.location.href = "/sign-in";
+    window.location.href = "/login";
   }
 }
 

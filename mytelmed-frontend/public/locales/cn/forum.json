@@ -1,0 +1,11 @@
+{
+  "general": "普通内科",
+  "general-description": "一般健康、慢性病和成人护理。",
+  "pediatrics": "儿科",
+  "pediatrics-description": "儿童健康、免疫和成长。",
+  "obgyn": "妇产科",
+  "obgyn-description": "女性健康、怀孕和分娩。",
+  "mental": "心理健康",
+  "mental-description": "心理健康、压力和咨询。",
+  "knowledgeHub": "知识中心"
+}

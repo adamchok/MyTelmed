@@ -1,0 +1,23 @@
+FROM alpine:3.21
+
+ENV NODE_VERSION=24.0.1
+
+# Install Node.js and yarn
+RUN apk add --no-cache nodejs npm yarn
+
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY package.json yarn.lock ./
+
+# Install dependencies
+RUN yarn install
+
+# Copy the rest of the application
+COPY . .
+
+# Expose the port the app will run on
+EXPOSE 3000
+
+# Start the development server
+CMD ["yarn", "dev"] 

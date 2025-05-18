@@ -1,0 +1,68 @@
+package com.mytelmed.model.entity.object;
+
+import com.mytelmed.constant.EntityType;
+import com.mytelmed.utils.converters.EncryptionConverter;
+import com.mytelmed.utils.converters.EntityTypeConverter;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import java.time.Instant;
+import java.util.UUID;
+
+
+@Entity
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "image")
+public class Image {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(name = "url")
+    @Convert(converter = EncryptionConverter.class)
+    private String imageUrl;
+
+    @Column(name = "type", length = 1)
+    @Convert(converter = EntityTypeConverter.class)
+    private EntityType entityType;
+
+    @Column(name = "entity_id")
+    private UUID entityId;
+
+    @Column(name = "is_deleted")
+    private boolean isDeleted;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "last_updated")
+    private Instant lastUpdated;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Instant.now();
+        lastUpdated = Instant.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        lastUpdated = Instant.now();
+    }
+}

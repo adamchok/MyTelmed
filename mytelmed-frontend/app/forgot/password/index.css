@@ -1,0 +1,19 @@
+.container {
+  min-height: 100vh;
+}
+
+.form-text {
+  font-size: 50px !important;
+}
+
+.link {
+  padding: 0px !important;
+}
+
+.email-reset-link {
+  color: #dc2626 !important;
+}
+
+.email-reset-link:hover {
+  color: #ef4444 !important;
+}

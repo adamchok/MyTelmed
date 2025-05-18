@@ -1,0 +1,14 @@
+.back-button {
+  background-color: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  color: #4b5563 !important;
+  font-size: 20px !important;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.back-button:hover {
+  color: #1f2937 !important;
+}

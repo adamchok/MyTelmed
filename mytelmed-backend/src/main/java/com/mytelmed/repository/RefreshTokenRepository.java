@@ -1,6 +1,6 @@
 package com.mytelmed.repository;
 
-import com.mytelmed.model.entity.RefreshToken;
+import com.mytelmed.model.entity.security.RefreshToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;

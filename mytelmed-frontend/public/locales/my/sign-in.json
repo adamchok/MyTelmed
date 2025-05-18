@@ -1,17 +1,19 @@
 {
-  "login-title": "Log Masuk Ke Akaun Anda",
-  "username": "Nama Pengguna",
+  "login-title": "Log Masuk",
+  "userIc": "Nombor IC",
   "password": "Kata Laluan",
   "login": "Log Masuk",
+  "forgotPassword": "Lupa Kata Laluan?",
   "loginSuccessMessage": "Berjaya Log Masuk",
   "loginFailedMessage": "Log masuk gagal, sila cuba lagi",
+  "register": "Daftar Akaun Baharu",
   "error": {
     "invalidCredentials": "Nama pengguna atau kata laluan salah",
-    "emptyUsername": "Sila masukkan nama pengguna anda",
+    "emptyUserIc": "Sila masukkan nombor IC anda",
     "emptyPassword": "Sila masukkan kata laluan anda"
   },
   "placeholder": {
-    "username": "Masukkan nama pengguna anda",
+    "userIc": "Masukkan nombor IC anda",
     "password": "Masukkan kata laluan anda"
   }
 }

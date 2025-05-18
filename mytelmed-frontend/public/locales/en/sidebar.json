@@ -1,0 +1,11 @@
+{
+  "dashboard": "Dashboard",
+  "changeLanguage": "Change Language",
+  "logout": "Log Out",
+  "logoutSuccessMessage": "Log out successful",
+  "logoutErrorMessage": "Error Occurred: Unable to logout",
+  "logoutFailedMessage": "Logout failed, please try again",
+  "login": "Login",
+  "knowledgeHub": "Knowledge Hub",
+  "hospitals": "Hospitals"
+}

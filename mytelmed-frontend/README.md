@@ -20,6 +20,40 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Docker Setup
+
+### Development
+
+To run the application in development mode using Docker:
+
+```bash
+docker-compose up dev
+```
+
+This will create a container with hot-reloading enabled.
+
+### Production
+
+To build and run the production Docker image:
+
+```bash
+# Build the production image
+docker-compose build app
+
+# Run the production container
+docker-compose up app
+```
+
+Alternatively, you can build and run the Docker image directly:
+
+```bash
+# Build the Docker image
+docker build -t mytelmed-frontend .
+
+# Run the container
+docker run -p 3000:3000 mytelmed-frontend
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

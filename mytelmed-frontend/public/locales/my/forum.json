@@ -1,0 +1,11 @@
+{
+  "general": "Perubatan Am",
+  "general-description": "Kesihatan am, penyakit kronik, dan penjagaan dewasa.",
+  "pediatrics": "Pediatrik",
+  "pediatrics-description": "Kesihatan kanak-kanak, imunisasi, dan perkembangan.",
+  "obgyn": "Obstetrik & Ginekologi",
+  "obgyn-description": "Kesihatan wanita, kehamilan, dan kelahiran anak.",
+  "mental": "Kesihatan Mental",
+  "mental-description": "Kesejahteraan mental, tekanan, dan kaunseling.",
+  "knowledgeHub": "Pusat Pengetahuan"
+}

@@ -1,0 +1,11 @@
+{
+  "dashboard": "仪表板",
+  "changeLanguage": "换语言",
+  "logout": "退出登录",
+  "logoutSuccessMessage": "登出成功",
+  "logoutErrorMessage": "發生錯誤：無法登出",
+  "logoutFailedMessage": "登出失敗，請再試一次",
+  "login": "登录",
+  "knowledgeHub": "知识库",
+  "hospitals": "医院"
+}
