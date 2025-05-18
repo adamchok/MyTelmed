@@ -5,7 +5,7 @@ import { Form, message } from "antd";
 import { resetRegistration } from "@/lib/reducers/registration-reducer";
 import type { RootState } from "@/lib/reducers";
 import { Dispatch, useState } from "react";
-import Auth from "@/app/api/auth";
+import AuthApi from "@/app/api/auth";
 import CreatePasswordPageComponent from "./component";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useRouter } from "next/navigation";
@@ -39,7 +39,7 @@ export default function CreatePasswordPage() {
     }
     try {
       setLoading(true);
-      const response = await Auth.register(registrationRequest);
+      const response = await AuthApi.register(registrationRequest);
       const { isSuccess, message: msg }: RegistrationResponse = response.data;
 
       if (isSuccess) {

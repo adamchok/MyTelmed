@@ -12,7 +12,7 @@ import {
 
 const RESOURCE: string = "/auth";
 
-const Auth = {
+const AuthApi = {
   signIn(body: LoginRequestOptions) {
     return repository.post(`${RESOURCE}/login`, body);
   },
@@ -45,4 +45,4 @@ const Auth = {
   },
 };
 
-export default Auth;
+export default AuthApi;

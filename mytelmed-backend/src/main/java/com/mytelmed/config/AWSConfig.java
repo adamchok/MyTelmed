@@ -1,6 +1,7 @@
 package com.mytelmed.config;
 
 import com.mytelmed.model.entity.Article;
+import com.mytelmed.model.entity.QnA;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,15 +19,18 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class AWSConfig {
     private final AwsCredentials CREDENTIALS;
     private final Region REGION;
-    private final String DYNAMO_DB_TABLE_NAME;
+    private final String ARTICLE_TABLE_NAME;
+    private final String QNA_TABLE_NAME;
 
     public AWSConfig(@Value("${aws.accessKey}") String accessKey,
                      @Value("${aws.secretKey}") String secretKey,
                      @Value("${aws.region}") String region,
-                     @Value("${aws.dynamodb.article.table-name}") String dynamoDbTableName) {
+                     @Value("${aws.dynamodb.article.table-name}") String articleTableName,
+                     @Value("${aws.dynamodb.qna.table-name}") String qnaTableName) {
         this.CREDENTIALS = AwsBasicCredentials.create(accessKey, secretKey);
         this.REGION = Region.of(region);
-        this.DYNAMO_DB_TABLE_NAME = dynamoDbTableName;
+        this.ARTICLE_TABLE_NAME = articleTableName;
+        this.QNA_TABLE_NAME = qnaTableName;
     }
 
     @Bean
@@ -54,6 +58,11 @@ public class AWSConfig {
 
     @Bean
     public DynamoDbTable<Article> articleTable(DynamoDbEnhancedClient enhancedClient) {
-        return enhancedClient.table(DYNAMO_DB_TABLE_NAME, TableSchema.fromBean(Article.class));
+        return enhancedClient.table(ARTICLE_TABLE_NAME, TableSchema.fromBean(Article.class));
+    }
+
+    @Bean
+    public DynamoDbTable<QnA> qnaTable(DynamoDbEnhancedClient enhancedClient) {
+        return enhancedClient.table(QNA_TABLE_NAME, TableSchema.fromBean(QnA.class));
     }
 }

@@ -14,9 +14,9 @@ export const menuItems = (t: any, isLoggedIn: boolean) => {
 			),
 		},
 		{
-			key: '/forum',
+			key: '/knowledge',
 			label: (
-				<Link href="/forum">
+				<Link href="/knowledge">
 					{t('knowledgeHub') ?? 'Knowledge Hub'}
 				</Link>
 			),
@@ -57,9 +57,9 @@ export const menuItems = (t: any, isLoggedIn: boolean) => {
 			label: <Link href="/family-access">Family Access</Link>,
 		},
 		{
-			key: '/forum',
+			key: '/knowledge',
 			label: (
-				<Link href="/forum">
+				<Link href="/knowledge">
 					{t('knowledgeHub') ?? 'Knowledge Hub'}
 				</Link>
 			),

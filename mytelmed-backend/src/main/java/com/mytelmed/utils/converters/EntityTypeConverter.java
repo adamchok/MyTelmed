@@ -5,27 +5,21 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
 @Converter(autoApply = true)
-public class EntityTypeConverter implements AttributeConverter<EntityType, Character> {
+public class EntityTypeConverter implements AttributeConverter<EntityType, String> {
 
     @Override
-    public Character convertToDatabaseColumn(EntityType entityType) {
+    public String convertToDatabaseColumn(EntityType entityType) {
         if (entityType == null) {
             return null;
         }
-        return entityType.toChar();
+        return entityType.toShortName();
     }
 
     @Override
-    public EntityType convertToEntityAttribute(Character dbData) {
+    public EntityType convertToEntityAttribute(String dbData) {
         if (dbData == null) {
             return null;
         }
-        
-        return switch (dbData) {
-            case 'f' -> EntityType.FACILITY;
-            case 'd' -> EntityType.DOCTOR;
-            case 'p' -> EntityType.PATIENT;
-            default -> throw new IllegalArgumentException("Unknown code: " + dbData);
-        };
+        return EntityType.fromShortName(dbData);
     }
 }

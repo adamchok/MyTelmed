@@ -6,7 +6,7 @@ import { EmailResetLinkRequestOptions } from '@/app/api/auth/props';
 import { EmailResetResponse } from './props';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import ForgotEmailPageComponent from './component';
-import Auth from '@/app/api/auth';
+import AuthApi from '@/app/api/auth';
 
 
 const ForgotEmail = () => {
@@ -37,7 +37,7 @@ const ForgotEmail = () => {
       email: values.email,
     }
     try {
-      const response = await Auth.requestEmailReset(emailResetRequest);
+      const response = await AuthApi.requestEmailReset(emailResetRequest);
       const { isSuccess, message: msg }: EmailResetResponse = response.data;
 
       if (isSuccess) {

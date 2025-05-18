@@ -1,8 +1,9 @@
 export interface Department {
-  key: string;
-  label: string;
-  image: string;
+  id: string;
+  name: string;
+  shortName: string;
   description: string;
+  imageUrl: string;
 }
 
 export interface Facility {
@@ -95,4 +96,25 @@ export interface Appointment {
   notes: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Article {
+  id: string;
+  title: string;
+  content: string;
+  department: string;
+  author: string;
+  imageUrl: string;
+  featured: boolean;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QA {
+  id: number;
+  question: string;
+  answer: string;
+  user: string;
+  date: string;
 }

@@ -33,11 +33,11 @@ public class Image {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "url")
+    @Column(name = "url", columnDefinition = "TEXT")
     @Convert(converter = EncryptionConverter.class)
     private String imageUrl;
 
-    @Column(name = "type", length = 1)
+    @Column(name = "type", length = 3)
     @Convert(converter = EntityTypeConverter.class)
     private EntityType entityType;
 

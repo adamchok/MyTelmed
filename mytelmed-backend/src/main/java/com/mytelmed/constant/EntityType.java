@@ -4,33 +4,38 @@ public enum EntityType {
     FACILITY,
     DOCTOR,
     ARTICLE,
+    DEPARTMENT,
     PATIENT;
 
-    public char toChar() {
+    public String toShortName() {
         switch (this) {
             case FACILITY -> {
-                return 'f';
+                return "fac";
             }
             case DOCTOR -> {
-                return 'd';
+                return "doc";
             }
             case ARTICLE -> {
-                return 'a';
+                return "art";
+            }
+            case DEPARTMENT -> {
+                return "dep";
             }
             case PATIENT -> {
-                return 'p';
+                return "pat";
             }
             default -> throw new IllegalArgumentException("Unknown entity type");
         }
     }
 
-    public static EntityType fromChar(char code) {
-        return switch (code) {
-            case 'f' -> FACILITY;
-            case 'd' -> DOCTOR;
-            case 'a' -> ARTICLE;
-            case 'p' -> PATIENT;
-            default -> throw new IllegalArgumentException("Unknown entity type code: " + code);
+    public static EntityType fromShortName(String shortName) {
+        return switch (shortName) {
+            case "fac" -> FACILITY;
+            case "doc" -> DOCTOR;
+            case "art" -> ARTICLE;
+            case "dep" -> DEPARTMENT;
+            case "pat" -> PATIENT;
+            default -> throw new IllegalArgumentException("Unknown entity type short name: " + shortName);
         };
     }
 

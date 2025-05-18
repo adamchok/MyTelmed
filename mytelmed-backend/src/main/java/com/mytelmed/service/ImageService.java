@@ -18,20 +18,17 @@ import java.util.UUID;
 public class ImageService {
     private final ImageRepository imageRepository;
     private final AwsPublicS3Service awsPublicS3Service;
-    private final AesEncryptionUtil aesEncryptionUtil;
 
-    public ImageService(ImageRepository imageRepository, AwsPublicS3Service awsPublicS3Service, AesEncryptionUtil aesEncryptionUtil) {
+    public ImageService(ImageRepository imageRepository, AwsPublicS3Service awsPublicS3Service) {
         this.imageRepository = imageRepository;
         this.awsPublicS3Service = awsPublicS3Service;
-        this.aesEncryptionUtil = aesEncryptionUtil;
     }
 
     public Optional<Image> saveImage(EntityType entityType, UUID entityId, MultipartFile imageFile) {
         try {
             String imageUrl = awsPublicS3Service.saveFileToS3AndGetUrl(entityType.name(), entityId.toString(), imageFile);
-            String encryptedImageUrl = aesEncryptionUtil.encrypt(imageUrl);
             Image image = Image.builder()
-                    .imageUrl(encryptedImageUrl)
+                    .imageUrl(imageUrl)
                     .entityType(entityType)
                     .entityId(entityId)
                     .isDeleted(false)
@@ -44,18 +41,7 @@ public class ImageService {
     }
 
     public Optional<Image> findImageByEntityTypeAndId(EntityType entityType, UUID entityId) {
-        try {
-            Image image = imageRepository.findByEntityTypeAndEntityIdAndIsDeletedFalse(entityType, entityId);
-            if (image == null) {
-                return Optional.empty();
-            }
-            String decryptedUrl = aesEncryptionUtil.decrypt(image.getImageUrl());
-            image.setImageUrl(decryptedUrl);
-            return Optional.of(image);
-        } catch (Exception e) {
-            log.error("Error finding image: {}", e.getMessage());
-        }
-        return Optional.empty();
+        return imageRepository.findByEntityTypeAndEntityIdAndIsDeletedFalse(entityType, entityId);
     }
 
     public List<Image> findAllImages() {

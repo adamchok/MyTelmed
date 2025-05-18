@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Form, Input, Button, Typography, message } from "antd";
 import { CreateEmailFormProps, EmailResetResponse } from "../props";
 import { ResetEmailRequestOptions } from "@/app/api/auth/props";
-import Auth from "@/app/api/auth";
+import AuthApi from "@/app/api/auth";
 
 const { Title, Paragraph } = Typography;
 
@@ -36,7 +36,7 @@ export default function CreateEmailPage() {
     }
     try {
       setLoading(true);
-      const response = await Auth.resetEmail(resetEmailRequest);
+      const response = await AuthApi.resetEmail(resetEmailRequest);
       const { isSuccess, message: msg }: EmailResetResponse = response.data;
 
       if (isSuccess) {

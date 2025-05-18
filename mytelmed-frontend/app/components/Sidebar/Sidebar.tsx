@@ -40,9 +40,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
 			return ['/browse/facilities'];
 		}
 
-		// For forum with sub-paths
-		if (basePath?.startsWith('/forum')) {
-			return ['/forum'];
+		// For knowledge with sub-paths
+		if (basePath?.startsWith('/knowledge')) {
+			return ['/knowledge'];
 		}
 
 		// Default selected key

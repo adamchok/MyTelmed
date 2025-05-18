@@ -10,8 +10,10 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface FacilityMapper {
     @Mapping(target = "id", expression = "java(facility.getId().toString())")
+    @Mapping(target = "imageUrl", expression = "java(facility.getImage() != null ? facility.getImage().getImageUrl() " +
+            ": null)")
     FacilityDto toDto(Facility facility);
-    
+
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "image", ignore = true)
     Facility toEntity(FacilityDto facilityDto);

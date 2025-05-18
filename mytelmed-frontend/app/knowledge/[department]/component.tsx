@@ -1,9 +1,10 @@
 'use client'
 
-import { Tabs, Card, Button, List, Avatar, Pagination, Input, DatePicker, Modal, Image, Typography } from "antd";
-import { useState, useRef } from "react";
-import { ForumComponentProps } from "./props";
-import { Article, QA } from "../props";
+import { Tabs, Card, Button, List, Avatar, Pagination, Input, DatePicker, Modal, Typography, Image, Spin } from "antd";
+import { useState, useRef, RefObject, useEffect, useCallback, ChangeEvent } from "react";
+import { KnowledgePageComponentProps } from "./props";
+import { QA } from "../props";
+import { calculateReadingTime } from "@/app/utils/ReadingTimeUtils";
 import dayjs, { Dayjs } from "dayjs";
 import Link from "next/link";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -16,72 +17,81 @@ dayjs.extend(isSameOrBefore);
 const { RangePicker } = DatePicker;
 const { Title, Paragraph } = Typography;
 
-const getReadingTime = (text: string) => {
-  const words = text.split(/\s+/).length;
-  return Math.max(1, Math.round(words / 200));
-};
-
-const ForumComponent = ({
+const DepartmentKnowledgePageComponent = ({
   department,
-  articles,
-  qa,
-  t
-}: ForumComponentProps) => {
-  const [articlePage, setArticlePage] = useState(1);
-  const [qaPage, setQaPage] = useState(1);
+  search,
+  setSearch,
+  dateRange,
+  setDateRange,
+  paginatedArticles,
+  totalArticleSize,
+  currentArticlePage,
+  setCurrentArticlePage,
+  paginatedQa,
+  totalQaSize,
+  currentQaPage,
+  setCurrentQaPage,
+  loading,
+}: KnowledgePageComponentProps) => {
+  const topRef: RefObject<HTMLDivElement> = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("articles");
-  const [search, setSearch] = useState("");
-  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null]>([null, null]);
-  const pageSize = 6;
-  const qaPageSize = 8;
-  const mainContentRef = useRef<HTMLDivElement>(null);
   const [qaModalOpen, setQaModalOpen] = useState(false);
   const [selectedQA, setSelectedQA] = useState<QA | null>(null);
 
-  const filterBySearchAndDate = (item: Article | QA, fields: string[]) => {
-    const matchesSearch = fields.some(field =>
-      (item as any)[field]?.toLowerCase().includes(search.toLowerCase())
-    );
-    const itemDate = dayjs(item.date);
-    const noDateFilter = !dateRange || (!dateRange[0] && !dateRange[1]);
-    const matchesDate =
-      noDateFilter ||
-      (!dateRange[0] || itemDate.isSameOrAfter(dateRange[0], 'day')) &&
-      (!dateRange[1] || itemDate.isSameOrBefore(dateRange[1], 'day'));
-    return matchesSearch && matchesDate;
-  };
-
-  const filteredArticles = articles.filter(article =>
-    filterBySearchAndDate(article, ["title", "summary"])
-  );
-  const pagedArticles = filteredArticles.slice((articlePage - 1) * pageSize, articlePage * pageSize);
-
-  const filteredQA = qa.filter(qaItem =>
-    filterBySearchAndDate(qaItem, ["question", "answer"])
-  );
-  const pagedQA = filteredQA.slice((qaPage - 1) * qaPageSize, qaPage * qaPageSize);
+  const handleSearch = useCallback((e: ChangeEvent<HTMLInputElement>): void => {
+    const newSearch: string = e.target.value;
+    setSearch(newSearch);
+  }, [setSearch]);
 
   const handleQAClick = (qaItem: QA) => {
     setSelectedQA(qaItem);
     setQaModalOpen(true);
   };
 
+  const handleTabChange = useCallback((key: string): void => {
+    setActiveTab(key);
+    if (key === "articles") setCurrentArticlePage(1);
+    if (key === "qa") setCurrentQaPage(1);
+  }, [setActiveTab, setCurrentArticlePage, setCurrentQaPage]);
+
+  useEffect(() => {
+    if (topRef.current) {
+      topRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [currentArticlePage, currentQaPage]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Spin size="large" tip="Loading..." />
+      </div>
+    );
+  }
+
+  if (!department) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full">
+        <Title level={2} className="text-2xl font-bold">Department Not Found</Title>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center justify-center mt-8 md:px-8">
-      <div ref={mainContentRef} className="max-w-6xl w-full px-6 bg-white rounded-lg shadow-lg relative">
-        <BackButton backLink="/forum" className="mt-4" />
+      <div ref={topRef} className="max-w-6xl w-full px-6 bg-white rounded-lg shadow-lg relative">
+        <BackButton backLink="/knowledge" className="mt-4" />
 
         <div className="flex flex-col md:flex-row items-center gap-6 pt-6 px-6 pb-4 border-b">
           <Image
-            src={department.image}
-            alt={department.label}
+            src={department.imageUrl}
+            alt={department.name}
             width={140}
-            height={120}
-            className="rounded-2xl object-contain"
+            height={140}
+            className="rounded-2xl object-cover"
             preview={false}
           />
           <div className="flex-1 text-center md:text-left">
-            <Title level={2} className="text-3xl font-bold text-blue-900 mb-2">{department.label}</Title>
+            <Title level={2} className="text-3xl font-bold text-blue-900 mb-2">{department.name}</Title>
             <Paragraph className="text-gray-600 text-lg">{department.description}</Paragraph>
           </div>
         </div>
@@ -91,35 +101,22 @@ const ForumComponent = ({
             value={dateRange}
             onChange={(range) => {
               setDateRange(range as [Dayjs | null, Dayjs | null]);
-              setArticlePage(1);
-              setQaPage(1);
-              if (mainContentRef.current) mainContentRef.current.scrollIntoView({ behavior: "smooth" });
             }}
             allowClear
             className="mb-2 md:mb-0"
           />
           <Input.Search
-            placeholder={t("Search...") || "Search..."}
+            placeholder="Search..."
             allowClear
             value={search}
-            onChange={e => {
-              setSearch(e.target.value);
-              setArticlePage(1);
-              setQaPage(1);
-              if (mainContentRef.current) mainContentRef.current.scrollIntoView({ behavior: "smooth" });
-            }}
+            onChange={handleSearch}
             className="w-full md:w-[320px]"
           />
         </div>
 
         <Tabs
           activeKey={activeTab}
-          onChange={key => {
-            setActiveTab(key);
-            if (key === "articles") setArticlePage(1);
-            if (key === "qa") setQaPage(1);
-            if (mainContentRef.current) mainContentRef.current.scrollIntoView({ behavior: "smooth" });
-          }}
+          onChange={handleTabChange}
           tabBarStyle={{
             padding: "0 24px",
             justifyContent: "center"
@@ -127,37 +124,37 @@ const ForumComponent = ({
           items={[
             {
               key: "articles",
-              label: t("Latest Articles") || "Latest Articles",
+              label: "Latest Articles",
               children: (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-5">
-                    {pagedArticles.map((article) => (
+                    {paginatedArticles.map((article) => (
                       <Link
-                        href={`/forum/${department.key}/article/${article.id}`}
-                        style={{ textDecoration: 'none' }}
+                        href={`/knowledge/${department.name}/article/${article.id}`}
                         key={article.id}
                       >
                         <Card
                           hoverable
                           cover={
-                            <Image
-                              src={article.image}
-                              alt={article.title}
-                              width={400}
-                              height={160}
-                              className="h-40 object-cover w-full"
-                              preview={false}
-                            />
+                            <div className="w-full h-full overflow-hidden">
+                              <Image
+                                src={article.imageUrl}
+                                alt={article.title}
+                                className="object-cover"
+                                preview={false}
+                              />
+                            </div>
                           }
-                          className="rounded-lg shadow-sm"
+                          className="rounded-lg shadow-sm w-full"
                         >
+
                           <Card.Meta
                             title={
                               <>
                                 <div className="flex items-center text-xs text-gray-500 mb-1">
-                                  <span>{dayjs(article.date).format("MMM D, YYYY")}</span>
+                                  <span>{dayjs(article.createdAt).format("MMM D, YYYY")}</span>
                                   <span className="mx-2">•</span>
-                                  <span>{getReadingTime(article.summary)} min read</span>
+                                  <span>{calculateReadingTime(article.content)} min read</span>
                                 </div>
                                 <span
                                   className="font-bold text-lg"
@@ -173,17 +170,34 @@ const ForumComponent = ({
                               </>
                             }
                             description={
-                              <span
-                                className="text-gray-600"
-                                style={{
-                                  display: "-webkit-box",
-                                  WebkitLineClamp: 3,
-                                  WebkitBoxOrient: "vertical",
-                                  overflow: "hidden",
-                                }}
-                              >
-                                {article.summary}
-                              </span>
+                              <>
+                                {article.tags && article.tags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mb-2 mt-1">
+                                    {article.tags.slice(0, 3).map((tag, index) => (
+                                      <span
+                                        key={index}
+                                        className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 text-blue-700"
+                                      >
+                                        #{tag}
+                                      </span>
+                                    ))}
+                                    {article.tags.length > 3 && (
+                                      <span className="text-xs text-gray-500">+{article.tags.length - 3} more</span>
+                                    )}
+                                  </div>
+                                )}
+                                <span
+                                  className="text-gray-600"
+                                  style={{
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: 3,
+                                    WebkitBoxOrient: "vertical",
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  {article.content}
+                                </span>
+                              </>
                             }
                           />
                           <Button
@@ -191,7 +205,7 @@ const ForumComponent = ({
                             className="mt-2 p-0 text-blue-600"
                             style={{ padding: "0px" }}
                           >
-                            {t("Read More") || "Read More"}
+                            Read More
                           </Button>
                         </Card>
                       </Link>
@@ -200,16 +214,12 @@ const ForumComponent = ({
 
                   <div className="flex justify-end pb-5 mt-4">
                     <Pagination
-                      current={articlePage}
-                      pageSize={pageSize}
-                      total={filteredArticles.length}
-                      onChange={page => {
-                        setArticlePage(page);
-                        if (mainContentRef.current) mainContentRef.current.scrollIntoView();
-                      }}
+                      current={currentArticlePage}
+                      pageSize={10}
+                      total={totalArticleSize}
+                      onChange={setCurrentArticlePage}
                       className="text-center"
                       style={{ padding: "10px 20px" }}
-                      showTotal={(total, range) => `${range[0]}-${range[1]} of ${total}`}
                       showQuickJumper
                     />
                   </div>
@@ -218,12 +228,12 @@ const ForumComponent = ({
             },
             {
               key: "qa",
-              label: t("Community Q&A") || "Community Q&A",
+              label: "Community Q&A",
               children: (
                 <div className="px-5">
                   <List
                     itemLayout="horizontal"
-                    dataSource={pagedQA}
+                    dataSource={paginatedQa}
                     pagination={false}
                     renderItem={(item) => (
                       <List.Item
@@ -265,20 +275,15 @@ const ForumComponent = ({
                   />
                   <div className="flex justify-between items-center pb-5">
                     <Button type="primary" className="font-bold">
-                      {t("Ask a Question") || "Ask a Question"}
+                      Ask a Question
                     </Button>
                     <Pagination
-                      current={qaPage}
-                      pageSize={qaPageSize}
-                      total={filteredQA.length}
-                      onChange={page => {
-                        setQaPage(page);
-                        if (mainContentRef.current) mainContentRef.current.scrollIntoView({ behavior: "smooth" });
-                      }}
+                      current={currentQaPage}
+                      pageSize={10}
+                      total={totalQaSize}
+                      onChange={setCurrentQaPage}
                       className="text-center"
                       style={{ padding: "10px 20px" }}
-                      showTotal={(total, range) => `${range[0]}-${range[1]} of ${total}`}
-                      showQuickJumper
                     />
                   </div>
                   <Modal
@@ -289,7 +294,9 @@ const ForumComponent = ({
                     centered
                   >
                     <div className="mb-2 text-gray-800">{selectedQA?.answer}</div>
-                    <div className="text-xs text-gray-500 mb-4">{selectedQA?.user} • {selectedQA?.date}</div>
+                    <div className="text-xs text-gray-500 mb-4">
+                      {selectedQA?.user} • {dayjs(selectedQA?.date).format("MMM D, YYYY")}
+                    </div>
                   </Modal>
                 </div>
               ),
@@ -301,4 +308,4 @@ const ForumComponent = ({
   );
 };
 
-export default ForumComponent;
+export default DepartmentKnowledgePageComponent;

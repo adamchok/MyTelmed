@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Form, Input, Button, Typography, message } from "antd";
 import { CreatePasswordFormProps, PasswordResetResponse } from "../props";
-import Auth from "@/app/api/auth";
+import AuthApi from "@/app/api/auth";
 import { ResetPasswordRequestOptions } from "@/app/api/auth/props";
 
 const { Title, Paragraph } = Typography;
@@ -36,7 +36,7 @@ export default function CreatePasswordPage() {
     }
     try {
       setLoading(true);
-      const response = await Auth.resetPassword(resetPasswordRequest);
+      const response = await AuthApi.resetPassword(resetPasswordRequest);
       const { isSuccess, message: msg }: PasswordResetResponse = response.data;
 
       if (isSuccess) {

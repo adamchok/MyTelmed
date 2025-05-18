@@ -34,7 +34,7 @@ export default function LandingPage() {
               {t("signIn")}
             </Button>
           </Link>
-          <Link href="/forum" className="w-full md:w-auto">
+          <Link href="/knowledge" className="w-full md:w-auto">
             <Button className="w-full md:w-auto px-8 py-3 h-10 border-blue-700 text-blue-700 rounded font-bold shadow hover:bg-blue-50 transition">
               {t("knowledgeHub")}
             </Button>

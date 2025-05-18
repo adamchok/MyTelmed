@@ -48,7 +48,7 @@ public class FacilityController {
     public ResponseEntity<FacilityDto> uploadImageForFacility(
             @PathVariable("id") String facilityId,
             @RequestPart("image") MultipartFile imageFile) {
-        FacilityDto createdFacility = facilityService.uploadImage(facilityId, imageFile);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdFacility);
+        FacilityDto updatedFacility = facilityService.uploadImage(facilityId, imageFile);
+        return ResponseEntity.status(HttpStatus.CREATED).body(updatedFacility);
     }
 }

@@ -7,7 +7,7 @@ export const nextI18NextConfig = {
     fallbackLng: "en",
     localePath: resolve("./public/locales"),
   },
-  ns: ["dashboard", "sidebar", "sign-in", "forum", "forgot-password", "forgot-email", "landing"],
+  ns: ["dashboard", "sidebar", "sign-in", "knowledge", "forgot-password", "forgot-email", "landing"],
   defaultNS: "dashboard",
   react: { useSuspense: false },
 };

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { PasswordResetLinkRequestOptions } from "@/app/api/auth/props";
 import { PasswordResetResponse } from "./props";
 import ForgotPasswordPageComponent from "./component";
-import Auth from "@/app/api/auth";
+import AuthApi from "@/app/api/auth";
 
 const ForgotPassword = () => {
   const router = useRouter();
@@ -23,7 +23,7 @@ const ForgotPassword = () => {
       email: values.email,
     }
     try {
-      const response = await Auth.requestPasswordReset(passwordResetRequest);
+      const response = await AuthApi.requestPasswordReset(passwordResetRequest);
       const { isSuccess, message: msg }: PasswordResetResponse = response.data;
 
       if (isSuccess) {

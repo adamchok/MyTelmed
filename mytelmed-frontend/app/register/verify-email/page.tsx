@@ -7,7 +7,7 @@ import { resetRegistration, setEmail } from "@/lib/reducers/registration-reducer
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import type { RootState } from "@/lib/reducers";
 import { useState, useEffect, Dispatch } from "react";
-import Auth from "@/app/api/auth";
+import AuthApi from "@/app/api/auth";
 import VerifyEmailPageComponent from "./component";
 import { CodeVerificationRequestOptions, EmailVerificationLinkRequestOptions } from "@/app/api/auth/props";
 import { CodeVerificationResponse, EmailVerificationResponse } from "./props";
@@ -38,7 +38,7 @@ export default function VerifyEmailPage() {
     const emailVerificationRequest: EmailVerificationLinkRequestOptions = { email };
     try {
       setLoading(true);
-      const response = await Auth.requestVerificationCode(emailVerificationRequest);
+      const response = await AuthApi.requestVerificationCode(emailVerificationRequest);
       const { isSuccess, message: msg }: EmailVerificationResponse = response.data;
       if (isSuccess) {
         message.success(msg);
@@ -62,7 +62,7 @@ export default function VerifyEmailPage() {
     setLoading(true);
     const codeVerificationRequest: CodeVerificationRequestOptions = { email: values.email, token: values.code };
     try {
-      const response = await Auth.verifyCode(codeVerificationRequest);
+      const response = await AuthApi.verifyCode(codeVerificationRequest);
       const { isSuccess, message: msg }: CodeVerificationResponse = response.data;
 
       if (isSuccess) {
