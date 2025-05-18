@@ -5,17 +5,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+
 import java.io.IOException;
 import java.util.UUID;
 
@@ -23,36 +21,24 @@ import java.util.UUID;
 @Service
 @Slf4j
 public class AwsPublicS3Service {
-    private final String ACCESS_KEY;
-    private final String SECRET_KEY;
     private final String BUCKET_NAME;
+    private final S3Client S3_CLIENT;
 
     public AwsPublicS3Service(
-            @Value("${aws.accessKey}") String accessKey,
-            @Value("${aws.secretKey}") String secretKey,
-            @Value("${aws.s3.public.bucket-name}") String bucketName) {
-        this.ACCESS_KEY = accessKey;
-        this.SECRET_KEY = secretKey;
+            @Value("${aws.s3.public.bucket-name}") String bucketName,
+            S3Client s3Client) {
         this.BUCKET_NAME = bucketName;
-    }
-
-    private S3Client getClient() {
-        AwsCredentials credentials = AwsBasicCredentials.create(ACCESS_KEY, SECRET_KEY);
-        return S3Client.builder()
-                .credentialsProvider(() -> credentials)
-                .region(Region.AP_SOUTHEAST_1)
-                .build();
+        this.S3_CLIENT = s3Client;
     }
 
     private byte[] getObjectBytes(String keyName) {
-        S3Client s3 = getClient();
         try {
             GetObjectRequest request = GetObjectRequest
                     .builder()
                     .key(keyName)
                     .bucket(BUCKET_NAME)
                     .build();
-            ResponseBytes<GetObjectResponse> objectBytes = s3.getObjectAsBytes(request);
+            ResponseBytes<GetObjectResponse> objectBytes = S3_CLIENT.getObjectAsBytes(request);
             return objectBytes.asByteArray();
         } catch (S3Exception ex) {
             log.error("Error downloading object:", ex);
@@ -61,13 +47,12 @@ public class AwsPublicS3Service {
     }
 
     private void putObject(byte[] data, String objectKey) {
-        S3Client s3 = getClient();
         try {
             PutObjectRequest request = PutObjectRequest.builder()
                     .bucket(BUCKET_NAME)
                     .key(objectKey)
                     .build();
-            s3.putObject(request, RequestBody.fromBytes(data));
+            S3_CLIENT.putObject(request, RequestBody.fromBytes(data));
         } catch (S3Exception ex) {
             log.error("Error uploading object:", ex);
             throw ex;
@@ -75,17 +60,23 @@ public class AwsPublicS3Service {
     }
 
     private void deleteObject(String objectKey) {
-        S3Client s3 = getClient();
         try {
             DeleteObjectRequest request = DeleteObjectRequest.builder()
                     .bucket(BUCKET_NAME)
                     .key(objectKey)
                     .build();
-            s3.deleteObject(request);
+            S3_CLIENT.deleteObject(request);
         } catch (S3Exception ex) {
             log.error("Error deleting object:", ex);
             throw ex;
         }
+    }
+
+    private String generateRandomFileName(String originalFileName) {
+        String fileExtension = StringUtils.hasText(originalFileName) ?
+                originalFileName.substring(originalFileName.lastIndexOf("."))
+                : "";
+        return UUID.randomUUID() + fileExtension;
     }
 
     /**
@@ -105,12 +96,5 @@ public class AwsPublicS3Service {
         putObject(file.getBytes(), key);
 
         return "https://" + BUCKET_NAME + ".s3.amazonaws.com/" + key;
-    }
-
-    public String generateRandomFileName(String originalFileName) {
-        String fileExtension = StringUtils.hasText(originalFileName) ?
-                originalFileName.substring(originalFileName.lastIndexOf("."))
-                : "";
-        return UUID.randomUUID() + fileExtension;
     }
 }

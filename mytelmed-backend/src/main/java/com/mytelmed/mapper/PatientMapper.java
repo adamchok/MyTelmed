@@ -1,8 +1,8 @@
-package com.mytelmed.mapper.patient;
+package com.mytelmed.mapper;
 
 
 import com.mytelmed.model.dto.PatientDto;
-import com.mytelmed.model.entity.object.Patient;
+import com.mytelmed.model.entity.Patient;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

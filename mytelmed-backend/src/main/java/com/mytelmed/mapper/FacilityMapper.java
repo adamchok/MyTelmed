@@ -1,7 +1,7 @@
-package com.mytelmed.mapper.facility;
+package com.mytelmed.mapper;
 
 import com.mytelmed.model.dto.FacilityDto;
-import com.mytelmed.model.entity.object.Facility;
+import com.mytelmed.model.entity.Facility;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

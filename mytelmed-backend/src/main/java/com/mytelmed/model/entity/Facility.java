@@ -1,4 +1,4 @@
-package com.mytelmed.model.entity.object;
+package com.mytelmed.model.entity;
 
 import com.mytelmed.constant.FacilityType;
 import com.mytelmed.utils.converters.FacilityTypeConverter;

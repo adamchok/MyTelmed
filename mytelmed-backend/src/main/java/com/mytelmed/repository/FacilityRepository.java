@@ -1,6 +1,6 @@
 package com.mytelmed.repository;
 
-import com.mytelmed.model.entity.object.Facility;
+import com.mytelmed.model.entity.Facility;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

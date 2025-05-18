@@ -55,7 +55,8 @@ public class SecurityConfig {
                         "/auth/register",
                         "/auth/verify/**",
                         "/auth/password/reset/**",
-                        "/auth/email/reset/**"
+                        "/auth/email/reset/**",
+                        "/article/**"
                 ).permitAll().anyRequest().authenticated())
                 .userDetailsService(this.userService)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)

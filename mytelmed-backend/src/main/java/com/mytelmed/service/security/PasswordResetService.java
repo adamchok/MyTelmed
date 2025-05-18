@@ -2,7 +2,7 @@ package com.mytelmed.service.security;
 
 import com.mytelmed.advice.exception.InvalidCredentialsException;
 import com.mytelmed.advice.exception.ResourceNotFoundException;
-import com.mytelmed.model.entity.object.Patient;
+import com.mytelmed.model.entity.Patient;
 import com.mytelmed.model.entity.security.ResetToken;
 import com.mytelmed.model.entity.security.User;
 import com.mytelmed.repository.ResetTokenRepository;
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import java.util.UUID;
+
 
 @Slf4j
 @Service

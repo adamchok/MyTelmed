@@ -1,10 +1,10 @@
 package com.mytelmed.service;
 
 import com.mytelmed.constant.EntityType;
-import com.mytelmed.mapper.facility.FacilityMapper;
+import com.mytelmed.mapper.FacilityMapper;
 import com.mytelmed.model.dto.FacilityDto;
-import com.mytelmed.model.entity.object.Facility;
-import com.mytelmed.model.entity.object.Image;
+import com.mytelmed.model.entity.Facility;
+import com.mytelmed.model.entity.Image;
 import com.mytelmed.repository.FacilityRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

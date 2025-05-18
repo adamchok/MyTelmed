@@ -3,6 +3,7 @@ package com.mytelmed.constant;
 public enum EntityType {
     FACILITY,
     DOCTOR,
+    ARTICLE,
     PATIENT;
 
     public char toChar() {
@@ -12,6 +13,9 @@ public enum EntityType {
             }
             case DOCTOR -> {
                 return 'd';
+            }
+            case ARTICLE -> {
+                return 'a';
             }
             case PATIENT -> {
                 return 'p';
@@ -24,6 +28,7 @@ public enum EntityType {
         return switch (code) {
             case 'f' -> FACILITY;
             case 'd' -> DOCTOR;
+            case 'a' -> ARTICLE;
             case 'p' -> PATIENT;
             default -> throw new IllegalArgumentException("Unknown entity type code: " + code);
         };
