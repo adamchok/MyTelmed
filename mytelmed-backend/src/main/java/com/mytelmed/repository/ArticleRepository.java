@@ -68,10 +68,10 @@ public class ArticleRepository {
         return new PageImpl<>(paginatedList, pageable, total);
     }
 
-    public void delete(String department, String id) {
+    public void delete(Article article) {
         Key key = Key.builder()
-                .partitionValue(department)
-                .sortValue(id)
+                .partitionValue(article.getDepartment())
+                .sortValue(article.getId())
                 .build();
         articleTable.deleteItem(key);
     }

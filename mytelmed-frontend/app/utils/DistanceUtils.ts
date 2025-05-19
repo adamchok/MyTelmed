@@ -1,8 +1,8 @@
-export async function calculateDistanceFromAddress(
+const calculateDistanceFromAddress = async (
   userLatitude: number,
   userLongitude: number,
   facilityAddress: string
-): Promise<number | null> {
+): Promise<number | null> => {
   const apiKey = process.env.GOOGLE_MAP_API_KEY;
   const encodedAddress = encodeURIComponent(facilityAddress);
   const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?key=${apiKey}&address=${encodedAddress}`;
@@ -27,4 +27,6 @@ export async function calculateDistanceFromAddress(
   const distance = R * c;
 
   return distance;
-}
+};
+
+export default calculateDistanceFromAddress;

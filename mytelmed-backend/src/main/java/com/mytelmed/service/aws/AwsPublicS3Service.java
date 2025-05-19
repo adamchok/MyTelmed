@@ -79,6 +79,11 @@ public class AwsPublicS3Service {
         return UUID.randomUUID() + fileExtension;
     }
 
+    private String extractS3KeyFromUrl(String imageUrl) {
+        String s3BaseUrl = "https://" + BUCKET_NAME + ".s3.amazonaws.com/";
+        return imageUrl.replace(s3BaseUrl, "");
+    }
+
     /**
      * Saves the given file to an AWS S3 bucket in the specified folder structure and returns the public URL of the uploaded file.
      *
@@ -96,5 +101,40 @@ public class AwsPublicS3Service {
         putObject(file.getBytes(), key);
 
         return "https://" + BUCKET_NAME + ".s3.amazonaws.com/" + key;
+    }
+
+    /**
+     * Updates an existing image in the S3 bucket by deleting the old image and uploading the new one.
+     *
+     * @param folderName the folder in which the image is stored
+     * @param entityId the ID associated with the image
+     * @param oldImageUrl the url of the old image in S3 to be replaced
+     * @param newFile the new image file to upload
+     * @return the public URL of the updated image
+     * @throws IOException if an error occurs during the upload or deletion process
+     */
+    public String updateImageInS3(String folderName, String entityId, String oldImageUrl, MultipartFile newFile) throws IOException {
+        String oldImageKey = extractS3KeyFromUrl(oldImageUrl);
+        deleteObject(oldImageKey);
+
+        String newFileName = generateRandomFileName(newFile.getOriginalFilename());
+        String newKey = folderName + "/" + entityId + "/images/" + newFileName;
+
+        putObject(newFile.getBytes(), newKey);
+
+        return "https://" + BUCKET_NAME + ".s3.amazonaws.com/" + newKey;
+    }
+
+
+    /**
+     * Deletes an image from the S3 bucket using its public URL.
+     *
+     * @param imageUrl the public URL of the image to be deleted from the S3 bucket
+     *
+     * @throws S3Exception if an error occurs while deleting the image from S3
+     */
+    public void deleteImageInS3ByImageUrl(String imageUrl) {
+        String oldImageKey = extractS3KeyFromUrl(imageUrl);
+        deleteObject(oldImageKey);
     }
 }

@@ -10,5 +10,5 @@ import java.util.UUID;
 
 @Repository
 public interface ImageRepository extends JpaRepository<Image, UUID> {
-    Optional<Image> findByEntityTypeAndEntityIdAndIsDeletedFalse(EntityType entityType, UUID entityId);
+    Optional<Image> findByEntityTypeAndEntityId(EntityType entityType, UUID entityId);
 }

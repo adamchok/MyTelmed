@@ -71,9 +71,9 @@ const BrowseFacilitiesPage = () => {
         facility.address.toLowerCase().includes(search.toLowerCase());
       const matchesLocation =
         !selectedLocation ||
-        facility.state === selectedLocation ||
-        facility.city === selectedLocation;
-      const matchesType = !selectedType || facility.type === selectedType;
+        facility.state.toLowerCase() === selectedLocation.toLowerCase() ||
+        facility.city.toLowerCase() === selectedLocation.toLowerCase();
+      const matchesType = !selectedType || facility.type.toLowerCase() === selectedType.toLowerCase();
       return matchesSearch && matchesLocation && matchesType;
     });
   }, [search, selectedLocation, selectedType]);

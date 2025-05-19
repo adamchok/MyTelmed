@@ -1,6 +1,7 @@
 package com.mytelmed.model.dto;
 
 import lombok.Builder;
+import java.util.List;
 
 
 @Builder
@@ -14,5 +15,5 @@ public record ArticleDto(
         String updatedAt,
         String imageUrl,
         boolean featured,
-        String[] tags
+        List<String> tags
 ) {}

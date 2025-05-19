@@ -110,11 +110,3 @@ export interface Article {
   createdAt: string;
   updatedAt: string;
 }
-
-export interface QA {
-  id: number;
-  question: string;
-  answer: string;
-  user: string;
-  date: string;
-}

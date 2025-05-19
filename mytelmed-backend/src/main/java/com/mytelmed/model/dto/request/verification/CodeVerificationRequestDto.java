@@ -1,4 +1,4 @@
-package com.mytelmed.model.dto.request;
+package com.mytelmed.model.dto.request.verification;
 
 import jakarta.validation.constraints.NotBlank;
 

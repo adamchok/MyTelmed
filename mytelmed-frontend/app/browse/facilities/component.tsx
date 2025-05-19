@@ -121,7 +121,7 @@ const BrowseFacilitiesPageComponent = ({
             )}
           </div>
 
-          {totalFacilitySize > facilitiesPerPage && (
+          {paginatedFacilities.length > 0 && totalFacilitySize > facilitiesPerPage && (
             <div className="flex flex-col items-center mt-8 mb-4">
               <Pagination
                 current={currentPage}
@@ -133,11 +133,13 @@ const BrowseFacilitiesPageComponent = ({
           )}
         </div>
 
-        <div className={`${selectedFacility ? 'hidden' : 'hidden lg:block lg:w-1/3'}`}>
-          <div className="sticky top-8">
-            <MapFrame selectedFacility={selectedFacility} />
+        {paginatedFacilities.length > 0 && selectedFacility && (
+          <div className="hidden lg:block lg:w-1/3">
+            <div className="sticky top-8">
+              <MapFrame selectedFacility={selectedFacility} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

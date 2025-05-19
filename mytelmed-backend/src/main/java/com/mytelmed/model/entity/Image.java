@@ -44,9 +44,6 @@ public class Image {
     @Column(name = "entity_id")
     private UUID entityId;
 
-    @Column(name = "is_deleted")
-    private boolean isDeleted;
-
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;

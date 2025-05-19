@@ -5,7 +5,7 @@ import { useMemo, memo } from "react";
 import { DoctorCardProps } from "./props";
 import { MedicineBoxOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined } from "@ant-design/icons";
 import AvailabilityGrid from "@/app/components/AvailabilityGrid/AvailabilityGrid";
-import { calculateDistanceFromAddress } from "@/app/utils/DistanceUtils";
+import calculateDistanceFromAddress from "@/app/utils/DistanceUtils";
 
 const DoctorCard = memo(({
   doctor,

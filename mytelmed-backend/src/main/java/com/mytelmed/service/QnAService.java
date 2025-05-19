@@ -2,6 +2,8 @@ package com.mytelmed.service;
 
 import com.mytelmed.mapper.QnAMapper;
 import com.mytelmed.model.dto.QnADto;
+import com.mytelmed.model.dto.request.qna.CreateQnARequestDto;
+import com.mytelmed.model.dto.request.qna.AnswerQnARequestDto;
 import com.mytelmed.model.entity.QnA;
 import com.mytelmed.repository.QnARepository;
 import org.springframework.data.domain.Page;
@@ -22,16 +24,6 @@ public class QnAService {
         this.qnAMapper = qnAMapper;
     }
     
-    public QnADto createQnA(QnADto request) {
-        QnA qnA = qnAMapper.toEntity(request);
-        qnA.setId(UUID.randomUUID().toString());
-        qnA.setCreatedAt(Instant.now());
-        qnA.setUpdatedAt(Instant.now());
-        
-        QnA savedQnA = qnARepository.save(qnA);
-        return qnAMapper.toDto(savedQnA);
-    }
-    
     public Page<QnADto> getAllQnA(int page, int pageSize) {
         Pageable pageable = PageRequest.of(page, pageSize);
         Page<QnA> qnA = qnARepository.findAll(pageable);
@@ -49,12 +41,27 @@ public class QnAService {
                 .orElseThrow(() -> new RuntimeException("QnA not found"));
         return qnAMapper.toDto(qnA);
     }
+
+    public QnADto createQnA(CreateQnARequestDto request) {
+        QnA qnA = QnA.builder()
+                .id(UUID.randomUUID().toString())
+                .question(request.question())
+                .department(request.department())
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .build();
+        QnA savedQnA = qnARepository.save(qnA);
+        return qnAMapper.toDto(savedQnA);
+    }
     
-    public QnADto updateQnA(String department, String id, QnADto request) {
+    public QnADto answerQnA(String department, String id, AnswerQnARequestDto request) {
         QnA existingQnA = qnARepository.findById(department, id)
                 .orElseThrow(() -> new RuntimeException("QnA not found"));
-        
-        qnAMapper.updateEntityFromDto(request, existingQnA);
+
+        existingQnA.setAnswer(request.answer());
+        existingQnA.setAnsweredBy(request.answeredBy());
+        existingQnA.setUpdatedAt(Instant.now());
+        existingQnA.setLastAnsweredAt(Instant.now());
         
         QnA updatedQnA = qnARepository.save(existingQnA);
         return qnAMapper.toDto(updatedQnA);

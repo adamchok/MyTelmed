@@ -12,9 +12,12 @@ export interface Article {
 }
 
 export interface QA {
-  id: number;
+  id: string;
   question: string;
-  answer: string;
-  user: string;
-  date: string;
+  answer: string | null;
+  department: string;
+  answeredBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lastAnsweredAt: string | null;
 }

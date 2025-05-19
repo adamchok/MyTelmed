@@ -1,4 +1,4 @@
-package com.mytelmed.model.dto.request;
+package com.mytelmed.model.dto.request.reset;
 
 public record EmailResetRequestDto(
         String nric,

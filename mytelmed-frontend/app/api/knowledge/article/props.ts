@@ -1,9 +1,8 @@
-export interface CreateArticleRequestOptions {
+export interface ArticleRequestOptions {
   title: string;
   content: string;
   department: string;
   author: string;
-  imageUrl: string;
   featured: boolean;
   tags: string[];
 }

@@ -1,4 +1,4 @@
-package com.mytelmed.model.dto.request;
+package com.mytelmed.model.dto.request.reset;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

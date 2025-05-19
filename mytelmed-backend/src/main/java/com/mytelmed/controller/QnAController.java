@@ -1,6 +1,8 @@
 package com.mytelmed.controller;
 
 import com.mytelmed.model.dto.QnADto;
+import com.mytelmed.model.dto.request.qna.CreateQnARequestDto;
+import com.mytelmed.model.dto.request.qna.AnswerQnARequestDto;
 import com.mytelmed.service.QnAService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -26,20 +28,6 @@ public class QnAController {
         this.qnAService = qnAService;
     }
 
-    @PostMapping
-    public ResponseEntity<QnADto> createQnA(@Valid @RequestBody QnADto request) {
-        QnADto response = qnAService.createQnA(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
-
-    @GetMapping
-    public ResponseEntity<Page<QnADto>> getAllQnA(
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(defaultValue = "10") Integer pageSize) {
-        Page<QnADto> qnA = qnAService.getAllQnA(page, pageSize);
-        return ResponseEntity.ok(qnA);
-    }
-
     @GetMapping("/{department}")
     public ResponseEntity<Page<QnADto>> getQnAByDepartment(
             @PathVariable String department,
@@ -49,20 +37,18 @@ public class QnAController {
         return ResponseEntity.ok(qnA);
     }
 
-    @GetMapping("/{department}/{id}")
-    public ResponseEntity<QnADto> getQnAByDepartmentAndId(
-            @PathVariable String department,
-            @PathVariable String id) {
-        QnADto qnA = qnAService.getQnAById(department, id);
-        return ResponseEntity.ok(qnA);
+    @PostMapping
+    public ResponseEntity<QnADto> createQnA(@Valid @RequestBody CreateQnARequestDto request) {
+        QnADto response = qnAService.createQnA(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PutMapping("/{department}/{id}")
-    public ResponseEntity<QnADto> updateQnA(
+    public ResponseEntity<QnADto> answerQnA(
             @PathVariable String department,
             @PathVariable String id,
-            @Valid @RequestBody QnADto request) {
-        QnADto response = qnAService.updateQnA(department, id, request);
+            @Valid @RequestBody AnswerQnARequestDto request) {
+        QnADto response = qnAService.answerQnA(department, id, request);
         return ResponseEntity.ok(response);
     }
 

@@ -24,18 +24,18 @@ const KnowledgeHubLandingPageComponent = ({ departments }: { departments: Depart
               onClick={() => router.push(`/knowledge/${dept.name}`)}
               cover={
                 dept.imageUrl ? (
-                  <Image
-                    src={dept.imageUrl}
-                    alt={dept.name}
-                    width={150}
-                    height={150}
-                    className="mx-auto mt-4 object-fill"
-                    preview={false}
-                  />
+                  <div className="w-full overflow-hidden">
+                    <Image
+                      src={dept.imageUrl}
+                      alt={dept.name}
+                      className="object-fill"
+                      preview={false}
+                    />
+                  </div>
                 ) : null
               }
             >
-              <Title level={4} className="font-bold text-xl mb-2">{dept.name}</Title>
+              <Title level={4} className="font-bold text-xl mb-2 mt-0">{dept.name}</Title>
               <Paragraph className="text-gray-600 mb-4">{dept.description || "Explore Q&A and resources for this department."}</Paragraph>
               <Button type="primary">View</Button>
             </Card>

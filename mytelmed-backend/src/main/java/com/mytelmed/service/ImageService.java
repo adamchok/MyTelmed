@@ -3,7 +3,6 @@ package com.mytelmed.service;
 import com.mytelmed.constant.EntityType;
 import com.mytelmed.repository.ImageRepository;
 import com.mytelmed.service.aws.AwsPublicS3Service;
-import com.mytelmed.utils.AesEncryptionUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import com.mytelmed.model.entity.Image;
@@ -31,7 +30,6 @@ public class ImageService {
                     .imageUrl(imageUrl)
                     .entityType(entityType)
                     .entityId(entityId)
-                    .isDeleted(false)
                     .build();
             return Optional.of(imageRepository.save(image));
         } catch (Exception e) {
@@ -40,18 +38,38 @@ public class ImageService {
         return Optional.empty();
     }
 
-    public Optional<Image> findImageByEntityTypeAndId(EntityType entityType, UUID entityId) {
-        return imageRepository.findByEntityTypeAndEntityIdAndIsDeletedFalse(entityType, entityId);
+    public Optional<Image> updateImage(EntityType entityType, UUID entityId, MultipartFile imageFile) {
+        try {
+            Optional<Image> existingImageOpt = imageRepository.findByEntityTypeAndEntityId(entityType, entityId);
+
+            if (existingImageOpt.isEmpty()) {
+                throw new RuntimeException("Image not found with entity type and entity ID: " + entityType.name()
+                        + ", " + entityId.toString());
+            }
+
+            Image existingImage = existingImageOpt.get();
+            String oldImageUrl = existingImage.getImageUrl();
+            String newImageUrl = awsPublicS3Service.updateImageInS3(entityType.name(), entityId.toString(), oldImageUrl,
+                    imageFile);
+            existingImage.setImageUrl(newImageUrl);
+
+            return Optional.of(imageRepository.save(existingImage));
+        } catch (Exception e) {
+            log.error("Error updating image: {}", e.getMessage(), e);
+        }
+        return Optional.empty();
     }
 
-    public List<Image> findAllImages() {
-        return imageRepository.findAll();
-    }
+    public void deleteImageByEntityTypeAndId(EntityType entityType, UUID entityId) {
+        Optional<Image> existingImageOpt = imageRepository.findByEntityTypeAndEntityId(entityType, entityId);
 
-    public void deleteImage(UUID imageId) {
-        Image image = imageRepository.findById(imageId)
-                .orElseThrow(() -> new RuntimeException("Image not found"));
-        image.setDeleted(true);
-        imageRepository.save(image);
+        if (existingImageOpt.isEmpty()) {
+            throw new RuntimeException("Image not found with entity type and entity ID: " + entityType.name()
+                    + ", " + entityId.toString());
+        }
+
+        Image existingImage = existingImageOpt.get();
+        awsPublicS3Service.deleteImageInS3ByImageUrl(existingImage.getImageUrl());
+        imageRepository.delete(existingImage);
     }
 }

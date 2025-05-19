@@ -7,7 +7,7 @@ import { Article } from "@/app/props";
 import { calculateReadingTime } from "@/app/utils/ReadingTimeUtils";
 import BackButton from "@/app/components/BackButton/BackButton";
 import Link from "next/link";
-import ArticleApi from "@/app/api/knowledge";
+import ArticleApi from "@/app/api/knowledge/qna";
 import dayjs from "dayjs";
 
 export default function ArticleDetailPage() {

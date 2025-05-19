@@ -16,4 +16,7 @@ export interface KnowledgePageComponentProps {
   currentQaPage: number;
   setCurrentQaPage: (currentQaPage: number) => void;
   loading: boolean;
+  handleCreateQnA: (question: string) => void;
+  qaModalOpen: boolean;
+  setQaModalOpen: (qaModalOpen: boolean) => void;
 }

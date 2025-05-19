@@ -66,5 +66,5 @@ export const menuItems = (t: any, isLoggedIn: boolean) => {
 		},
 	];
 
-	return !isLoggedIn ? loggedInMenus : baseMenus;
+	return isLoggedIn ? loggedInMenus : baseMenus;
 };

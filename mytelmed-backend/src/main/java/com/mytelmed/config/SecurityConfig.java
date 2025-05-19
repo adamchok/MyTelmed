@@ -57,6 +57,7 @@ public class SecurityConfig {
                         "/auth/password/reset/**",
                         "/auth/email/reset/**",
                         "/article/**",
+                        "/qna/**",
                         "/department/**"
                 ).permitAll().anyRequest().authenticated())
                 .userDetailsService(this.userService)
