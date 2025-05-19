@@ -1,6 +1,7 @@
 package com.mytelmed.model.entity;
 
 import com.mytelmed.constant.FacilityType;
+import com.mytelmed.model.entity.files.Image;
 import com.mytelmed.utils.converters.FacilityTypeConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;

@@ -19,6 +19,7 @@ public class PatientController {
         this.patientService = patientService;
     }
 
+    @PreAuthorize("hasAuthority('admin')")
     @GetMapping
     public ResponseEntity<List<PatientDto>> getAllPatients() {
         return ResponseEntity.ok(patientService.getAllPatients());

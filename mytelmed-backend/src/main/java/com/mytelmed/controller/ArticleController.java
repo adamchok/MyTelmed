@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,6 +46,7 @@ public class ArticleController {
         return ResponseEntity.ok(article);
     }
 
+    @PreAuthorize("hasAuthority('admin')")
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<ArticleDto> createArticleWithImage(
             @Valid @RequestPart("article") ArticleDto request,
@@ -53,6 +55,7 @@ public class ArticleController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('admin')")
     @PostMapping
     public ResponseEntity<ArticleDto> createArticleWithoutImage(
             @Valid @RequestBody ArticleDto request) {
@@ -60,6 +63,7 @@ public class ArticleController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('admin')")
     @PutMapping("/{department}/{id}")
     public ResponseEntity<ArticleDto> updateArticleWithoutImage(
             @PathVariable String department,
@@ -69,6 +73,7 @@ public class ArticleController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAuthority('admin')")
     @PutMapping(value = "/{department}/{id}", consumes = "multipart/form-data")
     public ResponseEntity<ArticleDto> updateArticleWithImage(
             @PathVariable String department,
@@ -79,6 +84,7 @@ public class ArticleController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAuthority('admin')")
     @DeleteMapping("/{department}/{id}")
     public ResponseEntity<Void> deleteArticle(
             @PathVariable String department,

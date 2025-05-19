@@ -2,12 +2,13 @@ package com.mytelmed.advice;
 
 import com.mytelmed.advice.exception.EmailAlreadyUsedException;
 import com.mytelmed.advice.exception.EmailSendingException;
+import com.mytelmed.advice.exception.InvalidCredentialsException;
 import com.mytelmed.advice.exception.TokenExpiredException;
 import com.mytelmed.advice.exception.TokenRefreshException;
 import com.mytelmed.advice.exception.UnverifiedEmailException;
 import com.mytelmed.advice.exception.UserAlreadyExistsException;
-import com.mytelmed.model.dto.response.EmailVerificationResponseDto;
-import com.mytelmed.model.dto.response.RegistrationResponseDto;
+import com.mytelmed.model.dto.response.StandardResponseDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,10 +16,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
     @ExceptionHandler({UserAlreadyExistsException.class, UnverifiedEmailException.class})
-    public ResponseEntity<RegistrationResponseDto> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
-        RegistrationResponseDto response = RegistrationResponseDto.builder()
+    public ResponseEntity<StandardResponseDto> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
+        StandardResponseDto response = StandardResponseDto.builder()
                 .isSuccess(false)
                 .message(ex.getMessage())
                 .build();
@@ -26,14 +28,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({EmailAlreadyUsedException.class, EmailSendingException.class})
-    public ResponseEntity<EmailVerificationResponseDto> handleEmailAlreadyUsedException(RuntimeException ex) {
+    public ResponseEntity<StandardResponseDto> handleEmailAlreadyUsedException(RuntimeException ex) {
         if (ex instanceof EmailSendingException) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(EmailVerificationResponseDto.builder()
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(StandardResponseDto.builder()
                     .isSuccess(false)
                     .message("Failed to send email.")
                     .build());
         }
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(EmailVerificationResponseDto.builder()
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(StandardResponseDto.builder()
                 .isSuccess(false)
                 .message(ex.getMessage())
                 .build());
@@ -49,5 +51,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
     }
 
-
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<StandardResponseDto> handleTokenRefreshException(InvalidCredentialsException ex) {
+        log.error("Invalid Credentials Exception: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(StandardResponseDto.builder()
+                .isSuccess(false)
+                .message("Invalid credentials or input")
+                .build());
+    }
 }

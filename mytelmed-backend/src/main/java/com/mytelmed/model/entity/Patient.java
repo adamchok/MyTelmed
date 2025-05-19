@@ -1,6 +1,7 @@
 package com.mytelmed.model.entity;
 
 import com.mytelmed.constant.GenderType;
+import com.mytelmed.model.entity.files.Document;
 import com.mytelmed.model.entity.security.User;
 import com.mytelmed.utils.BlindIndex;
 import com.mytelmed.utils.converters.EncryptionConverter;
@@ -11,6 +12,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -61,6 +64,9 @@ public class Patient {
     @Column(name = "dob")
     private LocalDate dateOfBirth;
 
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Document> documents = new ArrayList<>();
+
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
     
@@ -83,5 +89,15 @@ public class Patient {
     private void computeBlindIndex() {
         if (email != null)  this.emailHash  = BlindIndex.sha256(email);
         if (nric  != null)  this.nricHash   = BlindIndex.sha256(nric);
+    }
+
+    public void addDocument(Document document) {
+        documents.add(document);
+        document.setPatient(this);
+    }
+
+    public void removeDocument(Document document) {
+        documents.remove(document);
+        document.setPatient(null);
     }
 }

@@ -2,7 +2,9 @@ package com.mytelmed.model.entity;
 
 import com.mytelmed.constant.GenderType;
 import com.mytelmed.constant.SpecializationType;
+import com.mytelmed.model.entity.files.Image;
 import com.mytelmed.model.entity.security.User;
+import com.mytelmed.utils.BlindIndex;
 import com.mytelmed.utils.converters.EncryptionConverter;
 import com.mytelmed.utils.converters.GenderTypeConverter;
 import com.mytelmed.utils.converters.SpecializationTypeConverter;
@@ -17,12 +19,22 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "doctor")
 public class Doctor {
@@ -57,13 +69,12 @@ public class Doctor {
     @Convert(converter = EncryptionConverter.class)
     private String serialNumber;
 
-
     @Column(name = "gender",nullable = false)
     @Convert(converter = GenderTypeConverter.class)
     private GenderType gender;
 
     @Column(name = "dob", nullable = false)
-    private String dob;
+    private LocalDate dob;
 
     @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id", nullable = false)
@@ -84,4 +95,31 @@ public class Doctor {
     @OneToOne
     @JoinColumn(name = "image_id")
     private Image image;
+
+    @Column(name="description", length = 300)
+    private String description;
+
+    @Column(name = "created_at", updatable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
+        computeBlindIndex();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = Instant.now();
+        computeBlindIndex();
+    }
+
+    private void computeBlindIndex() {
+        this.emailHash  = BlindIndex.sha256(email);
+        this.nricHash   = BlindIndex.sha256(nric);
+    }
 }

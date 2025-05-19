@@ -4,13 +4,14 @@ import com.mytelmed.constant.EntityType;
 import com.mytelmed.mapper.FacilityMapper;
 import com.mytelmed.model.dto.FacilityDto;
 import com.mytelmed.model.entity.Facility;
-import com.mytelmed.model.entity.Image;
+import com.mytelmed.model.entity.files.Image;
 import com.mytelmed.repository.FacilityRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,6 +26,11 @@ public class FacilityService {
         this.imageService = imageService;
         this.facilityRepository = facilityRepository;
         this.facilityMapper = facilityMapper;
+    }
+
+    public List<FacilityDto> getAllFacilities() {
+        List<Facility> facilities = facilityRepository.findAll();
+        return facilities.stream().map(facilityMapper::toDto).toList();
     }
 
     public Page<FacilityDto> getAllFacilities(int page, int pageSize) {
@@ -45,7 +51,7 @@ public class FacilityService {
             throw new RuntimeException("Facility not found");
         }
         Facility facility = facilityOpt.get();
-        Optional<Image> image = imageService.saveImage(EntityType.FACILITY, facility.getId(), imageFile);
+        Optional<Image> image = imageService.saveImage(EntityType.FACILITY, facility.getId(), imageFile, true);
         if (image.isEmpty()) {
             throw new RuntimeException("Failed to save image");
         }

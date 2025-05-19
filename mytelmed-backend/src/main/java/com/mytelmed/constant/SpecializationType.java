@@ -17,51 +17,22 @@ public enum SpecializationType {
     UROLOGY;
 
     public String toShortName() {
-        switch (this) {
-            case CARDIOLOGY -> {
-                return "car";
-            }
-            case DERMATOLOGY -> {
-                return "der";
-            }
-            case ENDOCRINOLOGY -> {
-                return "end";
-            }
-            case GASTROENTEROLOGY -> {
-                return "gas";
-            }
-            case NEUROLOGY -> {
-                return "neu";
-            }
-            case ONCOLOGY -> {
-                return "onc";
-            }
-            case OPHTHALMOLOGY -> {
-                return "oph";
-            }
-            case ORTHOPEDICS -> {
-                return "ort";
-            }
-            case PEDIATRICS -> {
-                return "ped";
-            }
-            case PSYCHIATRY -> {
-                return "psy";
-            }
-            case RADIOLOGY -> {
-                return "rad";
-            }
-            case RESPIRATORY_MEDICINE -> {
-                return "res";
-            }
-            case SURGERY -> {
-                return "sur";
-            }
-            case UROLOGY -> {
-                return "uro";
-            }
-            default -> throw new IllegalArgumentException("Unknown specialization type");
-        }
+        return switch (this) {
+            case CARDIOLOGY -> "car";
+            case DERMATOLOGY -> "der";
+            case ENDOCRINOLOGY -> "end";
+            case GASTROENTEROLOGY -> "gas";
+            case NEUROLOGY -> "neu";
+            case ONCOLOGY -> "onc";
+            case OPHTHALMOLOGY -> "oph";
+            case ORTHOPEDICS -> "ort";
+            case PEDIATRICS -> "ped";
+            case PSYCHIATRY -> "psy";
+            case RADIOLOGY -> "rad";
+            case RESPIRATORY_MEDICINE -> "res";
+            case SURGERY -> "sur";
+            case UROLOGY -> "uro";
+        };
     }
 
     public static SpecializationType fromShortName(String shortName) {
@@ -80,7 +51,7 @@ public enum SpecializationType {
             case "res" -> RESPIRATORY_MEDICINE;
             case "sur" -> SURGERY;
             case "uro" -> UROLOGY;
-            default -> throw new IllegalArgumentException("Unknown specialization type short name: " + shortName);
+            default -> throw new IllegalArgumentException("Unknown SpecializationType short name: " + shortName);
         };
     }
 }

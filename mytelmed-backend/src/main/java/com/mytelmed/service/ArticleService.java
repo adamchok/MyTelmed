@@ -4,7 +4,7 @@ import com.mytelmed.constant.EntityType;
 import com.mytelmed.mapper.ArticleMapper;
 import com.mytelmed.model.dto.ArticleDto;
 import com.mytelmed.model.entity.Article;
-import com.mytelmed.model.entity.Image;
+import com.mytelmed.model.entity.files.Image;
 import com.mytelmed.repository.ArticleRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -58,7 +58,7 @@ public class ArticleService {
     public ArticleDto createArticleWithImage(ArticleDto request, MultipartFile imageFile) {
         UUID articleId = UUID.randomUUID();
 
-        Image image = imageService.saveImage(EntityType.ARTICLE, articleId, imageFile)
+        Image image = imageService.saveImage(EntityType.ARTICLE, articleId, imageFile, true)
                 .orElseThrow(() -> new RuntimeException("Failed to save image"));
 
         Article article = articleMapper.toEntity(request);
@@ -91,7 +91,7 @@ public class ArticleService {
 
         articleMapper.updateEntityFromDto(request, article);
 
-        Image image = imageService.updateImage(EntityType.ARTICLE, UUID.fromString(id), imageFile)
+        Image image = imageService.updateImage(EntityType.ARTICLE, UUID.fromString(id), imageFile, true)
                 .orElseThrow(() -> new RuntimeException("Failed to save image"));
         article.setImageUrl(image.getImageUrl());
 
@@ -109,6 +109,6 @@ public class ArticleService {
 
         articleRepository.delete(article);
         UUID entityId = UUID.fromString(article.getId());
-        imageService.deleteImageByEntityTypeAndId(EntityType.ARTICLE, entityId);
+        imageService.deleteImageByEntityTypeAndId(EntityType.ARTICLE, entityId, true);
     }
 }

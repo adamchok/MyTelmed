@@ -5,16 +5,12 @@ import com.mytelmed.advice.exception.TokenRefreshException;
 import com.mytelmed.model.dto.request.reset.EmailResetRequestDto;
 import com.mytelmed.model.dto.request.verification.EmailVerificationRequestDto;
 import com.mytelmed.model.dto.request.reset.PasswordResetRequestDto;
-import com.mytelmed.model.dto.response.EmailResetResponseDto;
-import com.mytelmed.model.dto.response.EmailVerificationResponseDto;
 import com.mytelmed.model.dto.response.JwtResponseDto;
 import com.mytelmed.model.dto.request.LoginRequestDto;
 import com.mytelmed.model.dto.request.RefreshTokenDto;
 import com.mytelmed.model.dto.request.RegistrationRequestDto;
 import com.mytelmed.model.dto.request.verification.CodeVerificationRequestDto;
-import com.mytelmed.model.dto.response.CodeVerificationResponseDto;
-import com.mytelmed.model.dto.response.PasswordResetResponseDto;
-import com.mytelmed.model.dto.response.RegistrationResponseDto;
+import com.mytelmed.model.dto.response.StandardResponseDto;
 import com.mytelmed.model.entity.security.RefreshToken;
 import com.mytelmed.model.entity.security.User;
 import com.mytelmed.service.security.EmailResetService;
@@ -99,18 +95,18 @@ public class AuthenticationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<RegistrationResponseDto> register(@Valid @RequestBody RegistrationRequestDto registrationRequestDto) {
+    public ResponseEntity<StandardResponseDto> register(@Valid @RequestBody RegistrationRequestDto registrationRequestDto) {
         try {
             patientService.createPatientAccount(registrationRequestDto);
 
-            RegistrationResponseDto response = RegistrationResponseDto.builder()
+            StandardResponseDto response = StandardResponseDto.builder()
                     .isSuccess(true)
                     .message("Registration successful.")
                     .build();
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            RegistrationResponseDto response = RegistrationResponseDto.builder()
+            StandardResponseDto response = StandardResponseDto.builder()
                     .isSuccess(false)
                     .message("An unexpected error occurred during registration.")
                     .build();
@@ -121,7 +117,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/verify/send")
-    public ResponseEntity<EmailVerificationResponseDto> sendVerificationCode(@RequestBody EmailVerificationRequestDto request) {
+    public ResponseEntity<StandardResponseDto> sendVerificationCode(@RequestBody EmailVerificationRequestDto request) {
         String email = request.email();
 
         if (patientService.isPatientEmailExists(email)) {
@@ -130,7 +126,7 @@ public class AuthenticationController {
 
         verificationService.sendVerificationCode(email);
 
-        EmailVerificationResponseDto emailRequestDto = EmailVerificationResponseDto.builder()
+        StandardResponseDto emailRequestDto = StandardResponseDto.builder()
                 .isSuccess(true)
                 .message("Verification code sent to email")
                 .build();
@@ -139,10 +135,10 @@ public class AuthenticationController {
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<CodeVerificationResponseDto> verifyEmail(@RequestBody CodeVerificationRequestDto request) {
+    public ResponseEntity<StandardResponseDto> verifyEmail(@RequestBody CodeVerificationRequestDto request) {
         boolean verified = verificationService.verifyEmail(request.email(), request.token());
 
-        CodeVerificationResponseDto codeVerificationResponseDto = CodeVerificationResponseDto.builder()
+        StandardResponseDto codeVerificationResponseDto = StandardResponseDto.builder()
                 .isSuccess(verified)
                 .message(verified ? "Email successfully verified" : "Invalid or expired verification code")
                 .build();
@@ -155,17 +151,17 @@ public class AuthenticationController {
     }
 
     @PostMapping("/password/reset/request")
-    public ResponseEntity<PasswordResetResponseDto> requestPasswordReset(
+    public ResponseEntity<StandardResponseDto> requestPasswordReset(
             @Valid @RequestBody PasswordResetRequestDto request) {
         try {
             passwordResetService.initiatePasswordReset(request.email(), request.nric());
-            return ResponseEntity.ok(PasswordResetResponseDto.builder()
+            return ResponseEntity.ok(StandardResponseDto.builder()
                     .isSuccess(true)
                     .message("Password reset link has been sent to your email")
                     .build());
         } catch (Exception e) {
             log.error("Error in password reset request: {}", e.getMessage());
-            return ResponseEntity.ok(PasswordResetResponseDto.builder()
+            return ResponseEntity.ok(StandardResponseDto.builder()
                     .isSuccess(true)
                     .message("If your email is registered with us, you will receive a password reset link")
                     .build());
@@ -173,18 +169,18 @@ public class AuthenticationController {
     }
 
     @PostMapping("/password/reset/{token}")
-    public ResponseEntity<PasswordResetResponseDto> resetPassword(
+    public ResponseEntity<StandardResponseDto> resetPassword(
             @PathVariable String token,
             @RequestBody String newPassword) {
         try {
             passwordResetService.resetPassword(token, newPassword);
-            return ResponseEntity.ok(PasswordResetResponseDto.builder()
+            return ResponseEntity.ok(StandardResponseDto.builder()
                     .isSuccess(true)
                     .message("Password has been reset successfully")
                     .build());
         } catch (Exception e) {
             log.error("Error in password reset: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(PasswordResetResponseDto.builder()
+            return ResponseEntity.badRequest().body(StandardResponseDto.builder()
                     .isSuccess(false)
                     .message("Invalid or expired reset link")
                     .build());
@@ -192,37 +188,28 @@ public class AuthenticationController {
     }
 
     @PostMapping("/email/reset/request")
-    public ResponseEntity<EmailResetResponseDto> requestEmailReset(
+    public ResponseEntity<StandardResponseDto> requestEmailReset(
             @Valid @RequestBody EmailResetRequestDto request) {
-        try {
-            emailResetService.initiateEmailReset(request.nric(), request.phone(), request.serialNumber(), request.name(), request.email());
-            return ResponseEntity.ok(EmailResetResponseDto.builder()
-                    .isSuccess(true)
-                    .message("Password reset link has been sent to your email")
-                    .build());
-        } catch (Exception e) {
-            log.error("Error in email reset request: {}", e.getMessage());
-            return ResponseEntity.ok(EmailResetResponseDto.builder()
-                    .isSuccess(true)
-                    .message("If you are registered with us, you will receive a email reset link in your provided " +
-                            "email.")
-                    .build());
-        }
+        emailResetService.initiateEmailReset(request.nric(), request.phone(), request.serialNumber(), request.name(), request.email());
+        return ResponseEntity.ok(StandardResponseDto.builder()
+                .isSuccess(true)
+                .message("Password reset link has been sent to your email")
+                .build());
     }
 
     @PostMapping("/email/reset/{token}")
-    public ResponseEntity<EmailResetResponseDto> resetEmail(
+    public ResponseEntity<StandardResponseDto> resetEmail(
             @PathVariable String token,
             @RequestBody String newEmail) {
         try {
             emailResetService.resetEmail(token, newEmail);
-            return ResponseEntity.ok(EmailResetResponseDto.builder()
+            return ResponseEntity.ok(StandardResponseDto.builder()
                     .isSuccess(true)
                     .message("Email has been reset successfully.")
                     .build());
         } catch (Exception e) {
             log.error("Error in email reset: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(EmailResetResponseDto.builder()
+            return ResponseEntity.badRequest().body(StandardResponseDto.builder()
                     .isSuccess(false)
                     .message("Invalid or expired reset link.")
                     .build());

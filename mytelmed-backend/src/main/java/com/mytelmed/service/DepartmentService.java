@@ -5,7 +5,7 @@ import com.mytelmed.constant.EntityType;
 import com.mytelmed.mapper.DepartmentMapper;
 import com.mytelmed.model.dto.DepartmentDto;
 import com.mytelmed.model.entity.Department;
-import com.mytelmed.model.entity.Image;
+import com.mytelmed.model.entity.files.Image;
 import com.mytelmed.repository.DepartmentRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -58,7 +58,7 @@ public class DepartmentService {
             throw new RuntimeException("Department not found");
         }
         Department department = departmentOpt.get();
-        Optional<Image> image = imageService.saveImage(EntityType.DEPARTMENT, department.getId(), imageFile);
+        Optional<Image> image = imageService.saveImage(EntityType.DEPARTMENT, department.getId(), imageFile, true);
         if (image.isEmpty()) {
             throw new RuntimeException("Failed to save image for specified department");
         }

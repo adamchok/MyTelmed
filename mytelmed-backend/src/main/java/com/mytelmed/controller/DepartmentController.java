@@ -27,12 +27,14 @@ public class DepartmentController {
         this.departmentService = departmentService;
     }
 
+    @PreAuthorize("hasAnyAuthority('admin', 'patient')")
     @GetMapping("/list")
     public ResponseEntity<List<DepartmentDto>> getAllDepartments() {
         List<DepartmentDto> departments = departmentService.getAllDepartments();
         return ResponseEntity.ok(departments);
     }
 
+    @PreAuthorize("hasAnyAuthority('admin', 'patient')")
     @GetMapping("/paginated")
     public ResponseEntity<Page<DepartmentDto>> getAllPaginatedDepartments(
             @RequestParam(defaultValue = "0") Integer page,
@@ -41,6 +43,7 @@ public class DepartmentController {
         return ResponseEntity.ok(departments);
     }
 
+    @PreAuthorize("hasAnyAuthority('admin', 'patient')")
     @GetMapping
     public ResponseEntity<DepartmentDto> getDepartmentByName(@RequestParam String name) {
         DepartmentDto department = departmentService.getDepartmentByName(name);

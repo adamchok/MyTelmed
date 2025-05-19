@@ -7,21 +7,12 @@ public enum PermissionType {
     PHARMACIST;
 
     public String toShortName() {
-        switch (this) {
-            case ADMIN -> {
-                return "adm";
-            }
-            case DOCTOR -> {
-                return "doc";
-            }
-            case PATIENT -> {
-                return "pat";
-            }
-            case PHARMACIST -> {
-                return "phar";
-            }
-            default -> throw new IllegalArgumentException("Unknown permission type");
-        }
+        return switch (this) {
+            case ADMIN -> "adm";
+            case DOCTOR -> "doc";
+            case PATIENT -> "pat";
+            case PHARMACIST -> "phar";
+        };
     }
 
     public static PermissionType fromShortName(String shortName) {
@@ -30,7 +21,7 @@ public enum PermissionType {
             case "doc" -> DOCTOR;
             case "pat" -> PATIENT;
             case "phar" -> PHARMACIST;
-            default -> throw new IllegalArgumentException("Unknown permission type code: " + shortName);
+            default -> throw new IllegalArgumentException("Unknown PermissionType code: " + shortName);
         };
     }
 }

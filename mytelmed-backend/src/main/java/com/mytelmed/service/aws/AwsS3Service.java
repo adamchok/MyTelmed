@@ -20,23 +20,26 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-public class AwsPublicS3Service {
-    private final String BUCKET_NAME;
+public class AwsS3Service {
+    private final String PUBLIC_BUCKET_NAME;
+    private final String PRIVATE_BUCKET_NAME;
     private final S3Client S3_CLIENT;
 
-    public AwsPublicS3Service(
-            @Value("${aws.s3.public.bucket-name}") String bucketName,
+    public AwsS3Service(
+            @Value("${aws.s3.public.bucket-name}") String publicBucketName,
+            @Value("${aws.s3.private.bucket-name}") String privateBucketName,
             S3Client s3Client) {
-        this.BUCKET_NAME = bucketName;
+        this.PUBLIC_BUCKET_NAME = publicBucketName;
+        this.PRIVATE_BUCKET_NAME = privateBucketName;
         this.S3_CLIENT = s3Client;
     }
 
-    private byte[] getObjectBytes(String keyName) {
+    private byte[] getObjectBytes(String keyName, boolean isPublic) {
         try {
             GetObjectRequest request = GetObjectRequest
                     .builder()
                     .key(keyName)
-                    .bucket(BUCKET_NAME)
+                    .bucket(isPublic ? PUBLIC_BUCKET_NAME : PRIVATE_BUCKET_NAME)
                     .build();
             ResponseBytes<GetObjectResponse> objectBytes = S3_CLIENT.getObjectAsBytes(request);
             return objectBytes.asByteArray();
@@ -46,10 +49,10 @@ public class AwsPublicS3Service {
         }
     }
 
-    private void putObject(byte[] data, String objectKey) {
+    private void putObject(byte[] data, String objectKey, boolean isPublic) {
         try {
             PutObjectRequest request = PutObjectRequest.builder()
-                    .bucket(BUCKET_NAME)
+                    .bucket(isPublic ? PUBLIC_BUCKET_NAME : PRIVATE_BUCKET_NAME)
                     .key(objectKey)
                     .build();
             S3_CLIENT.putObject(request, RequestBody.fromBytes(data));
@@ -59,10 +62,10 @@ public class AwsPublicS3Service {
         }
     }
 
-    private void deleteObject(String objectKey) {
+    private void deleteObject(String objectKey, boolean isPublic) {
         try {
             DeleteObjectRequest request = DeleteObjectRequest.builder()
-                    .bucket(BUCKET_NAME)
+                    .bucket(isPublic ? PUBLIC_BUCKET_NAME : PRIVATE_BUCKET_NAME)
                     .key(objectKey)
                     .build();
             S3_CLIENT.deleteObject(request);
@@ -79,9 +82,9 @@ public class AwsPublicS3Service {
         return UUID.randomUUID() + fileExtension;
     }
 
-    private String extractS3KeyFromUrl(String imageUrl) {
-        String s3BaseUrl = "https://" + BUCKET_NAME + ".s3.amazonaws.com/";
-        return imageUrl.replace(s3BaseUrl, "");
+    private String extractS3KeyFromUrl(String url, boolean isPublic) {
+        String s3BaseUrl = "https://" + (isPublic ? PUBLIC_BUCKET_NAME : PRIVATE_BUCKET_NAME) + ".s3.amazonaws.com/";
+        return url.replace(s3BaseUrl, "");
     }
 
     /**
@@ -93,48 +96,49 @@ public class AwsPublicS3Service {
      * @return the public URL of the uploaded file in the S3 bucket
      * @throws IOException if an error occurs while reading the file or uploading it to S3
      */
-    public String saveFileToS3AndGetUrl(String folderName, String entityId, MultipartFile file) throws IOException {
+    public String saveFileToS3AndGetUrl(String folderName, String entityId, MultipartFile file, boolean isPublic) throws IOException {
         String originalFileName = file.getOriginalFilename();
         String newFileName = generateRandomFileName(originalFileName);
-        String key = folderName + "/" + entityId + "/images/" + newFileName;
+        String key = folderName + "/" + entityId + "/files/" + newFileName;
 
-        putObject(file.getBytes(), key);
+        putObject(file.getBytes(), key, isPublic);
 
-        return "https://" + BUCKET_NAME + ".s3.amazonaws.com/" + key;
+        return "https://" + (isPublic ? PUBLIC_BUCKET_NAME : PRIVATE_BUCKET_NAME) + ".s3.amazonaws.com/" + key;
     }
 
     /**
-     * Updates an existing image in the S3 bucket by deleting the old image and uploading the new one.
+     * Updates an existing file in the S3 bucket by deleting the old file and uploading the new one.
      *
-     * @param folderName the folder in which the image is stored
-     * @param entityId the ID associated with the image
-     * @param oldImageUrl the url of the old image in S3 to be replaced
-     * @param newFile the new image file to upload
-     * @return the public URL of the updated image
+     * @param folderName the folder in which the file is stored
+     * @param entityId the ID associated with the file
+     * @param oldUrl the url of the old file in S3 to be replaced
+     * @param newFile the new file to upload
+     * @return the public URL of the updated file
      * @throws IOException if an error occurs during the upload or deletion process
      */
-    public String updateImageInS3(String folderName, String entityId, String oldImageUrl, MultipartFile newFile) throws IOException {
-        String oldImageKey = extractS3KeyFromUrl(oldImageUrl);
-        deleteObject(oldImageKey);
+    public String updateFileInS3(String folderName, String entityId, String oldUrl, MultipartFile newFile,
+                                 boolean isPublic) throws IOException {
+        String oldImageKey = extractS3KeyFromUrl(oldUrl, isPublic);
+        deleteObject(oldImageKey, isPublic);
 
         String newFileName = generateRandomFileName(newFile.getOriginalFilename());
-        String newKey = folderName + "/" + entityId + "/images/" + newFileName;
+        String newKey = folderName + "/" + entityId + "/files/" + newFileName;
 
-        putObject(newFile.getBytes(), newKey);
+        putObject(newFile.getBytes(), newKey, isPublic);
 
-        return "https://" + BUCKET_NAME + ".s3.amazonaws.com/" + newKey;
+        return "https://" + (isPublic ? PUBLIC_BUCKET_NAME : PRIVATE_BUCKET_NAME) + ".s3.amazonaws.com/" + newKey;
     }
 
 
     /**
-     * Deletes an image from the S3 bucket using its public URL.
+     * Deletes a file from the S3 bucket using its public URL.
      *
-     * @param imageUrl the public URL of the image to be deleted from the S3 bucket
+     * @param url the public URL of the file to be deleted from the S3 bucket
      *
-     * @throws S3Exception if an error occurs while deleting the image from S3
+     * @throws S3Exception if an error occurs while deleting the file from S3
      */
-    public void deleteImageInS3ByImageUrl(String imageUrl) {
-        String oldImageKey = extractS3KeyFromUrl(imageUrl);
-        deleteObject(oldImageKey);
+    public void deleteFileInS3ByUrl(String url, boolean isPublic) {
+        String oldImageKey = extractS3KeyFromUrl(url, isPublic);
+        deleteObject(oldImageKey, isPublic);
     }
 }

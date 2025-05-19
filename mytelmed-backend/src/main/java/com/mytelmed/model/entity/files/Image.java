@@ -1,4 +1,4 @@
-package com.mytelmed.model.entity;
+package com.mytelmed.model.entity.files;
 
 import com.mytelmed.constant.EntityType;
 import com.mytelmed.utils.converters.EncryptionConverter;

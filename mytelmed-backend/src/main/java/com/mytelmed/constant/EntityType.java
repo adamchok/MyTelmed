@@ -5,27 +5,18 @@ public enum EntityType {
     DOCTOR,
     ARTICLE,
     DEPARTMENT,
-    PATIENT;
+    PATIENT,
+    FILE;
 
     public String toShortName() {
-        switch (this) {
-            case FACILITY -> {
-                return "fac";
-            }
-            case DOCTOR -> {
-                return "doc";
-            }
-            case ARTICLE -> {
-                return "art";
-            }
-            case DEPARTMENT -> {
-                return "dep";
-            }
-            case PATIENT -> {
-                return "pat";
-            }
-            default -> throw new IllegalArgumentException("Unknown entity type");
-        }
+        return switch (this) {
+            case FACILITY -> "fac";
+            case DOCTOR -> "doc";
+            case ARTICLE -> "art";
+            case DEPARTMENT -> "dep";
+            case PATIENT -> "pat";
+            case FILE -> "fil";
+        };
     }
 
     public static EntityType fromShortName(String shortName) {
@@ -35,7 +26,8 @@ public enum EntityType {
             case "art" -> ARTICLE;
             case "dep" -> DEPARTMENT;
             case "pat" -> PATIENT;
-            default -> throw new IllegalArgumentException("Unknown entity type short name: " + shortName);
+            case "fil" -> FILE;
+            default -> throw new IllegalArgumentException("Unknown EntityType short name: " + shortName);
         };
     }
 

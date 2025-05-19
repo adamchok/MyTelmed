@@ -21,11 +21,6 @@ public class GenderTypeConverter implements AttributeConverter<GenderType, Chara
         if (dbData == null) {
             return null;
         }
-        
-        return switch (dbData) {
-            case 'm' -> GenderType.MALE;
-            case 'f' -> GenderType.FEMALE;
-            default -> throw new IllegalArgumentException("Unknown code: " + dbData);
-        };
+        return GenderType.fromChar(dbData);
     }
 }

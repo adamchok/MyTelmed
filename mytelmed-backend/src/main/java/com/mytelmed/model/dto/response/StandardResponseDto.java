@@ -4,7 +4,7 @@ import lombok.Builder;
 
 
 @Builder
-public record EmailVerificationResponseDto(
+public record StandardResponseDto(
         boolean isSuccess,
         String message
 ) {}
