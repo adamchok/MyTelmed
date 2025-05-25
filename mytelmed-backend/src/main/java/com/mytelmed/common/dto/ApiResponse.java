@@ -17,6 +17,10 @@ public record ApiResponse<T>(
         return new ApiResponse<>(true, message, null);
     }
 
+    public static <Void> ApiResponse<Void> success() {
+        return new ApiResponse<>(true, "OK", null);
+    }
+
     public static ApiResponse<Void> failure(String message) {
         return new ApiResponse<>(false, message, null);
     }

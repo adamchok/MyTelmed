@@ -6,6 +6,8 @@ import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.patient.service.PatientService;
+import com.mytelmed.core.reset.dto.InitiatePasswordResetRequestDto;
+import com.mytelmed.core.reset.dto.ResetPasswordRequestDto;
 import com.mytelmed.core.reset.entity.ResetToken;
 import com.mytelmed.core.reset.repository.ResetTokenRepository;
 import com.mytelmed.infrastructure.email.service.EmailService;
@@ -58,18 +60,18 @@ public class PasswordResetService {
     }
 
     @Transactional
-    public boolean initiatePasswordReset(String email, String nric) {
+    public boolean initiatePasswordReset(InitiatePasswordResetRequestDto request) {
         try {
-            Patient patient = patientService.getPatientByEmail(email);
+            Patient patient = patientService.getPatientByEmail(request.email());
 
-            if (!patient.getNric().equals(nric)) {
-                throw new InvalidCredentialsException("The NRIC does not match system records");
+            if (!patient.getNric().equals(request.nric())) {
+                throw new InvalidCredentialsException("Email or NRIC does does not match system records");
             }
 
             Account account = patient.getAccount();
             ResetToken token = createPasswordResetToken(account);
             String resetUrl = resetBaseUrl + "/" + token.getToken();
-            emailService.sendPasswordResetEmail(email, patient.getName(), resetUrl);
+            emailService.sendPasswordResetEmail(request.email(), patient.getName(), resetUrl);
             log.info("Password reset initiated for user: {}", account.getId());
             return true;
         } catch (Exception e) {
@@ -79,12 +81,12 @@ public class PasswordResetService {
     }
 
     @Transactional
-    public boolean resetPassword(String token, String newPassword) {
+    public boolean resetPassword(String token, ResetPasswordRequestDto request) {
         try {
             Account account = validatePasswordResetToken(token)
                     .orElseThrow(() -> new InvalidCredentialsException("Invalid or expired password reset link"));
 
-            if (accountService.resetPasswordById(account.getId(), newPassword)) {
+            if (accountService.resetPasswordById(account.getId(), request.password())) {
                 resetTokenRepository.deleteByAccount(account);
                 log.info("Password successfully reset for user: {}", account.getId());
                 return true;

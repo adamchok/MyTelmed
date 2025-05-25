@@ -11,7 +11,9 @@ public interface DocumentAccessMapper {
     @Mapping(target = "id", expression = "java(documentAccess.getId() != null ? documentAccess.getId().toString() : null)")
     @Mapping(target = "documentId", expression = "java(documentAccess.getDocument() != null && documentAccess.getDocument().getId() != null ?" +
             " documentAccess.getDocument().getId().toString() : null)")
-    @Mapping(target = "accountId", expression = "java(documentAccess.getAccount() != null && documentAccess.getAccount().getId() != null ?" +
-            " documentAccess.getAccount().getId().toString() : null)")
+    @Mapping(target = "documentName", expression = "java(documentAccess.getDocument() != null && documentAccess.getDocument().getDocumentName() != " +
+            "null ? documentAccess.getDocument().getDocumentName() : null)")
+    @Mapping(target = "accountId", expression = "java(documentAccess.getPermittedAccount() != null && documentAccess.getPermittedAccount().getId() != null ?" +
+            " documentAccess.getPermittedAccount().getId().toString() : null)")
     DocumentAccessDto toDto(DocumentAccess documentAccess);
 }

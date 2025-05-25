@@ -111,7 +111,7 @@ public class DocumentAccessController {
     public ResponseEntity<ApiResponse<Void>> grantAccess(@Valid @RequestBody GrantAccessRequestDto request) {
         log.info("Received request to grant access to document {} for account {}", request.documentId(), request.accountId());
 
-        Optional<DocumentAccess> documentAccess = documentAccessService.grantAccess(
+        Optional<DocumentAccess> documentAccess = documentAccessService.grantOrUpdateDocumentAccess(
                 UUID.fromString(request.documentId()),
                 UUID.fromString(request.accountId()),
                 request.canView(),

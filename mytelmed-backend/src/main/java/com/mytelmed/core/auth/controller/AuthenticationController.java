@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import java.util.UUID;
 
 
 @Slf4j
@@ -40,33 +39,47 @@ public class AuthenticationController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<JwtDto>> login(@Valid @RequestBody LoginRequestDto loginRequest) {
+        log.debug("Received login request for user: {}", loginRequest.username());
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.username(), loginRequest.password())
         );
+        log.debug("Authentication successful for user: {}", loginRequest.username());
 
-        String accessToken = jwtService.generateAccessToken(loginRequest.username());
-        String refreshToken = refreshTokenService.createOrGetRefreshToken(loginRequest.username()).getToken();
+        try {
+            String accessToken = jwtService.generateAccessToken(loginRequest.username());
+            String refreshToken = refreshTokenService.createOrGetRefreshToken(loginRequest.username()).getToken().toString();
 
-        JwtDto jwtDto = JwtDto.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
-        return ResponseEntity.ok(ApiResponse.success(jwtDto));
+            JwtDto jwtDto = JwtDto.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .build();
+
+            log.info("Login successful for user: {}", loginRequest.username());
+            return ResponseEntity.ok(ApiResponse.success(jwtDto));
+        } catch (Exception e) {
+            log.error("Failed to login for user: {}", loginRequest.username(), e);
+            return ResponseEntity.internalServerError().body(ApiResponse.failure(null, "Failed to login"));
+        }
     }
 
     @PostMapping("/token/refresh")
-    public ResponseEntity<ApiResponse<JwtDto>> refreshToken(@RequestBody RefreshTokenRequestDto request) {
+    public ResponseEntity<ApiResponse<JwtDto>> refreshToken(@Valid @RequestBody RefreshTokenRequestDto request) {
+        log.debug("Received refresh token request for user: {}", request.refreshToken());
+
         return refreshTokenService.findByToken(request.refreshToken())
                 .map(refreshTokenService::verifyExpiration)
                 .map(RefreshToken::getAccount)
                 .map(accountInfo -> {
                     String accessToken = jwtService.generateAccessToken(accountInfo.getUsername());
-                    String refreshToken = request.refreshToken();
+                    String refreshToken = request.refreshToken().toString();
 
                     JwtDto jwtDto =  JwtDto.builder()
                             .accessToken(accessToken)
                             .refreshToken(refreshToken)
                             .build();
+
+                    log.info("Refresh token successful for user: {}", accountInfo.getUsername());
                     return ResponseEntity.ok(ApiResponse.success(jwtDto));
                 })
                 .orElseThrow(() -> {
@@ -76,9 +89,15 @@ public class AuthenticationController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(@AuthenticationPrincipal Account auth) {
-        UUID accountId = auth.getId();
-        refreshTokenService.deleteRefreshTokenByAccountId(accountId);
-        return ResponseEntity.ok(ApiResponse.success("Logout successful"));
+    public ResponseEntity<ApiResponse<Void>> logout(@AuthenticationPrincipal Account account) {
+        log.info("Received logout request for user: {}", account.getUsername());
+
+        if (refreshTokenService.deleteRefreshTokenByAccountId(account.getId())) {
+            log.info("Logout successful for user: {}", account.getUsername());
+            return ResponseEntity.ok(ApiResponse.success("Logout successful"));
+        } else {
+            log.error("Failed to logout for user: {}", account.getUsername());
+            return ResponseEntity.internalServerError().body(ApiResponse.failure(null, "Failed to logout"));
+        }
     }
 }

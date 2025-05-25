@@ -4,8 +4,9 @@ import com.mytelmed.common.advice.exception.InvalidCredentialsException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.patient.entity.Patient;
-import com.mytelmed.core.patient.repository.PatientRepository;
 import com.mytelmed.core.patient.service.PatientService;
+import com.mytelmed.core.reset.dto.InitiateEmailResetRequestDto;
+import com.mytelmed.core.reset.dto.ResetEmailRequestDto;
 import com.mytelmed.core.reset.entity.ResetToken;
 import com.mytelmed.core.reset.repository.ResetTokenRepository;
 import com.mytelmed.infrastructure.email.service.EmailService;
@@ -28,7 +29,6 @@ public class EmailResetService {
     private final PatientService patientService;
 
     public EmailResetService(
-            PatientRepository patientRepository,
             EmailService emailService,
             PatientService patientService,
             ResetTokenRepository resetTokenRepository,
@@ -57,22 +57,22 @@ public class EmailResetService {
     }
 
     @Transactional
-    public boolean initiateEmailReset(String nric, String phone, String serialNumber, String name, String email) {
+    public boolean initiateEmailReset(InitiateEmailResetRequestDto request) {
         try {
-            Patient patient = patientService.getPatientByNric(nric);
+            Patient patient = patientService.getPatientByNric(request.nric());
 
-            if (!patient.getName().equals(name)) {
-                throw new InvalidCredentialsException("Full name does not match system records: " + name);
-            } else if (!patient.getPhone().equals(phone)) {
-                throw new InvalidCredentialsException("Phone does not match system records: " + phone);
-            } else if (!patient.getSerialNumber().equals(serialNumber)) {
-                throw new InvalidCredentialsException("Serial number does not match system records: " + serialNumber);
+            if (!patient.getName().equals(request.name())) {
+                throw new InvalidCredentialsException("Full name does not match system records: " + request.name());
+            } else if (!patient.getPhone().equals(request.phone())) {
+                throw new InvalidCredentialsException("Phone does not match system records: " + request.phone());
+            } else if (!patient.getSerialNumber().equals(request.serialNumber())) {
+                throw new InvalidCredentialsException("Serial number does not match system records: " + request.serialNumber());
             }
 
             Account account = patient.getAccount();
             ResetToken token = createEmailResetToken(account);
             String resetUrl = resetBaseUrl + "/" + token.getToken();
-            emailService.sendEmailResetEmail(email, patient.getName(), resetUrl);
+            emailService.sendEmailResetEmail(request.email(), patient.getName(), resetUrl);
             log.info("Email reset initiated for user: {}", account.getId());
             return true;
         } catch (Exception e) {
@@ -82,12 +82,12 @@ public class EmailResetService {
     }
 
     @Transactional
-    public boolean resetEmail(String token, String newEmail) {
+    public boolean resetEmail(String token, ResetEmailRequestDto request) {
         try {
             Account account = validateEmailResetToken(token)
                     .orElseThrow(() -> new ResourceNotFoundException("Token not found"));
 
-            Optional<Patient> patient = patientService.resetEmailByAccountId(account.getId(), newEmail);
+            Optional<Patient> patient = patientService.resetEmailByAccountId(account.getId(), request.email());
 
             if (patient.isEmpty()) {
                 resetTokenRepository.deleteByAccount(account);

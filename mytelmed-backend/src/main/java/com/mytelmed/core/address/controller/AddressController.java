@@ -6,9 +6,12 @@ import com.mytelmed.core.address.dto.RequestAddressDto;
 import com.mytelmed.core.address.entity.Address;
 import com.mytelmed.core.address.mapper.AddressMapper;
 import com.mytelmed.core.address.service.AddressService;
+import com.mytelmed.core.auth.entity.Account;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,40 +38,44 @@ public class AddressController {
         this.addressMapper = addressMapper;
     }
 
+    @PreAuthorize("hasAuthority('patient')")
     @GetMapping("/{addressId}")
     public ResponseEntity<ApiResponse<AddressDto>> getAddressById(@PathVariable UUID addressId) {
         log.info("Received request to get address with ID: {}", addressId);
-        Address address = addressService.getAddressById(addressId);
+        Address address = addressService.findAddressById(addressId);
         return ResponseEntity.ok(ApiResponse.success(addressMapper.toDto(address)));
     }
 
-    @GetMapping("/patient/{patientId}")
-    public ResponseEntity<ApiResponse<List<AddressDto>>> getAddressesByPatientId(@PathVariable UUID patientId) {
-        log.info("Received request to get all addresses for patient with ID: {}", patientId);
-        List<Address> addresses = addressService.findAddressesByPatientId(patientId);
+    @PreAuthorize("hasAuthority('patient')")
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<AddressDto>>> getAddressesByPatientAccount(@AuthenticationPrincipal Account account) {
+        log.info("Received request to get all addresses for patient with ID: {}", account.getId());
+        List<Address> addresses = addressService.findAddressesByPatientAccountId(account.getId());
 
-        List<AddressDto> addressResponses = addresses.stream()
+        List<AddressDto> addressDtoList = addresses.stream()
                 .map(addressMapper::toDto)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(ApiResponse.success(addressResponses));
+        return ResponseEntity.ok(ApiResponse.success(addressDtoList));
     }
 
-    @PostMapping("/patient/{patientId}")
-    public ResponseEntity<ApiResponse<Void>> createAddress(
-            @PathVariable UUID patientId,
-            @Valid @RequestBody RequestAddressDto request) {
+    @PreAuthorize("hasAuthority('patient')")
+    @PostMapping
+    public ResponseEntity<ApiResponse<Void>> createAddressByAccount(
+            @Valid @RequestBody RequestAddressDto request,
+            @AuthenticationPrincipal Account account) {
 
-        log.info("Received request to create address for patient with ID: {}", patientId);
-        Optional<Address> createdAddress = addressService.createAddress(patientId, request);
+        log.info("Received request to create address for patient with account ID: {}", account.getId());
+        Optional<Address> createdAddress = addressService.createAddressByAccountId(account.getId(), request);
 
         return createdAddress
                 .map(address -> ResponseEntity.ok(ApiResponse.success("Address created successfully")))
                 .orElseGet(() -> ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to create address")));
     }
 
+    @PreAuthorize("hasAuthority('patient')")
     @PutMapping("/{addressId}")
-    public ResponseEntity<ApiResponse<Void>> updateAddress(
+    public ResponseEntity<ApiResponse<Void>> updateAddressById(
             @PathVariable UUID addressId,
             @Valid @RequestBody RequestAddressDto request) {
 
@@ -80,8 +87,9 @@ public class AddressController {
                 .orElseGet(() -> ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to update address")));
     }
 
+    @PreAuthorize("hasAuthority('patient')")
     @DeleteMapping("/{addressId}")
-    public ResponseEntity<ApiResponse<Void>> deleteAddress(@PathVariable UUID addressId) {
+    public ResponseEntity<ApiResponse<Void>> deleteAddressById(@PathVariable UUID addressId) {
         log.info("Received request to delete address with ID: {}", addressId);
 
         if (!addressService.deleteAddress(addressId)) {

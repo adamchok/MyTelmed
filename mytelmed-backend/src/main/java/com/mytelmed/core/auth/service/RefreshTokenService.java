@@ -28,7 +28,6 @@ public class RefreshTokenService {
         this.refreshTokenRepository = refreshTokenRepository;
         this.userService = userService;
         this.refreshTokenDurationMs = refreshTokenExpirationMin * 60 * 1000;
-        log.info("Refresh token service initialized with token duration of {} minutes", refreshTokenExpirationMin);
     }
 
     private String maskToken(String token) {
@@ -39,7 +38,7 @@ public class RefreshTokenService {
     }
 
     private RefreshToken createRefreshToken(Account account) {
-        String tokenValue = UUID.randomUUID().toString();
+        UUID tokenValue = UUID.randomUUID();
         Instant expiryDate = Instant.now().plus(refreshTokenDurationMs, ChronoUnit.MILLIS);
 
         RefreshToken refreshToken = RefreshToken.builder()
@@ -49,14 +48,13 @@ public class RefreshTokenService {
                 .build();
 
         RefreshToken savedToken = refreshTokenRepository.save(refreshToken);
-        log.debug("Created refresh token for user: {} expiring at: {}",
-                account.getUsername(), expiryDate);
+        log.debug("Created refresh token for user: {} expiring at: {}", account.getUsername(), expiryDate);
 
         return savedToken;
     }
 
-    public Optional<RefreshToken> findByToken(String token) {
-        log.debug("Looking up refresh token: {}", maskToken(token));
+    public Optional<RefreshToken> findByToken(UUID token) {
+        log.debug("Looking up refresh token: {}", maskToken(token.toString()));
         return refreshTokenRepository.findByToken(token);
     }
 
@@ -97,13 +95,14 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public void deleteRefreshTokenByAccountId(UUID accountId) {
+    public boolean deleteRefreshTokenByAccountId(UUID accountId) {
         try {
             log.info("Deleting refresh token for account ID: {}", accountId);
             refreshTokenRepository.deleteByAccountId(accountId);
+            return true;
         } catch (Exception e) {
             log.error("Error deleting refresh token for user: {}", accountId);
-            throw e;
+            return false;
         }
     }
 }

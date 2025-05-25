@@ -33,7 +33,6 @@ public class JwtService {
         this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
         this.accessTokenExpirationMs = accessTokenExpirationMins * 60 * 1000;
         this.userService = userService;
-        log.info("JWT Service initialized with token expiration of {} minutes", accessTokenExpirationMins);
     }
 
     public String generateAccessToken(String username) {
@@ -47,7 +46,7 @@ public class JwtService {
                 .compact();
     }
 
-    public String extractUsername(String token) {
+    public String extractUsername(String token) throws JwtException {
         try {
             return extractClaim(token, Claims::getSubject);
         } catch (Exception e) {

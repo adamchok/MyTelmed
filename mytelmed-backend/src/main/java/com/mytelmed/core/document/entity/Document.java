@@ -53,6 +53,7 @@ public class Document {
     @Column(name = "size", nullable = false)
     private String documentSize;
 
+    @Builder.Default
     @OneToMany(mappedBy = "document")
     private List<DocumentAccess> documentAccessList = new ArrayList<>();
 

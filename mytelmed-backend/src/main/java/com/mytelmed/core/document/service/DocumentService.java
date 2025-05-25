@@ -35,7 +35,7 @@ public class DocumentService {
         this.patientService = patientService;
     }
 
-    public Document getDocumentById(UUID documentId) {
+    public Document getDocumentById(UUID documentId) throws ResourceNotFoundException {
         log.debug("Retrieving document with ID: {}", documentId);
         return documentRepository.findById(documentId)
                 .orElseThrow(() -> {

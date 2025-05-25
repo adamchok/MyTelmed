@@ -6,14 +6,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
@@ -27,7 +27,6 @@ import java.util.UUID;
 
 @Getter
 @Setter
-@ToString(exclude = "permissionList")
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -44,9 +43,9 @@ public class Account implements UserDetails {
     @Column(name = "password", nullable = false)
     private String password;
 
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
-    @Column(name = "permissions")
-    private List<Permission> permissionList;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "permission_id")
+    private Permission permission;
 
     @Builder.Default
     @Column(name = "enabled", nullable = false)
@@ -62,9 +61,7 @@ public class Account implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return permissionList.stream()
-                .map(permission -> new SimpleGrantedAuthority(permission.getAccess()))
-                .toList();
+        return List.of(new SimpleGrantedAuthority(permission.getAccess()));
     }
 
     @Override

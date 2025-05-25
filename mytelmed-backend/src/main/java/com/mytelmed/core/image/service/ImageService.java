@@ -1,5 +1,7 @@
 package com.mytelmed.core.image.service;
 
+import com.mytelmed.common.advice.AppException;
+import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constants.ImageType;
 import com.mytelmed.core.image.entity.Image;
@@ -29,13 +31,13 @@ public class ImageService {
     }
 
     @Transactional
-    public Optional<Image> saveImage(ImageType imageType, UUID entityId, MultipartFile imageFile) {
+    public Image saveAndGetImage(ImageType imageType, UUID entityId, MultipartFile imageFile) throws IOException, S3Exception, AppException {
+        String imageKey = null;
+
         if (imageFile == null || imageFile.isEmpty()) {
             log.warn("Attempted to save empty or null image file for entity: {}", entityId);
-            return Optional.empty();
+            throw new InvalidInputException("Image file cannot be empty");
         }
-
-        String imageKey = null;
 
         try {
             S3StorageOptions storageOptions = S3StorageOptions.builder()
@@ -55,14 +57,11 @@ public class ImageService {
                     .imageUrl(imageUrl)
                     .build();
 
-            log.debug("Saving image metadata to database for entity: {}", entityId);
-            return Optional.of(imageRepository.save(image));
-        }  catch (IOException e) {
-            log.error("Failed to read image file data for entity: {}", entityId, e);
-            return Optional.empty();
-        } catch (S3Exception e) {
-            log.error("AWS S3 error while saving image for entity: {}", entityId, e);
-            return Optional.empty();
+            image = imageRepository.save(image);
+            log.info("Saved image to database for entity: {}", entityId);
+            return image;
+        }  catch (IOException | S3Exception e) {
+            throw e;
         } catch (Exception e) {
             log.error("Unexpected error while saving image for entity: {}", entityId, e);
 
@@ -71,34 +70,37 @@ public class ImageService {
                     log.info("Rolling back S3 upload for entity: {} due to database failure", entityId);
                     awsS3Service.deleteFile(imageKey, true);
                 } catch (Exception rollbackEx) {
-                    log.error("Failed to roll back S3 upload for entity: {} (key: {})",
-                            entityId, imageKey, rollbackEx);
+                    log.error("Failed to roll back S3 upload for entity: {} (key: {})", entityId, imageKey, rollbackEx);
                 }
             }
 
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return Optional.empty();
+            throw e;
         }
     }
 
     @Transactional
-    public Optional<Image> updateImage(ImageType imageType, UUID entityId, MultipartFile imageFile) {
+    public Optional<Image> updateImage(ImageType imageType, UUID entityId, MultipartFile imageFile) throws InvalidInputException{
         if (imageFile == null || imageFile.isEmpty()) {
             log.warn("Attempted to update empty or null image file for entity: {}", entityId);
-            return Optional.empty();
+            throw new InvalidInputException("Image file cannot be empty");
         }
 
         try {
-            Image existingImage = imageRepository.findByImageTypeAndEntityId(imageType, entityId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Image not found"));
+            Optional<Image> imageOpt = imageRepository.findByImageTypeAndEntityId(imageType, entityId);
 
+            if (imageOpt.isEmpty()) {
+                saveAndGetImage(imageType, entityId, imageFile);
+            }
+
+            Image image = imageOpt.get();
             log.debug("Updating image for entity: {} of type: {}", entityId, imageType);
-            String imageKey = awsS3Service.updateFile(existingImage.getImageKey(), true, imageFile);
-            existingImage.setImageKey(imageKey);
-            existingImage.setImageUrl(imageKey);
+            String imageKey = awsS3Service.updateFile(image.getImageKey(), true, imageFile);
+            image.setImageKey(imageKey);
+            image.setImageUrl(imageKey);
 
             log.debug("Updating image metadata to database for entity: {}", entityId);
-            return Optional.of(imageRepository.save(existingImage));
+            return Optional.of(imageRepository.save(image));
         } catch (IOException e) {
             log.error("Failed to read image file data for entity: {}", entityId, e);
             return Optional.empty();

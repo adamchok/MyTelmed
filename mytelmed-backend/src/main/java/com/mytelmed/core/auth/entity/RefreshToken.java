@@ -36,7 +36,7 @@ public class RefreshToken {
 
     @NotBlank
     @Column(name = "token", nullable = false, unique = true)
-    private String token;
+    private UUID token;
 
     @NotNull
     @OneToOne(cascade = CascadeType.ALL)

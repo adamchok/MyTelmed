@@ -1,35 +1,53 @@
 package com.mytelmed.common.advice;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.mytelmed.common.constants.ErrorCode;
 import com.mytelmed.common.dto.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import java.util.Map;
+import java.util.Optional;
 
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final Map<ErrorCode, HttpStatus> ERROR_STATUS_MAP = Map.of(
+        ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.BAD_REQUEST,
+        ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST,
+        ErrorCode.INVALID_CREDENTIALS, HttpStatus.BAD_REQUEST,
+        ErrorCode.USERNAME_ALREADY_EXIST, HttpStatus.BAD_REQUEST,
+        ErrorCode.TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED,
+        ErrorCode.EMAIL_SENDING_FAILED, HttpStatus.INTERNAL_SERVER_ERROR
+    );
+
+    private HttpStatus resolveHttpStatus(ErrorCode errorCode) {
+        return Optional.ofNullable(errorCode)
+                .map(ERROR_STATUS_MAP::get)
+                .orElse(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex) {
-        HttpStatus status = switch (ex.getErrorCode()) {
-            case ErrorCode.RESOURCE_NOT_FOUND, ErrorCode.INVALID_INPUT, ErrorCode.INVALID_CREDENTIALS -> HttpStatus.BAD_REQUEST;
-            case ErrorCode.TOKEN_EXPIRED -> HttpStatus.UNAUTHORIZED;
-            case ErrorCode.EMAIL_SENDING_FAILED -> HttpStatus.INTERNAL_SERVER_ERROR;
-        };
-
-        return new ResponseEntity<>(
-                ApiResponse.failure(ex.getMessage()),
-                status
-        );
+        HttpStatus status = resolveHttpStatus(ex.getErrorCode());
+        return new ResponseEntity<>(ApiResponse.failure(ex.getMessage()), status);
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleUsernameNotFound(UsernameNotFoundException ex) {
-        return new ResponseEntity<>(
-                ApiResponse.failure("Invalid username or password"),
-                HttpStatus.INTERNAL_SERVER_ERROR
-        );
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+        return new ResponseEntity<>(ApiResponse.failure("Invalid username or password"), status);
+    }
+
+    @ExceptionHandler(InvalidFormatException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidEnum(InvalidFormatException ex) {
+        String fieldName = ex.getPath().get(0).getFieldName();
+        String invalidValue = ex.getValue().toString();
+        log.error("Invalid enum value '{}' for field '{}'", invalidValue, fieldName, ex);
+        return ResponseEntity.badRequest().body(ApiResponse.failure("Invalid " + fieldName + " value"));
     }
 }

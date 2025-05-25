@@ -41,7 +41,7 @@ public class ImageController {
             return ResponseEntity.badRequest().body(ApiResponse.failure("Image file not provided"));
         }
 
-        Optional<Image> savedImage = imageService.saveImage(imageType, entityId, imageFile);
+        Optional<Image> savedImage = imageService.saveAndGetImage(imageType, entityId, imageFile);
 
         return savedImage
                 .map(image -> ResponseEntity.ok(ApiResponse.success("Image uploaded successfully")))

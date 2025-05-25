@@ -94,8 +94,8 @@ public class DocumentAccessService {
     }
 
     @Transactional
-    public Optional<DocumentAccess> grantAccess(UUID documentId, UUID accountId,
-                                                boolean canView, boolean canDownload, LocalDate expiryDate) {
+    public Optional<DocumentAccess> grantOrUpdateDocumentAccess(UUID documentId, UUID accountId, boolean canView, boolean canDownload,
+                                                                LocalDate expiryDate) throws ResourceNotFoundException {
         log.debug("Granting access to document {} for account {}", documentId, accountId);
 
         try {
@@ -108,10 +108,15 @@ public class DocumentAccessService {
 
             if (existingAccess != null) {
                 log.debug("Updating existing access for document {} and account {}", documentId, accountId);
+
                 existingAccess.setCanView(canView);
                 existingAccess.setCanDownload(canDownload);
                 existingAccess.setExpiryDate(expiryDate);
-                return Optional.of(documentAccessRepository.save(existingAccess));
+
+                existingAccess = documentAccessRepository.save(existingAccess);
+                log.info("Updated existing access for document with ID: {}", documentId);
+
+                return Optional.of(existingAccess);
             }
 
             DocumentAccess newAccess = DocumentAccess.builder()
@@ -123,10 +128,11 @@ public class DocumentAccessService {
                     .build();
 
             DocumentAccess savedAccess = documentAccessRepository.save(newAccess);
-            log.info("Access granted to document {} for account {} (ID: {})",
-                    documentId, accountId, savedAccess.getId());
+            log.info("Access granted to document {} for account {} with document access {}", documentId, accountId, savedAccess.getId());
 
             return Optional.of(savedAccess);
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Unexpected error occured while granting document access for account: {}", accountId, e);
         }
@@ -134,8 +140,7 @@ public class DocumentAccessService {
     }
 
     @Transactional
-    public Optional<DocumentAccess> updateAccess(UUID accessId, boolean canView,
-                                       boolean canDownload, LocalDate expiryDate) {
+    public Optional<DocumentAccess> updateAccess(UUID accessId, boolean canView, boolean canDownload, LocalDate expiryDate) {
         log.debug("Updating document access with ID: {}", accessId);
 
         try {

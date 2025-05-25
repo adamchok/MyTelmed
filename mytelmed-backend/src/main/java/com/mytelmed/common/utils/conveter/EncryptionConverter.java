@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 
 @Component
-@Converter(autoApply = true)
+@Converter
 public class EncryptionConverter implements AttributeConverter<String, String> {
     private static AesEncryptionUtil aesEncryptionUtil;
 

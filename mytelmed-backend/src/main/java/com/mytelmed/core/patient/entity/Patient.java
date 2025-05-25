@@ -1,6 +1,7 @@
 package com.mytelmed.core.patient.entity;
 
 import com.mytelmed.common.constants.Gender;
+import com.mytelmed.common.utils.HashUtil;
 import com.mytelmed.common.utils.conveter.EncryptionConverter;
 import com.mytelmed.core.address.entity.Address;
 import com.mytelmed.core.auth.entity.Account;
@@ -49,7 +50,7 @@ public class Patient {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @OneToOne(mappedBy = "patient")
+    @OneToOne
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
@@ -82,20 +83,24 @@ public class Patient {
     @Column(name = "dob", nullable = false)
     private LocalDate dateOfBirth;
 
+    @Convert(converter = EncryptionConverter.class)
     @Column(name = "gender", nullable = false)
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    @OneToOne(mappedBy = "entity_id")
+    @OneToOne
     @JoinColumn(name = "image_id")
     private Image profileImage;
 
+    @Builder.Default
     @OneToMany(mappedBy = "patient")
     private List<Address> addressList = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "patient")
     private List<Document> documentList = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "patient")
     private List<FamilyMember> familyMemberList = new ArrayList<>();
 
@@ -110,6 +115,7 @@ public class Patient {
     @PrePersist
     @PreUpdate
     protected void beforeSave() {
-
+        if (email != null) hashedEmail = HashUtil.sha256(email);
+        if (nric != null) hashedNric = HashUtil.sha256(nric);
     }
 }

@@ -40,7 +40,6 @@ public class AwsS3Service {
         this.privateAssetsBucket = privateAssetsBucket;
         this.s3Client = s3Client;
         this.s3Presigner = s3Presigner;
-        log.info("AWS S3 service initialized");
     }
 
     private String generateRandomFileName(String originalFileName) {
@@ -100,10 +99,10 @@ public class AwsS3Service {
      * @throws IOException if the file cannot be read
      * @throws S3Exception if the file cannot be uploaded to S3
      */
-    public String uploadFileAndGetKey(S3StorageOptions storageOptions, MultipartFile file) throws IOException, S3Exception {
+    public String uploadFileAndGetKey(S3StorageOptions storageOptions, MultipartFile file) throws IOException, S3Exception, InvalidInputException {
         if (file == null || file.isEmpty()) {
             log.warn("Attempted to upload empty or null file to S3 for entity: {}", storageOptions.entityId());
-            return null;
+            throw new InvalidInputException("File cannot be null or empty");
         }
 
         String originalFileName = file.getOriginalFilename();
@@ -120,8 +119,7 @@ public class AwsS3Service {
 
             return key;
         } catch (S3Exception e) {
-            log.error("S3 error uploading object with key: {} to bucket: {}. Error code: {}",
-                    key, bucket, e.awsErrorDetails().errorCode(), e);
+            log.error("S3 error uploading object with key: {} to bucket: {}. Error code: {}", key, bucket, e.awsErrorDetails().errorCode(), e);
             throw e;
         } catch (IOException e) {
             log.error("Error reading file from multipart: {}", e.getMessage(), e);
