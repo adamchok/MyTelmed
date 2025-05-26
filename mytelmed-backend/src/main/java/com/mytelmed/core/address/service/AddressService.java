@@ -1,5 +1,6 @@
 package com.mytelmed.core.address.service;
 
+import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.core.address.dto.RequestAddressDto;
 import com.mytelmed.core.address.entity.Address;
@@ -10,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 
@@ -26,9 +26,15 @@ public class AddressService {
     }
 
     @Transactional(readOnly = true)
-    public List<Address> findAddressesByPatientAccountId(UUID accountId) {
+    public List<Address> findAddressesByPatientAccountId(UUID accountId) throws AppException {
         log.debug("Fetching addresses for patient with account ID: {}", accountId);
-        return addressRepository.findByPatientAccountId(accountId);
+
+        try {
+            return addressRepository.findByPatientAccountId(accountId);
+        } catch (Exception e) {
+            log.error("Unexpected error while fetching addresses for patient with account ID: {}", accountId, e);
+            throw new AppException("Failed to fetch addresses");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -42,11 +48,11 @@ public class AddressService {
     }
 
     @Transactional
-    public Optional<Address> createAddressByAccountId(UUID accountId, RequestAddressDto request) throws ResourceNotFoundException {
+    public void createAddressByAccountId(UUID accountId, RequestAddressDto request) throws AppException {
         log.debug("Creating new address for patient with account ID: {}", accountId);
 
         try {
-            Patient patient = patientService.getPatientByAccountId(accountId);
+            Patient patient = patientService.findPatientByAccountId(accountId);
 
             Address address = Address.builder()
                     .address(request.address())
@@ -58,18 +64,16 @@ public class AddressService {
 
             Address savedAddress = addressRepository.save(address);
             log.info("Created new address {} for patient {}", savedAddress.getId(), patient.getId());
-
-            return Optional.of(savedAddress);
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error while creating address for patient with account ID: {}", accountId, e);
-            return Optional.empty();
+            throw new AppException("Failed to create address");
         }
     }
 
     @Transactional
-    public Optional<Address> updateAddress(UUID addressId, RequestAddressDto request) throws ResourceNotFoundException {
+    public void updateAddress(UUID addressId, RequestAddressDto request) throws AppException {
         log.debug("Updating address with ID: {}", addressId);
 
         try {
@@ -82,18 +86,16 @@ public class AddressService {
 
             Address updatedAddress = addressRepository.save(existingAddress);
             log.info("Updated address with ID: {}", addressId);
-
-            return Optional.of(updatedAddress);
-        }  catch (ResourceNotFoundException e) {
+        } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error while updating address: {}", addressId, e);
-            return Optional.empty();
+            throw new AppException("Failed to update address");
         }
     }
 
     @Transactional
-    public boolean deleteAddress(UUID addressId) throws ResourceNotFoundException {
+    public void deleteAddress(UUID addressId) throws AppException {
         log.debug("Deleting address with ID: {}", addressId);
 
         try {
@@ -101,13 +103,11 @@ public class AddressService {
 
             addressRepository.delete(existingAddress);
             log.info("Deleted address with ID: {}", addressId);
-
-            return true;
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error while deleting address: {}", addressId, e);
-            return false;
+            throw new AppException("Failed to delete address");
         }
     }
 }

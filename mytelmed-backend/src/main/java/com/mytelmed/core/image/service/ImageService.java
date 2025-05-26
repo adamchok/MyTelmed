@@ -80,7 +80,7 @@ public class ImageService {
     }
 
     @Transactional
-    public Optional<Image> updateImage(ImageType imageType, UUID entityId, MultipartFile imageFile) throws InvalidInputException{
+    public void updateImage(ImageType imageType, UUID entityId, MultipartFile imageFile) throws AppException {
         if (imageFile == null || imageFile.isEmpty()) {
             log.warn("Attempted to update empty or null image file for entity: {}", entityId);
             throw new InvalidInputException("Image file cannot be empty");
@@ -91,43 +91,53 @@ public class ImageService {
 
             if (imageOpt.isEmpty()) {
                 saveAndGetImage(imageType, entityId, imageFile);
+                return;
             }
 
             Image image = imageOpt.get();
+
             log.debug("Updating image for entity: {} of type: {}", entityId, imageType);
             String imageKey = awsS3Service.updateFile(image.getImageKey(), true, imageFile);
             image.setImageKey(imageKey);
             image.setImageUrl(imageKey);
 
             log.debug("Updating image metadata to database for entity: {}", entityId);
-            return Optional.of(imageRepository.save(image));
+            imageRepository.save(image);
+
+            log.info("Updated image metadata to database for entity: {}", entityId);
         } catch (IOException e) {
             log.error("Failed to read image file data for entity: {}", entityId, e);
-            return Optional.empty();
+            throw new InvalidInputException("Failed to read image file");
         } catch (S3Exception e) {
             log.error("AWS S3 error while updating image for entity: {}", entityId, e);
-            return Optional.empty();
+            throw new AppException("Failed to update image");
         } catch (Exception e) {
             log.error("Unexpected error while updating image for entity: {}", entityId, e);
-            return Optional.empty();
+            throw new AppException("Failed to update image");
         }
     }
 
     @Transactional
-    public boolean deleteImage(ImageType imageType, UUID entityId) {
+    public void deleteImage(ImageType imageType, UUID entityId) throws AppException {
+        log.debug("Deleting image for entity: {} of type: {}", entityId, imageType);
+
         try {
             Image image = imageRepository.findByImageTypeAndEntityId(imageType, entityId)
                     .orElseThrow(() -> new ResourceNotFoundException("Image not found"));
 
+            log.debug("Deleting image from S3 for entity: {}", entityId);
             awsS3Service.deleteFile(image.getImageKey(), true);
+
+            log.debug("Deleting image metadata from database for entity: {}", entityId);
             imageRepository.delete(image);
-            return true;
+
+            log.info("Deleted image from database for entity: {}", entityId);
         } catch (S3Exception e) {
             log.error("AWS S3 error while deleting image for entity: {}", entityId, e);
-            return false;
+            throw new AppException("Failed to delete image");
         } catch (Exception e) {
             log.error("Unexpected error while deleting image for entity: {}", entityId, e);
-            return false;
+            throw new AppException("Failed to delete image");
         }
     }
 }

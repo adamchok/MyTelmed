@@ -27,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -53,17 +52,20 @@ public class DocumentAccessController {
 
         DocumentAccess access = documentAccessService.getDocumentAccessById(accessId);
         DocumentAccessDto dto = documentAccessMapper.toDto(access);
+
         return ResponseEntity.ok(ApiResponse.success(dto));
     }
 
     @GetMapping("/document/{documentId}")
     public ResponseEntity<ApiResponse<List<DocumentAccessDto>>> getAccessForDocument(@PathVariable UUID documentId) {
         log.info("Received request to get all access entries for document with ID: {}", documentId);
-        List<DocumentAccess> accessList = documentAccessService.getAccessForDocument(documentId);
-        List<DocumentAccessDto> dtos = accessList.stream()
+
+        List<DocumentAccess> documentAccessList = documentAccessService.getAccessForDocument(documentId);
+        List<DocumentAccessDto> documentAccessDtoList = documentAccessList.stream()
                 .map(documentAccessMapper::toDto)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(ApiResponse.success(dtos));
+
+        return ResponseEntity.ok(ApiResponse.success(documentAccessDtoList));
     }
 
     @GetMapping("/account/{accountId}")
@@ -111,7 +113,7 @@ public class DocumentAccessController {
     public ResponseEntity<ApiResponse<Void>> grantAccess(@Valid @RequestBody GrantAccessRequestDto request) {
         log.info("Received request to grant access to document {} for account {}", request.documentId(), request.accountId());
 
-        Optional<DocumentAccess> documentAccess = documentAccessService.grantOrUpdateDocumentAccess(
+        documentAccessService.grantOrUpdateDocumentAccess(
                 UUID.fromString(request.documentId()),
                 UUID.fromString(request.accountId()),
                 request.canView(),
@@ -119,9 +121,7 @@ public class DocumentAccessController {
                 DateTimeUtil.stringToLocalDate(request.expiryDate()).orElse(null)
         );
 
-        return documentAccess
-                .map(access -> ResponseEntity.ok(ApiResponse.success("Document access granted")))
-                .orElse(ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to grant document access")));
+        return ResponseEntity.ok(ApiResponse.success("Document access granted"));
     }
 
     @PutMapping("/{accessId}")
@@ -131,16 +131,14 @@ public class DocumentAccessController {
     ) {
         log.info("Received request to update document access with ID: {}", accessId);
 
-        Optional<DocumentAccess> updatedAccess = documentAccessService.updateAccess(
+        documentAccessService.updateAccess(
                 accessId,
                 request.canView(),
                 request.canDownload(),
                 DateTimeUtil.stringToLocalDate(request.expiryDate()).orElse(null)
         );
 
-        return updatedAccess
-                .map(access -> ResponseEntity.ok(ApiResponse.success("Document access updated")))
-                .orElse(ResponseEntity.ok(ApiResponse.failure("Failed to update document access")));
+        return ResponseEntity.ok(ApiResponse.success("Document access updated"));
     }
 
     @PatchMapping("/{accessId}/extend")
@@ -150,11 +148,8 @@ public class DocumentAccessController {
     ) {
         log.info("Received request to extend access expiry for ID: {} to {}", accessId, newExpiryDate);
 
-        Optional<DocumentAccess> updatedAccess = documentAccessService.extendAccessExpiry(accessId, newExpiryDate);
-
-        return updatedAccess
-                .map(access -> ResponseEntity.ok(ApiResponse.success("Document access extended")))
-                .orElse(ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to extend document access")));
+        documentAccessService.extendAccessExpiry(accessId, newExpiryDate);
+        return ResponseEntity.ok(ApiResponse.success("Document access extended"));
     }
 
     @DeleteMapping("/revoke")
@@ -164,26 +159,16 @@ public class DocumentAccessController {
     ) {
         log.info("Received request to revoke access to document {} for account {}", documentId, accountId);
 
-        boolean revoked = documentAccessService.revokeAccess(documentId, accountId);
-
-        if (revoked) {
-            return ResponseEntity.ok(ApiResponse.success("Document access revoked successfully"));
-        } else {
-            return ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to revoke document access"));
-        }
+        documentAccessService.revokeAccess(documentId, accountId);
+        return ResponseEntity.ok(ApiResponse.success("Document access revoked successfully"));
     }
 
     @DeleteMapping("/document/{documentId}/all")
     public ResponseEntity<ApiResponse<Void>> revokeAllAccessForDocument(@PathVariable UUID documentId) {
         log.info("Received request to revoke all access for document {}", documentId);
 
-        boolean revokedAll = documentAccessService.revokeAllAccessForDocument(documentId);
-
-        if (revokedAll) {
-            return ResponseEntity.ok(ApiResponse.success("All access revoked successfully"));
-        } else {
-            return ResponseEntity.ok(ApiResponse.failure("Failed to revoke all access"));
-        }
+        documentAccessService.revokeAllAccessForDocument(documentId);
+        return ResponseEntity.ok(ApiResponse.success("All access revoked successfully"));
     }
 
     @DeleteMapping("/expired")

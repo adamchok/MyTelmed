@@ -1,5 +1,8 @@
 package com.mytelmed.core.family.service;
 
+import com.mytelmed.common.advice.AppException;
+import com.mytelmed.common.advice.exception.EmailSendingException;
+import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
@@ -16,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 
@@ -45,21 +47,14 @@ public class FamilyMemberService {
                 .toUriString();
     }
 
-    private void sendInvitationEmail(FamilyMember familyMember, Patient patient, String invitationUrl) {
-        try {
-            emailService.notifyNewFamilyMember(
-                    familyMember.getEmail(),
-                    familyMember.getName(),
-                    patient.getName(),
-                    invitationUrl);
-        } catch (Exception e) {
-            log.error("Failed to send family member invitation email to {}: {}",
-                    familyMember.getEmail(), e.getMessage(), e);
-        }
+    private void sendInvitationEmail(FamilyMember familyMember, Patient patient, String invitationUrl) throws EmailSendingException {
+        emailService.notifyNewFamilyMember(familyMember.getEmail(), familyMember.getName(), patient.getName(), invitationUrl);
     }
 
-    public FamilyMember getFamilyMemberById(UUID familyMemberId) {
+    @Transactional(readOnly = true)
+    public FamilyMember getFamilyMemberById(UUID familyMemberId) throws ResourceNotFoundException {
         log.debug("Getting family member with ID: {}", familyMemberId);
+
         return familyMemberRepository.findById(familyMemberId)
                 .orElseThrow(() -> {
                     log.warn("Family member not found with ID: {}", familyMemberId);
@@ -67,92 +62,89 @@ public class FamilyMemberService {
                 });
     }
 
-    public List<FamilyMember> getFamilyMembersByPatientId(UUID patientId) {
+    @Transactional(readOnly = true)
+    public List<FamilyMember> getFamilyMembersByPatientId(UUID patientId) throws ResourceNotFoundException {
         log.debug("Getting all family members for patient ID: {}", patientId);
-        Patient patient = patientService.getPatientById(patientId);
+
+        Patient patient = patientService.findPatientById(patientId);
         return patient.getFamilyMemberList();
     }
 
     @Transactional
-    public Optional<FamilyMember> inviteFamilyMember(UUID patientId, CreateFamilyMemberRequestDto request) {
+    public void inviteFamilyMember(UUID patientId, CreateFamilyMemberRequestDto request) throws AppException {
         log.debug("Inviting new family member for patient ID: {}", patientId);
 
         try {
-            Patient patient = patientService.getPatientById(patientId);
+            Patient patient = patientService.findPatientById(patientId);
 
             boolean emailAlreadyExists = patient.getFamilyMemberList().stream()
                     .anyMatch(member -> member.getEmail().equals(request.email()));
 
             if (emailAlreadyExists) {
-                log.warn("Email {} is already associated with a family member for patient {}",
-                        request.email(), patientId);
-                return Optional.empty();
+                log.warn("Email {} is already associated with a family member for patient {}", request.email(), patientId);
+                throw new InvalidInputException("Email is already associated with a family member");
             }
 
-            Optional<Account> memberAccount = accountService.getAccountByUsername(request.nric());
+            Account memberAccount = accountService.getAccountByUsername(request.nric());
 
-            FamilyMember.FamilyMemberBuilder familyMemberBuilder = FamilyMember.builder()
+            FamilyMember familyMember = FamilyMember.builder()
                     .name(request.name())
                     .patient(patient)
                     .relationship(request.relationship())
                     .email(request.email())
-                    .pending(true);
+                    .memberAccount(memberAccount)
+                    .pending(true)
+                    .build();
 
-            memberAccount.ifPresent(familyMemberBuilder::memberAccount);
-
-            FamilyMember familyMember = familyMemberBuilder.build();
             FamilyMember savedFamilyMember = familyMemberRepository.save(familyMember);
 
             String invitationUrl = generateInvitationUrl(savedFamilyMember.getId());
-
             sendInvitationEmail(savedFamilyMember, patient, invitationUrl);
-
-            return Optional.of(savedFamilyMember);
+        } catch (AppException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Unexpected error while inviting new family member for patient: {}", patientId, e);
+            throw new AppException("Failed to invite new family member");
         }
-        return Optional.empty();
     }
 
     @Transactional
-    public Optional<FamilyMember> confirmFamilyMember(UUID id) {
-        log.debug("Confirming family member with ID: {}", id);
+    public void confirmFamilyMember(UUID familyMemberId) throws AppException {
+        log.debug("Confirming family member with ID: {}", familyMemberId);
 
         try {
-            FamilyMember familyMember = getFamilyMemberById(id);
+            FamilyMember familyMember = getFamilyMemberById(familyMemberId);
 
             if (familyMember.isPending()) {
-                log.info("Family member {} is already confirmed", id);
-                return Optional.of(familyMember);
+                log.info("Family member {} is already confirmed", familyMemberId);
+                throw new AppException("Family member is already confirmed");
             }
 
             familyMember.setPending(false);
 
             if (familyMember.getMemberAccount() == null) {
-                Account account = patientService.getPatientByEmail(familyMember.getEmail()).getAccount();
+                Account account = patientService.findPatientByEmail(familyMember.getEmail()).getAccount();
                 familyMember.setMemberAccount(account);
             }
 
             FamilyMember savedMember = familyMemberRepository.save(familyMember);
 
-            try {
-                emailService.notifyFamilyMemberConfirmation(
-                        familyMember.getEmail(),
-                        familyMember.getName(),
-                        familyMember.getPatient().getName());
-            } catch (Exception e) {
-                log.error("Failed to send family member confirmation email: {}", e.getMessage(), e);
-            }
+            emailService.notifyFamilyMemberConfirmation(
+                    familyMember.getEmail(),
+                    familyMember.getName(),
+                    familyMember.getPatient().getName());
 
-            return Optional.of(savedMember);
-        } catch (Exception e) {
-            log.error("Unexpected error while confirming family member: {}", id, e);
+            log.info("Family member {} confirmed", savedMember.getId());
+        } catch (AppException e) {
+            throw e;
+        }catch (Exception e) {
+            log.error("Unexpected error while confirming family member: {}", familyMemberId, e);
+            throw new AppException("Failed to confirm family member");
         }
-        return Optional.empty();
     }
 
     @Transactional
-    public Optional<FamilyMember> updateFamilyMember(UUID familyMemberId, UpdateFamilyMemberRequestDto request) {
+    public void updateFamilyMember(UUID familyMemberId, UpdateFamilyMemberRequestDto request) {
         log.debug("Updating family member with ID: {}", familyMemberId);
 
         try {
@@ -161,35 +153,34 @@ public class FamilyMemberService {
             familyMember.setName(request.name());
             familyMember.setRelationship(request.relationship());
 
-            return Optional.of(familyMemberRepository.save(familyMember));
+            familyMemberRepository.save(familyMember);
+            log.info("Updated family member with ID: {}", familyMemberId);
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Unexpected error while updating family member: {}", familyMemberId, e);
+            throw new AppException("Failed to update family member");
         }
-        return Optional.empty();
     }
 
     @Transactional
-    public boolean deleteFamilyMember(UUID id) {
-        log.debug("Deleting family member with ID: {}", id);
+    public void deleteFamilyMember(UUID familyMemberId) {
+        log.debug("Deleting family member with ID: {}", familyMemberId);
 
         try {
-            FamilyMember familyMember = getFamilyMemberById(id);
+            FamilyMember familyMember = getFamilyMemberById(familyMemberId);
             String email = familyMember.getEmail();
             String name = familyMember.getName();
             String patientName = familyMember.getPatient().getName();
 
             familyMemberRepository.delete(familyMember);
 
-            try {
-                emailService.notifyFamilyMemberRemoval(email, name, patientName);
-            } catch (Exception e) {
-                log.error("Failed to send family member removal notification: {}", e.getMessage(), e);
-            }
-
-            return true;
+            emailService.notifyFamilyMemberRemoval(email, name, patientName);
+        } catch (AppException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("Unexpected error while deleting family member: {}", id, e);
+            log.error("Unexpected error while deleting family member: {}", familyMemberId, e);
+            throw new AppException("Failed to delete family member");
         }
-        return false;
     }
 }

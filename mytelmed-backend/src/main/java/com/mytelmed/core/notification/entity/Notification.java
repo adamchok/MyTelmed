@@ -20,6 +20,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.Instant;
+import java.util.UUID;
 
 
 @Data
@@ -29,10 +30,9 @@ import java.time.Instant;
 @Entity
 @Table(name = "notifications")
 public class Notification {
-    
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID )
+    private UUID id;
     
     @ManyToOne
     @JoinColumn(name = "account_id")
@@ -59,8 +59,8 @@ public class Notification {
     private Instant readAt;
 
     @Builder.Default
-    @Column(name = "is_read", nullable = false)
-    private boolean isRead = false;
+    @Column(name = "read", nullable = false)
+    private boolean read = false;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

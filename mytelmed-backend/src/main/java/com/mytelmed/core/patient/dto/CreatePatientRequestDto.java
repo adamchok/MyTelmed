@@ -1,18 +1,16 @@
-package com.mytelmed.core.doctor.dto;
+package com.mytelmed.core.patient.dto;
 
 import com.mytelmed.common.constants.Gender;
-import com.mytelmed.common.constants.Language;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import java.util.List;
-import java.util.UUID;
 
 
-public record CreateDoctorRequestDto(
+public record CreatePatientRequestDto(
         @NotBlank(message = "Name is required")
+        @Size(min = 2, max = 50, message = "Name must be between 2 and 50 characters")
         String name,
 
         @Pattern(regexp = "^\\d{12}$", message = "NRIC must be exactly 12 digits")
@@ -24,30 +22,25 @@ public record CreateDoctorRequestDto(
         String email,
 
         @NotBlank(message = "Serial number is required")
+        @Pattern(regexp = "^[A-Za-z0-9]{10}$", message = "Serial number must be exactly 10 alphanumeric characters")
         String serialNumber,
 
         @Pattern(regexp = "^\\d{9}$", message = "Phone number must be exactly 9 digits")
         @NotBlank(message = "Phone is required")
         String phone,
 
+        @Pattern(regexp = "^\\d{2}-\\d{2}-\\d{4}$", message = "Date of birth must be in the format MM-DD-YYYY")
         @NotBlank(message = "Date of birth is required")
         String dateOfBirth,
 
-        @NotBlank(message = "Gender is required")
+        @NotNull(message = "Gender is required")
         Gender gender,
 
-        @NotNull(message = "Facility ID is required")
-        UUID facilityId,
-
-        @NotNull(message = "Specialities are required")
-        @Size(min = 1, message = "At least one speciality is required")
-        List<UUID> specialityIds,
-
-        @NotNull(message = "Languages are required")
-        @Size(min = 1, message = "At least one language is required")
-        List<Language> languageList,
-
-        @NotBlank(message = "Qualifications are required")
-        String qualifications
+        @NotBlank(message = "Password is required")
+        @Pattern(
+                regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+                message = "Password must be at least 8 characters long and include uppercase, lowercase, digit, and special character"
+        )
+        String password
 ) {
 }

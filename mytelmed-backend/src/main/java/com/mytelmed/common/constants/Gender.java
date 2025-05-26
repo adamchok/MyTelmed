@@ -1,6 +1,7 @@
 package com.mytelmed.common.constants;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.mytelmed.common.advice.exception.InvalidInputException;
 
 
 public enum Gender {
@@ -9,6 +10,10 @@ public enum Gender {
 
     @JsonCreator
     public static Gender fromString(String value) {
-        return Gender.valueOf(value.toUpperCase());
+        try {
+            return Gender.valueOf(value.toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException ex) {
+            throw new InvalidInputException("Invalid request inputs");
+        }
     }
 }

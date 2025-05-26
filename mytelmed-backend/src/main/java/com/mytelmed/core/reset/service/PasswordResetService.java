@@ -1,7 +1,7 @@
 package com.mytelmed.core.reset.service;
 
+import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidCredentialsException;
-import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.patient.entity.Patient;
@@ -60,9 +60,11 @@ public class PasswordResetService {
     }
 
     @Transactional
-    public boolean initiatePasswordReset(InitiatePasswordResetRequestDto request) {
+    public void initiatePasswordReset(InitiatePasswordResetRequestDto request) throws AppException {
+        log.debug("Initiating password reset with email: {}", request.email());
+
         try {
-            Patient patient = patientService.getPatientByEmail(request.email());
+            Patient patient = patientService.findPatientByEmail(request.email());
 
             if (!patient.getNric().equals(request.nric())) {
                 throw new InvalidCredentialsException("Email or NRIC does does not match system records");
@@ -72,30 +74,31 @@ public class PasswordResetService {
             ResetToken token = createPasswordResetToken(account);
             String resetUrl = resetBaseUrl + "/" + token.getToken();
             emailService.sendPasswordResetEmail(request.email(), patient.getName(), resetUrl);
+
             log.info("Password reset initiated for user: {}", account.getId());
-            return true;
+        } catch (AppException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error sending password reset email: {}", e.getMessage(), e);
-            return false;
+            throw new AppException("Failed to initiate password reset");
         }
     }
 
     @Transactional
-    public boolean resetPassword(String token, ResetPasswordRequestDto request) {
+    public void resetPassword(String token, ResetPasswordRequestDto request) {
+        log.debug("Resetting password for token: {}", token);
+
         try {
             Account account = validatePasswordResetToken(token)
                     .orElseThrow(() -> new InvalidCredentialsException("Invalid or expired password reset link"));
+            accountService.resetPasswordByAccountId(account.getId(), request.password());
 
-            if (accountService.resetPasswordById(account.getId(), request.password())) {
-                resetTokenRepository.deleteByAccount(account);
-                log.info("Password successfully reset for user: {}", account.getId());
-                return true;
-            } else {
-                throw new ResourceNotFoundException("Account not found");
-            }
+            log.info("Password successfully reset for user: {}", account.getId());
+        } catch (InvalidCredentialsException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error resetting password: {}", e.getMessage(), e);
+            throw new AppException("Failed to reset password");
         }
-        return false;
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -15,11 +16,13 @@ import java.util.UUID;
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
     Page<Notification> findByAccountIdOrderByCreatedAtDesc(UUID accountId, Pageable pageable);
 
-    List<Notification> findTop10ByAccountIdAndIsReadFalseOrderByCreatedAtDesc(UUID accountId);
+    List<Notification> findTop10ByAccountIdAndReadFalseOrderByCreatedAtDesc(UUID accountId);
 
-    long countByAccountIdAndIsReadFalse(UUID accountId);
+    Optional<Notification> findByIdAndAccountId(UUID notificationId, UUID accountId);
+
+    long countByAccountIdAndReadFalse(UUID accountId);
 
     @Modifying
-    @Query("UPDATE Notification n SET n.isRead = true, n.readAt = CURRENT_TIMESTAMP WHERE n.account.id = :accountId AND n.isRead = false")
+    @Query("UPDATE Notification n SET n.read = true, n.readAt = CURRENT_TIMESTAMP WHERE n.account.id = :accountId AND n.read = false")
     long markAllAsRead(UUID accountId);
 }

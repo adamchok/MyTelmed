@@ -1,8 +1,9 @@
 package com.mytelmed.core.image.controller;
 
+import com.mytelmed.common.advice.AppException;
+import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.constants.ImageType;
 import com.mytelmed.common.dto.ApiResponse;
-import com.mytelmed.core.image.entity.Image;
 import com.mytelmed.core.image.service.ImageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -15,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import java.util.Optional;
 import java.util.UUID;
 
 
@@ -38,14 +38,15 @@ public class ImageController {
         log.info("Received request to upload {} image for entity: {}", imageType, entityId);
 
         if (imageFile == null || imageFile.isEmpty()) {
-            return ResponseEntity.badRequest().body(ApiResponse.failure("Image file not provided"));
+            throw new InvalidInputException("Image file not provided");
         }
 
-        Optional<Image> savedImage = imageService.saveAndGetImage(imageType, entityId, imageFile);
-
-        return savedImage
-                .map(image -> ResponseEntity.ok(ApiResponse.success("Image uploaded successfully")))
-                .orElseGet(() -> ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to upload image")));
+        try {
+            imageService.saveAndGetImage(imageType, entityId, imageFile);
+            return ResponseEntity.ok(ApiResponse.success("Image uploaded successfully"));
+        } catch (Exception e) {
+            throw new AppException("Failed to save image");
+        }
     }
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -60,11 +61,8 @@ public class ImageController {
             return ResponseEntity.badRequest().body(ApiResponse.failure("Image file not provided"));
         }
 
-        Optional<Image> updatedImage = imageService.updateImage(imageType, entityId, imageFile);
-
-        return updatedImage
-                .map(image -> ResponseEntity.ok(ApiResponse.success("Image updated successfully")))
-                .orElseGet(() -> ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to update image")));
+        imageService.updateImage(imageType, entityId, imageFile);
+        return ResponseEntity.ok(ApiResponse.success("Image updated successfully"));
     }
 
     @DeleteMapping("/{imageType}/{entityId}")
@@ -74,12 +72,7 @@ public class ImageController {
     ) {
         log.info("Received request to delete {} image for entity: {}", imageType, entityId);
 
-        boolean deleted = imageService.deleteImage(imageType, entityId);
-
-        if (deleted) {
-            return ResponseEntity.ok(ApiResponse.success("Image deleted successfully"));
-        } else {
-            return ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to delete image"));
-        }
+        imageService.deleteImage(imageType, entityId);
+        return ResponseEntity.ok(ApiResponse.success("Image deleted successfully"));
     }
 }

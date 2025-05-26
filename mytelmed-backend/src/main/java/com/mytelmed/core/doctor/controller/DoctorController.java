@@ -96,7 +96,7 @@ public class DoctorController {
             @RequestBody UpdateDoctorProfileRequestDto request,
             @AuthenticationPrincipal Account account) {
         doctorService.updateDoctorProfileByAccountId(account.getId(), request);
-        return ResponseEntity.ok(ApiResponse.success("Doctor profile updated successfully"));
+        return ResponseEntity.ok(ApiResponse.success("Profile updated successfully"));
     }
 
     @PutMapping(value = "/profile/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

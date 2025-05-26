@@ -7,8 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -48,6 +50,17 @@ public class GlobalExceptionHandler {
         String fieldName = ex.getPath().get(0).getFieldName();
         String invalidValue = ex.getValue().toString();
         log.error("Invalid enum value '{}' for field '{}'", invalidValue, fieldName, ex);
-        return ResponseEntity.badRequest().body(ApiResponse.failure("Invalid " + fieldName + " value"));
+        return ResponseEntity.badRequest().body(ApiResponse.failure("Invalid request inputs"));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationErrors(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+
+        ex.getBindingResult().getFieldErrors().forEach(error -> {
+            errors.put(error.getField(), error.getDefaultMessage());
+        });
+
+        return ResponseEntity.badRequest().body(ApiResponse.failure(errors,"Invalid request inputs"));
     }
 }

@@ -28,47 +28,26 @@ public class ResetController {
 
     @PostMapping("/password/initiate")
     public ResponseEntity<ApiResponse<Void>> initiatePasswordReset(@RequestBody InitiatePasswordResetRequestDto request) {
-        boolean result = passwordResetService.initiatePasswordReset(request);
-
-        if (result) {
-            return ResponseEntity.ok(ApiResponse.success("Password reset link sent successfully"));
-        } else {
-            return ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to send password reset link"));
-        }
+        passwordResetService.initiatePasswordReset(request);
+        return ResponseEntity.ok(ApiResponse.success("Password reset link sent successfully"));
     }
 
     @PostMapping("/password/{token}")
     public ResponseEntity<ApiResponse<Void>> resetPassword(@PathVariable String token,
                                                  @RequestBody ResetPasswordRequestDto request) {
-        boolean result = passwordResetService.resetPassword(token, request);
-
-        if (result) {
-            return ResponseEntity.ok(ApiResponse.success("Password reset successfully"));
-        } else {
-            return ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to reset password"));
-        }
+        passwordResetService.resetPassword(token, request);
+        return ResponseEntity.ok(ApiResponse.success("Password reset successfully"));
     }
 
     @PostMapping("/email/initiate")
     public ResponseEntity<ApiResponse<Void>> initiateEmailReset(@RequestBody InitiateEmailResetRequestDto request) {
-        boolean result = emailResetService.initiateEmailReset(request);
-
-        if (result) {
-            return ResponseEntity.ok(ApiResponse.success("Email reset link sent successfully"));
-        } else {
-            return ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to send email reset link"));
-        }
+        emailResetService.initiateEmailReset(request);
+        return ResponseEntity.ok(ApiResponse.success("Email reset link sent successfully"));
     }
 
     @PostMapping("/email/{token}")
-    public ResponseEntity<ApiResponse<Void>> resetEmail(@PathVariable String token,
-                                              @RequestBody ResetEmailRequestDto request) {
-        boolean result = emailResetService.resetEmail(token, request);
-
-        if (result) {
-            return ResponseEntity.ok(ApiResponse.success("Email reset successfully"));
-        } else {
-            return ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to reset email"));
-        }
+    public ResponseEntity<ApiResponse<Void>> resetEmail(@PathVariable String token, @RequestBody ResetEmailRequestDto request) {
+        emailResetService.resetEmail(token, request);
+        return ResponseEntity.ok(ApiResponse.success("Email reset successfully"));
     }
 }

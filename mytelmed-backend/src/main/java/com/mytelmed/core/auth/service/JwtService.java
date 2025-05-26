@@ -1,5 +1,6 @@
 package com.mytelmed.core.auth.service;
 
+import com.mytelmed.common.advice.AppException;
 import com.mytelmed.core.auth.entity.Account;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -35,15 +36,21 @@ public class JwtService {
         this.userService = userService;
     }
 
-    public String generateAccessToken(String username) {
+    public String generateAccessToken(String username) throws AppException {
         log.debug("Generating access token for user: {}", username);
-        return Jwts.builder()
-                .claims(new HashMap<>())
-                .subject(username)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + accessTokenExpirationMs))
-                .signWith(signingKey)
-                .compact();
+
+        try {
+            return Jwts.builder()
+                    .claims(new HashMap<>())
+                    .subject(username)
+                    .issuedAt(new Date())
+                    .expiration(new Date(System.currentTimeMillis() + accessTokenExpirationMs))
+                    .signWith(signingKey)
+                    .compact();
+        } catch (Exception e) {
+            log.error("Failed to generate access token for user: {}", username, e);
+            throw new AppException("Failed to generate access token");
+        }
     }
 
     public String extractUsername(String token) throws JwtException {

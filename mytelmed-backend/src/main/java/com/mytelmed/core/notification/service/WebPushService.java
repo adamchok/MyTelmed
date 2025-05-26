@@ -1,5 +1,7 @@
 package com.mytelmed.core.notification.service;
 
+import com.mytelmed.common.advice.AppException;
+import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.notification.entity.PushSubscription;
@@ -51,22 +53,34 @@ public class WebPushService {
     }
 
     @Transactional
-    public void subscribe(UUID accountId, String endpoint, String p256dh, String auth) {
-        Account account = accountService.getAccountById(accountId);
+    public void subscribe(UUID accountId, String endpoint, String p256dh, String auth) throws AppException {
+        try {
+            Account account = accountService.getAccountById(accountId);
 
-        PushSubscription subscription = PushSubscription.builder()
-                .account(account)
-                .endpoint(endpoint)
-                .p256dh(p256dh)
-                .auth(auth)
-                .build();
+            PushSubscription subscription = PushSubscription.builder()
+                    .account(account)
+                    .endpoint(endpoint)
+                    .p256dh(p256dh)
+                    .auth(auth)
+                    .build();
 
-        pushSubscriptionRepository.save(subscription);
+            pushSubscriptionRepository.save(subscription);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to subscribe account: {}", accountId, e);
+            throw new AppException("Failed to subscribe account");
+        }
     }
 
     @Transactional
-    public void unsubscribe(UUID accountId, String endpoint) {
-        pushSubscriptionRepository.deleteByAccountIdAndEndpoint(accountId, endpoint);
+    public void unsubscribe(UUID accountId, String endpoint) throws AppException {
+        try {
+            pushSubscriptionRepository.deleteByAccountIdAndEndpoint(accountId, endpoint);
+        } catch (Exception e) {
+            log.error("Failed to unsubscribe account: {}", accountId, e);
+            throw new AppException("Failed to unsubscribe account");
+        }
     }
 
     @Transactional

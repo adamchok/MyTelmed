@@ -16,5 +16,5 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     @Modifying
     @Query("UPDATE Account a SET a.password = :password WHERE a.id = :id")
-    int updatePasswordById(@Param("id") UUID id, @Param("password") String password);
+    void updatePasswordById(@Param("id") UUID id, @Param("password") String password);
 }

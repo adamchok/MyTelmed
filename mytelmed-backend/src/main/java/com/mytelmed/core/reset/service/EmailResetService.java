@@ -1,5 +1,6 @@
 package com.mytelmed.core.reset.service;
 
+import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidCredentialsException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.core.auth.entity.Account;
@@ -33,7 +34,7 @@ public class EmailResetService {
             PatientService patientService,
             ResetTokenRepository resetTokenRepository,
             @Value("${application.security.email-reset.base-url}") String resetBaseUrl,
-            @Value("${application.security.password-reset.expiration-minutes}") long tokenExpirationMinutes) {
+            @Value("${application.security.email-reset.expiration-minutes}") long tokenExpirationMinutes) {
         this.patientService = patientService;
         this.emailService = emailService;
         this.resetTokenRepository = resetTokenRepository;
@@ -41,7 +42,8 @@ public class EmailResetService {
         this.tokenExpirationMinutes = tokenExpirationMinutes;
     }
 
-    private ResetToken createEmailResetToken(Account account) {
+    @Transactional
+    protected ResetToken createEmailResetToken(Account account) {
         resetTokenRepository.deleteByAccount(account);
         ResetToken token = ResetToken.builder()
                 .account(account)
@@ -50,16 +52,19 @@ public class EmailResetService {
         return resetTokenRepository.save(token);
     }
 
-    private Optional<Account> validateEmailResetToken(String token) {
+    @Transactional(readOnly = true)
+    protected Optional<Account> validateEmailResetToken(String token) {
         return resetTokenRepository.findByToken(token)
                 .filter(resetToken -> resetToken.getExpiredAt().isAfter(Instant.now()))
                 .map(ResetToken::getAccount);
     }
 
     @Transactional
-    public boolean initiateEmailReset(InitiateEmailResetRequestDto request) {
+    public void initiateEmailReset(InitiateEmailResetRequestDto request) throws AppException {
+        log.debug("Initiating email reset for token: {}", request.email());
+
         try {
-            Patient patient = patientService.getPatientByNric(request.nric());
+            Patient patient = patientService.findPatientByNric(request.nric());
 
             if (!patient.getName().equals(request.name())) {
                 throw new InvalidCredentialsException("Full name does not match system records: " + request.name());
@@ -72,31 +77,36 @@ public class EmailResetService {
             Account account = patient.getAccount();
             ResetToken token = createEmailResetToken(account);
             String resetUrl = resetBaseUrl + "/" + token.getToken();
+
+            log.debug("Sending email reset for user: {}, reset URL: {}", account.getId(), resetUrl);
             emailService.sendEmailResetEmail(request.email(), patient.getName(), resetUrl);
+
             log.info("Email reset initiated for user: {}", account.getId());
-            return true;
+        } catch (AppException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error initiating email reset: {}", e.getMessage(), e);
-            return false;
+            throw new AppException("Failed to initiate email reset");
         }
     }
 
     @Transactional
-    public boolean resetEmail(String token, ResetEmailRequestDto request) {
+    public void resetEmail(String token, ResetEmailRequestDto request) throws AppException {
+        log.debug("Resetting email for token: {}", token);
+
         try {
             Account account = validateEmailResetToken(token)
                     .orElseThrow(() -> new ResourceNotFoundException("Token not found"));
 
-            Optional<Patient> patient = patientService.resetEmailByAccountId(account.getId(), request.email());
+            patientService.resetEmailByAccountId(account.getId(), request.email());
+            resetTokenRepository.deleteByAccount(account);
 
-            if (patient.isEmpty()) {
-                resetTokenRepository.deleteByAccount(account);
-                log.info("Successful email reset for account: {}", account.getId());
-                return true;
-            }
+            log.info("Successful email reset for account: {}", account.getId());
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error resetting email: {}", e.getMessage(), e);
+            throw new AppException("Failed to reset email");
         }
-        return false;
     }
 }

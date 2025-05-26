@@ -9,7 +9,7 @@ public record S3StorageOptions(
         @NotBlank(message = "Bucket name is required")
         String folderName,
 
-        @NotBlank(message = "Entity Id is required")
+        @NotBlank(message = "Entity ID is required")
         String entityId,
 
         @NotBlank(message = "Public access is required")

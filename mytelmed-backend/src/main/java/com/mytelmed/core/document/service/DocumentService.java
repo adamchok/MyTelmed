@@ -1,5 +1,7 @@
 package com.mytelmed.core.document.service;
 
+import com.mytelmed.common.advice.AppException;
+import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constants.DocumentType;
 import com.mytelmed.core.document.dto.RequestDocumentDto;
@@ -18,7 +20,6 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 
@@ -37,6 +38,7 @@ public class DocumentService {
 
     public Document getDocumentById(UUID documentId) throws ResourceNotFoundException {
         log.debug("Retrieving document with ID: {}", documentId);
+
         return documentRepository.findById(documentId)
                 .orElseThrow(() -> {
                     log.warn("Document not found with ID: {}", documentId);
@@ -44,16 +46,22 @@ public class DocumentService {
                 });
     }
 
-    public List<Document> getDocumentsByPatientId(UUID patientId) {
+    public List<Document> getDocumentsByPatientId(UUID patientId) throws AppException {
         log.debug("Fetching all documents for patient with ID: {}", patientId);
-        return documentRepository.findByPatientId(patientId);
-    }
-
-    public String getPresignedDocumentUrl(UUID documentId, Integer expirationMinutes) {
-        log.debug("Generating pre-signed URL for document with ID: {}", documentId);
-        Document document = getDocumentById(documentId);
 
         try {
+            return documentRepository.findByPatientId(patientId);
+        } catch (Exception e) {
+            log.error("Unexpected error while fetching documents for patient with ID: {}", patientId, e);
+            throw new AppException("Failed to fetch documents");
+        }
+    }
+
+    public String getPresignedDocumentUrl(UUID documentId, Integer expirationMinutes) throws AppException {
+        log.debug("Generating pre-signed URL for document with ID: {}", documentId);
+
+        try {
+            Document document = getDocumentById(documentId);
             int expiration = expirationMinutes != null && expirationMinutes > 0 ?
                     expirationMinutes : 15;
 
@@ -65,30 +73,34 @@ public class DocumentService {
 
             log.info("Generated pre-signed URL for document: {} (expires in {} minutes)", documentId, expiration);
             return presignedUrl;
-        } catch (S3Exception e) {
-            log.error("AWS S3 error while generating document URL for document: {}", documentId, e);
         } catch (Exception e) {
             log.error("Failed to generate pre-signed URL for document: {}", documentId, e);
+            throw new AppException("Failed to generate the document's pre-signed URL");
         }
-        return null;
     }
 
-    public List<Document> findDocumentsByPatientAndType(UUID patientId, DocumentType documentType) {
+    public List<Document> findDocumentsByPatientAndType(UUID patientId, DocumentType documentType) throws AppException {
         log.debug("Finding {} documents for patient with ID: {}", documentType, patientId);
-        return documentRepository.findByPatientIdAndDocumentType(patientId, documentType);
+
+        try {
+            return documentRepository.findByPatientIdAndDocumentType(patientId, documentType);
+        } catch (Exception e) {
+            log.error("Unexpected error while finding {} documents for patient with ID: {}", documentType.toString(), patientId, e);
+            throw new AppException("Failed to fetch documents");
+        }
     }
 
     @Transactional
-    public Optional<Document> saveDocument(RequestDocumentDto request, UUID patientId, MultipartFile documentFile) {
+    public void saveDocument(RequestDocumentDto request, UUID patientId, MultipartFile documentFile) throws AppException {
         if (documentFile == null || documentFile.isEmpty()) {
             log.warn("Attempted to save empty or null document file for patient: {}", patientId);
-            return Optional.empty();
+            throw new InvalidInputException("Missing document file");
         }
 
         String documentKey = null;
 
         try {
-            Patient patient = patientService.getPatientById(patientId);
+            Patient patient = patientService.findPatientById(patientId);
 
             S3StorageOptions storageOptions = S3StorageOptions.builder()
                     .folderName(request.documentType())
@@ -108,11 +120,15 @@ public class DocumentService {
                     .build();
 
             log.debug("Saving document metadata to database for patient: {}", patientId);
-            return Optional.of(documentRepository.save(document));
+            documentRepository.save(document);
+
+            log.info("Saved document metadata to database for patient: {}", patientId);
         }  catch (IOException e) {
             log.error("Failed to read document file data for patient: {}", patientId, e);
+            throw new AppException("Failed to read document file data");
         } catch (S3Exception e) {
             log.error("AWS S3 error while saving document for patient: {}", patientId, e);
+            throw new AppException("Failed to upload document");
         } catch (Exception e) {
             log.error("Unexpected error while saving document for patient: {}", patientId, e);
 
@@ -127,50 +143,56 @@ public class DocumentService {
             }
 
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            throw new AppException("Failed to save document");
         }
-        return Optional.empty();
     }
 
-    // DOCUMENT TYPE CANNOT CHANGE - MAINTAIN THE SAME FOLDER STRUCTURE....
     @Transactional
-    public Optional<Document> updateDocument(RequestDocumentDto request, UUID documentId, MultipartFile documentFile) {
-        if (documentFile == null || documentFile.isEmpty()) {
-            log.warn("Attempted to update empty or null document file for document: {}", documentId);
-            return Optional.empty();
-        }
+    public void updateDocument(RequestDocumentDto request, UUID documentId, MultipartFile documentFile) throws AppException {
+        log.debug("Updating document: {} of type: {}", documentId, request.documentType());
 
         try {
             Document existingDocument = getDocumentById(documentId);
 
-            log.debug("Updating document: {} of type: {}", documentId, request.documentType());
-            String documentKey = awsS3Service.updateFile(existingDocument.getDocumentKey(), false, documentFile);
-            existingDocument.setDocumentKey(documentKey);
+            if (documentFile != null) {
+                String documentKey = awsS3Service.updateFile(existingDocument.getDocumentKey(), false, documentFile);
+                existingDocument.setDocumentKey(documentKey);
+            }
+
+            existingDocument.setDocumentName(request.documentName());
 
             log.debug("Updating document metadata to database for document: {}", documentId);
-            return Optional.of(documentRepository.save(existingDocument));
+            documentRepository.save(existingDocument);
+
+            log.info("Updated document to database for document: {}", documentId);
         } catch (IOException e) {
             log.error("Failed to read document file data for: {}", documentId, e);
+            throw new AppException("Failed to read document file data");
         } catch (S3Exception e) {
             log.error("AWS S3 error while updating document: {}", documentId, e);
+            throw new AppException("Failed to update document");
         } catch (Exception e) {
             log.error("Unexpected error while updating document: {}", documentId, e);
+            throw new AppException("Failed to update document");
         }
-        return Optional.empty();
     }
 
     @Transactional
-    public boolean deleteDocument(UUID documentId) {
+    public void deleteDocument(UUID documentId) throws AppException {
+        log.debug("Deleting document: {}", documentId);
+
         try {
             Document document = getDocumentById(documentId);
-
             awsS3Service.deleteFile(document.getDocumentKey(), true);
+
             documentRepository.delete(document);
-            return true;
+            log.info("Deleted document: {}", documentId);
         } catch (S3Exception e) {
             log.error("AWS S3 error while deleting document: {}", documentId, e);
+            throw new AppException("Failed to delete document");
         } catch (Exception e) {
             log.error("Unexpected error while deleting document: {}", documentId, e);
+            throw new AppException("Failed to delete document");
         }
-        return false;
     }
 }

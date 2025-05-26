@@ -240,7 +240,7 @@ public class DoctorService {
                 throw (AppException) e;
             }
             log.error("Unexpected error while updating doctor profile image: {}", accountId, e);
-            throw new AppException("Failed to update doctor profile image");
+            throw new AppException("Failed to update profile image");
         }
     }
 

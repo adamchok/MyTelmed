@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -62,11 +61,8 @@ public class FamilyMemberController {
             @PathVariable UUID familyMemberId) {
         log.debug("Received request to confirm family member: {}", familyMemberId);
 
-        Optional<FamilyMember> result = familyMemberService.confirmFamilyMember(familyMemberId);
-
-        return result
-                .map(family -> ResponseEntity.ok(ApiResponse.success("Family member confirmed successfully")))
-                .orElse(ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to confirm family member")));
+        familyMemberService.confirmFamilyMember(familyMemberId);
+        return ResponseEntity.ok(ApiResponse.success("Family member confirmed successfully"));
     }
 
     @PostMapping("/patient/{patientId}")
@@ -75,11 +71,8 @@ public class FamilyMemberController {
             @Valid @RequestBody CreateFamilyMemberRequestDto request) {
         log.debug("Received request to invite family member for patient: {}", patientId);
 
-        Optional<FamilyMember> result = familyMemberService.inviteFamilyMember(patientId, request);
-
-        return result
-                .map(family -> ResponseEntity.ok(ApiResponse.success("Family member invitation sent successfully")))
-                .orElse(ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to invite family member")));
+        familyMemberService.inviteFamilyMember(patientId, request);
+        return ResponseEntity.ok(ApiResponse.success("Family member invitation sent successfully"));
     }
 
     @PutMapping("/{familyMemberId}")
@@ -88,11 +81,8 @@ public class FamilyMemberController {
             @Valid @RequestBody UpdateFamilyMemberRequestDto request) {
         log.debug("Received request to update family member: {}", familyMemberId);
 
-        Optional<FamilyMember> result = familyMemberService.updateFamilyMember(familyMemberId, request);
-
-        return result
-                .map(family -> ResponseEntity.ok(ApiResponse.success("Family member updated successfully")))
-                .orElse(ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to update family member")));
+        familyMemberService.updateFamilyMember(familyMemberId, request);
+        return ResponseEntity.ok(ApiResponse.success("Family member updated successfully"));
     }
 
     @DeleteMapping("/{familyMemberId}")
@@ -100,12 +90,7 @@ public class FamilyMemberController {
             @PathVariable UUID familyMemberId) {
         log.debug("Request request to delete family member: {}", familyMemberId);
 
-        boolean deleted = familyMemberService.deleteFamilyMember(familyMemberId);
-
-        if (deleted) {
-            return ResponseEntity.ok(ApiResponse.success("Family member deleted successfully"));
-        } else {
-            return ResponseEntity.internalServerError().body(ApiResponse.failure("Failed to delete family member"));
-        }
+        familyMemberService.deleteFamilyMember(familyMemberId);
+        return ResponseEntity.ok(ApiResponse.success("Family member deleted successfully"));
     }
 }

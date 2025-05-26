@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 public interface DoctorMapper {
     @Mapping(target = "id", expression = "java(mapUUID(doctor.getId()))")
     @Mapping(target = "dateOfBirth", expression = "java(formatDate(doctor.getDateOfBirth()))")
-    @Mapping(target = "gender", expression = "java(doctor.getGender().name())")
+    @Mapping(target = "gender", expression = "java(doctor.getGender().name().toLowerCase())")
     @Mapping(target = "languageList", expression = "java(mapLanguages(doctor.getLanguageList()))")
     @Mapping(target = "profileImageUrl",
             expression = "java(doctor.getProfileImage() != null ? doctor.getProfileImage().getImageUrl() : null)")

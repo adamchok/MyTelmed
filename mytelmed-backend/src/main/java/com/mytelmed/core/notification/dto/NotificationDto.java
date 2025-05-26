@@ -4,7 +4,7 @@ import java.time.Instant;
 
 
 public record NotificationDto(
-        Long id,
+        String id,
         String title,
         String content,
         String imageUrl,
@@ -12,6 +12,6 @@ public record NotificationDto(
         String type,
         Instant createdAt,
         Instant readAt,
-        boolean isRead
+        boolean read
 ) {
 }

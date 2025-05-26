@@ -1,11 +1,14 @@
 package com.mytelmed.core.auth.service;
 
+import com.mytelmed.common.advice.AppException;
+import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.advice.exception.TokenExpiredException;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.entity.RefreshToken;
 import com.mytelmed.core.auth.repository.RefreshTokenRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
@@ -37,7 +40,18 @@ public class RefreshTokenService {
         return token.substring(0, 4) + "..." + token.substring(token.length() - 4);
     }
 
-    private RefreshToken createRefreshToken(Account account) {
+    @Transactional(readOnly = true)
+    public RefreshToken findByToken(UUID token) throws AppException {
+        log.debug("Looking up refresh token: {}", maskToken(token.toString()));
+        return refreshTokenRepository.findByToken(token)
+                .orElseThrow(() -> {
+                    log.warn("Token not found with token: {}", maskToken(token.toString()));
+                    return new ResourceNotFoundException("Token not found");
+                });
+    }
+
+    @Transactional
+    protected RefreshToken createRefreshToken(Account account) {
         UUID tokenValue = UUID.randomUUID();
         Instant expiryDate = Instant.now().plus(refreshTokenDurationMs, ChronoUnit.MILLIS);
 
@@ -53,15 +67,11 @@ public class RefreshTokenService {
         return savedToken;
     }
 
-    public Optional<RefreshToken> findByToken(UUID token) {
-        log.debug("Looking up refresh token: {}", maskToken(token.toString()));
-        return refreshTokenRepository.findByToken(token);
-    }
-
     @Transactional
-    public RefreshToken createOrGetRefreshToken(String username) {
+    public RefreshToken createOrGetRefreshToken(String username) throws UsernameNotFoundException {
+        log.debug("Creating or retrieving refresh token for user: {}", username);
+
         try {
-            log.debug("Creating or retrieving refresh token for user: {}", username);
             Account account = userService.loadUserByUsername(username);
 
             Optional<RefreshToken> existingToken = refreshTokenRepository.findByAccountId(account.getId());
@@ -73,13 +83,13 @@ public class RefreshTokenService {
                 return createRefreshToken(account);
             }
         } catch (Exception e) {
-            log.error("Error creating refresh token for user: {}", username);
+            log.error("Error creating refresh token for user: {}", username, e);
             throw e;
         }
     }
 
     @Transactional
-    public RefreshToken verifyExpiration(RefreshToken token) {
+    public RefreshToken verifyExpiration(RefreshToken token) throws TokenExpiredException {
         if (token.getExpiredAt().isBefore(Instant.now())) {
             String username = token.getAccount().getUsername();
             log.warn("Refresh token expired for user: {}, token expiry: {}", 
@@ -95,14 +105,15 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public boolean deleteRefreshTokenByAccountId(UUID accountId) {
+    public void deleteRefreshTokenByAccountId(UUID accountId) throws AppException {
+        log.debug("Deleting refresh token for account ID: {}", accountId);
+
         try {
-            log.info("Deleting refresh token for account ID: {}", accountId);
             refreshTokenRepository.deleteByAccountId(accountId);
-            return true;
+            log.info("Deleted refresh token for account ID: {}", accountId);
         } catch (Exception e) {
-            log.error("Error deleting refresh token for user: {}", accountId);
-            return false;
+            log.error("Error deleting refresh token for user: {}", accountId, e);
+            throw new AppException("Failed to logout");
         }
     }
 }

@@ -8,7 +8,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -33,8 +32,7 @@ public class Permission {
     @Column(name = "permission_id")
     private UUID id;
 
-    @OneToOne
-    @JoinColumn(name = "account_id", nullable = false)
+    @OneToOne(mappedBy = "permission")
     private Account account;
 
     @Column(name = "type", nullable = false)

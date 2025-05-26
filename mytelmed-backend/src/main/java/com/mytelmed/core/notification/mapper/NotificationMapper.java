@@ -14,6 +14,5 @@ public interface NotificationMapper {
             expression = "java(notification.getNotificationImage() != null ? notification.getNotificationImage().getImageUrl() : null)")
     @Mapping(target = "type",
             expression = "java(notification.getNotificationType() != null ? notification.getNotificationType().toString().toLowerCase() : null)")
-    @Mapping(target = "isRead", expression = "java(notification.getIsRead())")
     NotificationDto toDto(Notification notification);
 }

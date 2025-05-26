@@ -85,7 +85,7 @@ public class AwsS3Service {
                     key, bucket, e.awsErrorDetails().errorCode(), e);
             throw e;
         } catch (Exception e) {
-            log.error("Error getting file URL: {}", e.getMessage(), e);
+            log.error("Error getting file pre-signed URL: {}", e.getMessage(), e);
             throw e;
         }
     }

@@ -1,5 +1,6 @@
 package com.mytelmed.core.notification.service;
 
+import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constants.NotificationType;
 import com.mytelmed.core.auth.entity.Account;
@@ -59,41 +60,74 @@ public class NotificationService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Notification> getPaginatedNotificationsByAccountId(UUID accountId, int page, int pageSize) {
-        Pageable pageable = PageRequest.of(page, pageSize);
-        return notificationRepository.findByAccountIdOrderByCreatedAtDesc(accountId, pageable);
+    public Page<Notification> getPaginatedNotificationsByAccountId(UUID accountId, int page, int pageSize) throws AppException {
+        log.debug("Fetching notifications for account with ID: {} page: {} pageSize: {}", accountId, page, pageSize);
+
+        try {
+            Pageable pageable = PageRequest.of(page, pageSize);
+            return notificationRepository.findByAccountIdOrderByCreatedAtDesc(accountId, pageable);
+        } catch (Exception e) {
+            log.error("Unexpected error occurred while fetching notifications for account: {}", accountId, e);
+            throw new AppException("Failed to fetch notifications");
+        }
     }
 
     @Transactional(readOnly = true)
-    public List<Notification> getUnreadNotifications(UUID accountId) {
-        return notificationRepository.findTop10ByAccountIdAndIsReadFalseOrderByCreatedAtDesc(accountId);
+    public List<Notification> getUnreadNotifications(UUID accountId) throws AppException {
+        log.debug("Fetching unread notifications for account with ID: {}", accountId);
+
+        try {
+            return notificationRepository.findTop10ByAccountIdAndReadFalseOrderByCreatedAtDesc(accountId);
+        } catch (Exception e) {
+            log.error("Unexpected error occurred while fetching unread notifications for account: {}", accountId, e);
+            throw new AppException("Failed to fetch unread notifications");
+        }
     }
 
     @Transactional(readOnly = true)
-    public long getUnreadCount(UUID accountId) {
-        return notificationRepository.countByAccountIdAndIsReadFalse(accountId);
-    }
+    public long getUnreadCount(UUID accountId) throws AppException {
+        log.debug("Fetching unread count for account with ID: {}", accountId);
 
-    @Transactional
-    public void markAsReadByAccountId(UUID notificationId, UUID accountId) {
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> {
-                    log.warn("Notification not found with ID: {}", notificationId);
-                    return new ResourceNotFoundException("Notification not found");
-                });
-
-        if (notification.getAccount().getId().equals(accountId)) {
-            notification.setRead(true);
-            notification.setReadAt(Instant.now());
-            notificationRepository.save(notification);
-        } else {
-            log.warn("Notification not found for account with ID: {}", accountId);
-            throw new ResourceNotFoundException("Failed to mark notification as read");
+        try {
+            return notificationRepository.countByAccountIdAndReadFalse(accountId);
+        } catch (Exception e) {
+            log.error("Unexpected error occurred while fetching unread count for account: {}", accountId, e);
+            throw new AppException("Failed to fetch unread count");
         }
     }
 
     @Transactional
-    public long markAllAsRead(UUID accountId) {
-        return notificationRepository.markAllAsRead(accountId);
+    public void markAsReadByAccountId(UUID notificationId, UUID accountId) throws AppException {
+        log.debug("Marking notification with ID: {} as read for account with ID: {}", notificationId, accountId);
+        try {
+            Notification notification = notificationRepository.findByIdAndAccountId(notificationId, accountId)
+                    .orElseThrow(() -> {
+                        log.warn("Notification not found with ID: {}", notificationId);
+                        return new ResourceNotFoundException("Notification not found");
+                    });
+
+            notification.setRead(true);
+            notification.setReadAt(Instant.now());
+            notificationRepository.save(notification);
+
+            log.info("Marked notification with ID: {} as read for account with ID: {}", notificationId, accountId);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error occurred while marking notification as read: {}", notificationId, e);
+            throw new AppException("Failed to mark notification as read");
+        }
+    }
+
+    @Transactional
+    public long markAllAsRead(UUID accountId) throws AppException {
+        log.debug("Marking all notifications for account with ID: {} as read", accountId);
+
+        try {
+            return notificationRepository.markAllAsRead(accountId);
+        } catch (Exception e) {
+            log.error("Unexpected error occurred while marking all notifications for account: {}", accountId, e);
+            throw new AppException("Failed to mark all notifications as read");
+        }
     }
 }

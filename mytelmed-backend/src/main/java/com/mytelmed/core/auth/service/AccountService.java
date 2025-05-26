@@ -46,20 +46,26 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<Account> getAccountByUsername(String username) {
-        return accountRepository.findByUsername(username);
+    public Account getAccountByUsername(String username) throws ResourceNotFoundException {
+        log.debug("Fetching account with username: {}", username);
+
+        return accountRepository.findByUsername(username)
+                .orElseThrow(() -> {
+                    log.warn("Account not found with username: {}", username);
+                    return new ResourceNotFoundException("Account not found");
+                });
     }
 
     @Transactional
-    public boolean resetPasswordById(UUID id, String password) {
-        int rowsAffected = accountRepository.updatePasswordById(id, passwordEncoder.encode(password));
+    public void resetPasswordByAccountId(UUID accountId, String password) {
+        log.debug("Resetting password for account with ID: {}", accountId);
 
-        if (rowsAffected == 1) {
-            log.info("Password reset successful for account with ID: {}", id);
-            return true;
-        } else {
-            log.warn("Password reset failed for account with ID: {}", id);
-            return false;
+        try {
+            accountRepository.updatePasswordById(accountId, passwordEncoder.encode(password));
+            log.info("Password reset successful for account with ID: {}", accountId);
+        } catch (Exception e) {
+            log.error("Unexpected error while resetting password for account with ID: {}", accountId, e);
+            throw e;
         }
     }
 
@@ -127,6 +133,40 @@ public class AccountService {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error while creating admin account: {}", username, e);
+            return Optional.empty();
+        }
+    }
+
+    @Transactional
+    public Optional<Account> createPatientAccount(String nric, String password) throws UsernameAlreadyExistException {
+        log.debug("Creating patient account with NRIC: {}", nric);
+
+        try {
+            if (accountRepository.findByUsername(nric).isPresent()) {
+                log.warn("Patient's account already exists with username: {}", nric);
+                throw new UsernameAlreadyExistException("Account already exists with provided NRIC");
+            }
+
+            String encodedPassword = passwordEncoder.encode(password);
+
+            Permission permission = Permission.builder()
+                    .type(AccountType.PATIENT)
+                    .build();
+
+            Account account = Account.builder()
+                    .username(nric)
+                    .password(encodedPassword)
+                    .permission(permission)
+                    .build();
+
+            account = accountRepository.save(account);
+            log.info("Created patient account with username: {}", nric);
+
+            return Optional.of(account);
+        } catch (UsernameAlreadyExistException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while creating patient account: {}", nric, e);
             return Optional.empty();
         }
     }

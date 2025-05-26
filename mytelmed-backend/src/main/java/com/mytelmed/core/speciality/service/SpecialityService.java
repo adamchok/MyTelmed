@@ -28,11 +28,20 @@ public class SpecialityService {
 
     @Transactional(readOnly = true)
     public long countAllSpecialities() {
-        return specialityRepository.count();
+        log.debug("Fetching total count of specialities");
+
+        try {
+            return specialityRepository.count();
+        } catch (Exception e) {
+            log.error("Failed to fetch total count of specialities", e);
+            throw e;
+        }
     }
 
     @Transactional(readOnly = true)
-    public Speciality findSpecialityByName(String specialityName) {
+    public Speciality findSpecialityByName(String specialityName) throws ResourceNotFoundException {
+        log.debug("Fetching speciality with name: {}", specialityName);
+
         return specialityRepository.findByName(specialityName)
                 .orElseThrow(() -> {
                     log.warn("Speciality not found with name: {}", specialityName);
@@ -42,9 +51,17 @@ public class SpecialityService {
 
     @Transactional(readOnly = true)
     public List<Speciality> findAllSpecialitiesByIdList(List<UUID> specialityIdList) {
-        return specialityRepository.findAllById(specialityIdList);
+        log.debug("Fetching specialities by ID list: {}", specialityIdList.toString());
+
+        try {
+            return specialityRepository.findAllById(specialityIdList);
+        } catch (Exception e) {
+            log.error("Failed to fetch specialities by ID list: {}", specialityIdList, e);
+            throw e;
+        }
     }
 
+    @Transactional
     public boolean saveSpeciality(Speciality speciality) {
         log.debug("Saving speciality: {}", speciality.getName());
 
@@ -53,13 +70,12 @@ public class SpecialityService {
             return true;
         } catch (Exception e) {
             log.error("Failed to save speciality: {}", speciality.getName(), e);
+            throw e;
         }
-
-        return false;
     }
 
     @Transactional
-    public void uploadThumbnailImageBySpecialityName(String specialityName, MultipartFile thumbnailFile) {
+    public void uploadThumbnailImageBySpecialityName(String specialityName, MultipartFile thumbnailFile) throws AppException {
         log.debug("Uploading thumbnail image for speciality with name: {}", specialityName);
 
         try {
@@ -70,10 +86,9 @@ public class SpecialityService {
             specialityRepository.save(speciality);
 
             log.info("Uploaded thumbnail image for speciality with name: {}", specialityName);
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
-            if (e instanceof AppException) {
-                throw (AppException) e;
-            }
             log.error("Unexpected error occurred while uploading thumbnail image for speciality with name: {}", specialityName, e);
             throw new AppException("Failed to upload thumbnail image for selected speciality");
         }

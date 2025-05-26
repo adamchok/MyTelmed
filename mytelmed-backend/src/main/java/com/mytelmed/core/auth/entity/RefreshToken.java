@@ -1,6 +1,5 @@
 package com.mytelmed.core.auth.entity;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,8 +9,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -34,16 +31,13 @@ public class RefreshToken {
     @Column(name = "token_id")
     private UUID id;
 
-    @NotBlank
     @Column(name = "token", nullable = false, unique = true)
     private UUID token;
 
-    @NotNull
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
-    @NotBlank
     @Future
     @Column(name = "expired_at", nullable = false)
     private Instant expiredAt;
