@@ -1,11 +1,14 @@
 package com.mytelmed.infrastructure.aws.config;
 
+import com.mytelmed.core.article.entity.Article;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -62,14 +65,13 @@ public class AwsConfig {
                 .build();
     }
 
-    // Commented beans preserved for future implementation
-    // @Bean
-    // public DynamoDbTable<Article> articleTable(DynamoDbEnhancedClient enhancedClient) {
-    //     return enhancedClient.table(articleTableName, TableSchema.fromBean(Article.class));
-    // }
-    //
-    // @Bean
-    // public DynamoDbTable<QnA> qnaTable(DynamoDbEnhancedClient enhancedClient) {
-    //     return enhancedClient.table(qnaTableName, TableSchema.fromBean(QnA.class));
-    // }
+     @Bean
+     public DynamoDbTable<Article> articleTable(DynamoDbEnhancedClient enhancedClient) {
+         return enhancedClient.table(articleTableName, TableSchema.fromBean(Article.class));
+     }
+
+//     @Bean
+//     public DynamoDbTable<QnA> qnaTable(DynamoDbEnhancedClient enhancedClient) {
+//         return enhancedClient.table(qnaTableName, TableSchema.fromBean(QnA.class));
+//     }
 }

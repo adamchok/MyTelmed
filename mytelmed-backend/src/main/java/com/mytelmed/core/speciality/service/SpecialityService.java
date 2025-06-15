@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -59,6 +60,15 @@ public class SpecialityService {
             log.error("Failed to fetch specialities by ID list: {}", specialityIdList, e);
             throw e;
         }
+    }
+
+    @Transactional(readOnly = true)
+    public Speciality findSpecialityById(UUID specialityId) throws ResourceNotFoundException {
+        return specialityRepository.findById(specialityId)
+                .orElseThrow(() -> {
+                    log.warn("Speciality not found with ID: {}", specialityId);
+                    return new ResourceNotFoundException("Speciality not found");
+                });
     }
 
     @Transactional

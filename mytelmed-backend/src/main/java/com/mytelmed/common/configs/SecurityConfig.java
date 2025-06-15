@@ -97,7 +97,7 @@ public class SecurityConfig {
                         .maximumSessions(1)
                         .maxSessionsPreventsLogin(true)
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+//                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class) // Temporarily disable JWT authentication filter
                 .build();
     }
 }

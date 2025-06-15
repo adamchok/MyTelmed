@@ -33,13 +33,12 @@ public class EmailService {
     }
 
     private Message createEmailMessage(String to, String subject, String templateName, Context context) {
-        String recipient = "User <" + to + ">";
-        String domain = "MyTelmed <postmaster@" + mailGunApiDomain + ">";
+        String domain = "noreply@" + mailGunApiDomain;
         String htmlContent = templateEngine.process(templateName, context);
 
         return Message.builder()
                 .from(domain)
-                .to(recipient)
+                .to(to)
                 .subject(subject)
                 .html(htmlContent)
                 .build();
