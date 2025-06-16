@@ -2,8 +2,8 @@ package com.mytelmed.core.image.service;
 
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
-import com.mytelmed.common.advice.exception.ResourceNotFoundException;
-import com.mytelmed.common.constants.ImageType;
+import com.mytelmed.common.constants.file.FileType;
+import com.mytelmed.common.constants.file.ImageType;
 import com.mytelmed.core.image.entity.Image;
 import com.mytelmed.core.image.repository.ImageRepository;
 import com.mytelmed.infrastructure.aws.dto.S3StorageOptions;
@@ -41,6 +41,7 @@ public class ImageService {
 
         try {
             S3StorageOptions storageOptions = S3StorageOptions.builder()
+                    .fileType(FileType.IMAGE)
                     .folderName(imageType.name().toLowerCase())
                     .entityId(entityId.toString())
                     .publicAccess(true)
@@ -60,7 +61,7 @@ public class ImageService {
             image = imageRepository.save(image);
             log.info("Saved image to database for entity: {}", entityId);
             return image;
-        }  catch (IOException | S3Exception e) {
+        } catch (IOException | S3Exception e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error while saving image for entity: {}", entityId, e);
@@ -114,30 +115,6 @@ public class ImageService {
         } catch (Exception e) {
             log.error("Unexpected error while updating image for entity: {}", entityId, e);
             throw new AppException("Failed to update image");
-        }
-    }
-
-    @Transactional
-    public void deleteImage(ImageType imageType, UUID entityId) throws AppException {
-        log.debug("Deleting image for entity: {} of type: {}", entityId, imageType);
-
-        try {
-            Image image = imageRepository.findByImageTypeAndEntityId(imageType, entityId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Image not found"));
-
-            log.debug("Deleting image from S3 for entity: {}", entityId);
-            awsS3Service.deleteFile(image.getImageKey(), true);
-
-            log.debug("Deleting image metadata from database for entity: {}", entityId);
-            imageRepository.delete(image);
-
-            log.info("Deleted image from database for entity: {}", entityId);
-        } catch (S3Exception e) {
-            log.error("AWS S3 error while deleting image for entity: {}", entityId, e);
-            throw new AppException("Failed to delete image");
-        } catch (Exception e) {
-            log.error("Unexpected error while deleting image for entity: {}", entityId, e);
-            throw new AppException("Failed to delete image");
         }
     }
 }

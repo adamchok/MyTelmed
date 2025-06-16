@@ -10,6 +10,7 @@ import com.mytelmed.core.patient.service.PatientService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -26,7 +27,7 @@ public class AddressService {
     }
 
     @Transactional(readOnly = true)
-    public List<Address> findAddressesByPatientAccountId(UUID accountId) throws AppException {
+    public List<Address> findAddressListByPatientAccountId(UUID accountId) throws AppException {
         log.debug("Fetching addresses for patient with account ID: {}", accountId);
 
         try {
@@ -73,7 +74,7 @@ public class AddressService {
     }
 
     @Transactional
-    public void updateAddress(UUID addressId, RequestAddressDto request) throws AppException {
+    public void updateAddressById(UUID addressId, RequestAddressDto request) throws AppException {
         log.debug("Updating address with ID: {}", addressId);
 
         try {
@@ -95,7 +96,7 @@ public class AddressService {
     }
 
     @Transactional
-    public void deleteAddress(UUID addressId) throws AppException {
+    public void deleteAddressById(UUID addressId) throws AppException {
         log.debug("Deleting address with ID: {}", addressId);
 
         try {

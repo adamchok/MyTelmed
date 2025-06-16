@@ -1,172 +1,125 @@
 package com.mytelmed.infrastructure.email.service;
 
-import com.mailgun.api.v3.MailgunMessagesApi;
-import com.mailgun.model.message.Message;
-import com.mytelmed.common.advice.exception.EmailSendingException;
-import com.mytelmed.common.constants.EmailType;
-import feign.Response;
+import com.mytelmed.common.constants.email.EmailFamily;
+import com.mytelmed.common.constants.email.EmailType;
+import com.mytelmed.common.factory.email.AbstractEmailSenderFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thymeleaf.context.Context;
-import org.thymeleaf.spring6.SpringTemplateEngine;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 @Service
 @Slf4j
 public class EmailService {
-    private final String mailGunApiDomain;
     private final String uiHost;
-    private final MailgunMessagesApi mailgunMessagesApi;
-    private final SpringTemplateEngine templateEngine;
+    private final List<AbstractEmailSenderFactory> emailSenderFactoryList;
 
-    public EmailService(@Value("${mailgun.api.domain}") String mailGunApiDomain,
-                        @Value("${application.ui-host}") String uiHost,
-                        MailgunMessagesApi mailgunMessagesApi,
-                        SpringTemplateEngine templateEngine) {
-        this.mailGunApiDomain = mailGunApiDomain;
+    public EmailService(@Value("${application.ui-host}") String uiHost,
+                        List<AbstractEmailSenderFactory> emailSenderFactoryList) {
         this.uiHost = uiHost;
-        this.mailgunMessagesApi = mailgunMessagesApi;
-        this.templateEngine = templateEngine;
+        this.emailSenderFactoryList = emailSenderFactoryList;
     }
 
-    private Message createEmailMessage(String to, String subject, String templateName, Context context) {
-        String domain = "noreply@" + mailGunApiDomain;
-        String htmlContent = templateEngine.process(templateName, context);
+    private void send(EmailType type, String to, Map<String, Object> variables) {
+        EmailFamily family = type.getFamily();
 
-        return Message.builder()
-                .from(domain)
-                .to(to)
-                .subject(subject)
-                .html(htmlContent)
-                .build();
+        AbstractEmailSenderFactory factory = emailSenderFactoryList.stream()
+                .filter(f -> f.supports(family))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No factory for family: " + family));
+
+        factory.getEmailSender(type).sendEmail(to, variables);
     }
 
-    private void sendEmail(Message message, EmailType emailType, String recipient) throws EmailSendingException {
-        try {
-            CompletableFuture<Response> feignResponse = mailgunMessagesApi.sendMessageFeignResponseAsync(mailGunApiDomain, message);
-            try (Response response = feignResponse.join()) {
-                if (response.status() < 200 || response.status() >= 300) {
-                    log.error("Failed to send {} email to: {}", emailType.toString(), recipient);
-                    throw new EmailSendingException("Failed to send + " + emailType + " email");
-                }
-                log.info("Successfully sent {} email to: {}", emailType.toString(), recipient);
-            }
-        } catch (CompletionException ce) {
-            log.error("Completion error occurred while sending {} email to {}: {}", emailType.toString(), recipient, ce.getMessage(), ce);
-            throw new EmailSendingException("Failed to send " + emailType + " email.");
-        } catch (Exception e) {
-            log.error("Unexpected error occurred while sending {} email to {}: {}", emailType.toString(), recipient, e.getMessage(), e);
-            throw new EmailSendingException("Failed to send " + emailType + " email.");
-        }
+    public void sendVerificationEmail(String to, String token) {
+        log.debug("Sending verification email to: {}", to);
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("token", token);
+
+        send(EmailType.VERIFICATION, to, variables);
     }
 
-    public void sendVerificationEmail(String emailTo, String token) {
-        log.debug("Sending verification email to: {}", emailTo);
+    public void sendPasswordResetEmail(String to, String name, String resetUrl, long expirationInMinutes) {
+        log.debug("Sending password reset email to: {}", to);
 
-        Context context = new Context();
-        context.setVariable("token", token);
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("name", name);
+        variables.put("resetUrl", resetUrl);
+        variables.put("expiration", expirationInMinutes);
+        variables.put("uiHost", uiHost);
 
-        Message message = createEmailMessage(
-                emailTo,
-                "Your MyTelmed account email verification code is " + token,
-                "verify/verification",
-                context
-        );
-
-        sendEmail(message, EmailType.VERIFICATION, emailTo);
+        send(EmailType.PASSWORD_RESET, to, variables);
     }
 
-    public void sendPasswordResetEmail(String email, String name, String resetUrl) {
-        log.debug("Sending password reset email to: {}", email);
+    public void sendEmailResetEmail(String to, String name, String resetUrl, long expirationInMinutes) {
+        log.debug("Sending email reset email to: {}", to);
 
-        Context context = new Context();
-        context.setVariable("name", name);
-        context.setVariable("resetUrl", resetUrl);
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("name", name);
+        variables.put("resetUrl", resetUrl);
+        variables.put("expiration", expirationInMinutes);
+        variables.put("uiHost", uiHost);
 
-        Message message = createEmailMessage(
-                email,
-                "MyTelmed Password Reset",
-                "reset/password-reset",
-                context
-        );
-
-        sendEmail(message, EmailType.PASSWORD_RESET, email);
-        log.info("Password reset email sent to: {}", email);
+        send(EmailType.EMAIL_RESET, to, variables);
     }
 
-    public void sendEmailResetEmail(String email, String name, String resetUrl) {
-        log.debug("Sending email reset email to: {}", email);
+    public void sendAccountActivationEmail(String to, String username, String password) {
+        log.debug("Sending account activated email to: {}", to);
 
-        Context context = new Context();
-        context.setVariable("name", name);
-        context.setVariable("resetUrl", resetUrl);
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("username", username);
+        variables.put("password", password);
+        variables.put("uiHost", uiHost);
 
-        Message message = createEmailMessage(
-                email,
-                "MyTelmed Email Reset",
-                "reset/email-reset",
-                context
-        );
-
-        sendEmail(message, EmailType.EMAIL_RESET, email);
-        log.info("Email reset email sent to: {}", email);
+        send(EmailType.ACCOUNT_ACTIVATION, to, variables);
     }
 
-    public void notifyNewFamilyMember(String email, String familyMemberName, String patientName, String invitationUrl) {
-        log.debug("Sending family member invitation email to: {}", email);
+    public void sendAccountDeactivationEmail(String to, String name, String username) {
+        log.debug("Sending account deactivated email to: {}", to);
 
-        Context context = new Context();
-        context.setVariable("name", familyMemberName);
-        context.setVariable("patientName", patientName);
-        context.setVariable("invitationUrl", invitationUrl);
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("name", name);
+        variables.put("username", username);
+        variables.put("uiHost", uiHost);
 
-        Message message = createEmailMessage(
-                email,
-                "MyTelmed Family Member Invitation",
-                "family/family-member-invite",
-                context
-        );
-
-        sendEmail(message, EmailType.FAMILY_INVITATION, email);
-        log.info("Family invitation email sent to: {}", email);
+        send(EmailType.ACCOUNT_DEACTIVATION, to, variables);
     }
 
-    public void notifyFamilyMemberConfirmation(String email, String familyMemberName, String patientName) {
-        log.debug("Sending family member confirmation email to: {}", email);
+    public void sendFamilyMemberInvitationEmail(String to, String familyMemberName, String patientName, String invitationUrl) {
+        log.debug("Sending family member invitation email to: {}", to);
 
-        Context context = new Context();
-        context.setVariable("name", familyMemberName);
-        context.setVariable("patientName", patientName);
-        context.setVariable("url", uiHost);
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("name", familyMemberName);
+        variables.put("patientName", patientName);
+        variables.put("invitationUrl", invitationUrl);
+        variables.put("uiHost", uiHost);
 
-        Message message = createEmailMessage(
-                email,
-                "MyTelmed Family Member Access Confirmed",
-                "family/family-member-confirm",
-                context
-        );
-
-        sendEmail(message, EmailType.FAMILY_CONFIRMATION, email);
+        send(EmailType.FAMILY_INVITATION, to, variables);
     }
 
-    public void notifyFamilyMemberRemoval(String email, String familyMemberName, String patientName) {
-        log.debug("Sending family member removal notification to: {}", email);
+    public void sendFamilyMemberJoinedEmail(String to, String familyMemberName, String patientName) {
+        log.debug("Sending family member joined email to: {}", to);
 
-        Context context = new Context();
-        context.setVariable("name", familyMemberName);
-        context.setVariable("patientName", patientName);
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("name", familyMemberName);
+        variables.put("patientName", patientName);
+        variables.put("uiHost", uiHost);
 
-        Message message = createEmailMessage(
-                email,
-                "MyTelmed Family Member Access Removed",
-                "family/family-member-remove",
-                context
-        );
+        send(EmailType.FAMILY_JOINED, to, variables);
+    }
 
-        sendEmail(message, EmailType.FAMILY_REMOVAL, email);
+    public void sendFamilyMemberRemovedEmail(String to, String familyMemberName, String patientName) {
+        log.debug("Sending family member removal notification to: {}", to);
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("name", familyMemberName);
+        variables.put("patientName", patientName);
+
+        send(EmailType.FAMILY_REMOVAL, to, variables);
     }
 }
 

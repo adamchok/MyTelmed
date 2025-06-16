@@ -3,7 +3,7 @@ package com.mytelmed.core.patient.service;
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
-import com.mytelmed.common.constants.ImageType;
+import com.mytelmed.common.constants.file.ImageType;
 import com.mytelmed.common.utils.DateTimeUtil;
 import com.mytelmed.common.utils.HashUtil;
 import com.mytelmed.core.auth.entity.Account;
@@ -63,14 +63,6 @@ public class PatientService {
         }
 
         return dateOfBirth;
-    }
-
-    private Account createPatientAccount(String nric, String password) throws AppException {
-        return accountService.createPatientAccount(nric, password)
-                .orElseThrow(() -> {
-                    log.warn("Failed to create patient account for patient with username: {}", nric);
-                    return new AppException("Failed to account");
-                });
     }
 
     private Patient buildPatient(CreatePatientRequestDto request, LocalDate dateOfBirth, Account account) {
@@ -182,7 +174,7 @@ public class PatientService {
 
         try {
             LocalDate dateOfBirth = parseAndValidateDateOfBirth(request.dateOfBirth());
-            Account account = createPatientAccount(request.nric(), request.password());
+            Account account = accountService.createPatientAccount(request.nric(), request.password());
 
             Patient patient = buildPatient(request, dateOfBirth, account);
             patientRepository.save(patient);
@@ -247,7 +239,7 @@ public class PatientService {
             patientRepository.delete(patient);
 
             log.info("Deleted patient with ID: {}", patient.getId());
-        } catch(AppException e) {
+        } catch (AppException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error while deleting patient: {}", patientId, e);

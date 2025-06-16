@@ -29,15 +29,18 @@ import java.util.UUID;
 public class AwsS3Service {
     private final String publicAssetsBucket;
     private final String privateAssetsBucket;
+    private final String cloudFrontDomainName;
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
 
     public AwsS3Service(
             @Value("${aws.s3.public.bucket-name}") String publicAssetsBucket,
             @Value("${aws.s3.private.bucket-name}") String privateAssetsBucket,
+            @Value("${aws.cloudfront.domain-name}") String cloudFrontDomainName,
             S3Client s3Client, S3Presigner s3Presigner) {
         this.publicAssetsBucket = publicAssetsBucket;
         this.privateAssetsBucket = privateAssetsBucket;
+        this.cloudFrontDomainName = cloudFrontDomainName;
         this.s3Client = s3Client;
         this.s3Presigner = s3Presigner;
     }
@@ -51,12 +54,11 @@ public class AwsS3Service {
 
     private String buildObjectKey(S3StorageOptions storageOptions, String originalFileName) {
         String fileName = generateRandomFileName(originalFileName);
-        String subfolder = storageOptions.publicAccess() ? "images" : "files";
 
         return String.format("%s/%s/%s/%s",
+                storageOptions.fileType().name().toLowerCase(),
                 storageOptions.folderName(),
                 storageOptions.entityId(),
-                subfolder,
                 fileName);
     }
 
@@ -65,7 +67,7 @@ public class AwsS3Service {
 
         try {
             if (isPublicAccess) {
-                return String.format("https://%s.s3.amazonaws.com/%s", publicAssetsBucket, key);
+                return String.format("https://%s/%s", cloudFrontDomainName, key);
             } else {
                 GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                         .bucket(privateAssetsBucket)

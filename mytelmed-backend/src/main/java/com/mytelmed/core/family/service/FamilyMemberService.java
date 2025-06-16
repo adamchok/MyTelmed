@@ -48,7 +48,7 @@ public class FamilyMemberService {
     }
 
     private void sendInvitationEmail(FamilyMember familyMember, Patient patient, String invitationUrl) throws EmailSendingException {
-        emailService.notifyNewFamilyMember(familyMember.getEmail(), familyMember.getName(), patient.getName(), invitationUrl);
+        emailService.sendFamilyMemberInvitationEmail(familyMember.getEmail(), familyMember.getName(), patient.getName(), invitationUrl);
     }
 
     @Transactional(readOnly = true)
@@ -129,7 +129,7 @@ public class FamilyMemberService {
 
             FamilyMember savedMember = familyMemberRepository.save(familyMember);
 
-            emailService.notifyFamilyMemberConfirmation(
+            emailService.sendFamilyMemberJoinedEmail(
                     familyMember.getEmail(),
                     familyMember.getName(),
                     familyMember.getPatient().getName());
@@ -137,7 +137,7 @@ public class FamilyMemberService {
             log.info("Family member {} confirmed", savedMember.getId());
         } catch (AppException e) {
             throw e;
-        }catch (Exception e) {
+        } catch (Exception e) {
             log.error("Unexpected error while confirming family member: {}", familyMemberId, e);
             throw new AppException("Failed to confirm family member");
         }
@@ -175,7 +175,7 @@ public class FamilyMemberService {
 
             familyMemberRepository.delete(familyMember);
 
-            emailService.notifyFamilyMemberRemoval(email, name, patientName);
+            emailService.sendFamilyMemberRemovedEmail(email, name, patientName);
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {

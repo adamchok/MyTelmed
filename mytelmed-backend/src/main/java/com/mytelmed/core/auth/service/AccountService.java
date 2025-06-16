@@ -3,6 +3,7 @@ package com.mytelmed.core.auth.service;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.advice.exception.UsernameAlreadyExistException;
 import com.mytelmed.common.constants.AccountType;
+import com.mytelmed.common.factory.account.AccountFactoryProducer;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.entity.Permission;
 import com.mytelmed.core.auth.repository.AccountRepository;
@@ -10,30 +11,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.security.SecureRandom;
-import java.util.Base64;
-import java.util.Optional;
 import java.util.UUID;
 
 
 @Slf4j
 @Service
 public class AccountService {
-    private final SecureRandom random = new SecureRandom();
     private final PasswordEncoder passwordEncoder;
     private final AccountRepository accountRepository;
+    private final AccountFactoryProducer factoryProducer;
 
-    public AccountService(AccountRepository accountRepository, PasswordEncoder passwordEncoder) {
+    public AccountService(AccountRepository accountRepository,
+                          PasswordEncoder passwordEncoder,
+                          AccountFactoryProducer factoryProducer
+    ) {
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
-    }
-
-    private String generateRandomEncodedPassword() {
-        SecureRandom random = new SecureRandom();
-        byte[] passwordBytes = new byte[12];
-        random.nextBytes(passwordBytes);
-        String rawPassword = Base64.getUrlEncoder().withoutPadding().encodeToString(passwordBytes);
-        return passwordEncoder.encode(rawPassword);
+        this.factoryProducer = factoryProducer;
     }
 
     @Transactional(readOnly = true)
@@ -70,41 +64,53 @@ public class AccountService {
     }
 
     @Transactional
-    public Optional<Account> createDoctorAccount(String email) throws UsernameAlreadyExistException {
+    public Account createDoctorAccount(String email) throws UsernameAlreadyExistException {
         log.debug("Creating doctor account with email: {}", email);
 
         try {
             if (accountRepository.findByUsername(email).isPresent()) {
-                log.warn("Doctor's account already exists with username: {}", email);
-                throw new UsernameAlreadyExistException("Doctor's account already exists with provided email");
+                log.warn("Doctor account already exists with username: {}", email);
+                throw new UsernameAlreadyExistException("Doctor account already exists with provided email");
             }
 
-            String encodedPassword = generateRandomEncodedPassword();
-
-            Permission permission = Permission.builder()
-                    .type(AccountType.DOCTOR)
-                    .build();
-
-            Account account = Account.builder()
-                    .username(email)
-                    .password(encodedPassword)
-                    .permission(permission)
-                    .build();
-
+            Account account = factoryProducer.getFactory(AccountType.DOCTOR).createAccount(email);
             account = accountRepository.save(account);
-            log.info("Created doctor account with username: {}", email);
 
-            return Optional.of(account);
+            log.info("Created doctor account with username: {}", email);
+            return account;
         } catch (UsernameAlreadyExistException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error while creating doctor account: {}", email, e);
-            return Optional.empty();
+            throw e;
         }
     }
 
     @Transactional
-    public Optional<Account> createAdminAccount(String username, String password) throws UsernameAlreadyExistException {
+    public Account createPharmacistAccount(String email) throws UsernameAlreadyExistException {
+        log.debug("Creating pharmacist account with email: {}", email);
+
+        try {
+            if (accountRepository.findByUsername(email).isPresent()) {
+                log.warn("Pharmacist account already exists with username: {}", email);
+                throw new UsernameAlreadyExistException("Pharmacist account already exists with provided email");
+            }
+
+            Account account = factoryProducer.getFactory(AccountType.PHARMACIST).createAccount(email);
+            account = accountRepository.save(account);
+
+            log.info("Created pharmacist account with username: {}", email);
+            return account;
+        } catch (UsernameAlreadyExistException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while creating pharmacist account: {}", email, e);
+            throw e;
+        }
+    }
+
+    @Transactional
+    public Account createAdminAccount(String username, String password) throws UsernameAlreadyExistException {
         log.debug("Creating admin account with username: {}", username);
 
         try {
@@ -128,17 +134,17 @@ public class AccountService {
             account = accountRepository.save(account);
             log.info("Created admin account with username: {}", username);
 
-            return Optional.of(account);
+            return account;
         } catch (UsernameAlreadyExistException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error while creating admin account: {}", username, e);
-            return Optional.empty();
+            throw e;
         }
     }
 
     @Transactional
-    public Optional<Account> createPatientAccount(String nric, String password) throws UsernameAlreadyExistException {
+    public Account createPatientAccount(String nric, String password) throws UsernameAlreadyExistException {
         log.debug("Creating patient account with NRIC: {}", nric);
 
         try {
@@ -147,27 +153,17 @@ public class AccountService {
                 throw new UsernameAlreadyExistException("Account already exists with provided NRIC");
             }
 
-            String encodedPassword = passwordEncoder.encode(password);
-
-            Permission permission = Permission.builder()
-                    .type(AccountType.PATIENT)
-                    .build();
-
-            Account account = Account.builder()
-                    .username(nric)
-                    .password(encodedPassword)
-                    .permission(permission)
-                    .build();
-
+            Account account = factoryProducer.getFactory(AccountType.PATIENT).createAccount(nric, password);
             account = accountRepository.save(account);
+
             log.info("Created patient account with username: {}", nric);
 
-            return Optional.of(account);
+            return account;
         } catch (UsernameAlreadyExistException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error while creating patient account: {}", nric, e);
-            return Optional.empty();
+            throw e;
         }
     }
 }

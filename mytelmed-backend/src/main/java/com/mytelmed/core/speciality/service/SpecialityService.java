@@ -2,7 +2,7 @@ package com.mytelmed.core.speciality.service;
 
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
-import com.mytelmed.common.constants.ImageType;
+import com.mytelmed.common.constants.file.ImageType;
 import com.mytelmed.core.image.entity.Image;
 import com.mytelmed.core.image.service.ImageService;
 import com.mytelmed.core.speciality.entity.Speciality;
@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 

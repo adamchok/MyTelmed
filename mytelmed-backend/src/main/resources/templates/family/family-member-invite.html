@@ -1,75 +1,118 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Family Member Invitation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Member Invitation - MyTelmed</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .email-container {
+            border: 1px solid #e1e1e1;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #0066cc;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .logo {
+            width: 150px;
+            height: auto;
+        }
+
+        .content {
+            padding: 30px 20px;
+            background-color: #ffffff;
+        }
+
+        .info-box {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #0066cc;
+        }
+
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #0066cc;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+    </style>
 </head>
-<body style="margin:0; padding:0; background: linear-gradient(135deg, #e0e7ff 0%, #f0fff4 100%); font-family: 'Segoe UI', Arial, sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="padding: 40px 0;">
-    <tr>
-        <td align="center">
-            <table width="420" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="border-radius: 14px;
-            box-shadow: 0 8px 32px rgba(44, 62, 80, 0.10); padding: 0 40px 32px 40px;">
-                <tr>
-                    <td align="center" style="padding: 32px 0 0 0;">
-                        <h1 style="color: #2563eb; font-size: 26px; margin: 0 0 8px 0; font-weight: 700; letter-spacing: 1px;">Family Member Invitation</h1>
-                        <p style="color: #64748b; font-size: 16px; margin: 0 0 24px 0;">
-                            Hello <span th:text="${name}" style="font-weight: 600; color: #059669;">User</span>,
-                            <br>
-                            <span th:text="${patientName}" style="font-weight: 600; color: #059669;">Patient</span> has invited you to be their family member in MyTelmed.
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" style="padding-bottom: 24px;">
-                        <div style="background: #f0f9ff; border-left: 4px solid #60a5fa; padding: 16px; border-radius: 8px; text-align: left;">
-                            <p style="color: #475569; font-size: 15px; margin: 0 0 8px 0;">
-                                As a family member, you can:
-                            </p>
-                            <ul style="color: #475569; font-size: 15px; margin: 0; padding-left: 20px;">
-                                <li>View patient health information</li>
-                                <li>Receive important updates and alerts</li>
-                                <li>Help manage appointments and medication schedules</li>
-                                <li>Communicate with healthcare providers</li>
-                            </ul>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" style="padding-bottom: 24px;">
-                        <a th:href="${invitationUrl}" style="cursor: pointer; background: linear-gradient(90deg, #60a5fa 0%, #34d399 100%); color: #fff; display: inline-block; padding: 18px 48px; border-radius: 8px; font-size: 20px; letter-spacing: 2px; margin: 0; font-family: 'Segoe UI', Arial, sans-serif; font-weight: 700; text-decoration: none; box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);">
-                            Accept Invitation
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center">
-                        <p style="color: #475569; font-size: 15px; margin: 0 0 12px 0;">
-                            This invitation link will expire in <strong style="color: #059669;">7 days</strong>.
-                        </p>
-                        <p style="color: #64748b; font-size: 15px; margin: 0 0 24px 0;">
-                            If you don't have a MyTelmed account yet, you'll be guided to create one after accepting the invitation.
-                        </p>
-                        <p style="color: #64748b; font-size: 15px; margin: 0 0 24px 0;">
-                            If you believe this was done in error, please ignore this email.
-                        </p>
-                        <p style="color: #2563eb; font-size: 15px; margin: 0; font-weight: 500;">
-                            Thank you,<br>
-                            <span style="color: #059669;">The MyTelmed Team</span>
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" style="padding-top: 24px;">
-                        <hr style="border: none; border-top: 1px solid #e5e7eb; width: 80%; margin: 0 auto 16px auto;">
-                        <p style="color: #a0aec0; font-size: 12px; margin: 0;">
-                            &copy; 2025 MyTelmed. All rights reserved.
-                        </p>
-                    </td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-</table>
+<body>
+<div class="email-container">
+    <div class="header">
+        <img src="https://mytelmed-public-assets.s3.amazonaws.com/logo.png" alt="MyTelmed Logo" class="logo">
+    </div>
+
+    <div class="content">
+        <h2>You've Been Invited as a Family Member! 👪</h2>
+
+        <p>Dear <strong th:text="${name}">User</strong>,</p>
+
+        <p><strong th:text="${patientName}">Patient</strong> has invited you to be their family member on MyTelmed, our
+            healthcare platform designed to connect patients with their loved ones.</p>
+
+        <div class="info-box">
+            <h3 style="margin-top: 0;">As a family member, you can:</h3>
+            <ul style="padding-left: 20px; margin-bottom: 0;">
+                <li>View patient health information</li>
+                <li>Receive important updates and alerts</li>
+                <li>Help manage appointments and medication schedules</li>
+                <li>Communicate with healthcare providers</li>
+            </ul>
+        </div>
+
+        <p>To accept this invitation and set up your account, please click the button below:</p>
+
+        <a th:href="${invitationUrl}" class="button">Accept Invitation</a>
+
+        <p>If you believe you received this invitation by mistake, please disregard this email.</p>
+
+        <p>If you have any questions or need assistance, please don't hesitate to contact our support team at <a
+                href="mailto:support@mytelmed.com">support@mytelmed.com</a>.</p>
+
+        <p>Best regards,<br>
+            The MyTelmed Team</p>
+    </div>
+
+    <div class="footer">
+        <p>This is an automated message, please do not reply to this email.</p>
+        <p>&copy; 2025 MyTelmed. All rights reserved.</p>
+        <p>
+            <a th:href="${uiHost}/privacy">Privacy Policy</a> |
+            <a th:href="${uiHost}/terms">Terms of Service</a>
+        </p>
+    </div>
+</div>
 </body>
 </html>

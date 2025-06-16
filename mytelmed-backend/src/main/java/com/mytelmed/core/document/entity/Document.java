@@ -1,7 +1,7 @@
 package com.mytelmed.core.document.entity;
 
 
-import com.mytelmed.common.constants.DocumentType;
+import com.mytelmed.common.constants.file.DocumentType;
 import com.mytelmed.common.utils.conveter.EncryptionConverter;
 import com.mytelmed.core.patient.entity.Patient;
 import jakarta.persistence.Column;

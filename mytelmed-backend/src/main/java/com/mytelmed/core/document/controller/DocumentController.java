@@ -1,6 +1,6 @@
 package com.mytelmed.core.document.controller;
 
-import com.mytelmed.common.constants.DocumentType;
+import com.mytelmed.common.constants.file.DocumentType;
 import com.mytelmed.common.dto.ApiResponse;
 import com.mytelmed.core.document.dto.DocumentDto;
 import com.mytelmed.core.document.dto.DocumentUrlDto;

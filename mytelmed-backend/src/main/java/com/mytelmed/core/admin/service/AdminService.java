@@ -8,7 +8,6 @@ import com.mytelmed.core.auth.service.AccountService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.Optional;
 
 
 @Slf4j
@@ -27,32 +26,26 @@ public class AdminService {
     }
 
     @Transactional
-    public Optional<Admin> createAdmin(String username, String password, String name, String email, String phone) throws UsernameAlreadyExistException {
-        log.debug("Creating default admin account: {}", username);
+    public void createAdmin(String username, String password, String name, String email, String phone) throws UsernameAlreadyExistException {
+        log.debug("Creating admin account: {}", username);
 
         try {
-            Optional<Account> defaultAccount = accountService.createAdminAccount(username, password);
+            Account account = accountService.createAdminAccount(username, password);
 
-            if (defaultAccount.isPresent()) {
-                Admin admin = Admin.builder()
-                        .account(defaultAccount.get())
-                        .email(email)
-                        .name(name)
-                        .phone(phone)
-                        .build();
+            Admin admin = Admin.builder()
+                    .account(account)
+                    .email(email)
+                    .name(name)
+                    .phone(phone)
+                    .build();
 
-                admin = adminRepository.save(admin);
-                log.info("Created default admin account: {}", username);
+            adminRepository.save(admin);
 
-                return Optional.of(admin);
-            } else {
-                log.warn("Failed to create default admin account: {}", username);
-            }
+            log.info("Created admin account: {}", username);
         } catch (UsernameAlreadyExistException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Unexpected error while creating default admin account: {}}", username, e);
+            log.error("Unexpected error while creating admin account: {}}", username, e);
         }
-        return Optional.empty();
     }
 }

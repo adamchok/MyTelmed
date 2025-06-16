@@ -79,7 +79,7 @@ public class EmailResetService {
             String resetUrl = resetBaseUrl + "/" + token.getToken();
 
             log.debug("Sending email reset for user: {}, reset URL: {}", account.getId(), resetUrl);
-            emailService.sendEmailResetEmail(request.email(), patient.getName(), resetUrl);
+            emailService.sendEmailResetEmail(request.email(), patient.getName(), resetUrl, tokenExpirationMinutes);
 
             log.info("Email reset initiated for user: {}", account.getId());
         } catch (AppException e) {

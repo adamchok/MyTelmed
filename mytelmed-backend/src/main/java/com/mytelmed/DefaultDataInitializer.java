@@ -1,6 +1,5 @@
 package com.mytelmed;
 
-import com.mytelmed.core.admin.entity.Admin;
 import com.mytelmed.core.admin.service.AdminService;
 import com.mytelmed.core.speciality.dto.SpecialityDto;
 import com.mytelmed.core.speciality.entity.Speciality;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 
 @Slf4j
@@ -170,13 +168,10 @@ public class DefaultDataInitializer implements CommandLineRunner {
             String defaultEmail = "openai2326@gmail.com";
             String defaultName = "Admin";
             String defaultPhone = "123456789";
-            Optional<Admin> adminOpt = adminService.createAdmin(ADMIN_USERNAME, defaultPassword, defaultName, defaultEmail, defaultPhone);
 
-            if (adminOpt.isPresent()) {
-                log.info("Default admin created successfully: {}", ADMIN_USERNAME);
-            } else {
-                log.warn("Failed to create default admin: {}", ADMIN_USERNAME);
-            }
+            adminService.createAdmin(ADMIN_USERNAME, defaultPassword, defaultName, defaultEmail, defaultPhone);
+
+            log.info("Default admin created successfully: {}", ADMIN_USERNAME);
         } catch (Exception e) {
             log.error("Unexpected error while creating default admin: {}}", ADMIN_USERNAME, e);
         }

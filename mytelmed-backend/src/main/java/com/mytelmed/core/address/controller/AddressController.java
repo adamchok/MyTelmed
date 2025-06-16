@@ -46,9 +46,9 @@ public class AddressController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<AddressDto>>> getAddressesByPatientAccount(@AuthenticationPrincipal Account account) {
         log.info("Received request to get all addresses for patient with ID: {}", account.getId());
-        List<Address> addresses = addressService.findAddressesByPatientAccountId(account.getId());
+        List<Address> addressList = addressService.findAddressListByPatientAccountId(account.getId());
 
-        List<AddressDto> addressDtoList = addresses.stream()
+        List<AddressDto> addressDtoList = addressList.stream()
                 .map(addressMapper::toDto)
                 .collect(Collectors.toList());
 
@@ -70,14 +70,14 @@ public class AddressController {
             @Valid @RequestBody RequestAddressDto request) {
 
         log.info("Received request to update address with ID: {}", addressId);
-        addressService.updateAddress(addressId, request);
+        addressService.updateAddressById(addressId, request);
         return ResponseEntity.ok(ApiResponse.success("Address updated successfully"));
     }
 
     @DeleteMapping("/{addressId}")
     public ResponseEntity<ApiResponse<Void>> deleteAddressById(@PathVariable UUID addressId) {
         log.info("Received request to delete address with ID: {}", addressId);
-        addressService.deleteAddress(addressId);
+        addressService.deleteAddressById(addressId);
         return ResponseEntity.ok(ApiResponse.success("Address deleted successfully"));
     }
 }

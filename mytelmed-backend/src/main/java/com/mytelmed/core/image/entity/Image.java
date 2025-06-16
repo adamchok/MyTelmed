@@ -1,6 +1,6 @@
 package com.mytelmed.core.image.entity;
 
-import com.mytelmed.common.constants.ImageType;
+import com.mytelmed.common.constants.file.ImageType;
 import com.mytelmed.common.utils.conveter.EncryptionConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;

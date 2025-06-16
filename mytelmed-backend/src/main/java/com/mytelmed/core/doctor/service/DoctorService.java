@@ -3,7 +3,8 @@ package com.mytelmed.core.doctor.service;
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
-import com.mytelmed.common.constants.ImageType;
+import com.mytelmed.common.constants.file.ImageType;
+import com.mytelmed.common.events.deletion.ImageDeletedEvent;
 import com.mytelmed.common.utils.DateTimeUtil;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
@@ -19,6 +20,7 @@ import com.mytelmed.core.image.service.ImageService;
 import com.mytelmed.core.speciality.entity.Speciality;
 import com.mytelmed.core.speciality.service.SpecialityService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,16 +42,19 @@ public class DoctorService {
     private final SpecialityService specialityService;
     private final ImageService imageService;
     private final AccountService accountService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public DoctorService(DoctorRepository doctorRepository,
                          FacilityService facilityService,
                          SpecialityService specialityService,
-                         ImageService imageService, AccountService accountService) {
+                         ImageService imageService, AccountService accountService,
+                         ApplicationEventPublisher eventPublisher) {
         this.doctorRepository = doctorRepository;
         this.facilityService = facilityService;
         this.specialityService = specialityService;
         this.imageService = imageService;
         this.accountService = accountService;
+        this.eventPublisher = eventPublisher;
     }
 
     private List<Speciality> getValidatedSpecialities(List<UUID> specialityIds) throws ResourceNotFoundException {
@@ -66,14 +71,6 @@ public class DoctorService {
                 .orElseThrow(() -> {
                     log.warn("Invalid date of birth: {}", dateOfBirthStr);
                     return new InvalidInputException("Invalid date of birth");
-                });
-    }
-
-    private Account createDoctorAccount(String email) throws AppException {
-        return accountService.createDoctorAccount(email)
-                .orElseThrow(() -> {
-                    log.warn("Failed to create doctor account for doctor with email: {}", email);
-                    return new AppException("Failed to create doctor account");
                 });
     }
 
@@ -184,7 +181,7 @@ public class DoctorService {
             Facility facility = facilityService.findFacilityById(request.facilityId());
             List<Speciality> specialities = getValidatedSpecialities(request.specialityIds());
             LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
-            Account account = createDoctorAccount(request.email());
+            Account account = accountService.createDoctorAccount(request.email());
 
             Doctor doctor = buildDoctor(request, facility, specialities, dateOfBirth, account);
             doctor = doctorRepository.save(doctor);
@@ -275,8 +272,13 @@ public class DoctorService {
 
         try {
             Doctor doctor = findDoctorById(doctorId);
+            Image profileImage = doctor.getProfileImage();
 
             doctorRepository.delete(doctor);
+
+            if (profileImage != null) {
+                eventPublisher.publishEvent(new ImageDeletedEvent(profileImage.getEntityId(), profileImage.getImageKey()));
+            }
 
             log.info("Deleted doctor with ID: {}", doctor.getId());
         } catch (Exception e) {

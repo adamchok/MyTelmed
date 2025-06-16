@@ -1,4 +1,4 @@
-package com.mytelmed.common.constants;
+package com.mytelmed.common.constants.file;
 
 public enum ImageType {
     PROFILE,
@@ -6,4 +6,5 @@ public enum ImageType {
     SPECIALITY,
     ARTICLE,
     NOTIFICATION,
+    TUTORIAL
 }

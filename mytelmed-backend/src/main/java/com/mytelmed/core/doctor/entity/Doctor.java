@@ -9,6 +9,7 @@ import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.facility.entity.Facility;
 import com.mytelmed.core.image.entity.Image;
 import com.mytelmed.core.speciality.entity.Speciality;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -106,7 +107,7 @@ public class Doctor {
     @Column(name = "qualifications", nullable = false, columnDefinition = "TEXT")
     private String qualifications;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "image_id")
     private Image profileImage;
 

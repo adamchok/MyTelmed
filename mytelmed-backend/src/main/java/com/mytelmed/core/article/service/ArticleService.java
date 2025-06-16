@@ -2,6 +2,8 @@ package com.mytelmed.core.article.service;
 
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.core.article.dto.CreateArticleRequestDto;
+import com.mytelmed.core.article.dto.PaginatedArticles;
+import com.mytelmed.core.article.dto.UpdateArticleRequestDto;
 import com.mytelmed.core.article.entity.Article;
 import com.mytelmed.core.speciality.entity.Speciality;
 import com.mytelmed.core.speciality.service.SpecialityService;
@@ -10,19 +12,15 @@ import org.springframework.stereotype.Service;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
-import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.*;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-import java.util.ArrayList;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.List;
 
 
 @Slf4j
@@ -34,6 +32,48 @@ public class ArticleService {
     public ArticleService(DynamoDbTable<Article> articleTable, SpecialityService specialityService) {
         this.articleTable = articleTable;
         this.specialityService = specialityService;
+    }
+
+    public Article findArticleById(UUID id) throws ResourceNotFoundException {
+        Map<String, AttributeValue> expressionValues = new HashMap<>();
+        expressionValues.put(":id", AttributeValue.builder().s(id.toString()).build());
+
+        Expression filterExpression = Expression.builder()
+                .expression("id = :id")
+                .expressionValues(expressionValues)
+                .build();
+
+        ScanEnhancedRequest request = ScanEnhancedRequest.builder()
+                .filterExpression(filterExpression)
+                .build();
+
+        return articleTable.scan(request).items().stream()
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Article not found")) ;
+    }
+
+    public PaginatedArticles findPaginatedArticlesBySpeciality(String speciality, Map<String, AttributeValue> exclusiveStartKey, int pageSize) {
+        Key key = Key.builder()
+                .partitionValue(speciality)
+                .build();
+
+        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
+                .queryConditional(QueryConditional.keyEqualTo(key))
+                .limit(pageSize);
+
+        if (exclusiveStartKey != null && !exclusiveStartKey.isEmpty()) {
+            requestBuilder.exclusiveStartKey(exclusiveStartKey);
+        }
+
+        PageIterable<Article> pages = articleTable.query(requestBuilder.build());
+
+        Iterator<Page<Article>> iterator = pages.iterator();
+        if (!iterator.hasNext()) {
+            return new PaginatedArticles(Collections.emptyList(), null);
+        }
+
+        Page<Article> page = iterator.next();
+        return new PaginatedArticles(page.items(), page.lastEvaluatedKey());
     }
 
     public void createArticle(CreateArticleRequestDto request) throws ResourceNotFoundException {
@@ -51,44 +91,24 @@ public class ArticleService {
         articleTable.putItem(article);
     }
 
-    public Optional<Article> getArticleById(UUID id) {
-        Map<String, AttributeValue> expressionValues = new HashMap<>();
-        expressionValues.put(":id", AttributeValue.builder().s(id.toString()).build());
+    public void updateArticle(UUID articleId, UpdateArticleRequestDto request) throws ResourceNotFoundException {
+        Article article = findArticleById(articleId);
 
-        Expression filterExpression = Expression.builder()
-                .expression("id = :id")
-                .expressionValues(expressionValues)
-                .build();
-
-        ScanEnhancedRequest request = ScanEnhancedRequest.builder()
-                .filterExpression(filterExpression)
-                .build();
-
-        return articleTable.scan(request).items().stream().findFirst();
-    }
-
-    public List<Article> getAllArticles() {
-        PageIterable<Article> articles = articleTable.scan();
-        List<Article> result = new ArrayList<>();
-        articles.items().forEach(result::add);
-        return result;
-    }
-
-    public List<Article> getArticlesByDepartment(String department) {
-        QueryEnhancedRequest request = QueryEnhancedRequest.builder()
-                .queryConditional(QueryConditional.keyEqualTo(Key.builder()
-                        .partitionValue(department)
-                        .build()))
-                .build();
-
-        PageIterable<Article> articles = articleTable.query(request);
-        List<Article> result = new ArrayList<>();
-        articles.items().forEach(result::add);
-        return result;
-    }
-
-    public void updateArticle(Article article) {
+        article.setTitle(request.title());
+        article.setContent(request.content());
         article.setUpdatedAt(Instant.now());
+
         articleTable.updateItem(article);
+    }
+
+    public void deleteArticle(UUID id) throws ResourceNotFoundException {
+        Article article = findArticleById(id);
+
+        Key key = Key.builder()
+                .partitionValue(article.getSpeciality())
+                .sortValue(article.getId().toString())
+                .build();
+
+        articleTable.deleteItem(key);
     }
 }

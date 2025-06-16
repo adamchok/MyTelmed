@@ -1,6 +1,6 @@
 package com.mytelmed.core.document.repository;
 
-import com.mytelmed.common.constants.DocumentType;
+import com.mytelmed.common.constants.file.DocumentType;
 import com.mytelmed.core.document.entity.Document;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -11,5 +11,6 @@ import java.util.UUID;
 @Repository
 public interface DocumentRepository extends JpaRepository<Document, UUID> {
     List<Document> findByPatientId(UUID patientId);
+
     List<Document> findByPatientIdAndDocumentType(UUID patientId, DocumentType documentType);
 }

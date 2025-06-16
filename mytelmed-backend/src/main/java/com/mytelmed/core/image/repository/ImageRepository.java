@@ -1,6 +1,6 @@
 package com.mytelmed.core.image.repository;
 
-import com.mytelmed.common.constants.ImageType;
+import com.mytelmed.common.constants.file.ImageType;
 import com.mytelmed.core.image.entity.Image;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

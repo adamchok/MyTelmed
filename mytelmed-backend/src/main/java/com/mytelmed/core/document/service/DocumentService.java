@@ -3,7 +3,7 @@ package com.mytelmed.core.document.service;
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
-import com.mytelmed.common.constants.DocumentType;
+import com.mytelmed.common.constants.file.DocumentType;
 import com.mytelmed.core.document.dto.RequestDocumentDto;
 import com.mytelmed.core.document.entity.Document;
 import com.mytelmed.core.document.repository.DocumentRepository;
@@ -123,7 +123,7 @@ public class DocumentService {
             documentRepository.save(document);
 
             log.info("Saved document metadata to database for patient: {}", patientId);
-        }  catch (IOException e) {
+        } catch (IOException e) {
             log.error("Failed to read document file data for patient: {}", patientId, e);
             throw new AppException("Failed to read document file data");
         } catch (S3Exception e) {

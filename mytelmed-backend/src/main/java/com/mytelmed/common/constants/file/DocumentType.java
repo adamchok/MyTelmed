@@ -1,4 +1,4 @@
-package com.mytelmed.common.constants;
+package com.mytelmed.common.constants.file;
 
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import lombok.extern.slf4j.Slf4j;

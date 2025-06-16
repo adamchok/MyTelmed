@@ -73,7 +73,7 @@ public class PasswordResetService {
             Account account = patient.getAccount();
             ResetToken token = createPasswordResetToken(account);
             String resetUrl = resetBaseUrl + "/" + token.getToken();
-            emailService.sendPasswordResetEmail(request.email(), patient.getName(), resetUrl);
+            emailService.sendPasswordResetEmail(request.email(), patient.getName(), resetUrl, tokenExpirationMinutes);
 
             log.info("Password reset initiated for user: {}", account.getId());
         } catch (AppException e) {
