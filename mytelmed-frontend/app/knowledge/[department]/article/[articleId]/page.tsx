@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { Image, Spin } from "antd";
 import { useParams } from "next/navigation";
@@ -20,7 +20,10 @@ export default function ArticleDetailPage() {
   const findArticleById = useCallback(async () => {
     try {
       setLoading(true);
-      const { data } = await ArticleApi.findArticleByDepartmentAndId(departmentName, articleId);
+      const { data } = await ArticleApi.getArticleByDepartmentAndId(
+        departmentName,
+        articleId
+      );
       setArticle(data ?? null);
     } catch (error) {
       console.error("Error fetching article:", error);
@@ -46,7 +49,12 @@ export default function ArticleDetailPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl font-bold mb-4">Article Not Found</h1>
-        <Link href={`/knowledge/${departmentName}`} className="text-blue-700 hover:underline">Back to Knowledge Hub</Link>
+        <Link
+          href={`/knowledge/${departmentName}`}
+          className="text-blue-700 hover:underline"
+        >
+          Back to Knowledge Hub
+        </Link>
       </div>
     );
   }
@@ -66,7 +74,9 @@ export default function ArticleDetailPage() {
           />
         </div>
         <div className="px-6 md:px-10 py-8">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-blue-900 mb-3 leading-tight">{article.title}</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-blue-900 mb-3 leading-tight">
+            {article.title}
+          </h1>
           <div className="flex items-center text-sm text-gray-500 mb-4">
             <span>{dayjs(article.createdAt).format("MMM D, YYYY")}</span>
             <span className="mx-2">•</span>

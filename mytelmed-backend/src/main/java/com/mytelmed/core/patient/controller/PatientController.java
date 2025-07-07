@@ -1,6 +1,5 @@
 package com.mytelmed.core.patient.controller;
 
-
 import com.mytelmed.common.dto.ApiResponse;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.patient.dto.CreatePatientRequestDto;
@@ -9,6 +8,7 @@ import com.mytelmed.core.patient.dto.UpdatePatientProfileRequestDto;
 import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.patient.mapper.PatientMapper;
 import com.mytelmed.core.patient.service.PatientService;
+import com.mytelmed.infrastructure.aws.service.AwsS3Service;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -28,17 +28,18 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID;
 
-
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/patient")
 public class PatientController {
     private final PatientService patientService;
     private final PatientMapper patientMapper;
+    private final AwsS3Service awsS3Service;
 
-    public PatientController(PatientService patientService, PatientMapper patientMapper) {
+    public PatientController(PatientService patientService, PatientMapper patientMapper, AwsS3Service awsS3Service) {
         this.patientService = patientService;
         this.patientMapper = patientMapper;
+        this.awsS3Service = awsS3Service;
     }
 
     @GetMapping("/{patientId}")
@@ -46,7 +47,7 @@ public class PatientController {
         log.info("Received request to get patient with ID: {}", patientId);
 
         Patient patient = patientService.findPatientById(patientId);
-        PatientDto patientDto = patientMapper.toDto(patient);
+        PatientDto patientDto = patientMapper.toDto(patient, awsS3Service);
         return ResponseEntity.ok(ApiResponse.success(patientDto));
     }
 
@@ -55,19 +56,19 @@ public class PatientController {
         log.info("Received request to get patient with Account ID: {}", account.getId());
 
         Patient patient = patientService.findPatientByAccountId(account.getId());
-        PatientDto patientDto = patientMapper.toDto(patient);
+        PatientDto patientDto = patientMapper.toDto(patient, awsS3Service);
         return ResponseEntity.ok(ApiResponse.success(patientDto));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<PatientDto>>> getAllPaginatedPatients(
             @RequestParam(value = "page", defaultValue = "0") Integer page,
-            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize
-    ) {
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
         log.info("Received request to get all paginated patients");
 
         Page<Patient> paginatedPatient = patientService.getAllPaginatedPatient(page, pageSize);
-        Page<PatientDto> paginatedPatientDto = paginatedPatient.map(patientMapper::toDto);
+        Page<PatientDto> paginatedPatientDto = paginatedPatient
+                .map(patient -> patientMapper.toDto(patient, awsS3Service));
         return ResponseEntity.ok(ApiResponse.success(paginatedPatientDto));
     }
 

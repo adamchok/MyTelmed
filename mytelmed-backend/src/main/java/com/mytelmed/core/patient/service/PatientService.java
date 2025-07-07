@@ -3,7 +3,7 @@ package com.mytelmed.core.patient.service;
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
-import com.mytelmed.common.constants.file.ImageType;
+import com.mytelmed.common.constant.file.ImageType;
 import com.mytelmed.common.utils.DateTimeUtil;
 import com.mytelmed.common.utils.HashUtil;
 import com.mytelmed.core.auth.entity.Account;
@@ -95,7 +95,7 @@ public class PatientService {
 
     @Transactional(readOnly = true)
     public Patient findPatientById(UUID patientId) throws ResourceNotFoundException {
-        log.debug("Getting patient with ID: {}", patientId);
+        log.debug("Finding patient with ID: {}", patientId);
 
         return patientRepository.findById(patientId)
                 .orElseThrow(() -> {
@@ -106,7 +106,7 @@ public class PatientService {
 
     @Transactional(readOnly = true)
     public Patient findPatientByEmail(String email) throws ResourceNotFoundException {
-        log.debug("Getting patient with email: {}", email);
+        log.debug("Finding patient with email: {}", email);
 
         return patientRepository.findByHashedEmail(HashUtil.sha256(email))
                 .orElseThrow(() -> {
@@ -117,7 +117,7 @@ public class PatientService {
 
     @Transactional(readOnly = true)
     public Patient findPatientByNric(String nric) throws ResourceNotFoundException {
-        log.debug("Getting patient with NRIC: {}", nric);
+        log.debug("Finding patient with NRIC: {}", nric);
 
         return patientRepository.findByHashedNric(HashUtil.sha256(nric))
                 .orElseThrow(() -> {
@@ -126,9 +126,10 @@ public class PatientService {
                 });
     }
 
+
     @Transactional(readOnly = true)
     public Patient findPatientByAccountId(UUID accountId) throws ResourceNotFoundException {
-        log.debug("Getting patient with account ID: {}", accountId);
+        log.debug("Finding patient with account ID: {}", accountId);
 
         return patientRepository.findByAccountId(accountId)
                 .orElseThrow(() -> {
@@ -139,7 +140,7 @@ public class PatientService {
 
     @Transactional(readOnly = true)
     public Page<Patient> getAllPaginatedPatient(int page, int pageSize) throws AppException {
-        log.debug("Getting all patients paginated with page: {} and page size: {}", page, pageSize);
+        log.debug("Finding all patients paginated with page: {} and page size: {}", page, pageSize);
 
         try {
             Pageable pageable = PageRequest.of(page, pageSize);

@@ -1,6 +1,6 @@
 package com.mytelmed.common.factory.account;
 
-import com.mytelmed.common.constants.AccountType;
+import com.mytelmed.common.constant.AccountType;
 import org.springframework.stereotype.Component;
 import java.util.EnumMap;
 import java.util.List;

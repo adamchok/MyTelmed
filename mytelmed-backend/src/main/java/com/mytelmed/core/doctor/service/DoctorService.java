@@ -3,9 +3,10 @@ package com.mytelmed.core.doctor.service;
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
-import com.mytelmed.common.constants.file.ImageType;
-import com.mytelmed.common.events.deletion.ImageDeletedEvent;
+import com.mytelmed.common.constant.file.ImageType;
+import com.mytelmed.common.event.image.ImageDeletedEvent;
 import com.mytelmed.common.utils.DateTimeUtil;
+import com.mytelmed.common.utils.PasswordGenerator;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.doctor.dto.CreateDoctorRequestDto;
@@ -24,6 +25,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -57,6 +59,324 @@ public class DoctorService {
         this.eventPublisher = eventPublisher;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PATIENT')")
+    @Transactional(readOnly = true)
+    public Page<Doctor> findAll(int page, int pageSize) {
+        log.debug("Finding all doctors with page: {} and pageSize: {}", page, pageSize);
+
+        try {
+            Pageable pageable = PageRequest.of(page, pageSize);
+            return doctorRepository.findAll(pageable);
+        } catch (Exception e) {
+            log.error("Failed to fetch all paginated doctors with page {} and page size {}", page, pageSize, e);
+            throw new AppException("Failed to fetch all paginated doctors");
+        }
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'PATIENT')")
+    @Transactional(readOnly = true)
+    public Page<Doctor> findAllByFacilityId(UUID facilityId, int page, int pageSize) {
+        log.debug("Finding all doctors by facilityId {} with page: {} and pageSize: {}", facilityId, page,
+                pageSize);
+
+        try {
+            Pageable pageable = PageRequest.of(page, pageSize);
+            return doctorRepository.findAllByFacilityId(facilityId, pageable);
+        } catch (Exception e) {
+            log.error("Failed to fetch all doctors by facility {} with page {} and page size {}", facilityId, page,
+                    pageSize, e);
+            throw new AppException("Failed to fetch all paginated doctors by facility");
+        }
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'PATIENT')")
+    @Transactional(readOnly = true)
+    public Page<Doctor> findAllBySpeciality(String speciality, int page, int pageSize) {
+        log.debug("Finding all doctors by speciality {} with page: {} and pageSize: {}", speciality, page,
+                pageSize);
+
+        try {
+            Pageable pageable = PageRequest.of(page, pageSize);
+            return doctorRepository.findDistinctBySpecialityListNameContainingIgnoreCase(speciality, pageable);
+        } catch (Exception e) {
+            log.error("Failed to fetch all doctors by speciality {} with page {} and page size {}", speciality, page,
+                    pageSize, e);
+            throw new AppException("Failed to fetch all paginated doctors by speciality");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Doctor findById(UUID doctorId) throws ResourceNotFoundException {
+        log.debug("Finding doctor by ID: {}", doctorId);
+
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> {
+                    log.warn("Doctor not found with ID: {}", doctorId);
+                    return new ResourceNotFoundException("Doctor not found");
+                });
+
+        log.info("Found doctor with ID: {}", doctorId);
+        return doctor;
+    }
+
+    @PreAuthorize("hasRole('DOCTOR')")
+    @Transactional(readOnly = true)
+    public Doctor findByAccount(Account account) throws ResourceNotFoundException {
+        log.debug("Finding doctor by account ID: {}", account.getId());
+
+        Doctor doctor = doctorRepository.findByAccount(account)
+                .orElseThrow(() -> {
+                    log.warn("Doctor not found with account ID: {}", account.getId());
+                    return new ResourceNotFoundException("Doctor not found");
+                });
+
+        log.info("Found doctor with account ID: {}", account.getId());
+        return doctor;
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public Doctor create(CreateDoctorRequestDto request) throws AppException {
+        log.debug("Creating doctor account: {}", request.email());
+
+        // Find facility by ID
+        Facility facility = facilityService.findFacilityById(request.facilityId());
+
+        // Get validated specialities
+        List<Speciality> specialities = getValidatedSpecialities(request.specialityIds());
+
+        // Create a doctor account
+        Account account = accountService.createDoctorAccount(request.email(), request.name());
+
+        try {
+            LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
+
+            // Create a doctor
+            Doctor doctor = Doctor.builder()
+                    .name(request.name())
+                    .account(account)
+                    .nric(request.nric())
+                    .email(request.email())
+                    .phone(request.phone())
+                    .dateOfBirth(dateOfBirth)
+                    .gender(request.gender())
+                    .facility(facility)
+                    .specialityList(specialities)
+                    .languageList(request.languageList())
+                    .qualifications(request.qualifications())
+                    .build();
+
+            // Save the doctor
+            doctor = doctorRepository.save(doctor);
+
+            log.info("Created doctor account: {}", request.email());
+
+            return doctor;
+        } catch (Exception e) {
+            log.error("Unexpected error while creating doctor account: {}", request.email(), e);
+            throw new AppException("Failed to create doctor account");
+        }
+    }
+
+    @PreAuthorize("hasRole('DOCTOR')")
+    @Transactional
+    public void updateByAccount(Account account, UpdateDoctorProfileRequestDto request) throws AppException {
+        log.debug("Updating doctor profile for account: {}", account.getId());
+
+        // Find doctor by account
+        Doctor doctor = findByAccount(account);
+
+        try {
+            // Update doctor profile
+            LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
+            doctor.setName(request.name());
+            doctor.setEmail(request.email());
+            doctor.setPhone(request.phone());
+            doctor.setDateOfBirth(dateOfBirth);
+            doctor.setGender(request.gender());
+            doctor.setLanguageList(request.languageList());
+            doctor.setQualifications(request.qualifications());
+
+            // Save doctor
+            doctorRepository.save(doctor);
+
+            log.info("Updated doctor profile for account: {}", account.getId());
+        } catch (Exception e) {
+            log.error("Error updating doctor profile: {}", e.getMessage(), e);
+            throw new AppException("Failed to update doctor profile");
+        }
+    }
+
+    @PreAuthorize("hasRole('DOCTOR')")
+    @Transactional
+    public void updateProfileImageByAccount(Account account, MultipartFile profileImage) throws AppException {
+        log.debug("Updating doctor profile image for account: {}", account.getId());
+
+        if (profileImage == null || profileImage.isEmpty()) {
+            throw new InvalidInputException("Profile image is required");
+        }
+
+        // Find doctor by account
+        Doctor doctor = findByAccount(account);
+
+        try {
+            // Process profile image
+            processProfileImage(doctor, profileImage);
+
+            log.info("Updated doctor profile image for account: {}", account.getId());
+        } catch (Exception e) {
+            log.error("Error updating doctor profile image: {}", e.getMessage(), e);
+            throw new AppException("Failed to update doctor profile image");
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void uploadProfileImageById(UUID doctorId, MultipartFile profileImage) throws AppException {
+        log.debug("Uploading image for doctor with ID: {}", doctorId);
+
+        if (profileImage == null || profileImage.isEmpty()) {
+            throw new InvalidInputException("Profile image is required");
+        }
+
+        // Find doctor by ID
+        Doctor doctor = findById(doctorId);
+
+        try {
+            // Process profile image
+            processProfileImage(doctor, profileImage);
+
+            log.info("Uploaded image for doctor with ID: {}", doctorId);
+        } catch (Exception e) {
+            log.error("Error uploading image for doctor: {}", e.getMessage(), e);
+            throw new AppException("Failed to upload doctor image");
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void updateSpecialitiesAndFacilityById(UUID doctorId, UpdateDoctorSpecialitiesAndFacilityRequestDto request)
+            throws AppException {
+        log.debug("Updating doctor specialities and facility with ID: {}", doctorId);
+
+        // Find doctor by ID
+        Doctor doctor = findById(doctorId);
+
+        // Find facility by facility ID
+        Facility facility = facilityService.findFacilityById(request.facilityId());
+
+        // Get validated specialities
+        List<Speciality> specialities = getValidatedSpecialities(request.specialityIds());
+
+        try {
+            // Update doctor specialities and facility
+            doctor.setFacility(facility);
+            doctor.setSpecialityList(specialities);
+
+            // Save doctor
+            doctorRepository.save(doctor);
+
+            log.info("Updated doctor specialities and facility with ID: {}", doctorId);
+        } catch (Exception e) {
+            log.error("Error updating doctor specialities and facility: {}", e.getMessage(), e);
+            throw new AppException("Failed to update doctor specialities and facility");
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void deleteById(UUID id) throws AppException {
+        log.debug("Deleting doctor with ID: {}", id);
+
+        // Find doctor by ID
+        Doctor doctor = findById(id);
+
+        try {
+            // Get profile image for cleanup
+            Image profileImage = doctor.getProfileImage();
+
+            // Delete doctor
+            doctorRepository.deleteById(id);
+
+            // Clean up profile image if exists
+            if (profileImage != null) {
+                eventPublisher
+                        .publishEvent(new ImageDeletedEvent(profileImage.getEntityId(), profileImage.getImageKey()));
+            }
+
+            log.info("Deleted doctor with ID: {}", id);
+        } catch (Exception e) {
+            log.error("Error deleting doctor: {}", e.getMessage(), e);
+            throw new AppException("Failed to delete doctor");
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void activateById(UUID id) throws AppException {
+        log.debug("Activating doctor with ID: {}", id);
+
+        // Find doctor by ID
+        Doctor doctor = findById(id);
+
+        try {
+            // Activate doctor account
+            doctor.getAccount().setEnabled(true);
+
+            // Save doctor
+            doctorRepository.save(doctor);
+
+            log.info("Activated doctor with ID: {}", id);
+        } catch (Exception e) {
+            log.error("Error activating doctor: {}", e.getMessage(), e);
+            throw new AppException("Failed to activate doctor");
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void deactivateById(UUID id) throws AppException {
+        log.debug("Deactivating doctor with ID: {}", id);
+
+        // Find doctor by ID
+        Doctor doctor = findById(id);
+
+        try {
+            // Disable doctor account
+            doctor.getAccount().setEnabled(false);
+
+            // Save doctor
+            doctorRepository.save(doctor);
+
+            log.info("Deactivated doctor with ID: {}", id);
+        } catch (Exception e) {
+            log.error("Error deactivating doctor: {}", e.getMessage(), e);
+            throw new AppException("Failed to deactivate doctor");
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void resetAccountPassword(UUID id) throws AppException {
+        log.debug("Resetting password for doctor with ID: {}", id);
+
+        // Find doctor by ID
+        Doctor doctor = findById(id);
+
+        try {
+            // Generate a new random password
+            String newPassword = PasswordGenerator.generateRandomPassword();
+
+            // Reset account password
+            accountService.changePasswordById(doctor.getAccount().getId(), newPassword);
+
+            log.info("Reset password for doctor with ID: {}", id);
+        } catch (Exception e) {
+            log.error("Error resetting doctor password: {}", e.getMessage(), e);
+            throw new AppException("Failed to reset doctor password");
+        }
+    }
+
     private List<Speciality> getValidatedSpecialities(List<UUID> specialityIds) throws ResourceNotFoundException {
         List<Speciality> specialities = specialityService.findAllSpecialitiesByIdList(specialityIds);
         if (specialities.isEmpty()) {
@@ -74,219 +394,21 @@ public class DoctorService {
                 });
     }
 
-    private Doctor buildDoctor(CreateDoctorRequestDto request, Facility facility,
-                               List<Speciality> specialities, LocalDate dateOfBirth, Account account) {
-        return Doctor.builder()
-                .name(request.name())
-                .account(account)
-                .nric(request.nric())
-                .email(request.email())
-                .serialNumber(request.serialNumber())
-                .phone(request.phone())
-                .dateOfBirth(dateOfBirth)
-                .gender(request.gender())
-                .facility(facility)
-                .specialityList(specialities)
-                .languageList(request.languageList())
-                .qualifications(request.qualifications())
-                .build();
-    }
-
-    private void processProfileImage(MultipartFile profileImage, Doctor doctor) throws InvalidInputException, IOException, S3Exception {
+    private void processProfileImage(Doctor doctor, MultipartFile profileImage)
+            throws InvalidInputException, IOException, S3Exception {
         if (profileImage == null || profileImage.isEmpty()) {
             return;
         }
 
+        // Save image to S3
         Image image = imageService.saveAndGetImage(ImageType.PROFILE, doctor.getId(), profileImage);
+
+        // Update doctor profile image
         doctor.setProfileImage(image);
+
+        // Save doctor
         doctorRepository.save(doctor);
+
         log.info("Uploaded profile image for doctor with ID: {}", doctor.getId());
-
-        if (doctor.getProfileImage() == null) {
-            log.warn("Failed to upload profile image for doctor with ID: {}", doctor.getId());
-        }
-    }
-
-    private void updateDoctorDetails(Doctor doctor, UpdateDoctorProfileRequestDto request, LocalDate dateOfBirth) {
-        doctor.setName(request.name());
-        doctor.setPhone(request.phone());
-        doctor.setDateOfBirth(dateOfBirth);
-        doctor.setGender(request.gender());
-        doctor.setLanguageList(request.languageList());
-        doctor.setQualifications(request.qualifications());
-    }
-
-    @Transactional(readOnly = true)
-    public Doctor findDoctorById(UUID doctorId) throws ResourceNotFoundException {
-        return doctorRepository.findById(doctorId)
-                .orElseThrow(() -> {
-                    log.warn("Doctor not found with ID: {}", doctorId);
-                    return new ResourceNotFoundException("Doctor not found");
-                });
-    }
-
-    @Transactional(readOnly = true)
-    public Doctor findDoctorByAccountId(UUID accountId) throws ResourceNotFoundException {
-        return doctorRepository.findByAccountId(accountId)
-                .orElseThrow(() -> {
-                    log.warn("Doctor not found with account ID: {}", accountId);
-                    return new ResourceNotFoundException("Doctor not found");
-                });
-    }
-
-    @Transactional(readOnly = true)
-    public Page<Doctor> findAllPaginatedDoctors(int page, int pageSize) throws AppException {
-        log.debug("Fetching all doctors by page {} and page size {}", page, pageSize);
-
-        try {
-            Pageable pageable = PageRequest.of(page, pageSize);
-            return doctorRepository.findAll(pageable);
-        } catch (Exception e) {
-            log.error("Failed to fetch all paginated doctors with page {} and page size {}", page, pageSize, e);
-            throw new AppException("Failed to fetch all paginated doctors");
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public Page<Doctor> findAllPaginatedDoctorsBySpeciality(String speciality, int page, int pageSize) throws AppException {
-        log.debug("Fetching all doctors by speciality {} and page {} and page size {}", speciality, page, pageSize);
-
-        try {
-            Pageable pageable = PageRequest.of(page, pageSize);
-            return doctorRepository.findDistinctBySpecialityListNameContainingIgnoreCase(speciality, pageable);
-        } catch (Exception e) {
-            log.error("Failed to fetch all doctors by speciality {} with page {} and page size {}", speciality, page, pageSize, e);
-            throw new AppException("Failed to fetch all paginated doctors by speciality");
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public Page<Doctor> findAllPaginatedDoctorsByFacilityId(UUID facilityId, int page, int pageSize) throws AppException {
-        log.debug("Fetching all doctors by facilityId {} and page {} and page size {}", facilityId, page, pageSize);
-
-        try {
-            Pageable pageable = PageRequest.of(page, pageSize);
-            return doctorRepository.findAllByFacilityId(facilityId, pageable);
-        } catch (Exception e) {
-            log.error("Failed to fetch all doctors by facility {} with page {} and page size {}", facilityId, page, pageSize, e);
-            throw new AppException("Failed to fetch all paginated doctors by facility");
-        }
-    }
-
-    @Transactional
-    public void createDoctor(CreateDoctorRequestDto request, MultipartFile profileImage) throws AppException {
-        log.debug("Received request to create doctor with request: {}", request);
-
-        try {
-            Facility facility = facilityService.findFacilityById(request.facilityId());
-            List<Speciality> specialities = getValidatedSpecialities(request.specialityIds());
-            LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
-            Account account = accountService.createDoctorAccount(request.email());
-
-            Doctor doctor = buildDoctor(request, facility, specialities, dateOfBirth, account);
-            doctor = doctorRepository.save(doctor);
-
-            processProfileImage(profileImage, doctor);
-
-            log.info("Created doctor with ID: {}", doctor.getId());
-        } catch (Exception e) {
-            if (e instanceof AppException) {
-                throw (AppException) e;
-            }
-            log.error("Unexpected error while creating doctor: {}", request, e);
-            throw new AppException("Failed to create doctor");
-        }
-    }
-
-    @Transactional
-    public void updateDoctorProfileByAccountId(UUID accountId, UpdateDoctorProfileRequestDto request) throws AppException {
-        log.debug("Received request to update doctor profile with request: {}", request);
-        try {
-            Doctor doctor = findDoctorByAccountId(accountId);
-            LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
-
-            updateDoctorDetails(doctor, request, dateOfBirth);
-
-            doctor = doctorRepository.save(doctor);
-            log.info("Updated doctor with ID: {}", doctor.getId());
-        } catch (Exception e) {
-            if (e instanceof AppException) {
-                throw (AppException) e;
-            }
-            log.error("Unexpected error while updating doctor: {}", request, e);
-            throw new AppException("Failed to update doctor profile");
-        }
-    }
-
-    @Transactional
-    public void updateDoctorProfileImageByAccountId(UUID accountId, MultipartFile profileImage) throws AppException {
-        log.debug("Received request to update doctor profile image with ID: {}", accountId);
-
-        try {
-            if (profileImage == null || profileImage.isEmpty()) {
-                throw new InvalidInputException("Profile image is required");
-            }
-
-            Doctor doctor = findDoctorByAccountId(accountId);
-
-            processProfileImage(profileImage, doctor);
-
-            log.info("Updated doctor profile image with ID: {}", doctor.getId());
-        } catch (Exception e) {
-            if (e instanceof AppException) {
-                throw (AppException) e;
-            }
-            log.error("Unexpected error while updating doctor profile image: {}", accountId, e);
-            throw new AppException("Failed to update profile image");
-        }
-    }
-
-    @Transactional
-    public void updateDoctorSpecialitiesAndFacilityByDoctorId(UUID doctorId,
-                                                              UpdateDoctorSpecialitiesAndFacilityRequestDto request) throws AppException {
-        log.debug("Received request to update doctor specialities and facility with ID: {}", doctorId);
-
-        try {
-            Doctor doctor = findDoctorByAccountId(doctorId);
-            Facility facility = facilityService.findFacilityById(request.facilityId());
-            List<Speciality> specialityList = getValidatedSpecialities(request.specialityIds());
-
-            doctor.setFacility(facility);
-            doctor.setSpecialityList(specialityList);
-
-            doctor = doctorRepository.save(doctor);
-
-            log.info("Updated doctor specialities and facility with ID: {}", doctor.getId());
-        } catch (Exception e) {
-            if (e instanceof AppException) {
-                throw (AppException) e;
-            }
-            log.error("Unexpected error while updating doctor: {}", request, e);
-            throw new AppException("Failed to update doctor specialities and facility");
-        }
-    }
-
-    @Transactional
-    public void deleteDoctorByDoctorId(UUID doctorId) throws AppException {
-        log.debug("Received request to delete doctor with ID: {}", doctorId);
-
-        try {
-            Doctor doctor = findDoctorById(doctorId);
-            Image profileImage = doctor.getProfileImage();
-
-            doctorRepository.delete(doctor);
-
-            if (profileImage != null) {
-                eventPublisher.publishEvent(new ImageDeletedEvent(profileImage.getEntityId(), profileImage.getImageKey()));
-            }
-
-            log.info("Deleted doctor with ID: {}", doctor.getId());
-        } catch (Exception e) {
-            if (e instanceof AppException) {
-                throw (AppException) e;
-            }
-            log.error("Unexpected error while deleting doctor: {}", doctorId, e);
-            throw new AppException("Failed to delete doctor");
-        }
     }
 }

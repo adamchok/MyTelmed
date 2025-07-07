@@ -4,6 +4,7 @@ import com.mytelmed.common.dto.ApiResponse;
 import com.mytelmed.core.facility.dto.FacilityDto;
 import com.mytelmed.core.facility.mapper.FacilityMapper;
 import com.mytelmed.core.facility.service.FacilityService;
+import com.mytelmed.infrastructure.aws.service.AwsS3Service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
@@ -23,10 +24,12 @@ import java.util.UUID;
 @RequestMapping("/api/v1/facility")
 class FacilityController {
     private final FacilityService facilityService;
+    private final AwsS3Service awsS3Service;
     private final FacilityMapper facilityMapper;
 
-    FacilityController(FacilityMapper facilityMapper, FacilityService facilityService) {
+    FacilityController(FacilityMapper facilityMapper, AwsS3Service awsS3Service, FacilityService facilityService) {
         this.facilityMapper = facilityMapper;
+        this.awsS3Service = awsS3Service;
         this.facilityService = facilityService;
     }
 
@@ -37,7 +40,8 @@ class FacilityController {
     ) {
         log.info("Received request to get all facilities with page: {} and page size: {}", page, pageSize);
 
-        Page<FacilityDto> paginatedFacilityDto = facilityService.findAllFacilities(page, pageSize).map(facilityMapper::toDto);
+        Page<FacilityDto> paginatedFacilityDto = facilityService.findAllFacilities(page, pageSize)
+                .map(facility -> facilityMapper.toDto(facility, awsS3Service));
         return ResponseEntity.ok(ApiResponse.success(paginatedFacilityDto));
     }
 

@@ -25,7 +25,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "push_subscription", uniqueConstraints = {
+@Table(name = "push_subscriptions", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"account_id", "endpoint"})
 })
 public class PushSubscription {
@@ -33,18 +33,31 @@ public class PushSubscription {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
-    @Column(name = "endpoint", length = 500)
+    @Column(name = "endpoint", nullable = false, length = 1000)
     private String endpoint;
 
-    @Column(name = "p256dh", length = 500)
+    @Column(name = "p256dh", nullable = false, length = 500)
     private String p256dh;
 
-    @Column(name = "auth", length = 500)
+    @Column(name = "auth", nullable = false, length = 500)
     private String auth;
+
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
+
+    @Column(name = "user_agent", length = 500)
+    private String userAgent;
+
+    @Column(name = "device_info", length = 500)
+    private String deviceInfo;
+
+    @Column(name = "last_used_at")
+    private Instant lastUsedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

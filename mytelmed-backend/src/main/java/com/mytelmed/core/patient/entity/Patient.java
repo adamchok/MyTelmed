@@ -1,6 +1,6 @@
 package com.mytelmed.core.patient.entity;
 
-import com.mytelmed.common.constants.Gender;
+import com.mytelmed.common.constant.Gender;
 import com.mytelmed.common.utils.HashUtil;
 import com.mytelmed.common.utils.conveter.EncryptionConverter;
 import com.mytelmed.core.address.entity.Address;

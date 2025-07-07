@@ -2,8 +2,8 @@ package com.mytelmed.core.image.service;
 
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
-import com.mytelmed.common.constants.file.FileType;
-import com.mytelmed.common.constants.file.ImageType;
+import com.mytelmed.common.constant.file.FileType;
+import com.mytelmed.common.constant.file.ImageType;
 import com.mytelmed.core.image.entity.Image;
 import com.mytelmed.core.image.repository.ImageRepository;
 import com.mytelmed.infrastructure.aws.dto.S3StorageOptions;
@@ -31,7 +31,8 @@ public class ImageService {
     }
 
     @Transactional
-    public Image saveAndGetImage(ImageType imageType, UUID entityId, MultipartFile imageFile) throws IOException, S3Exception, AppException {
+    public Image saveAndGetImage(ImageType imageType, UUID entityId, MultipartFile imageFile)
+            throws IOException, S3Exception, AppException {
         String imageKey = null;
 
         if (imageFile == null || imageFile.isEmpty()) {
@@ -44,12 +45,11 @@ public class ImageService {
                     .fileType(FileType.IMAGE)
                     .folderName(imageType.name().toLowerCase())
                     .entityId(entityId.toString())
-                    .publicAccess(true)
                     .build();
 
             log.debug("Uploading image for entity: {} of type: {}", entityId, imageType);
             imageKey = awsS3Service.uploadFileAndGetKey(storageOptions, imageFile);
-            String imageUrl = awsS3Service.getFileUrl(imageKey, true, null);
+            String imageUrl = awsS3Service.generatePresignedViewUrl(imageKey);
 
             Image image = Image.builder()
                     .imageKey(imageKey)
@@ -69,7 +69,7 @@ public class ImageService {
             if (imageKey != null) {
                 try {
                     log.info("Rolling back S3 upload for entity: {} due to database failure", entityId);
-                    awsS3Service.deleteFile(imageKey, true);
+                    awsS3Service.deleteFile(imageKey);
                 } catch (Exception rollbackEx) {
                     log.error("Failed to roll back S3 upload for entity: {} (key: {})", entityId, imageKey, rollbackEx);
                 }
@@ -81,7 +81,7 @@ public class ImageService {
     }
 
     @Transactional
-    public void updateImage(ImageType imageType, UUID entityId, MultipartFile imageFile) throws AppException {
+    public Image updateAndGetImage(ImageType imageType, UUID entityId, MultipartFile imageFile) throws AppException {
         if (imageFile == null || imageFile.isEmpty()) {
             log.warn("Attempted to update empty or null image file for entity: {}", entityId);
             throw new InvalidInputException("Image file cannot be empty");
@@ -91,21 +91,22 @@ public class ImageService {
             Optional<Image> imageOpt = imageRepository.findByImageTypeAndEntityId(imageType, entityId);
 
             if (imageOpt.isEmpty()) {
-                saveAndGetImage(imageType, entityId, imageFile);
-                return;
+                return saveAndGetImage(imageType, entityId, imageFile);
             }
 
             Image image = imageOpt.get();
 
             log.debug("Updating image for entity: {} of type: {}", entityId, imageType);
-            String imageKey = awsS3Service.updateFile(image.getImageKey(), true, imageFile);
+            String imageKey = awsS3Service.updateFile(image.getImageKey(), imageFile);
             image.setImageKey(imageKey);
-            image.setImageUrl(imageKey);
+            image.setImageUrl(awsS3Service.generatePresignedViewUrl(imageKey));
 
             log.debug("Updating image metadata to database for entity: {}", entityId);
-            imageRepository.save(image);
+            image = imageRepository.save(image);
 
             log.info("Updated image metadata to database for entity: {}", entityId);
+            
+            return image;
         } catch (IOException e) {
             log.error("Failed to read image file data for entity: {}", entityId, e);
             throw new InvalidInputException("Failed to read image file");

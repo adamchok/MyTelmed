@@ -67,7 +67,7 @@ public class AuthenticationController {
         String accessToken = jwtService.generateAccessToken(account.getUsername());
         String token = request.refreshToken().toString();
 
-        JwtDto jwtDto =  JwtDto.builder()
+        JwtDto jwtDto = JwtDto.builder()
                 .accessToken(accessToken)
                 .refreshToken(token)
                 .build();

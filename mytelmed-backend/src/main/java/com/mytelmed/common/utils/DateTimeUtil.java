@@ -18,14 +18,14 @@ public class DateTimeUtil {
     private static final DateTimeFormatter US_DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
     private static final DateTimeFormatter EU_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter YEAR_MONTH_DAY_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    
+
     /**
      * Private constructor to prevent instantiation
      */
     private DateTimeUtil() {
         throw new UnsupportedOperationException("Utility class should not be instantiated");
     }
-    
+
     /**
      * Convert an Instant to LocalDate using the system default time zone
      *
@@ -38,7 +38,7 @@ public class DateTimeUtil {
         }
         return instant.atZone(DEFAULT_ZONE).toLocalDate();
     }
-    
+
     /**
      * Convert a String to LocalDate using multiple common formats
      * Attempts parsing with ISO, yyyy-MM-dd, MM/dd/yyyy, and dd/MM/yyyy formats
@@ -50,28 +50,28 @@ public class DateTimeUtil {
         if (dateString == null || dateString.trim().isEmpty()) {
             return Optional.empty();
         }
-        
+
         String trimmedDate = dateString.trim();
 
         DateTimeFormatter[] formatters = {
-            ISO_DATE_FORMATTER,
-            YEAR_MONTH_DAY_FORMATTER,
-            US_DATE_FORMATTER,
-            EU_DATE_FORMATTER
+                ISO_DATE_FORMATTER,
+                YEAR_MONTH_DAY_FORMATTER,
+                US_DATE_FORMATTER,
+                EU_DATE_FORMATTER
         };
-        
+
         for (DateTimeFormatter formatter : formatters) {
             try {
                 return Optional.of(LocalDate.parse(trimmedDate, formatter));
             } catch (DateTimeParseException ignored) {
             }
         }
-        
+
         return Optional.empty();
     }
 
     /**
-     * Format a LocalDate to a US-formatted date string (MM/dd/yyyy)
+     * Format a LocalDate to a EU-formatted date string (dd/MM/yyyy)
      *
      * @param date the LocalDate to format
      * @return the formatted date string, or null if input is null
@@ -80,6 +80,6 @@ public class DateTimeUtil {
         if (date == null) {
             return null;
         }
-        return US_DATE_FORMATTER.format(date);
+        return EU_DATE_FORMATTER.format(date);
     }
 }

@@ -27,7 +27,7 @@ public class RefreshTokenService {
     public RefreshTokenService(
             RefreshTokenRepository refreshTokenRepository,
             UserService userService,
-            @Value("${application.security.jwt.refresh-token-expiration}") long refreshTokenExpirationMin) {
+            @Value("${security.jwt.refresh.token.expiration}") long refreshTokenExpirationMin) {
         this.refreshTokenRepository = refreshTokenRepository;
         this.userService = userService;
         this.refreshTokenDurationMs = refreshTokenExpirationMin * 60 * 1000;
@@ -92,14 +92,14 @@ public class RefreshTokenService {
     public RefreshToken verifyExpiration(RefreshToken token) throws TokenExpiredException {
         if (token.getExpiredAt().isBefore(Instant.now())) {
             String username = token.getAccount().getUsername();
-            log.warn("Refresh token expired for user: {}, token expiry: {}", 
+            log.warn("Refresh token expired for user: {}, token expiry: {}",
                     username, token.getExpiredAt());
-            
+
             refreshTokenRepository.delete(token);
             throw new TokenExpiredException(
                     String.format("Refresh token expired for user: %s", username));
         }
-        
+
         log.debug("Verified valid refresh token for user: {}", token.getAccount().getUsername());
         return token;
     }

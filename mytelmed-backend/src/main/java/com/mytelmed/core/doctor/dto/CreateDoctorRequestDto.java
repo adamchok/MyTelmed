@@ -1,7 +1,7 @@
 package com.mytelmed.core.doctor.dto;
 
-import com.mytelmed.common.constants.Gender;
-import com.mytelmed.common.constants.Language;
+import com.mytelmed.common.constant.Gender;
+import com.mytelmed.common.constant.Language;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,9 +22,6 @@ public record CreateDoctorRequestDto(
         @Email(message = "Email should be valid")
         @NotBlank(message = "Email is required")
         String email,
-
-        @NotBlank(message = "Serial number is required")
-        String serialNumber,
 
         @Pattern(regexp = "^\\d{9}$", message = "Phone number must be exactly 9 digits")
         @NotBlank(message = "Phone is required")

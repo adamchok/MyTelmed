@@ -5,7 +5,6 @@ import lombok.Builder;
 
 @Builder
 public record DocumentUrlDto(
-        String documentUrl,
-        int expirationDuration
+        String documentUrl
 ) {
 }

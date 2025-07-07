@@ -7,7 +7,6 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -19,6 +18,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
+
 
 @Slf4j
 @Component
@@ -46,7 +46,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
                 storeUserIdInSession(request, userDetails);
-
                 log.info("User authenticated successfully: {} with roles: {}", username, userDetails.getAuthorities());
             } else {
                 log.warn("Token validation failed for user: {}", username);
@@ -78,7 +77,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException {
+            FilterChain filterChain) throws IOException {
         final String requestURI = request.getRequestURI();
         final String authHeader = request.getHeader(AUTHORIZATION_HEADER);
 

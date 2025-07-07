@@ -1,6 +1,6 @@
 package com.mytelmed.core.video.entity;
 
-import com.mytelmed.common.constants.file.VideoType;
+import com.mytelmed.common.constant.file.VideoType;
 import com.mytelmed.common.utils.conveter.EncryptionConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -36,16 +36,18 @@ public class Video {
     @Column(name = "key", nullable = false, unique = true)
     private String videoKey;
 
-    @Convert(converter = EncryptionConverter.class)
-    @Column(name = "url", nullable = false)
-    private String videoUrl;
-
     @Column(name = "type")
     @Enumerated(EnumType.STRING)
     private VideoType videoType;
 
     @Column(name = "entity_id")
     private UUID entityId;
+
+    @Column(name = "duration_seconds")
+    private Integer durationSeconds;
+
+    @Column(name = "file_size")
+    private Long fileSize;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)

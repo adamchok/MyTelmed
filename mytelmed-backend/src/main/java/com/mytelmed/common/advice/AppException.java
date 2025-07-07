@@ -1,6 +1,6 @@
 package com.mytelmed.common.advice;
 
-import com.mytelmed.common.constants.ErrorCode;
+import com.mytelmed.common.constant.ErrorCode;
 import lombok.Getter;
 
 

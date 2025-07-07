@@ -39,7 +39,7 @@ public class FamilyMemberController {
     public ResponseEntity<ApiResponse<FamilyMemberDto>> getFamilyMember(
             @PathVariable UUID familyMemberId) {
         log.debug("Received request to get family member: {}", familyMemberId);
-        FamilyMember familyMember = familyMemberService.getFamilyMemberById(familyMemberId);
+        FamilyMember familyMember = familyMemberService.findById(familyMemberId);
         return ResponseEntity.ok(ApiResponse.success(familyMemberMapper.toDto(familyMember)));
     }
 
@@ -48,7 +48,7 @@ public class FamilyMemberController {
             @PathVariable UUID patientId) {
         log.debug("Received request to get all family members for patient: {}", patientId);
 
-        List<FamilyMember> familyMemberList = familyMemberService.getFamilyMembersByPatientId(patientId);
+        List<FamilyMember> familyMemberList = familyMemberService.findAllByPatientId(patientId);
         List<FamilyMemberDto> familyMemberResponseDtoList = familyMemberList.stream()
                 .map(familyMemberMapper::toDto)
                 .collect(Collectors.toList());
@@ -61,7 +61,7 @@ public class FamilyMemberController {
             @PathVariable UUID familyMemberId) {
         log.debug("Received request to confirm family member: {}", familyMemberId);
 
-        familyMemberService.confirmFamilyMember(familyMemberId);
+        familyMemberService.confirm(familyMemberId);
         return ResponseEntity.ok(ApiResponse.success("Family member confirmed successfully"));
     }
 
@@ -71,7 +71,7 @@ public class FamilyMemberController {
             @Valid @RequestBody CreateFamilyMemberRequestDto request) {
         log.debug("Received request to invite family member for patient: {}", patientId);
 
-        familyMemberService.inviteFamilyMember(patientId, request);
+        familyMemberService.invite(patientId, request);
         return ResponseEntity.ok(ApiResponse.success("Family member invitation sent successfully"));
     }
 
@@ -81,7 +81,7 @@ public class FamilyMemberController {
             @Valid @RequestBody UpdateFamilyMemberRequestDto request) {
         log.debug("Received request to update family member: {}", familyMemberId);
 
-        familyMemberService.updateFamilyMember(familyMemberId, request);
+        familyMemberService.update(familyMemberId, request);
         return ResponseEntity.ok(ApiResponse.success("Family member updated successfully"));
     }
 
@@ -90,7 +90,7 @@ public class FamilyMemberController {
             @PathVariable UUID familyMemberId) {
         log.debug("Request request to delete family member: {}", familyMemberId);
 
-        familyMemberService.deleteFamilyMember(familyMemberId);
+        familyMemberService.delete(familyMemberId);
         return ResponseEntity.ok(ApiResponse.success("Family member deleted successfully"));
     }
 }

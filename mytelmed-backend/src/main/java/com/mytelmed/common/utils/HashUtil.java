@@ -14,7 +14,7 @@ public class HashUtil {
     private static String SECRET_SALT;
 
     @Autowired
-    public void setSecretSalt(@Value("${application.security.hashing.secret-key}") String secretSalt) {
+    public void setSecretSalt(@Value("${security.hashing.secret.key}") String secretSalt) {
         SECRET_SALT = secretSalt;
     }
 

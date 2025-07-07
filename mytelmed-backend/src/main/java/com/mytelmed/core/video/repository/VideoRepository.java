@@ -1,6 +1,6 @@
 package com.mytelmed.core.video.repository;
 
-import com.mytelmed.common.constants.file.VideoType;
+import com.mytelmed.common.constant.file.VideoType;
 import com.mytelmed.core.video.entity.Video;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

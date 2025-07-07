@@ -9,8 +9,6 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
@@ -27,8 +25,8 @@ public class JwtService {
     private final UserService userService;
 
     public JwtService(
-            @Value("${application.security.jwt.secret-key}") String secretKey,
-            @Value("${application.security.jwt.access-token-expiration}") long accessTokenExpirationMins,
+            @Value("${security.jwt.secret.key}") String secretKey,
+            @Value("${security.jwt.access.token.expiration}") long accessTokenExpirationMins,
             UserService userService
     ) {
         this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
@@ -57,7 +55,7 @@ public class JwtService {
         try {
             return extractClaim(token, Claims::getSubject);
         } catch (Exception e) {
-            log.error("Failed to extract username from token: {}", e.getMessage());
+            log.error("Failed to extract name from token: {}", e.getMessage());
             throw new JwtException("Invalid token", e);
         }
     }
@@ -87,11 +85,11 @@ public class JwtService {
     public boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         boolean isValid = username.equals(userDetails.getUsername()) && !isTokenExpired(token);
-        
+
         if (!isValid) {
             log.debug("Token validation failed for user: {}", userDetails.getUsername());
         }
-        
+
         return isValid;
     }
 
@@ -99,11 +97,11 @@ public class JwtService {
         try {
             String username = extractUsername(token);
             boolean isValid = username != null && !username.isEmpty() && !isTokenExpired(token);
-            
+
             if (!isValid) {
                 log.debug("Access token validation failed, token is expired or invalid");
             }
-            
+
             return isValid;
         } catch (Exception e) {
             log.warn("Access token validation error: {}", e.getMessage());
@@ -117,19 +115,7 @@ public class JwtService {
 
     public Account loadUserByToken(String token) {
         String username = extractUsername(token);
-        log.debug("Loading user details for token with username: {}", username);
+        log.debug("Loading user details for token with name: {}", username);
         return userService.loadUserByUsername(username);
-    }
-
-    public Authentication getAuthentication(String token) {
-        Account userDetails = loadUserByToken(token);
-        log.debug("Creating authentication for user: {} with roles: {}", 
-                  userDetails.getUsername(), 
-                  userDetails.getAuthorities());
-        return new UsernamePasswordAuthenticationToken(
-                userDetails, 
-                null, 
-                userDetails.getAuthorities()
-        );
     }
 }

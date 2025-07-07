@@ -18,20 +18,17 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 @Configuration
 public class AwsConfig {
     private final String articleTableName;
-    private final String qnaTableName;
     private final Region region;
     private final StaticCredentialsProvider credentialsProvider;
 
     public AwsConfig(@Value("${aws.accessKey}") String accessKey,
                      @Value("${aws.secretKey}") String secretKey,
                      @Value("${aws.region}") String region,
-                     @Value("${aws.dynamodb.article.table-name}") String articleTableName,
-                     @Value("${aws.dynamodb.qna.table-name}") String qnaTableName) {
+                     @Value("${aws.dynamodb.article.table-name}") String articleTableName) {
         this.credentialsProvider = StaticCredentialsProvider.create(
                 AwsBasicCredentials.create(accessKey, secretKey));
         this.region = Region.of(region);
         this.articleTableName = articleTableName;
-        this.qnaTableName = qnaTableName;
     }
 
     @Bean
@@ -65,13 +62,8 @@ public class AwsConfig {
                 .build();
     }
 
-     @Bean
-     public DynamoDbTable<Article> articleTable(DynamoDbEnhancedClient enhancedClient) {
-         return enhancedClient.table(articleTableName, TableSchema.fromBean(Article.class));
-     }
-
-//     @Bean
-//     public DynamoDbTable<QnA> qnaTable(DynamoDbEnhancedClient enhancedClient) {
-//         return enhancedClient.table(qnaTableName, TableSchema.fromBean(QnA.class));
-//     }
+    @Bean
+    public DynamoDbTable<Article> articleTable(DynamoDbEnhancedClient enhancedClient) {
+        return enhancedClient.table(articleTableName, TableSchema.fromBean(Article.class));
+    }
 }

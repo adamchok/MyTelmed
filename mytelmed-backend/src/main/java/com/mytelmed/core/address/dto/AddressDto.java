@@ -6,6 +6,7 @@ import org.hibernate.validator.constraints.Length;
 
 
 public record AddressDto(
+        @NotBlank(message = "ID is required")
         String id,
 
         @Length(max = 300, message = "Address must be less than 300 characters")

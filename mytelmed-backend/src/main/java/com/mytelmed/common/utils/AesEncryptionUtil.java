@@ -1,8 +1,7 @@
 package com.mytelmed.common.utils;
 
-import com.mytelmed.common.configs.EncryptionConfig;
-import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
@@ -18,22 +17,17 @@ public class AesEncryptionUtil {
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
     private static final int IV_SIZE = 12;
     private static final int TAG_LENGTH_BIT = 128;
-    private final EncryptionConfig encryptionConfig;
-    private SecretKeySpec keySpec;
+    private final SecretKeySpec keySpec;
 
-    public AesEncryptionUtil(EncryptionConfig encryptionConfig) {
-        this.encryptionConfig = encryptionConfig;
-    }
-
-    @PostConstruct
-    private void init() {
-        String base64Key = encryptionConfig.getSecretKey().trim();
+    public AesEncryptionUtil(@Value("${security.encryption.secret.key}") String secretKey) {
+        String base64Key = secretKey.trim();
         byte[] keyBytes = Base64.getDecoder().decode(base64Key);
 
         if (keyBytes.length != 32) {
             log.debug("Invalid key bytes length: {}", keyBytes.length);
             throw new IllegalArgumentException("AES key must be exactly 32 bytes for AES-256");
         }
+
         this.keySpec = new SecretKeySpec(keyBytes, ALGORITHM);
     }
 

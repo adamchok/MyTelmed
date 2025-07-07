@@ -1,6 +1,6 @@
 package com.mytelmed.common.utils.conveter;
 
-import com.mytelmed.common.constants.Language;
+import com.mytelmed.common.constant.Language;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import java.util.ArrayList;

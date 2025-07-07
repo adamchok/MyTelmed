@@ -2,6 +2,7 @@ package com.mytelmed.core.reset.service;
 
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidCredentialsException;
+import com.mytelmed.common.event.reset.model.PasswordResetEvent;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.patient.entity.Patient;
@@ -10,9 +11,9 @@ import com.mytelmed.core.reset.dto.InitiatePasswordResetRequestDto;
 import com.mytelmed.core.reset.dto.ResetPasswordRequestDto;
 import com.mytelmed.core.reset.entity.ResetToken;
 import com.mytelmed.core.reset.repository.ResetTokenRepository;
-import com.mytelmed.infrastructure.email.service.EmailService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
@@ -23,25 +24,24 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class PasswordResetService {
-    private final String resetBaseUrl;
+    private final String frontendUrl;
     private final long tokenExpirationMinutes;
     private final ResetTokenRepository resetTokenRepository;
-    private final EmailService emailService;
     private final PatientService patientService;
     private final AccountService accountService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public PasswordResetService(
-            EmailService emailService,
             ResetTokenRepository resetTokenRepository,
-            @Value("${application.security.password-reset.base-url}") String resetBaseUrl,
-            @Value("${application.security.password-reset.expiration-minutes}") long tokenExpirationMinutes,
-            PatientService patientService, AccountService accountService) {
-        this.emailService = emailService;
+            @Value("${application.frontend.url}") String frontendUrl,
+            @Value("${security.password.reset.expiration}") long tokenExpirationMinutes,
+            PatientService patientService, AccountService accountService, ApplicationEventPublisher applicationEventPublisher) {
         this.resetTokenRepository = resetTokenRepository;
-        this.resetBaseUrl = resetBaseUrl;
+        this.frontendUrl = frontendUrl;
         this.tokenExpirationMinutes = tokenExpirationMinutes;
         this.patientService = patientService;
         this.accountService = accountService;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     private ResetToken createPasswordResetToken(Account account) {
@@ -72,8 +72,16 @@ public class PasswordResetService {
 
             Account account = patient.getAccount();
             ResetToken token = createPasswordResetToken(account);
-            String resetUrl = resetBaseUrl + "/" + token.getToken();
-            emailService.sendPasswordResetEmail(request.email(), patient.getName(), resetUrl, tokenExpirationMinutes);
+            String resetUrl = frontendUrl + "/forgot/password/" + token.getToken();
+
+            PasswordResetEvent event = PasswordResetEvent.builder()
+                    .email(patient.getEmail())
+                    .name(patient.getName())
+                    .expirationMinutes(tokenExpirationMinutes)
+                    .resetUrl(resetUrl)
+                    .build();
+
+            applicationEventPublisher.publishEvent(event);
 
             log.info("Password reset initiated for user: {}", account.getId());
         } catch (AppException e) {
@@ -91,7 +99,7 @@ public class PasswordResetService {
         try {
             Account account = validatePasswordResetToken(token)
                     .orElseThrow(() -> new InvalidCredentialsException("Invalid or expired password reset link"));
-            accountService.resetPasswordByAccountId(account.getId(), request.password());
+            accountService.changePasswordById(account.getId(), request.password());
 
             log.info("Password successfully reset for user: {}", account.getId());
         } catch (InvalidCredentialsException e) {

@@ -1,6 +1,6 @@
 package com.mytelmed.infrastructure.email.strategy;
 
-import com.mytelmed.common.constants.email.EmailType;
+import com.mytelmed.infrastructure.email.constant.EmailType;
 import java.util.Map;
 
 

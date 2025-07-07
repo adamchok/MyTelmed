@@ -2,7 +2,7 @@ package com.mytelmed.core.speciality.service;
 
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
-import com.mytelmed.common.constants.file.ImageType;
+import com.mytelmed.common.constant.file.ImageType;
 import com.mytelmed.core.image.entity.Image;
 import com.mytelmed.core.image.service.ImageService;
 import com.mytelmed.core.speciality.entity.Speciality;

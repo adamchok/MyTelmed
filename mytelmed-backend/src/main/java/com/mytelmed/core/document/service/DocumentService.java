@@ -3,7 +3,7 @@ package com.mytelmed.core.document.service;
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
-import com.mytelmed.common.constants.file.DocumentType;
+import com.mytelmed.common.constant.file.DocumentType;
 import com.mytelmed.core.document.dto.RequestDocumentDto;
 import com.mytelmed.core.document.entity.Document;
 import com.mytelmed.core.document.repository.DocumentRepository;
@@ -22,7 +22,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 public class DocumentService {
@@ -30,7 +29,8 @@ public class DocumentService {
     private final AwsS3Service awsS3Service;
     private final PatientService patientService;
 
-    public DocumentService(DocumentRepository documentRepository, AwsS3Service awsS3Service, PatientService patientService) {
+    public DocumentService(DocumentRepository documentRepository, AwsS3Service awsS3Service,
+            PatientService patientService) {
         this.documentRepository = documentRepository;
         this.awsS3Service = awsS3Service;
         this.patientService = patientService;
@@ -57,21 +57,14 @@ public class DocumentService {
         }
     }
 
-    public String getPresignedDocumentUrl(UUID documentId, Integer expirationMinutes) throws AppException {
+    public String getPresignedDocumentUrl(UUID documentId) throws AppException {
         log.debug("Generating pre-signed URL for document with ID: {}", documentId);
 
         try {
             Document document = getDocumentById(documentId);
-            int expiration = expirationMinutes != null && expirationMinutes > 0 ?
-                    expirationMinutes : 15;
+            String presignedUrl = awsS3Service.generatePresignedDocumentUrl(document.getDocumentKey());
 
-            String presignedUrl = awsS3Service.getFileUrl(
-                    document.getDocumentKey(),
-                    false,
-                    Duration.ofMinutes(expiration)
-            );
-
-            log.info("Generated pre-signed URL for document: {} (expires in {} minutes)", documentId, expiration);
+            log.info("Generated pre-signed URL for document: {} (expires in 10 minutes)", documentId);
             return presignedUrl;
         } catch (Exception e) {
             log.error("Failed to generate pre-signed URL for document: {}", documentId, e);
@@ -85,13 +78,15 @@ public class DocumentService {
         try {
             return documentRepository.findByPatientIdAndDocumentType(patientId, documentType);
         } catch (Exception e) {
-            log.error("Unexpected error while finding {} documents for patient with ID: {}", documentType.toString(), patientId, e);
+            log.error("Unexpected error while finding {} documents for patient with ID: {}", documentType.toString(),
+                    patientId, e);
             throw new AppException("Failed to fetch documents");
         }
     }
 
     @Transactional
-    public void saveDocument(RequestDocumentDto request, UUID patientId, MultipartFile documentFile) throws AppException {
+    public void saveDocument(RequestDocumentDto request, UUID patientId, MultipartFile documentFile)
+            throws AppException {
         if (documentFile == null || documentFile.isEmpty()) {
             log.warn("Attempted to save empty or null document file for patient: {}", patientId);
             throw new InvalidInputException("Missing document file");
@@ -103,9 +98,9 @@ public class DocumentService {
             Patient patient = patientService.findPatientById(patientId);
 
             S3StorageOptions storageOptions = S3StorageOptions.builder()
+                    .fileType(com.mytelmed.common.constant.file.FileType.DOCUMENT)
                     .folderName(request.documentType())
                     .entityId(patientId.toString())
-                    .publicAccess(false)
                     .build();
 
             log.debug("Uploading document for patient: {} of type: {}", patientId, request.documentType());
@@ -135,7 +130,7 @@ public class DocumentService {
             if (documentKey != null) {
                 try {
                     log.info("Rolling back S3 document upload for patient: {} due to database failure", patientId);
-                    awsS3Service.deleteFile(documentKey, false);
+                    awsS3Service.deleteFile(documentKey);
                 } catch (Exception rollbackEx) {
                     log.error("Failed to roll back S3 document upload for patient: {} (key: {})",
                             patientId, documentKey, rollbackEx);
@@ -148,14 +143,15 @@ public class DocumentService {
     }
 
     @Transactional
-    public void updateDocument(RequestDocumentDto request, UUID documentId, MultipartFile documentFile) throws AppException {
+    public void updateDocument(RequestDocumentDto request, UUID documentId, MultipartFile documentFile)
+            throws AppException {
         log.debug("Updating document: {} of type: {}", documentId, request.documentType());
 
         try {
             Document existingDocument = getDocumentById(documentId);
 
             if (documentFile != null) {
-                String documentKey = awsS3Service.updateFile(existingDocument.getDocumentKey(), false, documentFile);
+                String documentKey = awsS3Service.updateFile(existingDocument.getDocumentKey(), documentFile);
                 existingDocument.setDocumentKey(documentKey);
             }
 
@@ -183,7 +179,7 @@ public class DocumentService {
 
         try {
             Document document = getDocumentById(documentId);
-            awsS3Service.deleteFile(document.getDocumentKey(), true);
+            awsS3Service.deleteFile(document.getDocumentKey());
 
             documentRepository.delete(document);
             log.info("Deleted document: {}", documentId);

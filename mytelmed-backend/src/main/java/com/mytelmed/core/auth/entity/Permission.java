@@ -1,6 +1,6 @@
 package com.mytelmed.core.auth.entity;
 
-import com.mytelmed.common.constants.AccountType;
+import com.mytelmed.common.constant.AccountType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -8,7 +8,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,9 +30,6 @@ public class Permission {
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "permission_id")
     private UUID id;
-
-    @OneToOne(mappedBy = "permission")
-    private Account account;
 
     @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)

@@ -17,10 +17,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.Instant;
 import java.util.UUID;
-
 
 @Data
 @Builder
@@ -40,11 +38,11 @@ public class Tutorial {
     private String description;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "video_id", nullable = false)
+    @JoinColumn(name = "video_id")
     private Video video;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "image_id", nullable = false)
+    @JoinColumn(name = "image_id")
     private Image thumbnail;
 
     @Column(name = "category")

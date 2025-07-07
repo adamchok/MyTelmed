@@ -1,6 +1,6 @@
 package com.mytelmed.core.facility.entity;
 
-import com.mytelmed.common.constants.FacilityType;
+import com.mytelmed.common.constant.FacilityType;
 import com.mytelmed.core.image.entity.Image;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -53,7 +53,7 @@ public class Facility {
     private FacilityType facilityType;
 
     @OneToOne
-    @JoinColumn(name = "thumbnail_image_id")
+    @JoinColumn(name = "image_id")
     private Image thumbnailImage;
 
     @CreationTimestamp

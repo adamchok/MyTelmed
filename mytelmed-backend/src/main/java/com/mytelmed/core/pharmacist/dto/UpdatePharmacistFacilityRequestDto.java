@@ -1,11 +1,11 @@
 package com.mytelmed.core.pharmacist.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 
 public record UpdatePharmacistFacilityRequestDto(
-        @NotBlank(message = "Facility ID is required")
+        @NotNull(message = "Facility ID is required")
         UUID facilityId
 ) {
 }

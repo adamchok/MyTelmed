@@ -1,6 +1,6 @@
 package com.mytelmed.core.document.repository;
 
-import com.mytelmed.common.constants.file.DocumentType;
+import com.mytelmed.common.constant.file.DocumentType;
 import com.mytelmed.core.document.entity.Document;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

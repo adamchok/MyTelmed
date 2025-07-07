@@ -1,0 +1,116 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.3'
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'com.mytelmed'
+version = '1.0.0-SNAPSHOT'
+description = 'A spring boot backend project for MyTelmed'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('awsJavaSdkVersion', '2.31.43')
+    set('jsonwebtokenVersion', '0.12.5')
+    set('mapstructVersion', '1.5.5.Final')
+    set('lombokVersion', '1.18.30')
+    set('mailgunVersion', '1.1.3')
+    set('webpushVersion', '5.1.1')
+    set('streamVersion', '2.0.0')
+    set('stripeVersion', '29.3.0')
+}
+
+dependencies {
+    // Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+    implementation 'org.springframework.retry:spring-retry'
+
+    // JWT
+    implementation "io.jsonwebtoken:jjwt-api:${jsonwebtokenVersion}"
+    implementation "io.jsonwebtoken:jjwt-impl:${jsonwebtokenVersion}"
+    implementation "io.jsonwebtoken:jjwt-jackson:${jsonwebtokenVersion}"
+
+    // AWS SDK
+    implementation platform("software.amazon.awssdk:bom:${awsJavaSdkVersion}")
+    implementation 'software.amazon.awssdk:s3'
+    implementation 'software.amazon.awssdk:dynamodb'
+    implementation 'software.amazon.awssdk:dynamodb-enhanced'
+
+    // MapStruct
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+
+    // Email Notifications
+    implementation "com.mailgun:mailgun-java:${mailgunVersion}"
+
+    // Push Notifications
+    implementation "nl.martijndwars:web-push:${webpushVersion}"
+
+    // Stream SDK for video calling and chat messaging
+    implementation "io.getstream:stream-sdk-java:${streamVersion}"
+
+    // Encryption
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+
+    // Database
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // Lombok - must be before MapStruct processor
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    
+    // MapStruct processor - must be after Lombok
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    
+    // Lombok + MapStruct binding
+    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:0.2.0"
+
+    // Test dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // Stripe
+    implementation "com.stripe:stripe-java:${stripeVersion}"
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// Configure the compiler to use annotation processors with proper ordering
+tasks.withType(JavaCompile) {
+    options.compilerArgs = [
+        '-Amapstruct.defaultComponentModel=spring',
+        '-Amapstruct.suppressGeneratorTimestamp=true',
+        '-Amapstruct.suppressGeneratorVersionInfoComment=true'
+    ]
+    
+    // Ensure annotation processors are available on the classpath
+    options.annotationProcessorPath = configurations.annotationProcessor
+}
+
+// Spring Boot plugin configuration
+springBoot {
+    buildInfo()
+}

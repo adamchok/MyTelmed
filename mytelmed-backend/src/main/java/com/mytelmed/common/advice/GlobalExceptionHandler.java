@@ -1,7 +1,7 @@
 package com.mytelmed.common.advice;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.mytelmed.common.constants.ErrorCode;
+import com.mytelmed.common.constant.ErrorCode;
 import com.mytelmed.common.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -19,12 +19,12 @@ import java.util.Optional;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     private static final Map<ErrorCode, HttpStatus> ERROR_STATUS_MAP = Map.of(
-        ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.BAD_REQUEST,
-        ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST,
-        ErrorCode.INVALID_CREDENTIALS, HttpStatus.BAD_REQUEST,
-        ErrorCode.USERNAME_ALREADY_EXIST, HttpStatus.BAD_REQUEST,
-        ErrorCode.TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED,
-        ErrorCode.EMAIL_SENDING_FAILED, HttpStatus.INTERNAL_SERVER_ERROR
+            ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.BAD_REQUEST,
+            ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST,
+            ErrorCode.INVALID_CREDENTIALS, HttpStatus.BAD_REQUEST,
+            ErrorCode.USERNAME_ALREADY_EXIST, HttpStatus.BAD_REQUEST,
+            ErrorCode.TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED,
+            ErrorCode.EMAIL_SENDING_FAILED, HttpStatus.INTERNAL_SERVER_ERROR
     );
 
     private HttpStatus resolveHttpStatus(ErrorCode errorCode) {
@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
                 .map(ERROR_STATUS_MAP::get)
                 .orElse(HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    
+
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex) {
         HttpStatus status = resolveHttpStatus(ex.getErrorCode());
@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleUsernameNotFound(UsernameNotFoundException ex) {
         HttpStatus status = HttpStatus.UNAUTHORIZED;
-        return new ResponseEntity<>(ApiResponse.failure("Invalid username or password"), status);
+        return new ResponseEntity<>(ApiResponse.failure("Invalid name or password"), status);
     }
 
     @ExceptionHandler(InvalidFormatException.class)
@@ -61,6 +61,6 @@ public class GlobalExceptionHandler {
             errors.put(error.getField(), error.getDefaultMessage());
         });
 
-        return ResponseEntity.badRequest().body(ApiResponse.failure(errors,"Invalid request inputs"));
+        return ResponseEntity.badRequest().body(ApiResponse.failure(errors, "Invalid request inputs"));
     }
 }

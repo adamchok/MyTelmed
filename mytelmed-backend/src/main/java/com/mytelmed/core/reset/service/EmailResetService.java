@@ -3,6 +3,7 @@ package com.mytelmed.core.reset.service;
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidCredentialsException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
+import com.mytelmed.common.event.reset.model.EmailResetEvent;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.patient.service.PatientService;
@@ -10,9 +11,9 @@ import com.mytelmed.core.reset.dto.InitiateEmailResetRequestDto;
 import com.mytelmed.core.reset.dto.ResetEmailRequestDto;
 import com.mytelmed.core.reset.entity.ResetToken;
 import com.mytelmed.core.reset.repository.ResetTokenRepository;
-import com.mytelmed.infrastructure.email.service.EmailService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
@@ -23,23 +24,22 @@ import java.util.Optional;
 @Service
 @Slf4j
 public class EmailResetService {
-    private final String resetBaseUrl;
+    private final String frontendUrl;
     private final long tokenExpirationMinutes;
     private final ResetTokenRepository resetTokenRepository;
-    private final EmailService emailService;
     private final PatientService patientService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public EmailResetService(
-            EmailService emailService,
             PatientService patientService,
             ResetTokenRepository resetTokenRepository,
-            @Value("${application.security.email-reset.base-url}") String resetBaseUrl,
-            @Value("${application.security.email-reset.expiration-minutes}") long tokenExpirationMinutes) {
+            @Value("${application.frontend.url}") String frontendUrl,
+            @Value("${security.email.reset.expiration}") long tokenExpirationMinutes, ApplicationEventPublisher applicationEventPublisher) {
         this.patientService = patientService;
-        this.emailService = emailService;
         this.resetTokenRepository = resetTokenRepository;
-        this.resetBaseUrl = resetBaseUrl;
+        this.frontendUrl = frontendUrl;
         this.tokenExpirationMinutes = tokenExpirationMinutes;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Transactional
@@ -76,10 +76,17 @@ public class EmailResetService {
 
             Account account = patient.getAccount();
             ResetToken token = createEmailResetToken(account);
-            String resetUrl = resetBaseUrl + "/" + token.getToken();
+            String resetUrl = frontendUrl + "/forgot/email/" + token.getToken();
 
-            log.debug("Sending email reset for user: {}, reset URL: {}", account.getId(), resetUrl);
-            emailService.sendEmailResetEmail(request.email(), patient.getName(), resetUrl, tokenExpirationMinutes);
+            EmailResetEvent event = EmailResetEvent.builder()
+                    .email(patient.getEmail())
+                    .name(patient.getName())
+                    .expirationMinutes(tokenExpirationMinutes)
+                    .resetUrl(resetUrl)
+                    .build();
+
+            log.debug("Sending email reset for user: {}, reset token: {}", account.getId(), token.getToken());
+            applicationEventPublisher.publishEvent(event);
 
             log.info("Email reset initiated for user: {}", account.getId());
         } catch (AppException e) {

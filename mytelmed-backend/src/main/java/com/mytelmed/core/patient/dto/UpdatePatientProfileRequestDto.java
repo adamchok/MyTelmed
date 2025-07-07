@@ -1,6 +1,6 @@
 package com.mytelmed.core.patient.dto;
 
-import com.mytelmed.common.constants.Gender;
+import com.mytelmed.common.constant.Gender;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

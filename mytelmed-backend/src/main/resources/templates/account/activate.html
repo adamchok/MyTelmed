@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>MyTelmed - Account Activated</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            justify-content: center;
+            border-bottom: 3px solid #28a745;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 192px;
+            height: auto;
+            max-width: 100%;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .activation-highlight {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .activation-highlight .status {
+            font-size: 18px;
+            font-weight: bold;
+            color: #155724;
+            margin-bottom: 5px;
+        }
+
+        .action-buttons {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 0 10px;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .footer {
+            border-top: 1px solid #dee2e6;
+            padding-top: 20px;
+            margin-top: 30px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <img th:src="@{/mytelmed-logo.png}" alt="MyTelmed Logo" class="logo"/>
+        <h2 style="color: #495057; margin: 0">
+            Your Account Has Been Activated
+        </h2>
+    </div>
+
+    <p>Dear <strong th:text="${name}">User</strong>,</p>
+
+    <p>
+        Great news! Your MyTelmed account has been successfully activated. You
+        can now access all the features and services available on our platform.
+    </p>
+
+    <div class="activation-highlight">
+        <div class="status">✅ Account Status: Active</div>
+        <p style="margin: 5px 0 0 0; color: #155724">
+            Your account is now fully functional and ready to use.
+        </p>
+    </div>
+
+    <p>You can now:</p>
+    <ul>
+        <li>Log in to your account</li>
+        <li>Access all platform features</li>
+        <li>Manage your profile and settings</li>
+        <li>Use all available services</li>
+    </ul>
+
+    <div class="action-buttons">
+        <a th:href="${uiHost + '/login'}" class="btn">
+            Login to Your Account
+        </a>
+    </div>
+
+    <p>
+        If you have any questions or need assistance, please contact our support
+        team.
+    </p>
+
+    <p>
+        Best regards,<br/>
+        The MyTelmed Team
+    </p>
+
+    <div class="footer">
+        <p>This is an automated message, please do not reply to this email.</p>
+        <p>&copy; 2025 MyTelmed. All rights reserved.</p>
+        <p>
+            <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
+            <a th:href="${uiHost + '/terms'}">Terms of Service</a>
+        </p>
+    </div>
+</div>
+</body>
+</html>

@@ -1,7 +1,7 @@
 package com.mytelmed.common.factory.account;
 
-import com.mytelmed.common.constants.AccountType;
-import com.mytelmed.common.events.email.AccountActivatedEvent;
+import com.mytelmed.common.constant.AccountType;
+import com.mytelmed.common.event.account.model.AccountCreatedEvent;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.entity.Permission;
 import org.springframework.context.ApplicationEventPublisher;
@@ -29,7 +29,7 @@ public class DoctorAccountFactory implements AccountAbstractFactory {
     }
 
     @Override
-    public Account createAccount(String email) {
+    public Account createAccount(String email, String name) {
         String rawPassword = generateRandomPassword();
         String encodedPassword = passwordEncoder.encode(rawPassword);
 
@@ -37,7 +37,7 @@ public class DoctorAccountFactory implements AccountAbstractFactory {
                 .type(AccountType.DOCTOR)
                 .build();
 
-        applicationEventPublisher.publishEvent(new AccountActivatedEvent(email, email, rawPassword));
+        applicationEventPublisher.publishEvent(new AccountCreatedEvent(email, name, email, rawPassword));
 
         return Account.builder()
                 .username(email)
@@ -47,19 +47,20 @@ public class DoctorAccountFactory implements AccountAbstractFactory {
     }
 
     /**
-     * Creates a new account with the specified username and password.
+     * Creates a new account with the specified name and password.
      * This method is not supported for the DoctorAccountFactory implementation
      * and will throw an UnsupportedOperationException if invoked.
-     * Please use {@link #createAccount(String)} instead.
+     * Please use {@link #createAccount(String, String)} instead.
      *
-     * @param username the username for the new account
+     * @param username the name for the new account
      * @param password the password for the new account
+     * @param name     the name of the user
      * @return an {@code Account} object representing the created account
      * @throws UnsupportedOperationException if called on DoctorAccountFactory
      */
     @Override
     @Deprecated
-    public Account createAccount(String username, String password) {
+    public Account createAccount(String username, String password, String name) {
         throw new UnsupportedOperationException("This method is not supported for DoctorAccountFactory");
     }
 }

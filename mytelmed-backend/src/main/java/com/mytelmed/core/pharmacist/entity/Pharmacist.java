@@ -1,6 +1,6 @@
 package com.mytelmed.core.pharmacist.entity;
 
-import com.mytelmed.common.constants.Gender;
+import com.mytelmed.common.constant.Gender;
 import com.mytelmed.common.utils.HashUtil;
 import com.mytelmed.common.utils.conveter.EncryptionConverter;
 import com.mytelmed.core.auth.entity.Account;
@@ -43,7 +43,7 @@ public class Pharmacist {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @OneToOne
+    @OneToOne(optional = false, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
@@ -64,10 +64,6 @@ public class Pharmacist {
 
     @Column(name = "hashed_email", nullable = false, unique = true, length = 64)
     private String hashedEmail;
-
-    @Convert(converter = EncryptionConverter.class)
-    @Column(name = "serial_number", nullable = false, unique = true)
-    private String serialNumber;
 
     @Convert(converter = EncryptionConverter.class)
     @Column(name = "phone", nullable = false, unique = true)

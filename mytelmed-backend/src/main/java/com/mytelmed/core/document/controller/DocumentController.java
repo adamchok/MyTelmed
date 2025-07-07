@@ -1,6 +1,6 @@
 package com.mytelmed.core.document.controller;
 
-import com.mytelmed.common.constants.file.DocumentType;
+import com.mytelmed.common.constant.file.DocumentType;
 import com.mytelmed.common.dto.ApiResponse;
 import com.mytelmed.core.document.dto.DocumentDto;
 import com.mytelmed.core.document.dto.DocumentUrlDto;
@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -77,15 +76,13 @@ public class DocumentController {
 
     @GetMapping("/{documentId}/url")
     public ResponseEntity<ApiResponse<DocumentUrlDto>> getDocumentUrl(
-            @PathVariable UUID documentId,
-            @RequestParam(required = false, defaultValue = "15") Integer expirationMinutes
+            @PathVariable UUID documentId
     ) {
-        log.info("Received request for document URL with ID: {}, expiration: {} minutes", documentId, expirationMinutes);
+        log.info("Received request for document URL with ID: {}", documentId);
 
-        String url = documentService.getPresignedDocumentUrl(documentId, expirationMinutes);
+        String url = documentService.getPresignedDocumentUrl(documentId);
         DocumentUrlDto urlDto = DocumentUrlDto.builder()
                 .documentUrl(url)
-                .expirationDuration(expirationMinutes)
                 .build();
         return ResponseEntity.ok(ApiResponse.success(urlDto));
     }

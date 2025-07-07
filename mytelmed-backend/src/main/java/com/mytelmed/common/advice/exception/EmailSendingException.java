@@ -1,11 +1,11 @@
 package com.mytelmed.common.advice.exception;
 
-import com.mytelmed.common.advice.AppException;
-import com.mytelmed.common.constants.ErrorCode;
-
-
-public class EmailSendingException extends AppException {
+public class EmailSendingException extends RuntimeException {
     public EmailSendingException(String message) {
-        super(message, ErrorCode.EMAIL_SENDING_FAILED);
+        super(message);
+    }
+
+    public EmailSendingException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

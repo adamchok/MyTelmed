@@ -9,6 +9,8 @@ import com.mytelmed.core.pharmacist.dto.UpdatePharmacistProfileRequestDto;
 import com.mytelmed.core.pharmacist.entity.Pharmacist;
 import com.mytelmed.core.pharmacist.mapper.PharmacistMapper;
 import com.mytelmed.core.pharmacist.service.PharmacistService;
+import com.mytelmed.infrastructure.aws.service.AwsS3Service;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
@@ -33,81 +35,138 @@ import java.util.UUID;
 @RequestMapping("/api/v1/pharmacist")
 public class PharmacistController {
     private final PharmacistMapper pharmacistMapper;
+    private final AwsS3Service awsS3Service;
     private final PharmacistService pharmacistService;
 
-    public PharmacistController(PharmacistMapper pharmacistMapper, PharmacistService pharmacistService) {
+    public PharmacistController(PharmacistMapper pharmacistMapper, AwsS3Service awsS3Service, PharmacistService pharmacistService) {
         this.pharmacistMapper = pharmacistMapper;
+        this.awsS3Service = awsS3Service;
         this.pharmacistService = pharmacistService;
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<PharmacistDto>>> getAllPharmacists(
+            @RequestParam Integer page,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
+        log.info("Received request to get all pharmacists with page: {} and page size: {}", page, pageSize);
+
+        Page<Pharmacist> paginatedPharmacist = pharmacistService.findAll(page, pageSize);
+        Page<PharmacistDto> paginatedPharmacistDto = paginatedPharmacist
+                .map(pharmacist -> pharmacistMapper.toDto(pharmacist, awsS3Service));
+        return ResponseEntity.ok(ApiResponse.success(paginatedPharmacistDto));
+    }
+
+    @GetMapping("/facility/{facilityId}")
+    public ResponseEntity<ApiResponse<Page<PharmacistDto>>> getPharmacistsByFacilityId(
+            @PathVariable UUID facilityId,
+            @RequestParam Integer page,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
+        log.info("Received request to get pharmacists by facility ID: {} with page: {} and page size: {}", facilityId,
+                page, pageSize);
+
+        Page<Pharmacist> paginatedPharmacist = pharmacistService.findAllByFacilityId(facilityId, page, pageSize);
+        Page<PharmacistDto> paginatedPharmacistDto = paginatedPharmacist
+                .map(pharmacist -> pharmacistMapper.toDto(pharmacist, awsS3Service));
+        return ResponseEntity.ok(ApiResponse.success(paginatedPharmacistDto));
     }
 
     @GetMapping("/{pharmacistId}")
     public ResponseEntity<ApiResponse<PharmacistDto>> getPharmacistById(@PathVariable UUID pharmacistId) {
-        Pharmacist pharmacist = pharmacistService.findPharmacistById(pharmacistId);
-        PharmacistDto pharmacistDto = pharmacistMapper.toDto(pharmacist);
+        log.info("Received request to get pharmacist with ID: {}", pharmacistId);
+
+        Pharmacist pharmacist = pharmacistService.findById(pharmacistId);
+        PharmacistDto pharmacistDto = pharmacistMapper.toDto(pharmacist, awsS3Service);
         return ResponseEntity.ok(ApiResponse.success(pharmacistDto));
     }
 
-    @GetMapping("/account/{accountId}")
-    public ResponseEntity<ApiResponse<PharmacistDto>> getPharmacistByAccountId(@PathVariable UUID accountId) {
-        Pharmacist pharmacist = pharmacistService.findPharmacistByAccountId(accountId);
-        PharmacistDto pharmacistDto = pharmacistMapper.toDto(pharmacist);
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse<PharmacistDto>> getPharmacistProfile(@AuthenticationPrincipal Account account) {
+        log.info("Received request to get pharmacist profile for account with ID: {}", account.getId());
+
+        Pharmacist pharmacist = pharmacistService.findByAccount(account);
+        PharmacistDto pharmacistDto = pharmacistMapper.toDto(pharmacist, awsS3Service);
         return ResponseEntity.ok(ApiResponse.success(pharmacistDto));
     }
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<Page<PharmacistDto>>> getPaginatedPharmacists(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Page<PharmacistDto> doctorDtoPage = pharmacistService.findAllPaginatedPharmacists(page, size)
-                .map(pharmacistMapper::toDto);
-        return ResponseEntity.ok(ApiResponse.success(doctorDtoPage));
-    }
+    @PostMapping
+    public ResponseEntity<ApiResponse<PharmacistDto>> createPharmacist(
+            @Valid @RequestBody CreatePharmacistRequestDto request) {
+        log.info("Received request to create pharmacist with request: {}", request);
 
-    @GetMapping("/facility/{facilityId}")
-    public ResponseEntity<ApiResponse<Page<PharmacistDto>>> getPaginatedPharmacistsByFacilityId(
-            @PathVariable UUID facilityId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Page<PharmacistDto> doctorDtoPage = pharmacistService.findAllPaginatedPharmacistsByFacilityId(facilityId, page, size)
-                .map(pharmacistMapper::toDto);
-        return ResponseEntity.ok(ApiResponse.success(doctorDtoPage));
-    }
-
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<Void>> createPharmacist(
-            @RequestPart("pharmacist") CreatePharmacistRequestDto request,
-            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
-        pharmacistService.createPharmacist(request, profileImage);
-        return ResponseEntity.ok(ApiResponse.success("Pharmacist created successfully"));
+        Pharmacist pharmacist = pharmacistService.create(request);
+        PharmacistDto pharmacistDto = pharmacistMapper.toDto(pharmacist, awsS3Service);
+        return ResponseEntity.ok(ApiResponse.success(pharmacistDto, "Pharmacist created successfully"));
     }
 
     @PutMapping("/profile")
     public ResponseEntity<ApiResponse<Void>> updatePharmacistProfile(
-            @RequestBody UpdatePharmacistProfileRequestDto request,
+            @Valid @RequestBody UpdatePharmacistProfileRequestDto request,
             @AuthenticationPrincipal Account account) {
-        pharmacistService.updatePharmacistProfileByAccountId(account.getId(), request);
-        return ResponseEntity.ok(ApiResponse.success("Profile updated successfully"));
+        log.info("Received request to update pharmacist profile for account with ID: {}", account.getId());
+
+        pharmacistService.updateByAccount(account, request);
+        return ResponseEntity.ok(ApiResponse.success("Pharmacist profile updated successfully"));
     }
 
     @PutMapping(value = "/profile/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<Void>> uploadPharmacistProfileImage(
+    public ResponseEntity<ApiResponse<Void>> updatePharmacistProfileImage(
             @RequestPart(value = "profileImage") MultipartFile profileImage,
             @AuthenticationPrincipal Account account) {
-        pharmacistService.updatePharmacistProfileImageByAccountId(account.getId(), profileImage);
+        log.info("Received request to update pharmacist profile image for account with ID: {}", account.getId());
+
+        pharmacistService.updateProfileImageByAccount(account, profileImage);
         return ResponseEntity.ok(ApiResponse.success("Pharmacist profile image updated successfully"));
     }
 
-    @PutMapping("/{pharmacistId}/specialities-facility")
+    @PutMapping("/{pharmacistId}/facility")
     public ResponseEntity<ApiResponse<Void>> updatePharmacistFacility(
             @PathVariable UUID pharmacistId,
-            @RequestBody UpdatePharmacistFacilityRequestDto request) {
-        pharmacistService.updatePharmacistFacilityByPharmacistId(pharmacistId, request);
-        return ResponseEntity.ok(ApiResponse.success("Pharmacist specialities and facility updated successfully"));
+            @Valid @RequestBody UpdatePharmacistFacilityRequestDto request) {
+        log.info("Received request to update pharmacist facility for pharmacist with ID: {}", pharmacistId);
+
+        pharmacistService.updateFacilityById(pharmacistId, request);
+        return ResponseEntity.ok(ApiResponse.success("Pharmacist facility updated successfully"));
     }
 
     @DeleteMapping("/{pharmacistId}")
-    public ResponseEntity<ApiResponse<Void>> deletePharmacistById(@PathVariable UUID pharmacistId) {
-        pharmacistService.deletePharmacistById(pharmacistId);
+    public ResponseEntity<ApiResponse<Void>> deletePharmacist(@PathVariable UUID pharmacistId) {
+        log.info("Received request to delete pharmacist with ID: {}", pharmacistId);
+
+        pharmacistService.deleteById(pharmacistId);
         return ResponseEntity.ok(ApiResponse.success("Pharmacist deleted successfully"));
+    }
+
+    @PostMapping("/activate/{pharmacistId}")
+    public ResponseEntity<ApiResponse<Void>> activatePharmacistById(@PathVariable UUID pharmacistId) {
+        log.info("Received request to activate pharmacist with ID: {}", pharmacistId);
+
+        pharmacistService.activateById(pharmacistId);
+        return ResponseEntity.ok(ApiResponse.success("Pharmacist account activated successfully"));
+    }
+
+    @PostMapping("/deactivate/{pharmacistId}")
+    public ResponseEntity<ApiResponse<Void>> deactivatePharmacistById(@PathVariable UUID pharmacistId) {
+        log.info("Received request to deactivate pharmacist with ID: {}", pharmacistId);
+
+        pharmacistService.deactivateById(pharmacistId);
+        return ResponseEntity.ok(ApiResponse.success("Pharmacist account deactivated successfully"));
+    }
+
+    @PostMapping("/reset/password/{pharmacistId}")
+    public ResponseEntity<ApiResponse<Void>> resetPharmacistAccountPassword(@PathVariable UUID pharmacistId) {
+        log.info("Received request to reset pharmacist account password for pharmacist with ID: {}", pharmacistId);
+
+        pharmacistService.resetAccountPassword(pharmacistId);
+        return ResponseEntity.ok(ApiResponse.success("Pharmacist account password reset successfully"));
+    }
+
+    @PostMapping(value = "/{pharmacistId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Void>> uploadPharmacistImage(
+            @PathVariable UUID pharmacistId,
+            @RequestPart(value = "profileImage") MultipartFile profileImage) {
+        log.info("Received request to upload image for pharmacist with ID: {}", pharmacistId);
+
+        pharmacistService.uploadProfileImageById(pharmacistId, profileImage);
+        return ResponseEntity.ok(ApiResponse.success("Pharmacist image uploaded successfully"));
     }
 }

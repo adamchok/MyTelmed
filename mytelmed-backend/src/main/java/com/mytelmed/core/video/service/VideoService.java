@@ -2,15 +2,13 @@ package com.mytelmed.core.video.service;
 
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
-import com.mytelmed.common.constants.file.FileType;
-import com.mytelmed.common.constants.file.VideoType;
-import com.mytelmed.common.events.deletion.VideoDeletedEvent;
+import com.mytelmed.common.constant.file.FileType;
+import com.mytelmed.common.constant.file.VideoType;
 import com.mytelmed.core.video.entity.Video;
 import com.mytelmed.core.video.repository.VideoRepository;
 import com.mytelmed.infrastructure.aws.dto.S3StorageOptions;
 import com.mytelmed.infrastructure.aws.service.AwsS3Service;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
@@ -26,16 +24,15 @@ import java.util.UUID;
 public class VideoService {
     private final VideoRepository videoRepository;
     private final AwsS3Service awsS3Service;
-    private final ApplicationEventPublisher eventPublisher;
 
-    public VideoService(VideoRepository videoRepository, AwsS3Service awsS3Service, ApplicationEventPublisher applicationEventPublisher) {
+    public VideoService(VideoRepository videoRepository, AwsS3Service awsS3Service) {
         this.videoRepository = videoRepository;
         this.awsS3Service = awsS3Service;
-        this.eventPublisher = applicationEventPublisher;
     }
 
     @Transactional
-    public Video saveAndGetVideo(VideoType videoType, UUID entityId, MultipartFile videoFile) throws IOException, S3Exception, AppException {
+    public Video saveAndGetVideo(VideoType videoType, UUID entityId, MultipartFile videoFile)
+            throws IOException, S3Exception, AppException {
         String videoKey = null;
 
         if (videoFile == null || videoFile.isEmpty()) {
@@ -48,18 +45,16 @@ public class VideoService {
                     .fileType(FileType.VIDEO)
                     .folderName(videoType.name().toLowerCase())
                     .entityId(entityId.toString())
-                    .publicAccess(true)
                     .build();
 
             log.debug("Uploading video for entity: {} of type: {}", entityId, videoType);
             videoKey = awsS3Service.uploadFileAndGetKey(storageOptions, videoFile);
-            String videoUrl = awsS3Service.getFileUrl(videoKey, true, null);
 
             Video video = Video.builder()
                     .videoKey(videoKey)
                     .videoType(videoType)
                     .entityId(entityId)
-                    .videoUrl(videoUrl)
+                    .fileSize(videoFile.getSize())
                     .build();
 
             video = videoRepository.save(video);
@@ -71,7 +66,12 @@ public class VideoService {
             log.error("Unexpected error while saving video for entity: {}", entityId, e);
 
             if (videoKey != null) {
-                eventPublisher.publishEvent(new VideoDeletedEvent(entityId, videoKey));
+                try {
+                    log.info("Rolling back S3 upload for entity: {} due to database failure", entityId);
+                    awsS3Service.deleteFile(videoKey);
+                } catch (Exception rollbackEx) {
+                    log.error("Failed to roll back S3 upload for entity: {} (key: {})", entityId, videoKey, rollbackEx);
+                }
             }
 
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -80,7 +80,7 @@ public class VideoService {
     }
 
     @Transactional
-    public void updateVideo(VideoType videoType, UUID entityId, MultipartFile videoFile) throws AppException {
+    public Video updateAndGetVideo(VideoType videoType, UUID entityId, MultipartFile videoFile) throws AppException {
         if (videoFile == null || videoFile.isEmpty()) {
             log.warn("Attempted to update empty or null video file for entity: {}", entityId);
             throw new InvalidInputException("Video file cannot be empty");
@@ -90,23 +90,22 @@ public class VideoService {
             Optional<Video> videoOpt = videoRepository.findByVideoTypeAndEntityId(videoType, entityId);
 
             if (videoOpt.isEmpty()) {
-                saveAndGetVideo(videoType, entityId, videoFile);
-                return;
+                return saveAndGetVideo(videoType, entityId, videoFile);
             }
 
             Video video = videoOpt.get();
 
             log.debug("Updating video for entity: {} of type: {}", entityId, videoType);
-            String videoKey = awsS3Service.updateFile(video.getVideoKey(), true, videoFile);
-            String videoUrl = awsS3Service.getFileUrl(videoKey, true, null);
+            String videoKey = awsS3Service.updateFile(video.getVideoKey(), videoFile);
 
             video.setVideoKey(videoKey);
-            video.setVideoUrl(videoUrl);
+            video.setFileSize(videoFile.getSize());
 
             log.debug("Updating video metadata to database for entity: {}", entityId);
-            videoRepository.save(video);
+            video = videoRepository.save(video);
 
             log.info("Updated video metadata to database for entity: {}", entityId);
+            return video;
         } catch (IOException e) {
             log.error("Failed to read video file data for entity: {}", entityId, e);
             throw new InvalidInputException("Failed to read video file");

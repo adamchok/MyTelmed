@@ -3,9 +3,10 @@ package com.mytelmed.core.tutorial.service;
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
-import com.mytelmed.common.constants.file.ImageType;
-import com.mytelmed.common.constants.file.VideoType;
-import com.mytelmed.common.events.deletion.VideoDeletedEvent;
+import com.mytelmed.common.constant.file.ImageType;
+import com.mytelmed.common.constant.file.VideoType;
+import com.mytelmed.common.event.image.ImageDeletedEvent;
+import com.mytelmed.common.event.video.VideoDeletedEvent;
 import com.mytelmed.core.image.entity.Image;
 import com.mytelmed.core.image.service.ImageService;
 import com.mytelmed.core.tutorial.dto.CreateTutorialRequestDto;
@@ -19,10 +20,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 import java.util.UUID;
 
 
@@ -34,7 +35,8 @@ public class TutorialService {
     private final VideoService videoService;
     private final ApplicationEventPublisher eventPublisher;
 
-    public TutorialService(TutorialRepository tutorialRepository, ImageService imageService, VideoService videoService, ApplicationEventPublisher eventPublisher) {
+    public TutorialService(TutorialRepository tutorialRepository, ImageService imageService, VideoService videoService,
+                           ApplicationEventPublisher eventPublisher) {
         this.tutorialRepository = tutorialRepository;
         this.imageService = imageService;
         this.videoService = videoService;
@@ -42,30 +44,33 @@ public class TutorialService {
     }
 
     @Transactional(readOnly = true)
-    public Tutorial findTutorialById(UUID id) throws ResourceNotFoundException {
-        return tutorialRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Tutorial not found with id " + id));
+    public Tutorial findById(UUID id) throws ResourceNotFoundException {
+        log.debug("Finding tutorial with ID: {}", id);
+
+        Tutorial tutorial = tutorialRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Tutorial not found with with ID: {}", id);
+                    return new ResourceNotFoundException("Tutorial not found");
+                });
+
+        log.debug("Found tutorial with ID: {}", id);
+        return tutorial;
     }
 
     @Transactional(readOnly = true)
-    public Page<Tutorial> findPaginatedTutorialByCategory(String category, int page, int size) {
+    public Page<Tutorial> findByCategory(String category, int page, int size) {
+        log.debug("Finding tutorial with category {} with page {} and size {}", category, page, size);
+
         Pageable pageable = PageRequest.of(page, size);
         return tutorialRepository.findByCategory(category, pageable);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
-    public void createTutorial(CreateTutorialRequestDto request, MultipartFile videoFile, MultipartFile thumbnailImageFile) throws S3Exception, AppException {
-        log.debug("Received request to create tutorial with request: {}", request);
+    public Tutorial create(CreateTutorialRequestDto request) throws AppException {
+        log.debug("Creating tutorial with request: {}", request);
 
         try {
-            if (videoFile == null || videoFile.isEmpty()) {
-                throw new InvalidInputException("Tutorial video is required");
-            }
-
-            if (thumbnailImageFile == null || thumbnailImageFile.isEmpty()) {
-                throw new InvalidInputException("Tutorial thumbnail image is required");
-            }
-
             Tutorial tutorial = Tutorial.builder()
                     .title(request.title())
                     .description(request.description())
@@ -74,42 +79,79 @@ public class TutorialService {
 
             tutorial = tutorialRepository.save(tutorial);
 
-            Video video = videoService.saveAndGetVideo(VideoType.TUTORIAL, tutorial.getId(), videoFile);
-            tutorial.setVideo(video);
-
-            Image image = imageService.saveAndGetImage(ImageType.TUTORIAL, tutorial.getId(), thumbnailImageFile);
-            tutorial.setThumbnail(image);
-
-            tutorialRepository.save(tutorial);
-
             log.info("Created tutorial with ID: {}", tutorial.getId());
+            return tutorial;
         } catch (Exception e) {
-            if (e instanceof AppException) {
-                throw (AppException) e;
-            }
             log.error("Unexpected error while creating tutorial: {}", request, e);
             throw new AppException("Failed to create tutorial");
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
-    public void updateTutorial(UUID tutorialId, UpdateTutorialRequestDto request, MultipartFile videoFile, MultipartFile imageFile) throws AppException {
-        log.debug("Received request to update tutorial with ID: {}", tutorialId);
+    public void uploadVideo(UUID tutorialId, MultipartFile videoFile) throws AppException {
+        log.debug("Uploading video for tutorial with ID: {}", tutorialId);
 
         try {
-            Tutorial tutorial = findTutorialById(tutorialId);
+            if (videoFile == null || videoFile.isEmpty()) {
+                throw new InvalidInputException("Tutorial video is required");
+            }
+
+            Tutorial tutorial = findById(tutorialId);
+
+            Video video = videoService.updateAndGetVideo(VideoType.TUTORIAL, tutorial.getId(), videoFile);
+            tutorial.setVideo(video);
+
+            tutorialRepository.save(tutorial);
+
+            log.info("Uploaded video for tutorial with ID: {}", tutorialId);
+        } catch (Exception e) {
+            if (e instanceof AppException) {
+                throw (AppException) e;
+            }
+            log.error("Unexpected error while uploading video for tutorial: {}", tutorialId, e);
+            throw new AppException("Failed to upload tutorial video");
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void uploadThumbnail(UUID tutorialId, MultipartFile thumbnailImageFile) throws AppException {
+        log.debug("Uploading thumbnail for tutorial with ID: {}", tutorialId);
+
+        try {
+            if (thumbnailImageFile == null || thumbnailImageFile.isEmpty()) {
+                throw new InvalidInputException("Tutorial thumbnail image is required");
+            }
+
+            Tutorial tutorial = findById(tutorialId);
+
+            Image image = imageService.updateAndGetImage(ImageType.TUTORIAL, tutorial.getId(), thumbnailImageFile);
+            tutorial.setThumbnail(image);
+
+            tutorialRepository.save(tutorial);
+
+            log.info("Uploaded thumbnail for tutorial with ID: {}", tutorialId);
+        } catch (Exception e) {
+            if (e instanceof AppException) {
+                throw (AppException) e;
+            }
+            log.error("Unexpected error while uploading thumbnail for tutorial: {}", tutorialId, e);
+            throw new AppException("Failed to upload tutorial thumbnail");
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void update(UUID tutorialId, UpdateTutorialRequestDto request) throws AppException {
+        log.debug("Updating tutorial with ID: {}", tutorialId);
+
+        try {
+            Tutorial tutorial = findById(tutorialId);
 
             tutorial.setTitle(request.title());
             tutorial.setDescription(request.description());
             tutorial.setCategory(request.category());
-
-            if (videoFile != null && !videoFile.isEmpty()) {
-                videoService.updateVideo(VideoType.TUTORIAL, tutorial.getId(), videoFile);
-            }
-
-            if (imageFile != null && !imageFile.isEmpty()) {
-                imageService.updateImage(ImageType.TUTORIAL, tutorial.getId(), imageFile);
-            }
 
             tutorialRepository.save(tutorial);
 
@@ -123,18 +165,24 @@ public class TutorialService {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
-    public void deleteTutorialById(UUID tutorialId) throws AppException {
-        log.debug("Received request to delete tutorial with ID: {}", tutorialId);
+    public void deleteById(UUID tutorialId) throws AppException {
+        log.debug("Deleting tutorial with ID: {}", tutorialId);
 
         try {
-            Tutorial tutorial = findTutorialById(tutorialId);
+            Tutorial tutorial = findById(tutorialId);
             String videoKey = tutorial.getVideo() != null ? tutorial.getVideo().getVideoKey() : null;
+            String imageKey = tutorial.getThumbnail() != null ? tutorial.getThumbnail().getImageKey() : null;
 
             tutorialRepository.delete(tutorial);
 
             if (videoKey != null) {
                 eventPublisher.publishEvent(new VideoDeletedEvent(tutorialId, videoKey));
+            }
+
+            if (imageKey != null) {
+                eventPublisher.publishEvent(new ImageDeletedEvent(tutorialId, imageKey));
             }
 
             log.info("Deleted tutorial with ID: {}", tutorial.getId());
