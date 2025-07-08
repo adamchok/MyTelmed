@@ -93,4 +93,4 @@ public class FamilyMemberPermissionController {
 
         return ResponseEntity.ok(ApiResponse.success("Permissions revoked successfully"));
     }
-} 
+}

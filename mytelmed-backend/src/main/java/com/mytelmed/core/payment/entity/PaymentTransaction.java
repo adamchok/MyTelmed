@@ -67,9 +67,23 @@ public class PaymentTransaction {
   @Column(name = "stripe_customer_id")
   private String stripeCustomerId;
 
+  // Refund tracking fields
+  @Column(name = "refund_amount", precision = 10, scale = 2)
+  @Builder.Default
+  private BigDecimal refundAmount = BigDecimal.ZERO;
+
+  @Column(name = "stripe_refund_id")
+  private String stripeRefundId;
+
+  @Column(name = "refund_reason")
+  private String refundReason;
+
+  @Column(name = "refunded_at")
+  private Instant refundedAt;
+
   @Column(name = "currency", length = 3)
   @Builder.Default
-  private String currency = "USD";
+  private String currency = "MYR";
 
   @Column(name = "failure_reason")
   private String failureReason;
@@ -91,6 +105,34 @@ public class PaymentTransaction {
     COMPLETED,
     FAILED,
     CANCELLED,
-    REFUNDED
+    REFUNDED,
+    PARTIAL_REFUND
+  }
+
+  /**
+   * Checks if this transaction is eligible for a full refund
+   */
+  public boolean isEligibleForFullRefund() {
+    return status == TransactionStatus.COMPLETED
+        && refundAmount.compareTo(BigDecimal.ZERO) == 0
+        && stripeChargeId != null;
+  }
+
+  /**
+   * Checks if this transaction has been fully refunded
+   */
+  public boolean isFullyRefunded() {
+    return status == TransactionStatus.REFUNDED
+        && refundAmount.compareTo(amount) == 0;
+  }
+
+  /**
+   * Gets the remaining refundable amount
+   */
+  public BigDecimal getRefundableAmount() {
+    if (status != TransactionStatus.COMPLETED) {
+      return BigDecimal.ZERO;
+    }
+    return amount.subtract(refundAmount);
   }
 }

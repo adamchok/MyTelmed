@@ -2,12 +2,15 @@ package com.mytelmed.core.payment.service;
 
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
+import com.mytelmed.common.constant.appointment.ConsultationMode;
+import com.mytelmed.common.constant.family.FamilyPermissionType;
 import com.mytelmed.common.constant.payment.BillType;
 import com.mytelmed.common.constant.payment.BillingStatus;
 import com.mytelmed.common.constant.payment.PaymentMode;
 import com.mytelmed.core.appointment.entity.Appointment;
 import com.mytelmed.core.appointment.service.AppointmentService;
 import com.mytelmed.core.auth.entity.Account;
+import com.mytelmed.core.family.service.FamilyMemberPermissionService;
 import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.patient.service.PatientService;
 import com.mytelmed.core.payment.dto.PaymentIntentResponseDto;
@@ -17,12 +20,15 @@ import com.mytelmed.core.payment.repository.BillRepository;
 import com.mytelmed.core.payment.repository.PaymentTransactionRepository;
 import com.mytelmed.core.prescription.entity.Prescription;
 import com.mytelmed.core.prescription.service.PrescriptionService;
+import com.mytelmed.common.event.payment.model.BillGeneratedEvent;
+import com.mytelmed.common.event.payment.model.PaymentCompletedEvent;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentConfirmParams;
 import com.stripe.param.PaymentIntentCreateParams;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,7 +42,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 public class PaymentService {
@@ -45,40 +50,72 @@ public class PaymentService {
     private final PatientService patientService;
     private final AppointmentService appointmentService;
     private final PrescriptionService prescriptionService;
+    private final FamilyMemberPermissionService familyPermissionService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${stripe.secret.key:}")
     private String stripeSecretKey;
 
-    @Value("${mytelmed.appointment.consultation.fee:5.00}")
+    @Value("${mytelmed.appointment.consultation.fee:2.00}")
     private BigDecimal consultationFee;
 
     @Value("${mytelmed.prescription.delivery.fee:10.00}")
     private BigDecimal deliveryFee;
 
     public PaymentService(BillRepository billRepository,
-                          PaymentTransactionRepository paymentTransactionRepository,
-                          PatientService patientService,
-                          AppointmentService appointmentService,
-                          PrescriptionService prescriptionService) {
+            PaymentTransactionRepository paymentTransactionRepository,
+            PatientService patientService,
+            AppointmentService appointmentService,
+            PrescriptionService prescriptionService,
+            FamilyMemberPermissionService familyPermissionService,
+            ApplicationEventPublisher eventPublisher) {
         this.billRepository = billRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.patientService = patientService;
         this.appointmentService = appointmentService;
         this.prescriptionService = prescriptionService;
+        this.familyPermissionService = familyPermissionService;
+        this.eventPublisher = eventPublisher;
+    }
+
+    /**
+     * Checks if payment is required for an appointment based on consultation mode.
+     * Only VIRTUAL consultations require upfront payment.
+     */
+    @Transactional(readOnly = true)
+    public boolean isPaymentRequired(UUID appointmentId) throws AppException {
+        Appointment appointment = appointmentService.findById(appointmentId);
+        return appointment.getConsultationMode() == ConsultationMode.VIRTUAL;
     }
 
     @PreAuthorize("hasRole('PATIENT')")
     @Transactional
     public PaymentIntentResponseDto createAppointmentPaymentIntent(Account account, UUID appointmentId)
             throws AppException {
-        log.info("Creating payment intent for appointment: {} by patient: {}", appointmentId, account.getId());
+        log.info("Creating payment intent for appointment: {} by account: {}", appointmentId, account.getId());
 
-        // Get patient and appointment
-        Patient patient = patientService.findPatientByAccountId(account.getId());
         Appointment appointment = appointmentService.findById(appointmentId);
 
-        // Verify patient owns the appointment
-        if (!appointment.getPatient().getId().equals(patient.getId())) {
+        // Check if payment is required for this consultation mode
+        if (!isPaymentRequired(appointmentId)) {
+            throw new AppException(
+                    "Payment is not required for " + appointment.getConsultationMode() + " consultations");
+        }
+
+        // Get the patient ID this account is authorized to access
+        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
+        if (authorizedPatientId == null) {
+            throw new AppException("Account is not authorized to make payments for any patient");
+        }
+
+        // Verify the account has BOOK_APPOINTMENT permission (required for payment)
+        if (!familyPermissionService.hasPermission(account, authorizedPatientId,
+                FamilyPermissionType.BOOK_APPOINTMENT)) {
+            throw new AppException("Insufficient permissions to make payment for appointments");
+        }
+
+        // Verify the appointment belongs to the authorized patient
+        if (!appointment.getPatient().getId().equals(authorizedPatientId)) {
             throw new AppException("Not authorized to pay for this appointment");
         }
 
@@ -88,9 +125,11 @@ public class PaymentService {
         }
 
         try {
+            Patient patient = patientService.findPatientById(authorizedPatientId);
+
             // Create bill
             Bill bill = createBill(patient, BillType.CONSULTATION, consultationFee,
-                    "Consultation fee for appointment with doctor" + appointment.getDoctor().getName(),
+                    "Virtual consultation fee for appointment with Dr. " + appointment.getDoctor().getName(),
                     appointment, null);
 
             // Create Stripe PaymentIntent
@@ -103,8 +142,7 @@ public class PaymentService {
                     paymentIntent.getCurrency().toUpperCase(),
                     paymentIntent.getStatus(),
                     bill.getId().toString(),
-                    bill.getDescription()
-            );
+                    bill.getDescription());
         } catch (StripeException e) {
             log.error("Stripe error creating payment intent for appointment: {}", appointmentId, e);
             throw new AppException("Failed to create payment intent: " + e.getMessage());
@@ -115,14 +153,24 @@ public class PaymentService {
     @Transactional
     public PaymentIntentResponseDto createPrescriptionPaymentIntent(Account account, UUID prescriptionId)
             throws AppException {
-        log.info("Creating payment intent for prescription: {} by patient: {}", prescriptionId, account.getId());
+        log.info("Creating payment intent for prescription: {} by account: {}", prescriptionId, account.getId());
 
-        // Get patient and prescription
-        Patient patient = patientService.findPatientByAccountId(account.getId());
         Prescription prescription = prescriptionService.findById(prescriptionId);
 
-        // Verify patient owns the prescription
-        if (!prescription.getPatient().getId().equals(patient.getId())) {
+        // Get the patient ID this account is authorized to access
+        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
+        if (authorizedPatientId == null) {
+            throw new AppException("Account is not authorized to make payments for any patient");
+        }
+
+        // Verify the account has BOOK_APPOINTMENT permission (required for payment)
+        if (!familyPermissionService.hasPermission(account, authorizedPatientId,
+                FamilyPermissionType.BOOK_APPOINTMENT)) {
+            throw new AppException("Insufficient permissions to make payment for prescriptions");
+        }
+
+        // Verify the prescription belongs to the authorized patient
+        if (!prescription.getPatient().getId().equals(authorizedPatientId)) {
             throw new AppException("Not authorized to pay for this prescription");
         }
 
@@ -132,9 +180,11 @@ public class PaymentService {
         }
 
         try {
-            // Create bill
+            Patient patient = patientService.findPatientById(authorizedPatientId);
+
+            // Create bill for standardized delivery fee (RM 10)
             Bill bill = createBill(patient, BillType.MEDICATION, deliveryFee,
-                    "Delivery fee for prescription: " + prescription.getId(),
+                    "Medication delivery fee for prescription: " + prescription.getId(),
                     null, prescription);
 
             // Create Stripe PaymentIntent
@@ -147,8 +197,7 @@ public class PaymentService {
                     paymentIntent.getCurrency().toUpperCase(),
                     paymentIntent.getStatus(),
                     bill.getId().toString(),
-                    bill.getDescription()
-            );
+                    bill.getDescription());
         } catch (StripeException e) {
             log.error("Stripe error creating payment intent for prescription: {}", prescriptionId, e);
             throw new AppException("Failed to create payment intent: " + e.getMessage());
@@ -159,16 +208,21 @@ public class PaymentService {
     @Transactional
     public PaymentIntentResponseDto confirmPayment(Account account, String paymentIntentId, String paymentMethodId)
             throws AppException {
-        log.info("Confirming payment intent: {} by patient: {}", paymentIntentId, account.getId());
+        log.info("Confirming payment intent: {} by account: {}", paymentIntentId, account.getId());
 
         try {
             // Find the payment transaction
             PaymentTransaction transaction = paymentTransactionRepository.findByStripePaymentIntentId(paymentIntentId)
                     .orElseThrow(() -> new ResourceNotFoundException("Payment transaction not found"));
 
-            // Verify patient owns the transaction
-            Patient patient = patientService.findPatientByAccountId(account.getId());
-            if (!transaction.getPatient().getId().equals(patient.getId())) {
+            // Get the patient ID this account is authorized to access
+            UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
+            if (authorizedPatientId == null) {
+                throw new AppException("Account is not authorized to confirm payments for any patient");
+            }
+
+            // Verify the transaction belongs to the authorized patient
+            if (!transaction.getPatient().getId().equals(authorizedPatientId)) {
                 throw new AppException("Not authorized to confirm this payment");
             }
 
@@ -196,8 +250,7 @@ public class PaymentService {
                     paymentIntent.getCurrency().toUpperCase(),
                     paymentIntent.getStatus(),
                     transaction.getBill().getId().toString(),
-                    transaction.getBill().getDescription()
-            );
+                    transaction.getBill().getDescription());
         } catch (StripeException e) {
             log.error("Stripe error confirming payment: {}", paymentIntentId, e);
             throw new AppException("Failed to confirm payment: " + e.getMessage());
@@ -207,19 +260,29 @@ public class PaymentService {
     @PreAuthorize("hasRole('PATIENT')")
     @Transactional(readOnly = true)
     public Page<Bill> getPatientBills(Account account, Pageable pageable) {
-        Patient patient = patientService.findPatientByAccountId(account.getId());
-        return billRepository.findByPatientId(patient.getId(), pageable);
+        // Get the patient ID this account is authorized to access
+        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
+        if (authorizedPatientId == null) {
+            throw new AppException("Account is not authorized to view bills for any patient");
+        }
+
+        return billRepository.findByPatientId(authorizedPatientId, pageable);
     }
 
     @PreAuthorize("hasRole('PATIENT')")
     @Transactional(readOnly = true)
     public Page<PaymentTransaction> getPatientTransactions(Account account, Pageable pageable) {
-        Patient patient = patientService.findPatientByAccountId(account.getId());
-        return paymentTransactionRepository.findByPatientId(patient.getId(), pageable);
+        // Get the patient ID this account is authorized to access
+        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
+        if (authorizedPatientId == null) {
+            throw new AppException("Account is not authorized to view transactions for any patient");
+        }
+
+        return paymentTransactionRepository.findByPatientId(authorizedPatientId, pageable);
     }
 
     private Bill createBill(Patient patient, BillType billType, BigDecimal amount,
-                            String description, Appointment appointment, Prescription prescription) {
+            String description, Appointment appointment, Prescription prescription) {
         String billNumber = generateBillNumber(billType);
 
         Bill bill = Bill.builder()
@@ -234,7 +297,17 @@ public class PaymentService {
                 .billedAt(Instant.now())
                 .build();
 
-        return billRepository.save(bill);
+        Bill savedBill = billRepository.save(bill);
+
+        // Publish bill generated event for invoice email
+        BillGeneratedEvent billEvent = BillGeneratedEvent.builder()
+                .bill(savedBill)
+                .build();
+        eventPublisher.publishEvent(billEvent);
+
+        log.info("Published bill generated event for bill: {}", savedBill.getBillNumber());
+
+        return savedBill;
     }
 
     private PaymentIntent createStripePaymentIntent(Bill bill) throws StripeException {
@@ -259,7 +332,7 @@ public class PaymentService {
 
         PaymentIntent paymentIntent = PaymentIntent.create(params);
 
-        // Create transaction record
+        // Create transaction record with correct currency
         String transactionNumber = generateTransactionNumber();
         PaymentTransaction transaction = PaymentTransaction.builder()
                 .transactionNumber(transactionNumber)
@@ -269,7 +342,7 @@ public class PaymentService {
                 .paymentMode(PaymentMode.CARD)
                 .status(PaymentTransaction.TransactionStatus.PENDING)
                 .stripePaymentIntentId(paymentIntent.getId())
-                .currency("USD")
+                .currency("MYR")
                 .build();
 
         paymentTransactionRepository.save(transaction);
@@ -304,6 +377,13 @@ public class PaymentService {
         bill.setStripeChargeId(paymentIntent.getLatestCharge());
         bill.setPaidAt(Instant.now());
         billRepository.save(bill);
+
+        // Publish payment completed event for receipt email
+        PaymentCompletedEvent paymentEvent = PaymentCompletedEvent.builder()
+                .bill(bill)
+                .transaction(transaction)
+                .build();
+        eventPublisher.publishEvent(paymentEvent);
 
         log.info("Payment completed successfully for bill: {} with transaction: {}",
                 bill.getBillNumber(), transaction.getTransactionNumber());

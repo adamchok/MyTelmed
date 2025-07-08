@@ -22,11 +22,10 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 public class AwsS3Service {
-    private final String privateAssetsBucket;
+    private final String bucket;
     private final String cloudFrontDomainName;
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
@@ -36,10 +35,10 @@ public class AwsS3Service {
     private static final Duration DOCUMENT_EXPIRY = Duration.ofMinutes(10);
 
     public AwsS3Service(
-            @Value("${aws.s3.private.bucket-name}") String privateAssetsBucket,
+            @Value("${aws.s3.bucket.name}") String bucket,
             @Value("${aws.cloudfront.domain-name}") String cloudFrontDomainName,
             S3Client s3Client, S3Presigner s3Presigner) {
-        this.privateAssetsBucket = privateAssetsBucket;
+        this.bucket = bucket;
         this.cloudFrontDomainName = cloudFrontDomainName;
         this.s3Client = s3Client;
         this.s3Presigner = s3Presigner;
@@ -96,7 +95,7 @@ public class AwsS3Service {
 
         try {
             PutObjectRequest request = PutObjectRequest.builder()
-                    .bucket(privateAssetsBucket)
+                    .bucket(bucket)
                     .key(key)
                     .build();
 
@@ -106,7 +105,7 @@ public class AwsS3Service {
             return key;
         } catch (S3Exception e) {
             log.error("S3 error uploading object with key: {} to bucket: {}. Error code: {}",
-                    key, privateAssetsBucket, e.awsErrorDetails().errorCode(), e);
+                    key, bucket, e.awsErrorDetails().errorCode(), e);
             throw e;
         } catch (IOException e) {
             log.error("Error reading file from multipart: {}", e.getMessage(), e);
@@ -142,27 +141,27 @@ public class AwsS3Service {
             // Check if file exists
             try {
                 s3Client.headObject(HeadObjectRequest.builder()
-                        .bucket(privateAssetsBucket)
+                        .bucket(bucket)
                         .key(key)
                         .build());
             } catch (S3Exception e) {
                 log.error("Cannot update file that doesn't exist in S3. Key: {} in bucket: {}", key,
-                        privateAssetsBucket);
+                        bucket);
                 throw new IllegalArgumentException("File does not exist in S3", e);
             }
 
             PutObjectRequest request = PutObjectRequest.builder()
-                    .bucket(privateAssetsBucket)
+                    .bucket(bucket)
                     .key(key)
                     .build();
 
-            log.debug("Updating existing S3 object at key: {} in bucket: {}", key, privateAssetsBucket);
+            log.debug("Updating existing S3 object at key: {} in bucket: {}", key, bucket);
             s3Client.putObject(request, RequestBody.fromBytes(file.getBytes()));
 
             return key;
         } catch (S3Exception e) {
             log.error("S3 error updating object with key: {} in bucket: {}. Error code: {}",
-                    key, privateAssetsBucket, e.awsErrorDetails().errorCode(), e);
+                    key, bucket, e.awsErrorDetails().errorCode(), e);
             throw e;
         } catch (IOException e) {
             log.error("Error reading update file content: {}", e.getMessage(), e);
@@ -186,7 +185,7 @@ public class AwsS3Service {
 
         try {
             DeleteObjectRequest request = DeleteObjectRequest.builder()
-                    .bucket(privateAssetsBucket)
+                    .bucket(bucket)
                     .key(key)
                     .build();
 
@@ -215,7 +214,7 @@ public class AwsS3Service {
             };
 
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                    .bucket(privateAssetsBucket)
+                    .bucket(bucket)
                     .key(key)
                     .build();
 
@@ -228,7 +227,7 @@ public class AwsS3Service {
             return presignedUrl.toString();
         } catch (S3Exception e) {
             log.error("S3 error generating pre-signed URL for key: {} from bucket: {}. Error code: {}",
-                    key, privateAssetsBucket, e.awsErrorDetails().errorCode(), e);
+                    key, bucket, e.awsErrorDetails().errorCode(), e);
             throw e;
         } catch (Exception e) {
             log.error("Error generating pre-signed URL: {}", e.getMessage(), e);

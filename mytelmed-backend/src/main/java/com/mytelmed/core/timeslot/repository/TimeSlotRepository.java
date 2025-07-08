@@ -2,15 +2,23 @@ package com.mytelmed.core.timeslot.repository;
 
 import com.mytelmed.core.timeslot.entity.TimeSlot;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface TimeSlotRepository extends JpaRepository<TimeSlot, UUID> {
+
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
+        @Query("SELECT ts FROM TimeSlot ts WHERE ts.id = :id")
+        Optional<TimeSlot> findByIdWithLock(@Param("id") UUID id);
+
         @Query("SELECT ts FROM TimeSlot ts WHERE ts.doctor.id = :doctorId " +
                         "AND ts.startTime >= :startTime AND ts.endTime <= :endTime " +
                         "AND ts.isAvailable = true AND ts.isBooked = false " +
@@ -44,4 +52,13 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, UUID> {
                         @Param("startTime") LocalDateTime startTime,
                         @Param("endTime") LocalDateTime endTime,
                         @Param("excludeTimeSlotId") UUID excludeTimeSlotId);
+
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
+        @Query("SELECT COUNT(ts) > 0 FROM TimeSlot ts WHERE ts.doctor.id = :doctorId " +
+                        "AND ts.startTime < :endTime " +
+                        "AND ts.endTime > :startTime")
+        boolean hasOverlappingTimeSlotsWithLock(
+                        @Param("doctorId") UUID doctorId,
+                        @Param("startTime") LocalDateTime startTime,
+                        @Param("endTime") LocalDateTime endTime);
 }

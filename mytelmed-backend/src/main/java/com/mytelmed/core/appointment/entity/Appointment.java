@@ -1,6 +1,7 @@
 package com.mytelmed.core.appointment.entity;
 
 import com.mytelmed.common.constant.appointment.AppointmentStatus;
+import com.mytelmed.common.constant.appointment.ConsultationMode;
 import com.mytelmed.core.doctor.entity.Doctor;
 import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.timeslot.entity.TimeSlot;
@@ -18,6 +19,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,6 +32,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Appointment entity for Malaysian public healthcare telemedicine system.
+ * Supports both PHYSICAL and VIRTUAL consultation modes.
+ */
 @Getter
 @Setter
 @Builder
@@ -41,6 +47,9 @@ public class Appointment {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Version
+    private Long version;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "patient_id", nullable = false)
@@ -57,6 +66,10 @@ public class Appointment {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private AppointmentStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "consultation_mode", nullable = false)
+    private ConsultationMode consultationMode;
 
     @Column(name = "patient_notes", columnDefinition = "TEXT")
     private String patientNotes;
@@ -91,4 +104,25 @@ public class Appointment {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    /**
+     * Checks if this appointment requires a video call (VIRTUAL mode)
+     */
+    public boolean requiresVideoCall() {
+        return consultationMode == ConsultationMode.VIRTUAL;
+    }
+
+    /**
+     * Checks if this appointment is conducted physically at the facility
+     */
+    public boolean isPhysicalConsultation() {
+        return consultationMode == ConsultationMode.PHYSICAL;
+    }
+
+    /**
+     * Checks if this appointment is conducted virtually online
+     */
+    public boolean isVirtualConsultation() {
+        return consultationMode == ConsultationMode.VIRTUAL;
+    }
 }

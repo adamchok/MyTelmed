@@ -19,4 +19,4 @@ public enum FamilyPermissionType {
     public String getDescription() {
         return description;
     }
-} 
+}

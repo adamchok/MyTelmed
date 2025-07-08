@@ -25,4 +25,4 @@ public interface FamilyMemberPermissionMapper {
     default String mapLocalDate(LocalDate date) {
         return date != null ? date.toString() : null;
     }
-} 
+}

@@ -1,190 +1,189 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MyTelmed - New Appointment Confirmation</title>
     <style>
-        body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333333;
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333333;
+        padding: 20px;
+        background-color: #f8f9fa;
+      }
 
-        .container {
-            background-color: #ffffff;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
+      .container {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
 
-        .header {
-            text-align: center;
-            justify-content: center;
-            border-bottom: 3px solid #28a745;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
+      .header {
+        text-align: center;
+        justify-content: center;
+        border-bottom: 3px solid #28a745;
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+      }
 
-        .logo {
-            width: 192px;
-            height: auto;
-            max-width: 100%;
-            display: block;
-            margin: 0 auto;
-        }
+      .logo {
+        width: 192px;
+        height: auto;
+        max-width: 100%;
+        display: block;
+        margin: 0 auto;
+      }
 
-        .appointment-details {
-            background-color: #f8f9fa;
-            border-left: 4px solid #28a745;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 5px;
-        }
+      .appointment-details {
+        background-color: #f8f9fa;
+        border-left: 4px solid #28a745;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 5px;
+      }
 
-        .detail-row {
-            display: flex;
-            margin-bottom: 12px;
-            align-items: center;
-        }
+      .detail-row {
+        display: flex;
+        margin-bottom: 12px;
+        align-items: center;
+      }
 
-        .detail-label {
-            font-weight: bold;
-            color: #495057;
-            min-width: 140px;
-            margin-right: 10px;
-        }
+      .detail-label {
+        font-weight: bold;
+        color: #495057;
+        min-width: 140px;
+        margin-right: 10px;
+      }
 
-        .detail-value {
-            color: #333;
-            flex: 1;
-        }
+      .detail-value {
+        color: #333;
+        flex: 1;
+      }
 
-        .datetime-highlight {
-            background-color: #28a745;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            margin: 20px 0;
-        }
+      .datetime-highlight {
+        background-color: #28a745;
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        margin: 20px 0;
+      }
 
-        .datetime-highlight .date {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
+      .datetime-highlight .date {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
 
-        .datetime-highlight .time {
-            font-size: 18px;
-        }
+      .datetime-highlight .time {
+        font-size: 18px;
+      }
 
-        .action-buttons {
-            text-align: center;
-            margin: 30px 0;
-        }
+      .action-buttons {
+        text-align: center;
+        margin: 30px 0;
+      }
 
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            margin: 0 10px;
-            background-color: #007bff;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-        }
+      .btn {
+        display: inline-block;
+        padding: 12px 24px;
+        margin: 0 10px;
+        background-color: #007bff;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+      }
 
-        .btn:hover {
-            background-color: #0056b3;
-        }
+      .btn:hover {
+        background-color: #0056b3;
+      }
 
-        .footer {
-            border-top: 1px solid #dee2e6;
-            padding-top: 20px;
-            margin-top: 30px;
-            text-align: center;
-            color: #6c757d;
-            font-size: 14px;
-        }
+      .footer {
+        border-top: 1px solid #dee2e6;
+        padding-top: 20px;
+        margin-top: 30px;
+        text-align: center;
+        color: #6c757d;
+        font-size: 14px;
+      }
 
-        a {
-            color: #007bff;
-        }
+      a {
+        color: #007bff;
+      }
 
-        a:hover {
-            text-decoration: underline;
-        }
+      a:hover {
+        text-decoration: underline;
+      }
     </style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <img th:src="@{/mytelmed-logo.png}" alt="MyTelmed Logo" class="logo"/>
-        <h2 style="color: #495057; margin: 0">
-            A new appointment has been confirmed for you
-        </h2>
-    </div>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <img th:src="@{/mytelmed-logo.png}" alt="MyTelmed Logo" class="logo" />
+        <h2 style="color: #495057; margin: 0">A new appointment has been confirmed for you</h2>
+      </div>
 
-    <p>Dear <strong th:text="${providerName}">Provider Name</strong>,</p>
+      <p>Dear <strong th:text="${providerName}">Provider Name</strong>,</p>
 
-    <p>
+      <p>
         You have a new confirmed appointment with patient
-        <strong th:text="${patientName}">Patient Name</strong>. Below are the
-        details of this appointment:
-    </p>
+        <strong th:text="${patientName}">Patient Name</strong>. Below are the details of this appointment:
+      </p>
 
-    <div class="datetime-highlight">
-        <div
-                class="date"
-                th:text="${#temporals.format(appointmentDateTime, 'EEEE, MMMM d, yyyy')}"
-        >
-            Monday, January 15, 2024
+      <div class="datetime-highlight">
+        <div class="date" th:text="${#temporals.format(appointmentDateTime, 'EEEE, MMMM d, yyyy')}">
+          Monday, January 15, 2024
         </div>
-        <div
-                class="time"
-                th:text="${#temporals.format(appointmentDateTime, 'h:mm a')}"
-        >
-            10:00 AM
-        </div>
-    </div>
+        <div class="time" th:text="${#temporals.format(appointmentDateTime, 'h:mm a')}">10:00 AM</div>
+      </div>
 
-    <div class="appointment-details">
-        <h3 style="color: #28a745; margin-top: 0">Appointment Details</h3>
+      <div class="appointment-details">
+        <h3 style="color: #28a745; margin-top: 0">Confirmed Appointment Details</h3>
 
         <div class="detail-row">
-            <span class="detail-label">Appointment ID:</span>
-            <span class="detail-value"
-                  th:text="${appointmentId.length() > 6 ? appointmentId.substring(appointmentId.length() - 6) : appointmentId}">-</span>
+          <span class="detail-label">Appointment ID:</span>
+          <span
+            class="detail-value"
+            th:text="${appointmentId.length() > 6 ? appointmentId.substring(appointmentId.length() - 6) : appointmentId}"
+            >-</span
+          >
         </div>
 
         <div class="detail-row">
-            <span class="detail-label">Patient Name:</span>
-            <span class="detail-value" th:text="${patientName}">-</span>
+          <span class="detail-label">Appointment Type:</span>
+          <span
+            class="detail-value"
+            th:text="${consultationMode == 'VIRTUAL' ? 'Virtual Consultation (Video Call)' : 'Physical Consultation (In-Person)'}"
+            >-</span
+          >
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label">Patient Name:</span>
+          <span class="detail-value" th:text="${patientName}">-</span>
         </div>
 
         <div class="detail-row" th:if="${reasonForVisit}">
-            <span class="detail-label">Reason for Visit:</span>
-            <span class="detail-value" th:text="${reasonForVisit}">-</span>
+          <span class="detail-label">Reason for Visit:</span>
+          <span class="detail-value" th:text="${reasonForVisit}">-</span>
         </div>
-    </div>
+      </div>
 
-    <div class="action-buttons">
-        <a th:href="${uiHost + '/doctor/appointment/' + appointmentId}" class="btn">
-            Review Appointment
-        </a>
-    </div>
+      <div class="action-buttons">
+        <a th:href="${uiHost + '/doctor/appointment/' + appointmentId}" class="btn"> Review Appointment </a>
+      </div>
 
-    <div class="footer">
+      <div class="footer">
         <p>This is an automated message, please do not reply to this email.</p>
         <p>&copy; 2025 MyTelmed. All rights reserved.</p>
         <p>
-            <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
-            <a th:href="${uiHost + '/terms'}">Terms of Service</a>
+          <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
+          <a th:href="${uiHost + '/terms'}">Terms of Service</a>
         </p>
+      </div>
     </div>
-</div>
-</body>
+  </body>
 </html>

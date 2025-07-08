@@ -9,6 +9,7 @@ import com.mytelmed.common.constant.referral.ReferralStatus;
 import com.mytelmed.common.constant.referral.ReferralType;
 import com.mytelmed.common.utils.DateTimeUtil;
 import com.mytelmed.core.appointment.entity.Appointment;
+import com.mytelmed.core.appointment.repository.AppointmentRepository;
 import com.mytelmed.core.appointment.service.AppointmentService;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.doctor.entity.Doctor;
@@ -23,7 +24,9 @@ import com.mytelmed.core.referral.entity.Referral;
 import com.mytelmed.core.referral.repository.ReferralRepository;
 import com.mytelmed.core.timeslot.entity.TimeSlot;
 import com.mytelmed.core.timeslot.service.TimeSlotService;
+import com.mytelmed.common.event.referral.model.ReferralCreatedEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,7 +37,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 public class ReferralService {
@@ -42,21 +44,27 @@ public class ReferralService {
     private final PatientService patientService;
     private final DoctorService doctorService;
     private final AppointmentService appointmentService;
+    private final AppointmentRepository appointmentRepository;
     private final TimeSlotService timeSlotService;
     private final FamilyMemberPermissionService familyPermissionService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ReferralService(ReferralRepository referralRepository,
-                           PatientService patientService,
-                           DoctorService doctorService,
-                           AppointmentService appointmentService,
-                           TimeSlotService timeSlotService,
-                           FamilyMemberPermissionService familyPermissionService) {
+            PatientService patientService,
+            DoctorService doctorService,
+            AppointmentService appointmentService,
+            AppointmentRepository appointmentRepository,
+            TimeSlotService timeSlotService,
+            FamilyMemberPermissionService familyPermissionService,
+            ApplicationEventPublisher eventPublisher) {
         this.referralRepository = referralRepository;
         this.patientService = patientService;
         this.doctorService = doctorService;
         this.appointmentService = appointmentService;
+        this.appointmentRepository = appointmentRepository;
         this.timeSlotService = timeSlotService;
         this.familyPermissionService = familyPermissionService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -86,14 +94,16 @@ public class ReferralService {
         log.debug("Found referral with number: {}", referralNumber);
         return referral;
     }
-    
+
     @PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR')")
     @Transactional(readOnly = true)
-    public Page<Referral> findByPatientId(UUID patientId, Account requestingAccount, Pageable pageable) throws AppException {
+    public Page<Referral> findByPatientId(UUID patientId, Account requestingAccount, Pageable pageable)
+            throws AppException {
         log.debug("Finding referrals for patient: {} by account: {}", patientId, requestingAccount.getId());
 
         // Verify account is authorized to view referrals for this patient
-        if (!familyPermissionService.isAuthorizedForPatient(requestingAccount, patientId, FamilyPermissionType.VIEW_REFERRALS)) {
+        if (!familyPermissionService.isAuthorizedForPatient(requestingAccount, patientId,
+                FamilyPermissionType.VIEW_REFERRALS)) {
             throw new AppException("Insufficient permissions to view referrals for this patient");
         }
 
@@ -191,6 +201,12 @@ public class ReferralService {
         // Save referral
         Referral referral = referralRepository.save(referralBuilder.build());
 
+        // Publish referral created event for notification emails
+        ReferralCreatedEvent referralEvent = ReferralCreatedEvent.builder()
+                .referral(referral)
+                .build();
+        eventPublisher.publishEvent(referralEvent);
+
         log.info("Referral created successfully: {}", maskReferralNumber(referral.getReferralNumber()));
     }
 
@@ -263,44 +279,44 @@ public class ReferralService {
             throw new InvalidInputException("Can only schedule appointments for accepted referrals");
         }
 
-        // Get time slot
-        TimeSlot timeSlot = timeSlotService.findById(timeSlotId);
+        // Use thread-safe time slot booking
+        TimeSlot timeSlot = timeSlotService.bookTimeSlotSafely(timeSlotId);
 
         // Validate time slot belongs to the doctor
         if (!timeSlot.getDoctor().getId().equals(doctor.getId())) {
             throw new InvalidInputException("Time slot does not belong to the doctor");
         }
 
-        // Validate time slot is not booked
-        if (timeSlot.getIsBooked() == true) {
-            throw new InvalidInputException("Time slot is already booked");
+        try {
+            // Create appointment with PENDING status (automated scheduler will handle
+            // transitions)
+            Appointment appointment = Appointment.builder()
+                    .patient(referral.getPatient())
+                    .doctor(doctor)
+                    .timeSlot(timeSlot)
+                    .status(AppointmentStatus.PENDING) // Start at PENDING for physical appointments
+                    .consultationMode(timeSlot.getConsultationMode()) // Use time slot's consultation mode
+                    .reasonForVisit("Referral: " + referral.getReasonForReferral())
+                    .doctorNotes(referral.getClinicalSummary())
+                    .referral(referral)
+                    .build();
+
+            // Save appointment directly (no manual scheduling needed)
+            Appointment savedAppointment = appointmentRepository.save(appointment);
+
+            // Update referral status
+            referral.setStatus(ReferralStatus.SCHEDULED);
+            referral.setScheduledAppointment(savedAppointment);
+            referralRepository.save(referral);
+
+            log.info("Appointment scheduled successfully for referral: {} with appointment: {}",
+                    referralId, savedAppointment.getId());
+        } catch (Exception e) {
+            // Release time slot if appointment creation fails
+            timeSlotService.releaseTimeSlotSafely(timeSlotId);
+            log.error("Failed to schedule appointment for referral: {}", referralId, e);
+            throw new AppException("Failed to schedule appointment for referral");
         }
-
-        // Validate time slot is available
-        if (timeSlot.getIsAvailable() == false) {
-            throw new InvalidInputException("Time slot is not available");
-        }
-
-        // Create appointment
-        Appointment appointment = Appointment.builder()
-                .patient(referral.getPatient())
-                .doctor(doctor)
-                .timeSlot(timeSlot)
-                .status(AppointmentStatus.PENDING)
-                .reasonForVisit("Referral: " + referral.getReasonForReferral())
-                .doctorNotes(referral.getClinicalSummary())
-                .referral(referral)
-                .build();
-
-        // Schedule appointment
-        appointmentService.schedule(appointment);
-
-        // Update referral status
-        referral.setStatus(ReferralStatus.SCHEDULED);
-        referral.setScheduledAppointment(appointment);
-        referralRepository.save(referral);
-
-        log.info("Appointment scheduled successfully for referral: {}", referralId);
     }
 
     @Transactional
@@ -340,12 +356,14 @@ public class ReferralService {
             }
         } else {
             if (request.externalDoctorName() == null || request.externalFacilityName() == null) {
-                throw new InvalidInputException("External doctor name and facility name are required for external referrals");
+                throw new InvalidInputException(
+                        "External doctor name and facility name are required for external referrals");
             }
         }
     }
 
-    private void validateStatusTransition(ReferralStatus currentStatus, ReferralStatus newStatus) throws InvalidInputException {
+    private void validateStatusTransition(ReferralStatus currentStatus, ReferralStatus newStatus)
+            throws InvalidInputException {
         boolean isValidTransition = switch (currentStatus) {
             case PENDING -> newStatus == ReferralStatus.ACCEPTED ||
                     newStatus == ReferralStatus.REJECTED ||
@@ -364,7 +382,8 @@ public class ReferralService {
     }
 
     /**
-     * Masks a referral number by keeping the "REF" prefix and last 4 characters, masking the rest.
+     * Masks a referral number by keeping the "REF" prefix and last 4 characters,
+     * masking the rest.
      * Example: REF-1234567890 -> REF-******7890
      */
     private String maskReferralNumber(String referralNumber) {

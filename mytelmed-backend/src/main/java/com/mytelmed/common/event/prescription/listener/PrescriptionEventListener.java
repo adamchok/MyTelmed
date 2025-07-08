@@ -2,7 +2,6 @@ package com.mytelmed.common.event.prescription.listener;
 
 import com.mytelmed.common.event.prescription.model.PrescriptionCreatedEvent;
 import com.mytelmed.common.event.prescription.model.PrescriptionExpiringEvent;
-import com.mytelmed.common.event.prescription.model.PrescriptionOutForDeliveryEvent;
 import com.mytelmed.core.notification.service.PushSubscriptionService;
 import com.mytelmed.core.prescription.entity.Prescription;
 import com.mytelmed.infrastructure.email.constant.EmailType;
@@ -18,7 +17,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-
 @Slf4j
 @Component
 public class PrescriptionEventListener {
@@ -27,8 +25,8 @@ public class PrescriptionEventListener {
     private final String frontendUrl;
 
     public PrescriptionEventListener(EmailSenderFactoryRegistry emailService,
-                                     PushSubscriptionService pushSubscriptionService,
-                                     @Value("${application.frontend.url}") String frontendUrl) {
+            PushSubscriptionService pushSubscriptionService,
+            @Value("${application.frontend.url}") String frontendUrl) {
         this.emailService = emailService;
         this.pushSubscriptionService = pushSubscriptionService;
         this.frontendUrl = frontendUrl;
@@ -58,29 +56,8 @@ public class PrescriptionEventListener {
         }
     }
 
-    @Async
-    @EventListener
-    public void handlePrescriptionOutForDelivery(PrescriptionOutForDeliveryEvent event) {
-        log.info("Handling prescription out-for-delivery event for prescription: {}", event);
-
-        try {
-            // Build specific variables for each strategy
-            Map<String, Object> emailVars = buildOutForDeliveryEmailVariables(event);
-            Map<String, Object> pushVars = buildOutForDeliveryPushVariables(event);
-
-            // Send email notification
-            sendEmailNotificationsForDelivery(event.prescription(), emailVars);
-
-            // Send push notification
-            sendPushNotificationsForDelivery(event.prescription(), pushVars);
-
-            log.info("Successfully sent prescription status updated notifications for prescription: {}",
-                    event.prescription().getId());
-        } catch (Exception e) {
-            log.error("Error sending prescription status updated notifications for prescription: {}",
-                    event.prescription().getId(), e);
-        }
-    }
+    // Note: Out-for-delivery events are now handled by DeliveryEventListener
+    // since delivery concerns have been separated from prescription concerns
 
     @Async
     @EventListener
@@ -126,8 +103,7 @@ public class PrescriptionEventListener {
                 "expiryDate",
                 event.prescription().getExpiryDate()
                         .atZone(ZoneId.of("Asia/Kuala_Lumpur"))
-                        .toLocalDate()
-        );
+                        .toLocalDate());
 
         return variables;
     }
@@ -145,22 +121,13 @@ public class PrescriptionEventListener {
                 "expiryDate",
                 event.prescription().getExpiryDate()
                         .atZone(ZoneId.of("Asia/Kuala_Lumpur"))
-                        .toLocalDate()
-        );
-        
+                        .toLocalDate());
+
         return variables;
     }
 
-    // === OUT FOR DELIVERY EMAIL VARIABLE BUILDERS ===
-
-    private Map<String, Object> buildOutForDeliveryEmailVariables(PrescriptionOutForDeliveryEvent event) {
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("prescriptionId", event.prescription().getId().toString());
-        variables.put("patientName", event.prescription().getPatient().getName());
-        variables.put("deliveryAddress", event.prescription().getDeliveryAddress().toString());
-        variables.put("uiHost", frontendUrl);
-        return variables;
-    }
+    // Note: Out-for-delivery variable builders removed - handled by
+    // DeliveryEventListener
 
     // ===================================================================
     // PUSH STRATEGY VARIABLE BUILDERS
@@ -186,21 +153,15 @@ public class PrescriptionEventListener {
         return variables;
     }
 
-    // === PRESCRIPTION OUT FOR DELIVERY PUSH VARIABLE BUILDERS ===
-
-    private Map<String, Object> buildOutForDeliveryPushVariables(PrescriptionOutForDeliveryEvent event) {
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("prescriptionId", event.prescription().getId().toString());
-        variables.put("facilityName", event.prescription().getFacility().getName());
-        return variables;
-    }
+    // Note: Out-for-delivery push variables removed - handled by
+    // DeliveryEventListener
 
     // ===================================================================
     // NOTIFICATION SENDING METHODS
     // ===================================================================
 
     private void sendEmailNotificationsForCreation(Prescription prescription,
-                                                   Map<String, Object> variables) {
+            Map<String, Object> variables) {
         try {
             emailService.getEmailSender(EmailType.PRESCRIPTION_CREATED)
                     .sendEmail(prescription.getPatient().getEmail(), variables);
@@ -211,7 +172,7 @@ public class PrescriptionEventListener {
     }
 
     private void sendPushNotificationsForCreation(Prescription prescription,
-                                                  Map<String, Object> patientVariables) {
+            Map<String, Object> patientVariables) {
         try {
             sendPushNotification(prescription.getPatient().getAccount().getId(),
                     NotificationType.PRESCRIPTION_CREATED, patientVariables);
@@ -222,7 +183,7 @@ public class PrescriptionEventListener {
     }
 
     private void sendEmailNotificationsForExpiring(PrescriptionExpiringEvent event,
-                                                   Map<String, Object> patientVariables) {
+            Map<String, Object> patientVariables) {
         try {
             emailService.getEmailSender(EmailType.PRESCRIPTION_EXPIRING)
                     .sendEmail(event.prescription().getPatient().getEmail(), patientVariables);
@@ -233,7 +194,7 @@ public class PrescriptionEventListener {
     }
 
     private void sendPushNotificationsForExpiring(PrescriptionExpiringEvent event,
-                                                  Map<String, Object> patientVariables) {
+            Map<String, Object> patientVariables) {
         try {
             sendPushNotification(event.prescription().getPatient().getAccount().getId(),
                     NotificationType.PRESCRIPTION_EXPIRING, patientVariables);
@@ -243,33 +204,15 @@ public class PrescriptionEventListener {
         }
     }
 
-    private void sendEmailNotificationsForDelivery(Prescription prescription,
-                                                   Map<String, Object> variables) {
-        try {
-            emailService.getEmailSender(EmailType.PRESCRIPTION_OUT_FOR_DELIVERY)
-                    .sendEmail(prescription.getPatient().getEmail(), variables);
-        } catch (Exception e) {
-            log.error("Failed to send prescription out-for-delivery email notifications for prescription ID: {}",
-                    prescription.getId(), e);
-        }
-    }
-
-    private void sendPushNotificationsForDelivery(Prescription prescription,
-                                                  Map<String, Object> patientVariables) {
-        try {
-            sendPushNotification(prescription.getPatient().getAccount().getId(),
-                    NotificationType.PRESCRIPTION_OUT_FOR_DELIVERY, patientVariables);
-        } catch (Exception e) {
-            log.error("Failed to send prescription out-for-delivery push notifications for prescription ID: {}",
-                    prescription.getId(), e);
-        }
-    }
+    // Note: Delivery notification methods removed - handled by
+    // DeliveryEventListener
 
     // ===================================================================
     // UTILITY METHODS
     // ===================================================================
 
-    private void sendPushNotification(UUID accountId, NotificationType notificationType, Map<String, Object> variables) {
+    private void sendPushNotification(UUID accountId, NotificationType notificationType,
+            Map<String, Object> variables) {
         try {
             if (accountId == null) {
                 log.warn("Cannot send push notification: account ID is null for type: {}",

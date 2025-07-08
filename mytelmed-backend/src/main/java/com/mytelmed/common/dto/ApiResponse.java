@@ -3,8 +3,7 @@ package com.mytelmed.common.dto;
 public record ApiResponse<T>(
         boolean isSuccess,
         String message,
-        T data
-) {
+        T data) {
     public static <T> ApiResponse<T> success(T data) {
         return new ApiResponse<>(true, "OK", data);
     }
@@ -29,4 +28,3 @@ public record ApiResponse<T>(
         return new ApiResponse<>(false, message, data);
     }
 }
-

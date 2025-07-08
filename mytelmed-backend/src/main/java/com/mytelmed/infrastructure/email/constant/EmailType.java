@@ -2,7 +2,10 @@ package com.mytelmed.infrastructure.email.constant;
 
 import lombok.Getter;
 
-
+/**
+ * Email types for Malaysian public healthcare telemedicine system.
+ * Supports both PHYSICAL and VIRTUAL appointment notifications.
+ */
 @Getter
 public enum EmailType {
     PASSWORD_RESET(EmailFamily.ACCOUNT),
@@ -29,7 +32,14 @@ public enum EmailType {
 
     FAMILY_MEMBER_INVITE(EmailFamily.FAMILY),
     FAMILY_MEMBER_JOINED(EmailFamily.FAMILY),
-    FAMILY_MEMBER_REMOVED(EmailFamily.FAMILY);
+    FAMILY_MEMBER_REMOVED(EmailFamily.FAMILY),
+
+    // Billing and payment notifications
+    BILL_GENERATED(EmailFamily.PAYMENT),
+    PAYMENT_RECEIPT(EmailFamily.PAYMENT),
+
+    // Referral notifications
+    REFERRAL_CREATED(EmailFamily.REFERRAL);
 
     private final EmailFamily family;
 

@@ -18,7 +18,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 public class TimeSlotService {
@@ -71,9 +70,9 @@ public class TimeSlotService {
         // Validate the time slot request
         validateTimeSlotRequest(request.startTime(), request.endTime(), request.durationMinutes());
 
-        // Check for overlapping time slots
+        // Check for overlapping time slots with pessimistic locking
         if (timeSlotRepository
-                .hasOverlappingTimeSlots(doctor.getId(), request.startTime(), request.endTime())) {
+                .hasOverlappingTimeSlotsWithLock(doctor.getId(), request.startTime(), request.endTime())) {
             throw new AppException("Overlapping time slot exists for this time period");
         }
 
@@ -84,6 +83,7 @@ public class TimeSlotService {
                     .startTime(request.startTime())
                     .endTime(request.endTime())
                     .durationMinutes(request.durationMinutes())
+                    .consultationMode(request.consultationMode())
                     .isAvailable(true)
                     .isBooked(false)
                     .build();
@@ -96,6 +96,57 @@ public class TimeSlotService {
             log.error("Error creating time slot for account {}", account.getId(), e);
             throw new AppException("Failed to create time slot");
         }
+    }
+
+    /**
+     * Thread-safe method to book a time slot using pessimistic locking
+     */
+    @Transactional
+    public TimeSlot bookTimeSlotSafely(UUID timeSlotId) throws AppException {
+        log.debug("Booking time slot with ID {} safely", timeSlotId);
+
+        // Get time slot with pessimistic lock
+        TimeSlot timeSlot = timeSlotRepository.findByIdWithLock(timeSlotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Time slot not found"));
+
+        // Validate time slot is available for booking
+        if (timeSlot.getIsBooked()) {
+            throw new AppException("Time slot is already booked");
+        }
+
+        if (!timeSlot.getIsAvailable()) {
+            throw new AppException("Time slot is not available");
+        }
+
+        // Validate time slot is not in the past
+        if (timeSlot.getStartTime().isBefore(LocalDateTime.now())) {
+            throw new AppException("Cannot book time slot in the past");
+        }
+
+        // Mark as booked
+        timeSlot.setIsBooked(true);
+
+        // Save and return the locked time slot
+        return timeSlotRepository.save(timeSlot);
+    }
+
+    /**
+     * Thread-safe method to release a time slot booking
+     */
+    @Transactional
+    public void releaseTimeSlotSafely(UUID timeSlotId) throws AppException {
+        log.debug("Releasing time slot booking with ID {} safely", timeSlotId);
+
+        // Get time slot with pessimistic lock
+        TimeSlot timeSlot = timeSlotRepository.findByIdWithLock(timeSlotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Time slot not found"));
+
+        // Mark as not booked and available
+        timeSlot.setIsBooked(false);
+        timeSlot.setIsAvailable(true);
+
+        timeSlotRepository.save(timeSlot);
+        log.info("Released time slot booking with ID {}", timeSlotId);
     }
 
     @PreAuthorize("hasRole('DOCTOR')")

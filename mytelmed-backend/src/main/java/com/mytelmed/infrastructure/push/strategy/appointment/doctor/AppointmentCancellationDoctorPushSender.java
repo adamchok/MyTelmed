@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-
 @Component
 public class AppointmentCancellationDoctorPushSender extends BasePushNotificationStrategy {
 
@@ -34,13 +33,17 @@ public class AppointmentCancellationDoctorPushSender extends BasePushNotificatio
     @Override
     protected String buildBody(Map<String, Object> variables) {
         String patientName = (String) variables.get("patientName");
+        String consultationMode = (String) variables.get("consultationMode");
 
         LocalDateTime appointmentDateTime = (LocalDateTime) variables.get("appointmentDateTime");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
         String formattedDateTime = appointmentDateTime.format(formatter);
 
-        return String.format("Patient %s cancelled their appointment scheduled for %s.",
-                patientName, formattedDateTime);
+        String appointmentType = consultationMode.equals("VIRTUAL") ? "virtual" : "physical";
+
+        return String.format(
+                "The %s appointment with %s scheduled for %s has been cancelled.",
+                appointmentType, patientName, formattedDateTime);
     }
 
     @Override
@@ -57,16 +60,19 @@ public class AppointmentCancellationDoctorPushSender extends BasePushNotificatio
             throw new IllegalArgumentException("appointmentId is required");
         }
         if (!variables.containsKey("patientName")) {
-            throw new IllegalArgumentException("inviterName is required");
+            throw new IllegalArgumentException("patientName is required");
         }
         if (!variables.containsKey("appointmentDateTime")) {
             throw new IllegalArgumentException("appointmentDateTime is required");
+        }
+        if (!variables.containsKey("consultationMode")) {
+            throw new IllegalArgumentException("consultationMode is required");
         }
     }
 
     @Override
     protected Map<String, Object>[] buildActions(Map<String, Object> variables) {
-        return new Map[]{
+        return new Map[] {
                 Map.of(
                         "action", "view-appointment",
                         "title", "View Appointment",

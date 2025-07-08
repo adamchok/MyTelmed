@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import java.util.Map;
 
-
 @Slf4j
 @Component
 public class AppointmentReminderDoctorEmailSender extends BaseEmailSenderStrategy {
@@ -38,24 +37,12 @@ public class AppointmentReminderDoctorEmailSender extends BaseEmailSenderStrateg
     @Override
     protected void validateRequiredVariables(Map<String, Object> variables) {
         validateRequiredVariable(variables, "appointmentId", "Appointment ID is required");
-        validateRequiredVariable(variables, "inviterName", "Patient name is required");
+        validateRequiredVariable(variables, "patientName", "Patient name is required");
         validateRequiredVariable(variables, "providerName", "Provider name is required");
         validateRequiredVariable(variables, "appointmentDateTime", "Appointment date and time is required");
+        validateRequiredVariable(variables, "consultationMode", "Consultation mode is required");
         validateRequiredVariable(variables, "hoursUntilAppointment", "Hours until appointment is required");
         validateRequiredVariable(variables, "uiHost", "UI host is required");
-
-        // Validate hoursUntilAppointment is a positive number
-        Object hoursUntilAppointment = variables.get("hoursUntilAppointment");
-        if (hoursUntilAppointment != null) {
-            try {
-                long hours = Long.parseLong(hoursUntilAppointment.toString());
-                if (hours < 0) {
-                    throw new IllegalArgumentException("Hours until appointment must be non-negative");
-                }
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Hours until appointment must be a valid number");
-            }
-        }
 
         // reasonForVisit is optional - no validation needed
     }

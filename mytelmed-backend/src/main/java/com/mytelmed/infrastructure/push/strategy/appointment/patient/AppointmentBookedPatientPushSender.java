@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-
 @Component
 public class AppointmentBookedPatientPushSender extends BasePushNotificationStrategy {
     public AppointmentBookedPatientPushSender(
@@ -33,14 +32,17 @@ public class AppointmentBookedPatientPushSender extends BasePushNotificationStra
     @Override
     protected String buildBody(Map<String, Object> variables) {
         String providerName = (String) variables.get("providerName");
+        String consultationMode = (String) variables.get("consultationMode");
 
         LocalDateTime appointmentDateTime = (LocalDateTime) variables.get("appointmentDateTime");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
         String formattedDateTime = appointmentDateTime.format(formatter);
 
+        String appointmentType = consultationMode.equals("VIRTUAL") ? "virtual" : "physical";
+
         return String.format(
-                "Your appointment with %s has been booked for %s. You'll receive a confirmation once the provider reviews your request.",
-                providerName, formattedDateTime);
+                "Your %s appointment with %s has been booked for %s. You'll receive a confirmation once the provider reviews your request.",
+                appointmentType, providerName, formattedDateTime);
     }
 
     @Override
@@ -62,11 +64,14 @@ public class AppointmentBookedPatientPushSender extends BasePushNotificationStra
         if (!variables.containsKey("appointmentDateTime")) {
             throw new IllegalArgumentException("appointmentDateTime is required");
         }
+        if (!variables.containsKey("consultationMode")) {
+            throw new IllegalArgumentException("consultationMode is required");
+        }
     }
 
     @Override
     protected Map<String, Object>[] buildActions(Map<String, Object> variables) {
-        return new Map[]{
+        return new Map[] {
                 Map.of(
                         "action", "view-appointment",
                         "title", "View Appointment",

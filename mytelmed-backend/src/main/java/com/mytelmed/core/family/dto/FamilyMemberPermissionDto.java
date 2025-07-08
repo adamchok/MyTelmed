@@ -13,4 +13,4 @@ public record FamilyMemberPermissionDto(
         Instant createdAt,
         Instant updatedAt
 ) {
-} 
+}

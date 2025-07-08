@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-
 @Component
 public class AppointmentCancellationPatientPushSender extends BasePushNotificationStrategy {
 
@@ -34,13 +33,17 @@ public class AppointmentCancellationPatientPushSender extends BasePushNotificati
     @Override
     protected String buildBody(Map<String, Object> variables) {
         String providerName = (String) variables.get("providerName");
+        String consultationMode = (String) variables.get("consultationMode");
 
         LocalDateTime appointmentDateTime = (LocalDateTime) variables.get("appointmentDateTime");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
         String formattedDateTime = appointmentDateTime.format(formatter);
 
-        return String.format("Your appointment with %s scheduled for %s has been cancelled. Please reschedule if needed.",
-                providerName, formattedDateTime);
+        String appointmentType = consultationMode.equals("VIRTUAL") ? "virtual" : "physical";
+
+        return String.format(
+                "Your %s appointment with %s scheduled for %s has been cancelled.",
+                appointmentType, providerName, formattedDateTime);
     }
 
     @Override
@@ -62,11 +65,14 @@ public class AppointmentCancellationPatientPushSender extends BasePushNotificati
         if (!variables.containsKey("appointmentDateTime")) {
             throw new IllegalArgumentException("appointmentDateTime is required");
         }
+        if (!variables.containsKey("consultationMode")) {
+            throw new IllegalArgumentException("consultationMode is required");
+        }
     }
 
     @Override
     protected Map<String, Object>[] buildActions(Map<String, Object> variables) {
-        return new Map[]{
+        return new Map[] {
                 Map.of(
                         "action", "view-appointment",
                         "title", "View Details",

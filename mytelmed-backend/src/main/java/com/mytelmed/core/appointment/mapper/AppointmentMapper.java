@@ -10,6 +10,11 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.beans.factory.annotation.Autowired;
 
+/**
+ * Mapper for appointment entities and DTOs in Malaysian public healthcare
+ * telemedicine.
+ * Handles both PHYSICAL and VIRTUAL appointment consultations.
+ */
 @Mapper(componentModel = "spring", uses = { PatientMapper.class, AppointmentDocumentMapper.class })
 public abstract class AppointmentMapper {
     protected PatientMapper patientMapper;
@@ -37,6 +42,7 @@ public abstract class AppointmentMapper {
     @Mapping(target = "appointmentDateTime", source = "appointment.timeSlot.startTime")
     @Mapping(target = "durationMinutes", source = "appointment.timeSlot.durationMinutes")
     @Mapping(target = "status", expression = "java(appointment.getStatus().name())")
+    @Mapping(target = "consultationMode", source = "appointment.consultationMode")
     @Mapping(target = "doctorNotes", source = "appointment.doctorNotes")
     @Mapping(target = "attachedDocuments", expression = "java(appointment.getAppointmentDocuments().stream().map(doc -> appointmentDocumentMapper.toDto(doc, awsS3Service)).collect(java.util.stream.Collectors.toList()))")
     public abstract AppointmentDto toDto(Appointment appointment, AwsS3Service awsS3Service);

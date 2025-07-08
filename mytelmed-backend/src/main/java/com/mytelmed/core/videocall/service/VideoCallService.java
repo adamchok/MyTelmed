@@ -2,7 +2,6 @@ package com.mytelmed.core.videocall.service;
 
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
-import com.mytelmed.common.constant.AccountType;
 import com.mytelmed.common.constant.appointment.AppointmentStatus;
 import com.mytelmed.common.constant.family.FamilyPermissionType;
 import com.mytelmed.common.dto.StreamTokenAndUserResponseDto;
@@ -25,6 +24,11 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Service for managing video calls in Malaysian public healthcare telemedicine.
+ * Only supports VIRTUAL appointments - PHYSICAL appointments do not use video
+ * calls.
+ */
 @Slf4j
 @Service
 public class VideoCallService {
@@ -36,11 +40,11 @@ public class VideoCallService {
     private final PatientService patientService;
 
     public VideoCallService(VideoCallRepository videoCallRepository,
-                            AppointmentService appointmentService,
-                            AppointmentRepository appointmentRepository,
-                            StreamService streamService,
-                            FamilyMemberPermissionService familyPermissionService,
-                            PatientService patientService) {
+            AppointmentService appointmentService,
+            AppointmentRepository appointmentRepository,
+            StreamService streamService,
+            FamilyMemberPermissionService familyPermissionService,
+            PatientService patientService) {
         this.videoCallRepository = videoCallRepository;
         this.appointmentService = appointmentService;
         this.appointmentRepository = appointmentRepository;
@@ -49,7 +53,6 @@ public class VideoCallService {
         this.patientService = patientService;
     }
 
-    @Transactional(readOnly = true)
     public VideoCall findById(UUID id) throws ResourceNotFoundException {
         log.debug("Finding video call by ID: {}", id);
 
@@ -63,7 +66,6 @@ public class VideoCallService {
         return videoCall;
     }
 
-    @Transactional(readOnly = true)
     public VideoCall findByAppointmentId(UUID appointmentId) {
         log.debug("Finding video call by appointment ID: {}", appointmentId);
 
@@ -84,6 +86,12 @@ public class VideoCallService {
         // Find appointment
         Appointment appointment = appointmentService.findById(appointmentId);
 
+        // Validate that this is a virtual appointment
+        if (!appointment.isVirtualConsultation()) {
+            throw new AppException("Video calls are only available for VIRTUAL appointments. This is a " +
+                    appointment.getConsultationMode() + " appointment.");
+        }
+
         // Find video call
         VideoCall videoCall = findByAppointmentId(appointmentId);
 
@@ -100,7 +108,7 @@ public class VideoCallService {
             // Create Stream call using the existing StreamService
             CallResponse callResponse = streamService.createCall(appointment, account.getId().toString());
 
-            // Update vide call
+            // Update video call
             videoCall.setStreamCallId(callResponse.getId());
             videoCall.setStreamCallType(callResponse.getType());
             videoCall.setIsActive(true);
@@ -112,7 +120,7 @@ public class VideoCallService {
             appointment.setStatus(AppointmentStatus.IN_PROGRESS);
             appointmentRepository.save(appointment);
 
-            log.info("Successfully created video call for appointment: {} with Stream call ID: {}",
+            log.info("Successfully created video call for virtual appointment: {} with Stream call ID: {}",
                     appointmentId, callResponse.getId());
 
             return videoCall;
@@ -134,6 +142,12 @@ public class VideoCallService {
         // Find the appointment
         Appointment appointment = appointmentService.findById(appointmentId);
 
+        // Validate that this is a virtual appointment
+        if (!appointment.isVirtualConsultation()) {
+            throw new AppException("Video calls are only available for VIRTUAL appointments. This is a " +
+                    appointment.getConsultationMode() + " appointment.");
+        }
+
         // Validate authorization and timing
         validateUserCanJoinCall(appointment, account);
         validateCallTiming(appointment);
@@ -146,6 +160,7 @@ public class VideoCallService {
             VideoCall videoCall = videoCallRepository.findByAppointmentId(appointmentId).orElseGet(() -> {
                 VideoCall newCall = VideoCall.builder()
                         .appointment(appointment)
+                        .isActive(false)
                         .build();
                 return videoCallRepository.save(newCall);
             });
@@ -176,7 +191,7 @@ public class VideoCallService {
             // Save updated video call
             videoCallRepository.save(videoCall);
 
-            log.info("Successfully generated token for user with account ID: {} in call: {}",
+            log.info("Successfully generated token for user with account ID: {} in virtual appointment call: {}",
                     account.getId(), videoCall.getStreamCallId());
 
             return StreamTokenAndUserResponseDto.builder()
@@ -196,7 +211,7 @@ public class VideoCallService {
     }
 
     /**
-     * Ends a video call
+     * Ends a video call for virtual appointments
      */
     @Transactional
     public void endVideoCall(UUID appointmentId, Account account) throws AppException {
@@ -204,6 +219,12 @@ public class VideoCallService {
 
         // Find the appointment
         Appointment appointment = appointmentService.findById(appointmentId);
+
+        // Validate that this is a virtual appointment
+        if (!appointment.isVirtualConsultation()) {
+            throw new AppException("Video calls are only available for VIRTUAL appointments. This is a " +
+                    appointment.getConsultationMode() + " appointment.");
+        }
 
         // Find video call
         VideoCall videoCall = findById(appointment.getVideoCall().getId());
@@ -222,7 +243,7 @@ public class VideoCallService {
                 videoCall.setProviderLeftAt(Instant.now());
             }
 
-            // If both participants have left end the meeting
+            // If both participants have left, end the meeting
             boolean shouldEndMeeting = videoCall.getPatientLeftAt() != null && videoCall.getProviderLeftAt() != null;
 
             if (shouldEndMeeting && videoCall.getMeetingEndedAt() == null) {
@@ -235,7 +256,7 @@ public class VideoCallService {
                 appointment.setCompletedAt(Instant.now());
                 appointmentRepository.save(appointment);
 
-                log.info("Successfully ended video call for appointment: {}", appointmentId);
+                log.info("Successfully ended video call for virtual appointment: {}", appointmentId);
             }
 
             // Save video call
@@ -247,6 +268,11 @@ public class VideoCallService {
     }
 
     private void validateAppointmentForVideoCall(Appointment appointment) throws AppException {
+        // Check if appointment is virtual
+        if (!appointment.isVirtualConsultation()) {
+            throw new AppException("Video calls are only available for VIRTUAL appointments");
+        }
+
         // Check appointment status
         if (!AppointmentStatus.READY_FOR_CALL.equals(appointment.getStatus())) {
             throw new AppException("Video call can only be created for confirmed appointments");
@@ -267,16 +293,23 @@ public class VideoCallService {
     }
 
     private void validateUserCanJoinCall(Appointment appointment, Account account) throws AppException {
+        // First validate that this is a virtual appointment
+        if (!appointment.isVirtualConsultation()) {
+            throw new AppException("Video calls are only available for VIRTUAL appointments");
+        }
+
         switch (account.getPermission().getType()) {
             case PATIENT -> {
-                // Check if account is the patient themselves or a family member with JOIN_VIDEO_CALL permission
+                // Check if account is the patient themselves or a family member with
+                // JOIN_VIDEO_CALL permission
                 if (appointment.getPatient().getAccount().getId().equals(account.getId())) {
                     // Patient themselves - always allowed
                     return;
                 }
-                
+
                 // Check if account is a family member with video call permission
-                if (!familyPermissionService.hasPermission(account, appointment.getPatient().getId(), FamilyPermissionType.JOIN_VIDEO_CALL)) {
+                if (!familyPermissionService.hasPermission(account, appointment.getPatient().getId(),
+                        FamilyPermissionType.JOIN_VIDEO_CALL)) {
                     throw new AppException("You are not authorized to join this video call");
                 }
             }
@@ -312,18 +345,17 @@ public class VideoCallService {
                 if (appointment.getPatient().getAccount().getId().equals(account.getId())) {
                     // Account is the patient themselves
                     return new UserCallInfo(
-                        appointment.getPatient().getId().toString(),
-                        appointment.getPatient().getName(),
-                        true
-                    );
+                            appointment.getPatient().getId().toString(),
+                            appointment.getPatient().getName(),
+                            true);
                 } else {
                     // Account is a family member - get their info but mark as patient side
                     try {
                         Patient familyMemberPatient = patientService.findPatientByAccountId(account.getId());
                         return new UserCallInfo(
-                            account.getId().toString(), // Use account ID as unique identifier
-                            familyMemberPatient.getName() + " (Family)",
-                            true // Still on patient side
+                                account.getId().toString(), // Use account ID as unique identifier
+                                familyMemberPatient.getName() + " (Family)",
+                                true // Still on patient side
                         );
                     } catch (Exception e) {
                         throw new AppException("Unable to get family member information for video call");
@@ -332,10 +364,9 @@ public class VideoCallService {
             }
             case DOCTOR -> {
                 return new UserCallInfo(
-                    appointment.getDoctor().getId().toString(),
-                    appointment.getDoctor().getName(),
-                    false
-                );
+                        appointment.getDoctor().getId().toString(),
+                        appointment.getDoctor().getName(),
+                        false);
             }
             default -> throw new AppException("Invalid account type for video call");
         }

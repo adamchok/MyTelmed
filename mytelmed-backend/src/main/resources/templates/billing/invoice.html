@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MyTelmed - Invoice</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+      }
+
+      .container {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        text-align: center;
+        justify-content: center;
+        border-bottom: 3px solid #28a745;
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+      }
+
+      .logo {
+        width: 192px;
+        height: auto;
+        max-width: 100%;
+        display: block;
+        margin: 0 auto;
+      }
+
+      .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        align-items: flex-start;
+      }
+
+      .invoice-details {
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 5px;
+      }
+
+      .invoice-number {
+        font-size: 18px;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 10px;
+      }
+
+      .bill-summary {
+        background-color: #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding: 5px 0;
+      }
+
+      .summary-row.total {
+        border-top: 2px solid #28a745;
+        padding-top: 15px;
+        margin-top: 15px;
+        font-weight: bold;
+        font-size: 18px;
+        color: #28a745;
+      }
+
+      .amount {
+        font-weight: bold;
+        color: #28a745;
+      }
+
+      .payment-info {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 20px 0;
+      }
+
+      .action-buttons {
+        text-align: center;
+        margin: 30px 0;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 12px 24px;
+        margin: 0 10px;
+        background-color: #007bff;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+      }
+
+      .btn:hover {
+        background-color: #0056b3;
+      }
+
+      .btn-success {
+        background-color: #28a745;
+      }
+
+      .btn-success:hover {
+        background-color: #1e7e34;
+      }
+
+      .footer {
+        border-top: 1px solid #dee2e6;
+        padding-top: 20px;
+        margin-top: 30px;
+        text-align: center;
+        color: #6c757d;
+        font-size: 14px;
+      }
+
+      .service-details {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+
+      .service-header {
+        background-color: #007bff;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+        font-weight: bold;
+      }
+
+      .service-body {
+        padding: 15px;
+      }
+
+      @media (max-width: 600px) {
+        .invoice-header {
+          flex-direction: column;
+        }
+
+        .summary-row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <img th:src="@{/mytelmed-logo.png}" alt="MyTelmed Logo" class="logo" />
+        <h2 style="color: #495057; margin: 10px 0 0 0">Invoice for Healthcare Services</h2>
+      </div>
+
+      <div class="invoice-header">
+        <div>
+          <h3 style="margin: 0 0 10px 0; color: #495057">Bill To:</h3>
+          <strong th:text="${patientName}">Patient Name</strong><br />
+          <span th:text="${patientEmail}">patient@email.com</span>
+        </div>
+        <div style="text-align: right">
+          <div class="invoice-number">Invoice #<span th:text="${billNumber}">INV-001</span></div>
+          <div>
+            <strong>Date:</strong>
+            <span th:text="${#temporals.format(billedAt, 'dd/MM/yyyy')}">Date</span>
+          </div>
+          <div th:if="${dueDate}">
+            <strong>Due Date:</strong>
+            <span th:text="${#temporals.format(dueDate, 'dd/MM/yyyy')}">Due Date</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="invoice-details">
+        <h4 style="margin: 0 0 15px 0; color: #007bff">Service Details</h4>
+        <div>
+          <strong>Service Type:</strong>
+          <span th:text="${billType == 'CONSULTATION' ? 'Virtual Consultation' : 'Medication Delivery'}">Service</span>
+        </div>
+        <div th:if="${facilityName}">
+          <strong>Healthcare Facility:</strong>
+          <span th:text="${facilityName}">Facility Name</span>
+        </div>
+        <div th:if="${doctorName}">
+          <strong>Attending Doctor:</strong>
+          <span th:text="${doctorName}">Dr. Name</span>
+        </div>
+        <div th:if="${appointmentDate}">
+          <strong>Appointment Date:</strong>
+          <span th:text="${#temporals.format(appointmentDate, 'EEEE, dd MMMM yyyy HH:mm')}">Date</span>
+        </div>
+        <div th:if="${description}">
+          <strong>Description:</strong>
+          <span th:text="${description}">Service description</span>
+        </div>
+      </div>
+
+      <div class="bill-summary">
+        <h4 style="margin: 0 0 20px 0; color: #495057">Billing Summary</h4>
+
+        <div class="summary-row">
+          <span th:text="${billType == 'CONSULTATION' ? 'Virtual Consultation Fee' : 'Medication Delivery Fee'}"
+            >Service</span
+          >
+          <span class="amount"
+            >RM <span th:text="${#numbers.formatDecimal(amount, 1, 'COMMA', 2, 'POINT')}">0.00</span></span
+          >
+        </div>
+
+        <div class="summary-row">
+          <span>Service Tax (0%)</span>
+          <span class="amount">RM 0.00</span>
+        </div>
+
+        <div class="summary-row total">
+          <span>Total Amount</span>
+          <span>RM <span th:text="${#numbers.formatDecimal(amount, 1, 'COMMA', 2, 'POINT')}">0.00</span></span>
+        </div>
+      </div>
+
+      <div class="payment-info">
+        <h4 style="margin: 0 0 10px 0; color: #856404"><i class="icon">💳</i> Payment Information</h4>
+        <p style="margin: 0; color: #856404">
+          This invoice is for services provided under the Malaysian public healthcare telemedicine program. Please complete
+          payment to access your scheduled services.
+        </p>
+      </div>
+
+      <div class="action-buttons">
+        <a th:href="${paymentUrl}" class="btn btn-success">
+          Pay Invoice - RM <span th:text="${#numbers.formatDecimal(amount, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+        </a>
+        <a th:href="${uiHost + '/patient/billing/' + billId}" class="btn"> View Details </a>
+      </div>
+
+      <p>
+        <strong>Payment Terms:</strong> Payment is due upon receipt for consultation services. Medication delivery fees are
+        due before dispatch of prescriptions.
+      </p>
+
+      <p>
+        For questions about this invoice or payment assistance, please contact our billing support team or visit your nearest
+        participating healthcare facility.
+      </p>
+
+      <p>
+        Best regards,<br />
+        MyTelmed Billing Department<br />
+        Malaysian Public Healthcare Telemedicine Services
+      </p>
+
+      <div class="footer">
+        <p>This invoice is generated electronically and is valid without signature.</p>
+        <p>&copy; 2025 MyTelmed. All rights reserved.</p>
+        <p>
+          <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> | <a th:href="${uiHost + '/terms'}">Terms of Service</a> |
+          <a th:href="${uiHost + '/billing-policy'}">Billing Policy</a>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

@@ -77,6 +77,24 @@ public class Bill {
     @Column(name = "stripe_charge_id")
     private String stripeChargeId;
 
+    // Refund tracking fields
+    @Column(name = "refund_amount", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal refundAmount = BigDecimal.ZERO;
+
+    @Column(name = "stripe_refund_id")
+    private String stripeRefundId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "refund_status")
+    private RefundStatus refundStatus;
+
+    @Column(name = "refund_reason")
+    private String refundReason;
+
+    @Column(name = "refunded_at")
+    private Instant refundedAt;
+
     @Column(name = "billed_at", nullable = false)
     private Instant billedAt;
 
@@ -93,4 +111,40 @@ public class Bill {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    public enum RefundStatus {
+        NOT_REFUNDED,
+        REFUND_PENDING,
+        REFUND_PROCESSING,
+        REFUNDED,
+        REFUND_FAILED,
+        PARTIAL_REFUND
+    }
+
+    /**
+     * Checks if this bill is eligible for a full refund
+     */
+    public boolean isEligibleForFullRefund() {
+        return billingStatus == BillingStatus.PAID
+                && (refundStatus == null || refundStatus == RefundStatus.NOT_REFUNDED)
+                && refundAmount.compareTo(BigDecimal.ZERO) == 0;
+    }
+
+    /**
+     * Checks if this bill has been fully refunded
+     */
+    public boolean isFullyRefunded() {
+        return refundStatus == RefundStatus.REFUNDED
+                && refundAmount.compareTo(amount) == 0;
+    }
+
+    /**
+     * Gets the remaining refundable amount
+     */
+    public BigDecimal getRefundableAmount() {
+        if (billingStatus != BillingStatus.PAID) {
+            return BigDecimal.ZERO;
+        }
+        return amount.subtract(refundAmount);
+    }
 }

@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-
 @Component
 public class AppointmentReminderDoctorPushSender extends BasePushNotificationStrategy {
     public AppointmentReminderDoctorPushSender(
@@ -58,17 +57,20 @@ public class AppointmentReminderDoctorPushSender extends BasePushNotificationStr
         if (!variables.containsKey("patientName")) {
             throw new IllegalArgumentException("patientName is required");
         }
+        if (!variables.containsKey("appointmentDateTime")) {
+            throw new IllegalArgumentException("appointmentDateTime is required");
+        }
         if (!variables.containsKey("hoursUntilAppointment")) {
             throw new IllegalArgumentException("hoursUntilAppointment is required");
         }
-        if (!variables.containsKey("appointmentDateTime")) {
-            throw new IllegalArgumentException("appointmentDateTime is required");
+        if (!variables.containsKey("consultationMode")) {
+            throw new IllegalArgumentException("consultationMode is required");
         }
     }
 
     @Override
     protected Map<String, Object>[] buildActions(Map<String, Object> variables) {
-        return new Map[]{
+        return new Map[] {
                 Map.of(
                         "action", "view-appointment",
                         "title", "View Appointment",

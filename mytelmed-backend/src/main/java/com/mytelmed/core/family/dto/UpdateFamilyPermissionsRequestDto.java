@@ -11,4 +11,4 @@ public record UpdateFamilyPermissionsRequestDto(
         String expiryDate,
         String notes
 ) {
-} 
+}

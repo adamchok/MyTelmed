@@ -4,5 +4,7 @@ public enum EmailFamily {
     ACCOUNT,
     APPOINTMENT,
     PRESCRIPTION,
-    FAMILY
+    FAMILY,
+    PAYMENT,
+    REFERRAL
 }

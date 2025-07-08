@@ -2,7 +2,10 @@ package com.mytelmed.infrastructure.push.constant;
 
 import lombok.Getter;
 
-
+/**
+ * Push notification types for Malaysian public healthcare telemedicine system.
+ * Supports both PHYSICAL and VIRTUAL appointment notifications.
+ */
 @Getter
 public enum NotificationType {
     APPOINTMENT_REMINDER_PATIENT(NotificationFamily.APPOINTMENT),

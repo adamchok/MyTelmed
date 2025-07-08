@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-
 @Component
 public class AppointmentConfirmationDoctorPushSender extends BasePushNotificationStrategy {
 
@@ -39,7 +38,8 @@ public class AppointmentConfirmationDoctorPushSender extends BasePushNotificatio
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
         String formattedDateTime = appointmentDateTime.format(formatter);
 
-        return String.format("Your appointment with %s on %s has been confirmed. Please review patient details before the appointment.",
+        return String.format(
+                "Your appointment with %s on %s has been confirmed. Please review patient details before the appointment.",
                 patientName, formattedDateTime);
     }
 
@@ -62,11 +62,14 @@ public class AppointmentConfirmationDoctorPushSender extends BasePushNotificatio
         if (!variables.containsKey("appointmentDateTime")) {
             throw new IllegalArgumentException("appointmentDateTime is required");
         }
+        if (!variables.containsKey("consultationMode")) {
+            throw new IllegalArgumentException("consultationMode is required");
+        }
     }
 
     @Override
     protected Map<String, Object>[] buildActions(Map<String, Object> variables) {
-        return new Map[]{
+        return new Map[] {
                 Map.of(
                         "action", "view-appointment",
                         "title", "View Appointment",

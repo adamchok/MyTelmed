@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/document")
@@ -39,14 +38,15 @@ public class DocumentController {
     }
 
     @GetMapping("/{documentId}")
-    public ResponseEntity<DocumentDto> getDocumentById(@PathVariable UUID documentId) {
+    public ResponseEntity<ApiResponse<DocumentDto>> getDocumentById(@PathVariable UUID documentId) {
         log.info("Received request to get document with ID: {}", documentId);
         Document document = documentService.getDocumentById(documentId);
-        return ResponseEntity.ok(documentMapper.toDto(document));
+        DocumentDto documentDto = documentMapper.toDto(document);
+        return ResponseEntity.ok(ApiResponse.success(documentDto));
     }
 
     @GetMapping("/patient/{patientId}")
-    public ResponseEntity<List<DocumentDto>> getDocumentsByPatientId(@PathVariable UUID patientId) {
+    public ResponseEntity<ApiResponse<List<DocumentDto>>> getDocumentsByPatientId(@PathVariable UUID patientId) {
         log.info("Received request to get all documents for patient with ID: {}", patientId);
         List<Document> documentList = documentService.getDocumentsByPatientId(patientId);
 
@@ -54,14 +54,13 @@ public class DocumentController {
                 .map(documentMapper::toDto)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(documentDtoList);
+        return ResponseEntity.ok(ApiResponse.success(documentDtoList));
     }
 
     @GetMapping("/patient/{patientId}/type/{type}")
     public ResponseEntity<ApiResponse<List<DocumentDto>>> getDocumentsByPatientAndType(
             @PathVariable UUID patientId,
-            @PathVariable String type
-    ) {
+            @PathVariable String type) {
         log.info("Received request to get documents of type {} for patient with ID: {}", type, patientId);
 
         DocumentType documentType = DocumentType.fromString(type);
@@ -76,8 +75,7 @@ public class DocumentController {
 
     @GetMapping("/{documentId}/url")
     public ResponseEntity<ApiResponse<DocumentUrlDto>> getDocumentUrl(
-            @PathVariable UUID documentId
-    ) {
+            @PathVariable UUID documentId) {
         log.info("Received request for document URL with ID: {}", documentId);
 
         String url = documentService.getPresignedDocumentUrl(documentId);
@@ -91,9 +89,9 @@ public class DocumentController {
     public ResponseEntity<ApiResponse<Void>> uploadDocument(
             @PathVariable UUID patientId,
             @Valid @RequestPart("metadata") RequestDocumentDto request,
-            @RequestPart("file") MultipartFile file
-    ) {
-        log.info("Received request to upload document for patient with ID: {}, document type: {}", patientId, request.documentType());
+            @RequestPart("file") MultipartFile file) {
+        log.info("Received request to upload document for patient with ID: {}, document type: {}", patientId,
+                request.documentType());
         documentService.saveDocument(request, patientId, file);
         return ResponseEntity.ok(ApiResponse.success("Document uploaded successfully"));
     }
@@ -102,8 +100,7 @@ public class DocumentController {
     public ResponseEntity<ApiResponse<Void>> updateDocument(
             @PathVariable UUID documentId,
             @Valid @RequestPart("metadata") RequestDocumentDto request,
-            @RequestPart(value = "file", required = false) MultipartFile file
-    ) {
+            @RequestPart(value = "file", required = false) MultipartFile file) {
         log.info("Received request to update document with ID: {}", documentId);
         documentService.updateDocument(request, documentId, file);
         return ResponseEntity.ok(ApiResponse.success("Document updated successfully"));

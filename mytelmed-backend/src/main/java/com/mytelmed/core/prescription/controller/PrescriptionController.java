@@ -3,7 +3,6 @@ package com.mytelmed.core.prescription.controller;
 import com.mytelmed.common.constant.prescription.PrescriptionStatus;
 import com.mytelmed.common.dto.ApiResponse;
 import com.mytelmed.core.auth.entity.Account;
-import com.mytelmed.core.prescription.dto.ChoosePrescriptionDeliveryRequestDto;
 import com.mytelmed.core.prescription.dto.CreatePrescriptionRequestDto;
 import com.mytelmed.core.prescription.dto.PrescriptionDto;
 import com.mytelmed.core.prescription.entity.Prescription;
@@ -28,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
-
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/prescriptions")
@@ -38,7 +36,7 @@ public class PrescriptionController {
     private final AwsS3Service awsS3Service;
 
     public PrescriptionController(PrescriptionService prescriptionService, PrescriptionMapper prescriptionMapper,
-                                  AwsS3Service awsS3Service) {
+            AwsS3Service awsS3Service) {
         this.prescriptionService = prescriptionService;
         this.prescriptionMapper = prescriptionMapper;
         this.awsS3Service = awsS3Service;
@@ -143,88 +141,72 @@ public class PrescriptionController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createPrescription(
+    public ResponseEntity<ApiResponse<PrescriptionDto>> createPrescription(
             @Valid @RequestBody CreatePrescriptionRequestDto request,
             @AuthenticationPrincipal Account account) {
         log.info("Received request to create prescription for appointment: {}", request.appointmentId());
 
-        prescriptionService.createPrescription(account, request);
+        Prescription prescription = prescriptionService.createPrescription(account, request);
+        PrescriptionDto prescriptionDto = prescriptionMapper.toDto(prescription, awsS3Service);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Prescription created successfully"));
+                .body(ApiResponse.success(prescriptionDto));
     }
 
-    @PutMapping("/{prescriptionId}/choose-pickup-with-date")
+    @PutMapping("/{prescriptionId}/ready-for-processing")
     @PreAuthorize("hasRole('PATIENT')")
-    public ResponseEntity<ApiResponse<Void>> choosePickup(
+    public ResponseEntity<ApiResponse<Void>> markAsReadyForProcessing(
             @PathVariable UUID prescriptionId,
             @AuthenticationPrincipal Account account) {
-        log.info("Received request to select pickup for prescription: {}", prescriptionId);
+        log.info("Patient marking prescription as ready for processing: {}", prescriptionId);
 
-        prescriptionService.choosePickup(prescriptionId, account);
+        prescriptionService.markAsReadyForProcessing(prescriptionId, account);
 
-        return ResponseEntity.ok(ApiResponse.success("Pickup option selected successfully with pickup date"));
+        return ResponseEntity.ok(ApiResponse.success("Prescription marked as ready for processing"));
     }
 
-    @PutMapping("/{prescriptionId}/choose-delivery")
-    @PreAuthorize("hasRole('PATIENT')")
-    public ResponseEntity<ApiResponse<Void>> chooseDelivery(
-            @PathVariable UUID prescriptionId,
-            @Valid @RequestBody ChoosePrescriptionDeliveryRequestDto request,
-            @AuthenticationPrincipal Account account
-    ) {
-        log.info("Patient choosing delivery for prescription: {}", prescriptionId);
-
-        prescriptionService.chooseDelivery(prescriptionId, account, request);
-
-        return ResponseEntity.ok(ApiResponse.success("Delivery option selected, payment required"));
-    }
-
-    @PostMapping("/{prescriptionId}/process-payment")
-    @PreAuthorize("hasRole('PATIENT')")
-    public ResponseEntity<ApiResponse<Void>> processPayment(
-            @PathVariable UUID prescriptionId,
-            @AuthenticationPrincipal Account account) {
-        log.info("Processing payment for prescription: {}", prescriptionId);
-
-        prescriptionService.processPayment(prescriptionId, account);
-
-        return ResponseEntity.ok(ApiResponse.success("Payment processed successfully"));
-    }
-
-    @PutMapping("/{prescriptionId}/mark-picked-up")
-    @PreAuthorize("hasRole('PATIENT')")
-    public ResponseEntity<ApiResponse<Void>> markAsPickedUp(
-            @PathVariable UUID prescriptionId,
-            @AuthenticationPrincipal Account account) {
-        log.info("Patient marking prescription as picked up: {}", prescriptionId);
-
-        prescriptionService.markAsPickedUp(prescriptionId, account);
-
-        return ResponseEntity.ok(ApiResponse.success("Prescription marked as picked up"));
-    }
-
-    @PutMapping("/{prescriptionId}/mark-delivered")
-    @PreAuthorize("hasRole('PATIENT')")
-    public ResponseEntity<ApiResponse<Void>> markAsDelivered(
-            @PathVariable UUID prescriptionId,
-            @AuthenticationPrincipal Account account) {
-        log.info("Patient marking prescription as delivered: {}", prescriptionId);
-
-        prescriptionService.markAsDelivered(prescriptionId, account);
-
-        return ResponseEntity.ok(ApiResponse.success("Prescription marked as delivered"));
-    }
-
-    @PutMapping("/{prescriptionId}/process")
+    @PutMapping("/{prescriptionId}/start-processing")
     @PreAuthorize("hasRole('PHARMACIST')")
-    public ResponseEntity<ApiResponse<Void>> processPrescription(
+    public ResponseEntity<ApiResponse<Void>> startProcessing(
             @PathVariable UUID prescriptionId,
             @AuthenticationPrincipal Account account) {
-        log.info("Pharmacist processing prescription: {}", prescriptionId);
+        log.info("Pharmacist starting to process prescription: {}", prescriptionId);
 
-        prescriptionService.processPrescription(prescriptionId, account);
+        prescriptionService.startProcessing(prescriptionId, account);
 
-        return ResponseEntity.ok(ApiResponse.success("Prescription processed successfully"));
+        return ResponseEntity.ok(ApiResponse.success("Prescription processing started"));
+    }
+
+    @PutMapping("/{prescriptionId}/complete")
+    @PreAuthorize("hasRole('PHARMACIST')")
+    public ResponseEntity<ApiResponse<Void>> markAsCompleted(
+            @PathVariable UUID prescriptionId,
+            @AuthenticationPrincipal Account account) {
+        log.info("Pharmacist completing prescription: {}", prescriptionId);
+
+        prescriptionService.markAsCompleted(prescriptionId, account);
+
+        return ResponseEntity.ok(ApiResponse.success("Prescription completed successfully"));
+    }
+
+    @PutMapping("/{prescriptionId}/expire")
+    public ResponseEntity<ApiResponse<Void>> markAsExpired(
+            @PathVariable UUID prescriptionId) {
+        log.info("Marking prescription as expired: {}", prescriptionId);
+
+        prescriptionService.markAsExpired(prescriptionId);
+
+        return ResponseEntity.ok(ApiResponse.success("Prescription marked as expired"));
+    }
+
+    @PutMapping("/{prescriptionId}/cancel")
+    public ResponseEntity<ApiResponse<Void>> cancelPrescription(
+            @PathVariable UUID prescriptionId,
+            @RequestBody String reason) {
+        log.info("Cancelling prescription: {}", prescriptionId);
+
+        prescriptionService.cancelPrescription(prescriptionId, reason);
+
+        return ResponseEntity.ok(ApiResponse.success("Prescription cancelled successfully"));
     }
 }

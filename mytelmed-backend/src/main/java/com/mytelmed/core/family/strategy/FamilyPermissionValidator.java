@@ -31,7 +31,7 @@ public interface FamilyPermissionValidator {
      * @return true if access is authorized, false otherwise
      */
     boolean isAuthorizedForPatient(Account account, UUID patientId, FamilyPermissionType permissionType);
-    
+
     /**
      * Gets the patient ID that the account is authorized to access
      * If the account is a patient, returns their own ID
@@ -41,4 +41,4 @@ public interface FamilyPermissionValidator {
      * @return Patient ID if authorized, null otherwise
      */
     UUID getAuthorizedPatientId(Account account);
-} 
+}

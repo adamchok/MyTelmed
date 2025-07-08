@@ -3,17 +3,13 @@ package com.mytelmed.core.prescription.service;
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constant.appointment.AppointmentStatus;
-import com.mytelmed.common.constant.prescription.DeliveryType;
 import com.mytelmed.common.constant.prescription.PrescriptionStatus;
 import com.mytelmed.common.event.prescription.model.PrescriptionCreatedEvent;
-import com.mytelmed.core.address.entity.Address;
-import com.mytelmed.core.address.service.AddressService;
 import com.mytelmed.core.appointment.entity.Appointment;
 import com.mytelmed.core.appointment.service.AppointmentService;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.pharmacist.entity.Pharmacist;
 import com.mytelmed.core.pharmacist.service.PharmacistService;
-import com.mytelmed.core.prescription.dto.ChoosePrescriptionDeliveryRequestDto;
 import com.mytelmed.core.prescription.dto.CreatePrescriptionRequestDto;
 import com.mytelmed.core.prescription.entity.Prescription;
 import com.mytelmed.core.prescription.entity.PrescriptionItem;
@@ -26,10 +22,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+/**
+ * Service for managing medical prescriptions in Malaysian public healthcare
+ * telemedicine.
+ * Focuses on prescription lifecycle management separated from delivery
+ * logistics.
+ * Delivery concerns are handled by MedicationDeliveryService.
+ */
 @Slf4j
 @Service
 public class PrescriptionService {
@@ -37,18 +38,17 @@ public class PrescriptionService {
     private final PrescriptionItemRepository prescriptionItemRepository;
     private final AppointmentService appointmentService;
     private final PharmacistService pharmacistService;
-    private final AddressService addressService;
     private final ApplicationEventPublisher applicationEventPublisher;
 
     public PrescriptionService(PrescriptionRepository prescriptionRepository,
             PrescriptionItemRepository prescriptionItemRepository,
-            AppointmentService appointmentService, AddressService addressService,
-            PharmacistService pharmacistService, ApplicationEventPublisher applicationEventPublisher) {
+            AppointmentService appointmentService,
+            PharmacistService pharmacistService,
+            ApplicationEventPublisher applicationEventPublisher) {
         this.prescriptionRepository = prescriptionRepository;
         this.prescriptionItemRepository = prescriptionItemRepository;
         this.appointmentService = appointmentService;
         this.pharmacistService = pharmacistService;
-        this.addressService = addressService;
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
@@ -143,7 +143,7 @@ public class PrescriptionService {
 
     @PreAuthorize("hasRole('DOCTOR')")
     @Transactional
-    public void createPrescription(Account account, CreatePrescriptionRequestDto request) throws AppException {
+    public Prescription createPrescription(Account account, CreatePrescriptionRequestDto request) throws AppException {
         log.info("Creating prescription for appointment: {}", request.appointmentId());
 
         // Check if appointment exists and is completed
@@ -172,9 +172,7 @@ public class PrescriptionService {
                     .diagnosis(request.diagnosis())
                     .notes(request.notes())
                     .instructions(request.instructions())
-                    .deliveryType(request.deliveryType())
                     .status(PrescriptionStatus.CREATED)
-                    .expiryDate(Instant.now().plus(30, ChronoUnit.DAYS))
                     .build();
 
             // Save prescription
@@ -205,6 +203,8 @@ public class PrescriptionService {
 
             log.info("Prescription created successfully: {} with status: {}", prescription.getPrescriptionNumber(),
                     PrescriptionStatus.CREATED);
+
+            return prescription;
         } catch (Exception e) {
             log.error("Error creating prescription for appointment ID: {}", request.appointmentId(), e);
             throw new AppException("Error creating prescription");
@@ -213,8 +213,8 @@ public class PrescriptionService {
 
     @PreAuthorize("hasRole('PATIENT')")
     @Transactional
-    public void choosePickup(UUID prescriptionId, Account patientAccount) throws AppException {
-        log.info("Choosing pickup for prescription {}", prescriptionId);
+    public void markAsReadyForProcessing(UUID prescriptionId, Account patientAccount) throws AppException {
+        log.info("Marking prescription as ready for processing: {}", prescriptionId);
 
         // Find prescription by ID
         Prescription prescription = findById(prescriptionId);
@@ -230,192 +230,39 @@ public class PrescriptionService {
         }
 
         try {
-            // Update delivery type, status, and pickup date
-            prescription.setDeliveryType(DeliveryType.PICKUP);
-            prescription.setStatus(PrescriptionStatus.READY_FOR_PICKUP); // Move directly to processing for pickup
-
-            // Save prescription
+            prescription.setStatus(PrescriptionStatus.READY_FOR_PROCESSING);
             prescriptionRepository.save(prescription);
 
-            log.info("Patient chose pickup for prescription {}", prescriptionId);
+            log.info("Prescription {} marked as ready for processing", prescriptionId);
         } catch (Exception e) {
-            log.error("Failed to select pickup for prescription with ID: {}", prescriptionId, e);
-            throw new AppException("Failed to select pickup for prescription");
-        }
-    }
-
-    @PreAuthorize("hasRole('PATIENT')")
-    @Transactional
-    public void chooseDelivery(UUID prescriptionId, Account patientAccount,
-            ChoosePrescriptionDeliveryRequestDto request) throws AppException {
-        log.info("Choosing delivery for prescription {}", prescriptionId);
-
-        // Find prescription by ID
-        Prescription prescription = findById(prescriptionId);
-
-        // Find address by ID
-        Address address = addressService.findAddressById(request.addressId());
-
-        // Verify patient owns this prescription
-        if (!prescription.getPatient().getAccount().getId().equals(patientAccount.getId())) {
-            throw new AppException("Not authorized to modify this prescription");
-        }
-
-        // Validate current status
-        if (prescription.getStatus() != PrescriptionStatus.CREATED) {
-            throw new AppException("Prescription is not in CREATED status");
-        }
-
-        try {
-            // Update delivery type and status
-            prescription.setDeliveryType(DeliveryType.DELIVERY);
-            prescription.setStatus(PrescriptionStatus.PENDING_PAYMENT);
-            prescription.setDeliveryAddress(address);
-
-            // Save prescription
-            prescriptionRepository.save(prescription);
-
-            log.info("Patient chose delivery for prescription: {}, payment required", prescriptionId);
-        } catch (Exception e) {
-            log.error("Failed to select delivery for prescription with ID: {}", prescriptionId, e);
-            throw new AppException("Failed to select delivery for prescription");
-        }
-    }
-
-    @PreAuthorize("hasRole('PATIENT')")
-    @Transactional
-    public void markAsPickedUp(UUID prescriptionId, Account patientAccount) throws AppException {
-        log.info("Marking prescription {} as picked up", prescriptionId);
-
-        // Find prescription by ID
-        Prescription prescription = findById(prescriptionId);
-
-        // Verify patient owns this prescription
-        if (!prescription.getPatient().getAccount().getId().equals(patientAccount.getId())) {
-            throw new AppException("Not authorized to modify this prescription");
-        }
-
-        // Verify if the prescription delivery type is correct
-        if (prescription.getDeliveryType() != DeliveryType.PICKUP) {
-            throw new AppException("This prescription is not for pickup");
-        }
-
-        // Validate current status and delivery type
-        if (prescription.getStatus() != PrescriptionStatus.READY_FOR_PICKUP) {
-            throw new AppException("Prescription is not ready for pickup");
-        }
-
-        try {
-            // Update prescription
-            prescription.setPickedUpAt(Instant.now());
-            prescription.setStatus(PrescriptionStatus.PICKED_UP);
-
-            // Save prescription
-            prescriptionRepository.save(prescription);
-
-            log.info("Prescription marked as picked up: {} at {}", prescriptionId, Instant.now());
-        } catch (Exception e) {
-            log.error("Failed to mark prescription as picked up: {}", prescriptionId, e);
-            throw new AppException("Failed to mark prescription as picked up");
-        }
-    }
-
-    @PreAuthorize("hasRole('PATIENT')")
-    @Transactional
-    public void markAsDelivered(UUID prescriptionId, Account patientAccount) throws AppException {
-        log.info("Marking prescription as delivered: {}", prescriptionId);
-
-        // Find prescription by ID
-        Prescription prescription = findById(prescriptionId);
-
-        // Verify patient owns this prescription
-        if (!prescription.getPatient().getAccount().getId().equals(patientAccount.getId())) {
-            throw new AppException("Not authorized to modify this prescription");
-        }
-
-        // Verify if the prescription delivery type
-        if (prescription.getDeliveryType() != DeliveryType.DELIVERY) {
-            throw new AppException("This prescription is not for delivery");
-        }
-
-        // Verify the prescription current status
-        if (prescription.getStatus() != PrescriptionStatus.OUT_FOR_DELIVERY) {
-            throw new AppException("Prescription is not out for delivery");
-        }
-
-        try {
-            // Update prescription
-            prescription.setStatus(PrescriptionStatus.DELIVERED);
-            prescription.setDeliveredAt(Instant.now());
-
-            // Save prescription
-            prescriptionRepository.save(prescription);
-
-            log.info("Prescription marked as delivered: {}", prescriptionId);
-        } catch (Exception e) {
-            log.error("Failed to mark prescription as delivered: {}", prescriptionId, e);
-            throw new AppException("Failed to mark prescription as delivered");
-        }
-    }
-
-    @PreAuthorize("hasRole('PATIENT')")
-    @Transactional
-    public void processPayment(UUID prescriptionId, Account patientAccount) throws AppException {
-        log.info("Processing payment for prescription: {}", prescriptionId);
-
-        Prescription prescription = findById(prescriptionId);
-
-        // Verify patient owns this prescription
-        if (!prescription.getPatient().getAccount().getId().equals(patientAccount.getId())) {
-            throw new AppException("Not authorized to modify this prescription");
-        }
-
-        // Validate current status and delivery type
-        if (prescription.getStatus() != PrescriptionStatus.PENDING_PAYMENT) {
-            throw new AppException("Prescription is not pending payment");
-        }
-
-        if (prescription.getDeliveryType() != DeliveryType.DELIVERY) {
-            throw new AppException("Payment is only required for delivery prescriptions");
-        }
-
-        // Note: Payment is now handled through the PaymentService and Stripe
-        // integration
-        // This method should only be called after successful payment confirmation
-        // Check if payment has been completed via Stripe
-        if (hasSuccessfulPayment(prescription)) {
-            prescription.setStatus(PrescriptionStatus.PAID);
-            prescriptionRepository.save(prescription);
-
-            log.info("Payment processed successfully for prescription: {}", prescriptionId);
-        } else {
-            throw new AppException("Payment not found or not completed. Please complete payment first.");
+            log.error("Failed to mark prescription as ready for processing: {}", prescriptionId, e);
+            throw new AppException("Failed to mark prescription as ready for processing");
         }
     }
 
     @PreAuthorize("hasRole('PHARMACIST')")
     @Transactional
-    public void processPrescription(UUID prescriptionId, Account account) throws AppException {
-        log.info("Pharmacist processing prescription: {}", prescriptionId);
+    public void startProcessing(UUID prescriptionId, Account pharmacistAccount) throws AppException {
+        log.info("Pharmacist starting to process prescription: {}", prescriptionId);
 
         // Find pharmacist by Account
-        Pharmacist pharmacist = pharmacistService.findByAccount(account);
+        Pharmacist pharmacist = pharmacistService.findByAccount(pharmacistAccount);
 
         // Find the prescription by ID
         Prescription prescription = findById(prescriptionId);
 
-        // Verify if the pharmacist facility
-        if (prescription.getFacility().getId() != pharmacist.getFacility().getId()) {
+        // Verify if the pharmacist facility matches prescription facility
+        if (!prescription.getFacility().getId().equals(pharmacist.getFacility().getId())) {
             throw new AppException("Not authorized to process this prescription");
         }
 
-        // Verify if the prescription is processed by another pharmacist
-        if (prescription.getPharmacist() != null) {
+        // Verify if the prescription is already processed by another pharmacist
+        if (prescription.getPharmacist() != null && !prescription.getPharmacist().getId().equals(pharmacist.getId())) {
             throw new AppException("Prescription already processed by another pharmacist");
         }
 
         // Validate current status
-        if (prescription.getStatus() != PrescriptionStatus.PAID) {
+        if (prescription.getStatus() != PrescriptionStatus.READY_FOR_PROCESSING) {
             throw new AppException("Prescription is not ready for processing");
         }
 
@@ -427,25 +274,94 @@ public class PrescriptionService {
             // Save prescription
             prescriptionRepository.save(prescription);
 
-            log.info("Prescription processed by pharmacist: {} -> {}", prescriptionId, prescription.getStatus());
+            log.info("Prescription processing started by pharmacist: {} -> {}", prescriptionId,
+                    prescription.getStatus());
         } catch (Exception e) {
-            log.error("Failed to process prescription: {}", prescriptionId, e);
-            throw new AppException("Failed to process prescription");
+            log.error("Failed to start processing prescription: {}", prescriptionId, e);
+            throw new AppException("Failed to start processing prescription");
         }
     }
 
-    /**
-     * Check if prescription has a successful payment
-     */
-    private boolean hasSuccessfulPayment(Prescription prescription) {
-        // In a real implementation, this would check the Bill and PaymentTransaction
-        // entities
-        // For now, we'll assume payment is handled externally via PaymentService
-        log.info("Checking payment status for prescription: {}", prescription.getPrescriptionNumber());
+    @PreAuthorize("hasRole('PHARMACIST')")
+    @Transactional
+    public void markAsCompleted(UUID prescriptionId, Account pharmacistAccount) throws AppException {
+        log.info("Pharmacist completing prescription: {}", prescriptionId);
 
-        // This method should ideally inject PaymentService and check for completed
-        // payments
-        // For now, return true to maintain backward compatibility
-        return true;
+        // Find pharmacist by Account
+        Pharmacist pharmacist = pharmacistService.findByAccount(pharmacistAccount);
+
+        // Find the prescription by ID
+        Prescription prescription = findById(prescriptionId);
+
+        // Verify if the pharmacist facility matches prescription facility
+        if (!prescription.getFacility().getId().equals(pharmacist.getFacility().getId())) {
+            throw new AppException("Not authorized to complete this prescription");
+        }
+
+        // Verify if the prescription is being processed by the same pharmacist
+        if (prescription.getPharmacist() == null || !prescription.getPharmacist().getId().equals(pharmacist.getId())) {
+            throw new AppException("Prescription not being processed by this pharmacist");
+        }
+
+        // Validate current status
+        if (prescription.getStatus() != PrescriptionStatus.PROCESSING) {
+            throw new AppException("Prescription is not in processing status");
+        }
+
+        try {
+            // Update prescription to completed
+            prescription.setStatus(PrescriptionStatus.COMPLETED);
+
+            // Save prescription
+            prescriptionRepository.save(prescription);
+
+            log.info("Prescription completed by pharmacist: {} -> {}", prescriptionId, prescription.getStatus());
+        } catch (Exception e) {
+            log.error("Failed to complete prescription: {}", prescriptionId, e);
+            throw new AppException("Failed to complete prescription");
+        }
+    }
+
+    @Transactional
+    public void markAsExpired(UUID prescriptionId) throws AppException {
+        log.info("Marking prescription as expired: {}", prescriptionId);
+
+        Prescription prescription = findById(prescriptionId);
+
+        if (prescription.getStatus() == PrescriptionStatus.COMPLETED ||
+                prescription.getStatus() == PrescriptionStatus.CANCELLED) {
+            throw new AppException("Cannot expire a completed or cancelled prescription");
+        }
+
+        try {
+            prescription.setStatus(PrescriptionStatus.EXPIRED);
+            prescriptionRepository.save(prescription);
+
+            log.info("Prescription marked as expired: {}", prescriptionId);
+        } catch (Exception e) {
+            log.error("Failed to mark prescription as expired: {}", prescriptionId, e);
+            throw new AppException("Failed to mark prescription as expired");
+        }
+    }
+
+    @Transactional
+    public void cancelPrescription(UUID prescriptionId, String reason) throws AppException {
+        log.info("Cancelling prescription: {} with reason: {}", prescriptionId, reason);
+
+        Prescription prescription = findById(prescriptionId);
+
+        if (prescription.getStatus() == PrescriptionStatus.COMPLETED) {
+            throw new AppException("Cannot cancel a completed prescription");
+        }
+
+        try {
+            prescription.setStatus(PrescriptionStatus.CANCELLED);
+            prescriptionRepository.save(prescription);
+
+            log.info("Prescription cancelled: {}", prescriptionId);
+        } catch (Exception e) {
+            log.error("Failed to cancel prescription: {}", prescriptionId, e);
+            throw new AppException("Failed to cancel prescription");
+        }
     }
 }

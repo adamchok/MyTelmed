@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MyTelmed - New Medical Referral</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333333;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+      }
+
+      .container {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        text-align: center;
+        justify-content: center;
+        border-bottom: 3px solid #007bff;
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+      }
+
+      .logo {
+        width: 192px;
+        height: auto;
+        max-width: 100%;
+        display: block;
+        margin: 0 auto;
+      }
+
+      .referral-status {
+        background-color: #e3f2fd;
+        border: 1px solid #2196f3;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: center;
+      }
+
+      .referral-status .status-icon {
+        font-size: 48px;
+        color: #2196f3;
+        margin-bottom: 10px;
+      }
+
+      .referral-status h3 {
+        color: #1565c0;
+        margin: 0 0 10px 0;
+      }
+
+      .referral-details {
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 5px;
+      }
+
+      .referral-number {
+        font-size: 18px;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 10px;
+      }
+
+      .priority-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+
+      .priority-routine {
+        background-color: #e8f5e8;
+        color: #2e7d32;
+        border: 1px solid #4caf50;
+      }
+
+      .priority-urgent {
+        background-color: #fff3e0;
+        color: #ef6c00;
+        border: 1px solid #ff9800;
+      }
+
+      .priority-emergency {
+        background-color: #ffebee;
+        color: #c62828;
+        border: 1px solid #f44336;
+      }
+
+      .doctor-info {
+        background-color: #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding: 5px 0;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      .info-row:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+      }
+
+      .info-label {
+        font-weight: bold;
+        color: #495057;
+        flex: 0 0 40%;
+      }
+
+      .info-value {
+        color: #333;
+        flex: 1;
+        text-align: right;
+      }
+
+      .clinical-summary {
+        background-color: #f1f3f4;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .expiry-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 20px 0;
+      }
+
+      .action-buttons {
+        text-align: center;
+        margin: 30px 0;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 12px 24px;
+        margin: 0 10px;
+        background-color: #007bff;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+      }
+
+      .btn:hover {
+        background-color: #0056b3;
+      }
+
+      .btn-primary {
+        background-color: #2196f3;
+      }
+
+      .btn-primary:hover {
+        background-color: #1976d2;
+      }
+
+      .footer {
+        border-top: 1px solid #dee2e6;
+        padding-top: 20px;
+        margin-top: 30px;
+        text-align: center;
+        color: #6c757d;
+        font-size: 14px;
+      }
+
+      .external-referral {
+        background-color: #fffbf0;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .external-referral h4 {
+        color: #856404;
+        margin: 0 0 15px 0;
+      }
+
+      @media (max-width: 600px) {
+        .info-row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .info-value {
+          text-align: left;
+          margin-top: 5px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <img th:src="@{/mytelmed-logo.png}" alt="MyTelmed Logo" class="logo" />
+        <h2 style="color: #495057; margin: 10px 0 0 0">New Medical Referral</h2>
+      </div>
+
+      <div class="referral-status">
+        <div class="status-icon">🏥</div>
+        <h3>Medical Referral Notification</h3>
+        <p style="margin: 0; color: #1565c0">You have received a new medical referral from your healthcare provider.</p>
+      </div>
+
+      <div class="referral-details">
+        <div class="referral-number">Referral #<span th:text="${referralNumber}">REF-001</span></div>
+
+        <div th:class="'priority-badge priority-' + ${#strings.toLowerCase(priority)}">
+          <span th:text="${priority}">Priority</span> Priority
+        </div>
+
+        <h4 style="margin: 15px 0 10px 0; color: #007bff">Referral Information</h4>
+
+        <div class="info-row">
+          <span class="info-label">Patient Name:</span>
+          <span class="info-value" th:text="${patientName}">Patient Name</span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">Referral Type:</span>
+          <span class="info-value" th:text="${referralType == 'INTERNAL' ? 'Internal Specialist' : 'External Specialist'}"
+            >Type</span
+          >
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">Date Created:</span>
+          <span class="info-value" th:text="${#temporals.format(createdAt, 'EEEE, dd MMMM yyyy HH:mm')}">Date</span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">Valid Until:</span>
+          <span class="info-value" th:text="${#temporals.format(expiryDate, 'EEEE, dd MMMM yyyy')}">Expiry Date</span>
+        </div>
+      </div>
+
+      <div class="doctor-info">
+        <h4 style="margin: 0 0 15px 0; color: #495057">Referring Doctor</h4>
+
+        <div class="info-row">
+          <span class="info-label">Doctor Name:</span>
+          <span class="info-value" th:text="${referringDoctorName}">Dr. Name</span>
+        </div>
+
+        <div class="info-row" th:if="${facilityName}">
+          <span class="info-label">Healthcare Facility:</span>
+          <span class="info-value" th:text="${facilityName}">Facility Name</span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">Reason for Referral:</span>
+          <span class="info-value" th:text="${reasonForReferral}">Reason</span>
+        </div>
+      </div>
+
+      <!-- Internal Referral Details -->
+      <div th:if="${referralType == 'INTERNAL'}" class="doctor-info">
+        <h4 style="margin: 0 0 15px 0; color: #28a745">Referred Specialist (MyTelmed Network)</h4>
+
+        <div class="info-row">
+          <span class="info-label">Specialist Name:</span>
+          <span class="info-value" th:text="${referredDoctorName}">Dr. Specialist</span>
+        </div>
+
+        <div class="info-row" th:if="${referredDoctorSpeciality}">
+          <span class="info-label">Speciality:</span>
+          <span class="info-value" th:text="${referredDoctorSpeciality}">Speciality</span>
+        </div>
+
+        <div class="info-row" th:if="${referredFacilityName}">
+          <span class="info-label">Specialist Facility:</span>
+          <span class="info-value" th:text="${referredFacilityName}">Specialist Facility</span>
+        </div>
+      </div>
+
+      <!-- External Referral Details -->
+      <div th:if="${referralType == 'EXTERNAL'}" class="external-referral">
+        <h4><i class="icon">🏥</i> External Specialist Information</h4>
+
+        <div class="info-row">
+          <span class="info-label">Specialist Name:</span>
+          <span class="info-value" th:text="${externalDoctorName}">Dr. External</span>
+        </div>
+
+        <div class="info-row" th:if="${externalDoctorSpeciality}">
+          <span class="info-label">Speciality:</span>
+          <span class="info-value" th:text="${externalDoctorSpeciality}">Speciality</span>
+        </div>
+
+        <div class="info-row" th:if="${externalFacilityName}">
+          <span class="info-label">Healthcare Facility:</span>
+          <span class="info-value" th:text="${externalFacilityName}">External Facility</span>
+        </div>
+
+        <div class="info-row" th:if="${externalFacilityAddress}">
+          <span class="info-label">Address:</span>
+          <span class="info-value" th:text="${externalFacilityAddress}">Address</span>
+        </div>
+
+        <div class="info-row" th:if="${externalContactNumber}">
+          <span class="info-label">Contact Number:</span>
+          <span class="info-value" th:text="${externalContactNumber}">Contact</span>
+        </div>
+      </div>
+
+      <div class="clinical-summary">
+        <h4 style="margin: 0 0 15px 0; color: #495057">Clinical Summary</h4>
+        <p th:text="${clinicalSummary}" style="margin: 0; white-space: pre-line">Clinical summary details...</p>
+      </div>
+
+      <!-- Additional Clinical Information -->
+      <div th:if="${currentMedications or allergies or investigationsDone}" class="clinical-summary">
+        <h4 style="margin: 0 0 15px 0; color: #495057">Additional Clinical Information</h4>
+
+        <div th:if="${currentMedications}">
+          <strong>Current Medications:</strong>
+          <p th:text="${currentMedications}" style="margin: 5px 0 15px 0; white-space: pre-line">Medications</p>
+        </div>
+
+        <div th:if="${allergies}">
+          <strong>Known Allergies:</strong>
+          <p th:text="${allergies}" style="margin: 5px 0 15px 0; white-space: pre-line">Allergies</p>
+        </div>
+
+        <div th:if="${investigationsDone}">
+          <strong>Investigations Done:</strong>
+          <p th:text="${investigationsDone}" style="margin: 5px 0 0 0; white-space: pre-line">Investigations</p>
+        </div>
+      </div>
+
+      <div class="expiry-warning">
+        <h4 style="margin: 0 0 10px 0; color: #856404"><i class="icon">⏰</i> Important Notice</h4>
+        <p style="margin: 0; color: #856404">
+          This referral is valid until
+          <strong th:text="${#temporals.format(expiryDate, 'EEEE, dd MMMM yyyy')}">expiry date</strong>. Please take action
+          before this date to ensure continuity of your healthcare.
+        </p>
+      </div>
+
+      <div class="action-buttons">
+        <a th:href="${uiHost + '/patient/referral/' + referralId}" class="btn btn-primary"> View Full Referral Details </a>
+        <a th:if="${referralType == 'INTERNAL'}" th:href="${uiHost + '/patient/appointment/book'}" class="btn">
+          Book Specialist Appointment
+        </a>
+      </div>
+
+      <div th:if="${referralType == 'INTERNAL'}">
+        <p>
+          <strong>Next Steps:</strong> Your referral has been sent to the specialist within our MyTelmed network. You can
+          book an appointment directly through the platform, or the specialist may contact you to schedule a consultation.
+        </p>
+      </div>
+
+      <div th:if="${referralType == 'EXTERNAL'}">
+        <p>
+          <strong>Next Steps:</strong> This referral is for a specialist outside the MyTelmed network. Please contact the
+          external healthcare facility directly using the provided contact information to schedule your appointment.
+        </p>
+      </div>
+
+      <p>
+        <strong>Important:</strong> Please bring this referral information and any relevant medical records to your
+        specialist appointment. If you have any questions about this referral, please contact your referring doctor or our
+        support team.
+      </p>
+
+      <p>
+        This referral is issued under the Malaysian public healthcare telemedicine program to ensure you receive the
+        specialized care you need.
+      </p>
+
+      <p>
+        Best regards,<br />
+        MyTelmed Medical Team<br />
+        Malaysian Public Healthcare Telemedicine Services
+      </p>
+
+      <div class="footer">
+        <p>This referral notification is generated electronically and is part of your official medical record.</p>
+        <p>&copy; 2025 MyTelmed. All rights reserved.</p>
+        <p>
+          <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> | <a th:href="${uiHost + '/terms'}">Terms of Service</a> |
+          <a th:href="${uiHost + '/patient/support'}">Medical Support</a>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

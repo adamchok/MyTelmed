@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-
 @Component
 public class AppointmentBookedDoctorPushSender extends BasePushNotificationStrategy {
     public AppointmentBookedDoctorPushSender(
@@ -33,13 +32,17 @@ public class AppointmentBookedDoctorPushSender extends BasePushNotificationStrat
     @Override
     protected String buildBody(Map<String, Object> variables) {
         String patientName = (String) variables.get("patientName");
+        String consultationMode = (String) variables.get("consultationMode");
 
         LocalDateTime appointmentDateTime = (LocalDateTime) variables.get("appointmentDateTime");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
         String formattedDateTime = appointmentDateTime.format(formatter);
 
-        return String.format("New appointment booking with %s at %s. Please review the appointment.",
-                patientName, formattedDateTime);
+        String appointmentType = consultationMode.equals("VIRTUAL") ? "virtual" : "physical";
+
+        return String.format(
+                "You have a new %s appointment booking from %s scheduled for %s. Please review and confirm the appointment.",
+                appointmentType, patientName, formattedDateTime);
     }
 
     @Override
@@ -62,11 +65,14 @@ public class AppointmentBookedDoctorPushSender extends BasePushNotificationStrat
         if (!variables.containsKey("appointmentDateTime")) {
             throw new IllegalArgumentException("appointmentDateTime is required");
         }
+        if (!variables.containsKey("consultationMode")) {
+            throw new IllegalArgumentException("consultationMode is required");
+        }
     }
 
     @Override
     protected Map<String, Object>[] buildActions(Map<String, Object> variables) {
-        return new Map[]{
+        return new Map[] {
                 Map.of(
                         "action", "view-appointment",
                         "title", "Review Appointment",
