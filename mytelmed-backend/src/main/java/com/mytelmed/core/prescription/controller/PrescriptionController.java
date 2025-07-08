@@ -16,7 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -154,7 +154,6 @@ public class PrescriptionController {
     }
 
     @PutMapping("/{prescriptionId}/ready-for-processing")
-    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<Void>> markAsReadyForProcessing(
             @PathVariable UUID prescriptionId,
             @AuthenticationPrincipal Account account) {
@@ -166,7 +165,6 @@ public class PrescriptionController {
     }
 
     @PutMapping("/{prescriptionId}/start-processing")
-    @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<ApiResponse<Void>> startProcessing(
             @PathVariable UUID prescriptionId,
             @AuthenticationPrincipal Account account) {
@@ -178,7 +176,6 @@ public class PrescriptionController {
     }
 
     @PutMapping("/{prescriptionId}/complete")
-    @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<ApiResponse<Void>> markAsCompleted(
             @PathVariable UUID prescriptionId,
             @AuthenticationPrincipal Account account) {

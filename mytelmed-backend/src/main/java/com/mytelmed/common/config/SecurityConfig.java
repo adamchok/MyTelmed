@@ -31,8 +31,7 @@ import java.util.List;
 public class SecurityConfig {
     private final String FRONTEND_URL;
 
-    public SecurityConfig(UserService userService,
-                          @Value("${application.frontend.url}") String frontendUrl) {
+    public SecurityConfig(@Value("${application.frontend.url}") String frontendUrl) {
         this.FRONTEND_URL = frontendUrl;
     }
 
@@ -77,9 +76,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll()) // Temporarily allow all requests without authentication
                 .userDetailsService(userService)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                        .maximumSessions(1)
-                        .maxSessionsPreventsLogin(true))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

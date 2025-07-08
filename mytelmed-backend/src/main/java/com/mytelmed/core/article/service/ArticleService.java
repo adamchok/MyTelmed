@@ -2,7 +2,6 @@ package com.mytelmed.core.article.service;
 
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.core.article.dto.CreateArticleRequestDto;
-import com.mytelmed.core.article.dto.PaginatedArticles;
 import com.mytelmed.core.article.dto.UpdateArticleRequestDto;
 import com.mytelmed.core.article.entity.Article;
 import com.mytelmed.core.speciality.entity.Speciality;
@@ -12,13 +11,15 @@ import org.springframework.stereotype.Service;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.model.*;
+import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-
 import java.time.Instant;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -49,38 +50,31 @@ public class ArticleService {
 
         return articleTable.scan(request).items().stream()
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("Article not found")) ;
+                .orElseThrow(() -> new ResourceNotFoundException("Article not found"));
     }
 
-    public PaginatedArticles findPaginatedArticlesBySpeciality(String speciality, Map<String, AttributeValue> exclusiveStartKey, int pageSize) {
+    public List<Article> findArticlesBySpeciality(String speciality) {
         Key key = Key.builder()
                 .partitionValue(speciality)
                 .build();
 
-        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
+        QueryEnhancedRequest request = QueryEnhancedRequest.builder()
                 .queryConditional(QueryConditional.keyEqualTo(key))
-                .limit(pageSize);
+                .build();
 
-        if (exclusiveStartKey != null && !exclusiveStartKey.isEmpty()) {
-            requestBuilder.exclusiveStartKey(exclusiveStartKey);
-        }
+        PageIterable<Article> pages = articleTable.query(request);
 
-        PageIterable<Article> pages = articleTable.query(requestBuilder.build());
+        List<Article> allArticles = new ArrayList<>();
+        pages.stream().forEach(page -> allArticles.addAll(page.items()));
 
-        Iterator<Page<Article>> iterator = pages.iterator();
-        if (!iterator.hasNext()) {
-            return new PaginatedArticles(Collections.emptyList(), null);
-        }
-
-        Page<Article> page = iterator.next();
-        return new PaginatedArticles(page.items(), page.lastEvaluatedKey());
+        return allArticles;
     }
 
     public void createArticle(CreateArticleRequestDto request) throws ResourceNotFoundException {
         Speciality speciality = specialityService.findSpecialityById(request.specialityId());
 
         Article article = Article.builder()
-                .id(UUID.randomUUID())
+                .id(UUID.randomUUID().toString())
                 .title(request.title())
                 .speciality(speciality.getName())
                 .content(request.content())
@@ -106,7 +100,7 @@ public class ArticleService {
 
         Key key = Key.builder()
                 .partitionValue(article.getSpeciality())
-                .sortValue(article.getId().toString())
+                .sortValue(article.getId())
                 .build();
 
         articleTable.deleteItem(key);

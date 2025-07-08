@@ -8,9 +8,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttri
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
-
 import java.time.Instant;
-import java.util.UUID;
 
 
 @DynamoDbBean
@@ -19,7 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Article {
-    private UUID id;
+    private String id;
     private String title;
     private String speciality;
     private String content;
@@ -28,7 +26,7 @@ public class Article {
 
     @DynamoDbSortKey
     @DynamoDbAttribute("id")
-    public UUID getId() {
+    public String getId() {
         return id;
     }
 

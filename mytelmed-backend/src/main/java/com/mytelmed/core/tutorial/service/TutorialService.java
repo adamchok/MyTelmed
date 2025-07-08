@@ -20,7 +20,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -65,7 +64,6 @@ public class TutorialService {
         return tutorialRepository.findByCategory(category, pageable);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public Tutorial create(CreateTutorialRequestDto request) throws AppException {
         log.debug("Creating tutorial with request: {}", request);
@@ -87,7 +85,6 @@ public class TutorialService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void uploadVideo(UUID tutorialId, MultipartFile videoFile) throws AppException {
         log.debug("Uploading video for tutorial with ID: {}", tutorialId);
@@ -114,7 +111,6 @@ public class TutorialService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void uploadThumbnail(UUID tutorialId, MultipartFile thumbnailImageFile) throws AppException {
         log.debug("Uploading thumbnail for tutorial with ID: {}", tutorialId);
@@ -141,7 +137,6 @@ public class TutorialService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void update(UUID tutorialId, UpdateTutorialRequestDto request) throws AppException {
         log.debug("Updating tutorial with ID: {}", tutorialId);
@@ -164,8 +159,7 @@ public class TutorialService {
             throw new AppException("Failed to update tutorial");
         }
     }
-
-    @PreAuthorize("hasRole('ADMIN')")
+    
     @Transactional
     public void deleteById(UUID tutorialId) throws AppException {
         log.debug("Deleting tutorial with ID: {}", tutorialId);

@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -105,7 +105,6 @@ public class MedicationDeliveryService {
     return deliveryRepository.findByStatus(status, pageable);
   }
 
-  @PreAuthorize("hasRole('PATIENT')")
   @Transactional
   public MedicationDelivery choosePickup(UUID prescriptionId, Account patientAccount) {
     log.info("Patient choosing pickup for prescription: {}", prescriptionId);
@@ -119,7 +118,6 @@ public class MedicationDeliveryService {
     return delivery;
   }
 
-  @PreAuthorize("hasRole('PATIENT')")
   @Transactional
   public MedicationDelivery chooseHomeDelivery(UUID prescriptionId, Account patientAccount, UUID addressId) {
     log.info("Patient choosing home delivery for prescription: {} to address: {}", prescriptionId, addressId);
@@ -135,7 +133,6 @@ public class MedicationDeliveryService {
     return delivery;
   }
 
-  @PreAuthorize("hasRole('PATIENT')")
   @Transactional
   public void processPayment(UUID deliveryId, Account account) {
     log.info("Processing payment for delivery: {}", deliveryId);
@@ -171,7 +168,6 @@ public class MedicationDeliveryService {
     log.info("Payment processed successfully for delivery: {}", deliveryId);
   }
 
-  @PreAuthorize("hasRole('PHARMACIST')")
   @Transactional
   public void processDelivery(UUID deliveryId, Account pharmacistAccount) {
     log.info("Pharmacist processing delivery: {}", deliveryId);
@@ -191,7 +187,6 @@ public class MedicationDeliveryService {
     log.info("Delivery {} processed by pharmacist", deliveryId);
   }
 
-  @PreAuthorize("hasRole('PHARMACIST')")
   @Transactional
   public void markOutForDelivery(UUID deliveryId, Account pharmacistAccount, String courierName,
       String trackingReference, String contactPhone) {
@@ -221,7 +216,6 @@ public class MedicationDeliveryService {
     log.info("Delivery {} marked as out for delivery", deliveryId);
   }
 
-  @PreAuthorize("hasRole('PATIENT')")
   @Transactional
   public void markAsCompleted(UUID deliveryId, Account account) {
     log.info("Patient marking delivery {} as completed", deliveryId);

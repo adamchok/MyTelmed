@@ -7,6 +7,8 @@ import com.mytelmed.common.constant.family.FamilyPermissionType;
 import com.mytelmed.common.constant.payment.BillType;
 import com.mytelmed.common.constant.payment.BillingStatus;
 import com.mytelmed.common.constant.payment.PaymentMode;
+import com.mytelmed.common.event.payment.model.BillGeneratedEvent;
+import com.mytelmed.common.event.payment.model.PaymentCompletedEvent;
 import com.mytelmed.core.appointment.entity.Appointment;
 import com.mytelmed.core.appointment.service.AppointmentService;
 import com.mytelmed.core.auth.entity.Account;
@@ -20,8 +22,6 @@ import com.mytelmed.core.payment.repository.BillRepository;
 import com.mytelmed.core.payment.repository.PaymentTransactionRepository;
 import com.mytelmed.core.prescription.entity.Prescription;
 import com.mytelmed.core.prescription.service.PrescriptionService;
-import com.mytelmed.common.event.payment.model.BillGeneratedEvent;
-import com.mytelmed.common.event.payment.model.PaymentCompletedEvent;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentConfirmParams;
@@ -31,7 +31,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -41,6 +40,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
 
 @Slf4j
 @Service
@@ -56,19 +56,19 @@ public class PaymentService {
     @Value("${stripe.secret.key:}")
     private String stripeSecretKey;
 
-    @Value("${mytelmed.appointment.consultation.fee:2.00}")
+    @Value("${mytelmed.appointment.consultation.fee}")
     private BigDecimal consultationFee;
 
-    @Value("${mytelmed.prescription.delivery.fee:10.00}")
+    @Value("${mytelmed.prescription.delivery.fee}")
     private BigDecimal deliveryFee;
 
     public PaymentService(BillRepository billRepository,
-            PaymentTransactionRepository paymentTransactionRepository,
-            PatientService patientService,
-            AppointmentService appointmentService,
-            PrescriptionService prescriptionService,
-            FamilyMemberPermissionService familyPermissionService,
-            ApplicationEventPublisher eventPublisher) {
+                          PaymentTransactionRepository paymentTransactionRepository,
+                          PatientService patientService,
+                          AppointmentService appointmentService,
+                          PrescriptionService prescriptionService,
+                          FamilyMemberPermissionService familyPermissionService,
+                          ApplicationEventPublisher eventPublisher) {
         this.billRepository = billRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.patientService = patientService;
@@ -88,7 +88,6 @@ public class PaymentService {
         return appointment.getConsultationMode() == ConsultationMode.VIRTUAL;
     }
 
-    @PreAuthorize("hasRole('PATIENT')")
     @Transactional
     public PaymentIntentResponseDto createAppointmentPaymentIntent(Account account, UUID appointmentId)
             throws AppException {
@@ -149,7 +148,6 @@ public class PaymentService {
         }
     }
 
-    @PreAuthorize("hasRole('PATIENT')")
     @Transactional
     public PaymentIntentResponseDto createPrescriptionPaymentIntent(Account account, UUID prescriptionId)
             throws AppException {
@@ -204,7 +202,6 @@ public class PaymentService {
         }
     }
 
-    @PreAuthorize("hasRole('PATIENT')")
     @Transactional
     public PaymentIntentResponseDto confirmPayment(Account account, String paymentIntentId, String paymentMethodId)
             throws AppException {
@@ -257,7 +254,6 @@ public class PaymentService {
         }
     }
 
-    @PreAuthorize("hasRole('PATIENT')")
     @Transactional(readOnly = true)
     public Page<Bill> getPatientBills(Account account, Pageable pageable) {
         // Get the patient ID this account is authorized to access
@@ -269,7 +265,6 @@ public class PaymentService {
         return billRepository.findByPatientId(authorizedPatientId, pageable);
     }
 
-    @PreAuthorize("hasRole('PATIENT')")
     @Transactional(readOnly = true)
     public Page<PaymentTransaction> getPatientTransactions(Account account, Pageable pageable) {
         // Get the patient ID this account is authorized to access
@@ -282,7 +277,7 @@ public class PaymentService {
     }
 
     private Bill createBill(Patient patient, BillType billType, BigDecimal amount,
-            String description, Appointment appointment, Prescription prescription) {
+                            String description, Appointment appointment, Prescription prescription) {
         String billNumber = generateBillNumber(billType);
 
         Bill bill = Bill.builder()

@@ -10,13 +10,13 @@ import com.mytelmed.core.timeslot.dto.UpdateTimeSlotRequestDto;
 import com.mytelmed.core.timeslot.entity.TimeSlot;
 import com.mytelmed.core.timeslot.repository.TimeSlotRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
 
 @Slf4j
 @Service
@@ -45,7 +45,6 @@ public class TimeSlotService {
         return timeSlotRepository.findAvailableSlotsByDoctorId(doctorId, startDate, endDate);
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional(readOnly = true)
     public List<TimeSlot> findByAccount(Account account, LocalDateTime fromDate) throws AppException {
         log.debug("Finding time slots with doctor account ID {}", account.getId());
@@ -59,7 +58,6 @@ public class TimeSlotService {
         }
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional
     public void create(Account account, CreateTimeSlotRequestDto request) throws AppException {
         log.debug("Creating time slot for doctor account ID {}", account.getId());
@@ -149,7 +147,6 @@ public class TimeSlotService {
         log.info("Released time slot booking with ID {}", timeSlotId);
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional
     public void update(Account account, UUID timeSlotId, UpdateTimeSlotRequestDto request) throws AppException {
         // Find the doctor by account
@@ -193,7 +190,6 @@ public class TimeSlotService {
         }
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional
     public void enableTimeSlotById(Account account, UUID timeSlotId) throws AppException {
         // Find the doctor by account
@@ -226,7 +222,6 @@ public class TimeSlotService {
         }
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional
     public void disableTimeSlotById(Account account, UUID timeSlotId) throws AppException {
         // Find the doctor by account

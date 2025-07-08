@@ -35,7 +35,7 @@ public abstract class BasePushNotificationStrategy implements PushNotificationSt
 
     @Override
     @Retryable(retryFor = {PushNotificationException.class}, backoff = @Backoff(delay = 1000, multiplier = 2))
-    public final void sendNotification(String endpoint, String p256dh, String auth, Map<String, Object> variables) {
+    public void sendNotification(String endpoint, String p256dh, String auth, Map<String, Object> variables) {
         try {
             if (!vapidConfiguration.isPushNotificationsEnabled()) {
                 log.debug("Push notifications are disabled. Skipping notification: {}", getNotificationType());

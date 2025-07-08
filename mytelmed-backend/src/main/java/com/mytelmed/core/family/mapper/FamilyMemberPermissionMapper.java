@@ -8,9 +8,9 @@ import org.mapstruct.Named;
 import java.time.LocalDate;
 import java.util.UUID;
 
+
 @Mapper(componentModel = "spring")
 public interface FamilyMemberPermissionMapper {
-    
     @Mapping(target = "id", source = "id", qualifiedByName = "mapUUID")
     @Mapping(target = "familyMemberId", source = "familyMember.id", qualifiedByName = "mapUUID")
     @Mapping(target = "expiryDate", source = "expiryDate", qualifiedByName = "mapLocalDate")

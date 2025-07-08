@@ -7,6 +7,7 @@ import com.mytelmed.common.constant.appointment.AppointmentStatus;
 import com.mytelmed.common.constant.family.FamilyPermissionType;
 import com.mytelmed.common.constant.referral.ReferralStatus;
 import com.mytelmed.common.constant.referral.ReferralType;
+import com.mytelmed.common.event.referral.model.ReferralCreatedEvent;
 import com.mytelmed.common.utils.DateTimeUtil;
 import com.mytelmed.core.appointment.entity.Appointment;
 import com.mytelmed.core.appointment.repository.AppointmentRepository;
@@ -24,12 +25,10 @@ import com.mytelmed.core.referral.entity.Referral;
 import com.mytelmed.core.referral.repository.ReferralRepository;
 import com.mytelmed.core.timeslot.entity.TimeSlot;
 import com.mytelmed.core.timeslot.service.TimeSlotService;
-import com.mytelmed.common.event.referral.model.ReferralCreatedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
@@ -37,30 +36,29 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+
 @Slf4j
 @Service
 public class ReferralService {
     private final ReferralRepository referralRepository;
     private final PatientService patientService;
     private final DoctorService doctorService;
-    private final AppointmentService appointmentService;
     private final AppointmentRepository appointmentRepository;
     private final TimeSlotService timeSlotService;
     private final FamilyMemberPermissionService familyPermissionService;
     private final ApplicationEventPublisher eventPublisher;
 
     public ReferralService(ReferralRepository referralRepository,
-            PatientService patientService,
-            DoctorService doctorService,
-            AppointmentService appointmentService,
-            AppointmentRepository appointmentRepository,
-            TimeSlotService timeSlotService,
-            FamilyMemberPermissionService familyPermissionService,
-            ApplicationEventPublisher eventPublisher) {
+                           PatientService patientService,
+                           DoctorService doctorService,
+                           AppointmentService appointmentService,
+                           AppointmentRepository appointmentRepository,
+                           TimeSlotService timeSlotService,
+                           FamilyMemberPermissionService familyPermissionService,
+                           ApplicationEventPublisher eventPublisher) {
         this.referralRepository = referralRepository;
         this.patientService = patientService;
         this.doctorService = doctorService;
-        this.appointmentService = appointmentService;
         this.appointmentRepository = appointmentRepository;
         this.timeSlotService = timeSlotService;
         this.familyPermissionService = familyPermissionService;
@@ -95,7 +93,6 @@ public class ReferralService {
         return referral;
     }
 
-    @PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR')")
     @Transactional(readOnly = true)
     public Page<Referral> findByPatientId(UUID patientId, Account requestingAccount, Pageable pageable)
             throws AppException {
@@ -111,7 +108,6 @@ public class ReferralService {
         return referralRepository.findByPatientOrderByCreatedAtDesc(patient, pageable);
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional(readOnly = true)
     public Page<Referral> findByReferringDoctor(Account doctorAccount, Pageable pageable) throws AppException {
         log.debug("Finding referrals by referring doctor: {}", doctorAccount.getId());
@@ -120,7 +116,6 @@ public class ReferralService {
         return referralRepository.findByReferringDoctorOrderByCreatedAtDesc(doctor, pageable);
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional(readOnly = true)
     public Page<Referral> findByReferredDoctor(Account doctorAccount, Pageable pageable) throws AppException {
         log.debug("Finding referrals by referred doctor: {}", doctorAccount.getId());
@@ -129,7 +124,6 @@ public class ReferralService {
         return referralRepository.findByReferredDoctorOrderByCreatedAtDesc(doctor, pageable);
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional(readOnly = true)
     public List<Referral> findPendingReferralsForDoctor(Account doctorAccount) throws AppException {
         log.debug("Finding pending referrals for doctor: {}", doctorAccount.getId());
@@ -138,7 +132,6 @@ public class ReferralService {
         return referralRepository.findPendingReferralsForDoctor(doctor);
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional
     public void createReferral(Account doctorAccount, CreateReferralRequestDto request) throws AppException {
         log.info("Creating referral for patient: {} by doctor: {}", request.patientId(), doctorAccount.getId());
@@ -210,7 +203,6 @@ public class ReferralService {
         log.info("Referral created successfully: {}", maskReferralNumber(referral.getReferralNumber()));
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional
     public void updateReferralStatus(UUID referralId, Account doctorAccount, UpdateReferralStatusRequestDto request)
             throws AppException {
@@ -257,7 +249,6 @@ public class ReferralService {
         log.info("Referral status updated successfully: {} -> {}", referralId, request.status());
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional
     public void scheduleAppointment(UUID referralId, UUID timeSlotId, Account doctorAccount) throws AppException {
         log.info("Scheduling appointment for referral: {} with time slot: {}", referralId, timeSlotId);
@@ -334,7 +325,6 @@ public class ReferralService {
         log.info("Processed {} expired referrals", expiredReferrals.size());
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional(readOnly = true)
     public ReferralStatisticsDto getReferralStatistics(Account doctorAccount) throws AppException {
         log.debug("Getting referral statistics for doctor: {}", doctorAccount.getId());

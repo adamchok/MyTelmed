@@ -19,10 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
+
 
 /**
  * Service for managing medical prescriptions in Malaysian public healthcare
@@ -41,10 +41,10 @@ public class PrescriptionService {
     private final ApplicationEventPublisher applicationEventPublisher;
 
     public PrescriptionService(PrescriptionRepository prescriptionRepository,
-            PrescriptionItemRepository prescriptionItemRepository,
-            AppointmentService appointmentService,
-            PharmacistService pharmacistService,
-            ApplicationEventPublisher applicationEventPublisher) {
+                               PrescriptionItemRepository prescriptionItemRepository,
+                               AppointmentService appointmentService,
+                               PharmacistService pharmacistService,
+                               ApplicationEventPublisher applicationEventPublisher) {
         this.prescriptionRepository = prescriptionRepository;
         this.prescriptionItemRepository = prescriptionItemRepository;
         this.appointmentService = appointmentService;
@@ -141,7 +141,6 @@ public class PrescriptionService {
         return prescriptions;
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional
     public Prescription createPrescription(Account account, CreatePrescriptionRequestDto request) throws AppException {
         log.info("Creating prescription for appointment: {}", request.appointmentId());
@@ -211,7 +210,6 @@ public class PrescriptionService {
         }
     }
 
-    @PreAuthorize("hasRole('PATIENT')")
     @Transactional
     public void markAsReadyForProcessing(UUID prescriptionId, Account patientAccount) throws AppException {
         log.info("Marking prescription as ready for processing: {}", prescriptionId);
@@ -240,7 +238,6 @@ public class PrescriptionService {
         }
     }
 
-    @PreAuthorize("hasRole('PHARMACIST')")
     @Transactional
     public void startProcessing(UUID prescriptionId, Account pharmacistAccount) throws AppException {
         log.info("Pharmacist starting to process prescription: {}", prescriptionId);
@@ -282,7 +279,6 @@ public class PrescriptionService {
         }
     }
 
-    @PreAuthorize("hasRole('PHARMACIST')")
     @Transactional
     public void markAsCompleted(UUID prescriptionId, Account pharmacistAccount) throws AppException {
         log.info("Pharmacist completing prescription: {}", prescriptionId);

@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -50,7 +50,6 @@ public class AppointmentController {
                 this.awsS3Service = awsS3Service;
         }
 
-        @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
         @GetMapping("/{appointmentId}")
         public ResponseEntity<ApiResponse<AppointmentDto>> getAppointmentById(@PathVariable UUID appointmentId) {
                 log.info("Received request to get appointment with ID: {}", appointmentId);
@@ -60,7 +59,6 @@ public class AppointmentController {
                 return ResponseEntity.ok(ApiResponse.success(appointmentDto));
         }
 
-        @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
         @GetMapping
         public ResponseEntity<ApiResponse<Page<AppointmentDto>>> getAppointmentsByAccount(
                         @RequestParam(defaultValue = "0") int page,
@@ -76,7 +74,6 @@ public class AppointmentController {
                 return ResponseEntity.ok(ApiResponse.success(appointmentDtoPage));
         }
 
-        @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
         @GetMapping("/list")
         public ResponseEntity<ApiResponse<List<AppointmentDto>>> getAllAppointmentsByAccount(
                         @AuthenticationPrincipal Account account) {
@@ -89,7 +86,6 @@ public class AppointmentController {
                 return ResponseEntity.ok(ApiResponse.success(appointmentDtoList));
         }
 
-        @PreAuthorize("hasRole('PATIENT')")
         @PostMapping
         public ResponseEntity<ApiResponse<Void>> bookAppointment(
                         @Valid @RequestBody BookAppointmentRequestDto request,
@@ -103,7 +99,6 @@ public class AppointmentController {
                                                 request.consultationMode() + " appointment booked successfully"));
         }
 
-        @PreAuthorize("hasRole('PATIENT')")
         @PatchMapping("/{appointmentId}")
         public ResponseEntity<ApiResponse<Void>> updateAppointmentDetails(
                         @PathVariable UUID appointmentId,
@@ -115,7 +110,6 @@ public class AppointmentController {
                 return ResponseEntity.ok(ApiResponse.success("Appointment details updated successfully"));
         }
 
-        @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
         @PostMapping("/cancel/{appointmentId}")
         public ResponseEntity<ApiResponse<Void>> cancelAppointment(
                         @PathVariable UUID appointmentId,
@@ -127,7 +121,6 @@ public class AppointmentController {
                 return ResponseEntity.ok(ApiResponse.success("Appointment cancelled successfully"));
         }
 
-        @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
         @PutMapping("/start-virtual/{appointmentId}")
         public ResponseEntity<ApiResponse<Void>> startVirtualAppointment(
                         @PathVariable UUID appointmentId,
@@ -139,7 +132,6 @@ public class AppointmentController {
                 return ResponseEntity.ok(ApiResponse.success("Virtual appointment started successfully"));
         }
 
-        @PreAuthorize("hasRole('DOCTOR')")
         @PutMapping("/complete/{appointmentId}")
         public ResponseEntity<ApiResponse<Void>> completeAppointment(
                         @PathVariable UUID appointmentId,

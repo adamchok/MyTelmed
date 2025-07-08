@@ -34,7 +34,7 @@ public abstract class BaseEmailSenderStrategy implements EmailSenderStrategy {
     @Override
     @Retryable(retryFor = {EmailSendingException.class, CompletionException.class},
             backoff = @Backoff(delay = 1000, multiplier = 2))
-    public final void sendEmail(String to, Map<String, Object> variables) {
+    public void sendEmail(String to, Map<String, Object> variables) {
         try {
             validateInput(to, variables);
 

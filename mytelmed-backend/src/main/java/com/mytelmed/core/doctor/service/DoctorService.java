@@ -25,7 +25,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -59,7 +58,6 @@ public class DoctorService {
         this.eventPublisher = eventPublisher;
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PATIENT')")
     @Transactional(readOnly = true)
     public Page<Doctor> findAll(int page, int pageSize) {
         log.debug("Finding all doctors with page: {} and pageSize: {}", page, pageSize);
@@ -73,7 +71,6 @@ public class DoctorService {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PATIENT')")
     @Transactional(readOnly = true)
     public Page<Doctor> findAllByFacilityId(UUID facilityId, int page, int pageSize) {
         log.debug("Finding all doctors by facilityId {} with page: {} and pageSize: {}", facilityId, page,
@@ -89,7 +86,6 @@ public class DoctorService {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PATIENT')")
     @Transactional(readOnly = true)
     public Page<Doctor> findAllBySpeciality(String speciality, int page, int pageSize) {
         log.debug("Finding all doctors by speciality {} with page: {} and pageSize: {}", speciality, page,
@@ -119,7 +115,6 @@ public class DoctorService {
         return doctor;
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional(readOnly = true)
     public Doctor findByAccount(Account account) throws ResourceNotFoundException {
         log.debug("Finding doctor by account ID: {}", account.getId());
@@ -134,7 +129,6 @@ public class DoctorService {
         return doctor;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public Doctor create(CreateDoctorRequestDto request) throws AppException {
         log.debug("Creating doctor account: {}", request.email());
@@ -178,7 +172,6 @@ public class DoctorService {
         }
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional
     public void updateByAccount(Account account, UpdateDoctorProfileRequestDto request) throws AppException {
         log.debug("Updating doctor profile for account: {}", account.getId());
@@ -207,7 +200,6 @@ public class DoctorService {
         }
     }
 
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional
     public void updateProfileImageByAccount(Account account, MultipartFile profileImage) throws AppException {
         log.debug("Updating doctor profile image for account: {}", account.getId());
@@ -230,7 +222,6 @@ public class DoctorService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void uploadProfileImageById(UUID doctorId, MultipartFile profileImage) throws AppException {
         log.debug("Uploading image for doctor with ID: {}", doctorId);
@@ -253,7 +244,6 @@ public class DoctorService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void updateSpecialitiesAndFacilityById(UUID doctorId, UpdateDoctorSpecialitiesAndFacilityRequestDto request)
             throws AppException {
@@ -283,7 +273,6 @@ public class DoctorService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void deleteById(UUID id) throws AppException {
         log.debug("Deleting doctor with ID: {}", id);
@@ -311,7 +300,6 @@ public class DoctorService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void activateById(UUID id) throws AppException {
         log.debug("Activating doctor with ID: {}", id);
@@ -333,7 +321,6 @@ public class DoctorService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void deactivateById(UUID id) throws AppException {
         log.debug("Deactivating doctor with ID: {}", id);
@@ -355,7 +342,6 @@ public class DoctorService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void resetAccountPassword(UUID id) throws AppException {
         log.debug("Resetting password for doctor with ID: {}", id);

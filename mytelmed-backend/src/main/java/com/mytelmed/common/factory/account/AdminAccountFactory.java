@@ -2,13 +2,13 @@ package com.mytelmed.common.factory.account;
 
 import com.mytelmed.common.constant.AccountType;
 import com.mytelmed.common.event.account.model.AccountCreatedEvent;
+import com.mytelmed.common.utils.PasswordGenerator;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.entity.Permission;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import java.security.SecureRandom;
-import java.util.Base64;
+
 
 @Component("ADMIN")
 public class AdminAccountFactory implements AccountAbstractFactory {
@@ -20,17 +20,10 @@ public class AdminAccountFactory implements AccountAbstractFactory {
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
-    private String generateRandomPassword() {
-        SecureRandom random = new SecureRandom();
-        byte[] passwordBytes = new byte[12];
-        random.nextBytes(passwordBytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(passwordBytes);
-    }
-
     @Override
     @Deprecated
     public Account createAccount(String email, String name) {
-        String rawPassword = generateRandomPassword();
+        String rawPassword = PasswordGenerator.generateRandomPassword();
         String encodedPassword = passwordEncoder.encode(rawPassword);
 
         Permission permission = Permission.builder()

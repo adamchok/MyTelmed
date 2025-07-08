@@ -3,7 +3,6 @@ package com.mytelmed.core.article.controller;
 import com.mytelmed.common.dto.ApiResponse;
 import com.mytelmed.core.article.dto.ArticleDto;
 import com.mytelmed.core.article.dto.CreateArticleRequestDto;
-import com.mytelmed.core.article.dto.PaginatedArticles;
 import com.mytelmed.core.article.dto.UpdateArticleRequestDto;
 import com.mytelmed.core.article.entity.Article;
 import com.mytelmed.core.article.mapper.ArticleMapper;
@@ -16,10 +15,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -42,13 +39,12 @@ public class ArticleController {
     }
 
     @GetMapping("/{speciality}")
-    public ResponseEntity<ApiResponse<PaginatedArticles>> getPaginatedArticlesBySpeciality(
-            @PathVariable String speciality,
-            @RequestBody Map<String, AttributeValue> exclusiveStartKey,
-            @RequestParam(defaultValue = "10") int size
+    public ResponseEntity<ApiResponse<List<ArticleDto>>> getPaginatedArticlesBySpeciality(
+            @PathVariable String speciality
     ) {
-        PaginatedArticles paginatedArticles = articleService.findPaginatedArticlesBySpeciality(speciality, exclusiveStartKey, size);
-        return ResponseEntity.ok(ApiResponse.success(paginatedArticles));
+        List<Article> articleList = articleService.findArticlesBySpeciality(speciality);
+        List<ArticleDto> articleDtoList = articleList.stream().map(articleMapper::toDto).toList();
+        return ResponseEntity.ok(ApiResponse.success(articleDtoList));
     }
 
     @PostMapping

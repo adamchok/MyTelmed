@@ -10,7 +10,7 @@ import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.payment.entity.Bill;
 import com.mytelmed.core.payment.repository.BillRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
@@ -30,7 +30,6 @@ public class AppointmentPaymentService {
     this.appointmentStateMachine = appointmentStateMachine;
   }
 
-  @PreAuthorize("hasRole('PATIENT')")
   @Transactional
   public void confirmAppointmentPayment(Account account, UUID appointmentId) throws AppException {
     log.info("Confirming appointment payment for appointment: {} by patient: {}", appointmentId, account.getId());
@@ -99,7 +98,6 @@ public class AppointmentPaymentService {
   /**
    * Handles payment failure - reverts appointment to appropriate status
    */
-  @PreAuthorize("hasRole('PATIENT')")
   @Transactional
   public void handlePaymentFailure(Account account, UUID appointmentId, String failureReason) throws AppException {
     log.info("Handling payment failure for appointment: {} by patient: {}", appointmentId, account.getId());

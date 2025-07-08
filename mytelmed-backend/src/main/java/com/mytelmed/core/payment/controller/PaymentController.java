@@ -17,7 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,7 +41,6 @@ public class PaymentController {
   }
 
   @PostMapping("/appointment/{appointmentId}/create-intent")
-  @PreAuthorize("hasRole('PATIENT')")
   public ResponseEntity<ApiResponse<PaymentIntentResponseDto>> createAppointmentPaymentIntent(
       @PathVariable UUID appointmentId,
       @AuthenticationPrincipal Account account) {
@@ -53,7 +52,6 @@ public class PaymentController {
   }
 
   @PostMapping("/prescription/{prescriptionId}/create-intent")
-  @PreAuthorize("hasRole('PATIENT')")
   public ResponseEntity<ApiResponse<PaymentIntentResponseDto>> createPrescriptionPaymentIntent(
       @PathVariable UUID prescriptionId,
       @AuthenticationPrincipal Account account) {
@@ -65,7 +63,6 @@ public class PaymentController {
   }
 
   @PostMapping("/confirm")
-  @PreAuthorize("hasRole('PATIENT')")
   public ResponseEntity<ApiResponse<PaymentIntentResponseDto>> confirmPayment(
       @Valid @RequestBody ConfirmPaymentRequestDto request,
       @AuthenticationPrincipal Account account) {
@@ -79,7 +76,6 @@ public class PaymentController {
   }
 
   @GetMapping("/bills")
-  @PreAuthorize("hasRole('PATIENT')")
   public ResponseEntity<ApiResponse<Page<BillDto>>> getPatientBills(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size,
@@ -98,7 +94,6 @@ public class PaymentController {
   }
 
   @GetMapping("/transactions")
-  @PreAuthorize("hasRole('PATIENT')")
   public ResponseEntity<ApiResponse<Page<PaymentTransactionDto>>> getPatientTransactions(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size,

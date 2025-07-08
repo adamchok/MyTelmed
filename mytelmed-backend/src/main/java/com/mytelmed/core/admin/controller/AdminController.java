@@ -13,7 +13,6 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,7 +42,6 @@ public class AdminController {
         this.adminMapper = adminMapper;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<AdminDto>>> getAllAdmin(
             @RequestParam Integer page,
@@ -55,7 +53,6 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(paginatedAdminDto));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{adminId}")
     public ResponseEntity<ApiResponse<AdminDto>> getAdminById(@PathVariable UUID adminId) {
         log.info("Received request to get admin with ID: {}", adminId);
@@ -74,7 +71,6 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(adminDto));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createAdmin(@Valid @RequestBody CreateAdminRequestDto request) {
         log.info("Received request to create admin with request: {}", request);
@@ -92,7 +88,6 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Admin profile updated successfully"));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{adminId}")
     public ResponseEntity<ApiResponse<Void>> deleteAdmin(@PathVariable UUID adminId) {
         log.info("Received request to delete admin with ID: {}", adminId);
@@ -101,7 +96,6 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Admin deleted successfully"));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/activate/{adminId}")
     public ResponseEntity<ApiResponse<Void>> activateAdminById(@PathVariable UUID adminId) {
         log.info("Received request to activate admin with ID: {}", adminId);
@@ -110,7 +104,6 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Admin account activated successfully"));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/deactivate/{adminId}")
     public ResponseEntity<ApiResponse<Void>> deactivateAdminById(@PathVariable UUID adminId) {
         log.info("Received request to deactivate admin with ID: {}", adminId);
@@ -119,7 +112,6 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Admin account deactivated successfully"));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/reset/password/{adminId}")
     public ResponseEntity<ApiResponse<Void>> resetAdminAccountPassword(@PathVariable UUID adminId) {
         log.info("Received request to reset admin account password for admin with ID: {}", adminId);

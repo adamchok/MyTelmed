@@ -10,7 +10,7 @@ import com.mytelmed.core.family.service.FamilyMemberPermissionService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,70 +27,65 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/family/permissions")
 public class FamilyMemberPermissionController {
-    
-    private final FamilyMemberPermissionService permissionService;
-    private final FamilyMemberPermissionMapper permissionMapper;
 
-    public FamilyMemberPermissionController(FamilyMemberPermissionService permissionService,
-                                          FamilyMemberPermissionMapper permissionMapper) {
-        this.permissionService = permissionService;
-        this.permissionMapper = permissionMapper;
-    }
+        private final FamilyMemberPermissionService permissionService;
+        private final FamilyMemberPermissionMapper permissionMapper;
 
-    @PreAuthorize("hasRole('PATIENT')")
-    @GetMapping("/family-member/{familyMemberId}")
-    public ResponseEntity<ApiResponse<List<FamilyMemberPermissionDto>>> getFamilyMemberPermissions(
-            @PathVariable UUID familyMemberId) {
-        log.info("Received request to get permissions for family member: {}", familyMemberId);
+        public FamilyMemberPermissionController(FamilyMemberPermissionService permissionService,
+                        FamilyMemberPermissionMapper permissionMapper) {
+                this.permissionService = permissionService;
+                this.permissionMapper = permissionMapper;
+        }
 
-        List<FamilyMemberPermission> permissions = permissionService.getFamilyMemberPermissions(familyMemberId);
-        List<FamilyMemberPermissionDto> permissionDtos = permissions.stream()
-                .map(permissionMapper::toDto)
-                .collect(Collectors.toList());
+        @GetMapping("/family-member/{familyMemberId}")
+        public ResponseEntity<ApiResponse<List<FamilyMemberPermissionDto>>> getFamilyMemberPermissions(
+                        @PathVariable UUID familyMemberId) {
+                log.info("Received request to get permissions for family member: {}", familyMemberId);
 
-        return ResponseEntity.ok(ApiResponse.success(permissionDtos));
-    }
+                List<FamilyMemberPermission> permissions = permissionService.getFamilyMemberPermissions(familyMemberId);
+                List<FamilyMemberPermissionDto> permissionDtos = permissions.stream()
+                                .map(permissionMapper::toDto)
+                                .collect(Collectors.toList());
 
-    @PreAuthorize("hasRole('PATIENT')")
-    @PutMapping("/family-member/{familyMemberId}/grant")
-    public ResponseEntity<ApiResponse<Void>> grantPermissions(
-            @PathVariable UUID familyMemberId,
-            @Valid @RequestBody UpdateFamilyPermissionsRequestDto request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        log.info("Received request to grant permissions {} to family member: {}", 
-                request.permissions(), familyMemberId);
+                return ResponseEntity.ok(ApiResponse.success(permissionDtos));
+        }
 
-        // Get patient account ID from authenticated user
-        UUID patientAccountId = UUID.fromString(userDetails.getUsername());
+        @PutMapping("/family-member/{familyMemberId}/grant")
+        public ResponseEntity<ApiResponse<Void>> grantPermissions(
+                        @PathVariable UUID familyMemberId,
+                        @Valid @RequestBody UpdateFamilyPermissionsRequestDto request,
+                        @AuthenticationPrincipal UserDetails userDetails) {
+                log.info("Received request to grant permissions {} to family member: {}",
+                                request.permissions(), familyMemberId);
 
-        permissionService.grantPermissions(
-                patientAccountId,
-                familyMemberId,
-                request.permissions(),
-                DateTimeUtil.stringToLocalDate(request.expiryDate()).orElse(null)
-        );
+                // Get patient account ID from authenticated user
+                UUID patientAccountId = UUID.fromString(userDetails.getUsername());
 
-        return ResponseEntity.ok(ApiResponse.success("Permissions granted successfully"));
-    }
+                permissionService.grantPermissions(
+                                patientAccountId,
+                                familyMemberId,
+                                request.permissions(),
+                                DateTimeUtil.stringToLocalDate(request.expiryDate()).orElse(null));
 
-    @PreAuthorize("hasRole('PATIENT')")
-    @PutMapping("/family-member/{familyMemberId}/revoke")
-    public ResponseEntity<ApiResponse<Void>> revokePermissions(
-            @PathVariable UUID familyMemberId,
-            @Valid @RequestBody UpdateFamilyPermissionsRequestDto request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        log.info("Received request to revoke permissions {} from family member: {}", 
-                request.permissions(), familyMemberId);
+                return ResponseEntity.ok(ApiResponse.success("Permissions granted successfully"));
+        }
 
-        // Get patient account ID from authenticated user
-        UUID patientAccountId = UUID.fromString(userDetails.getUsername());
+        @PutMapping("/family-member/{familyMemberId}/revoke")
+        public ResponseEntity<ApiResponse<Void>> revokePermissions(
+                        @PathVariable UUID familyMemberId,
+                        @Valid @RequestBody UpdateFamilyPermissionsRequestDto request,
+                        @AuthenticationPrincipal UserDetails userDetails) {
+                log.info("Received request to revoke permissions {} from family member: {}",
+                                request.permissions(), familyMemberId);
 
-        permissionService.revokePermissions(
-                patientAccountId,
-                familyMemberId,
-                request.permissions()
-        );
+                // Get patient account ID from authenticated user
+                UUID patientAccountId = UUID.fromString(userDetails.getUsername());
 
-        return ResponseEntity.ok(ApiResponse.success("Permissions revoked successfully"));
-    }
+                permissionService.revokePermissions(
+                                patientAccountId,
+                                familyMemberId,
+                                request.permissions());
+
+                return ResponseEntity.ok(ApiResponse.success("Permissions revoked successfully"));
+        }
 }

@@ -14,11 +14,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
-
 
 @Slf4j
 @Service
@@ -36,7 +35,6 @@ public class AdminService {
         return adminRepository.existsAdminByAccountUsername(username);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly = true)
     public Page<Admin> findAll(int page, int pageSize) {
         log.debug("Finding all admins with page: {} and pageSize: {}", page, pageSize);
@@ -48,7 +46,6 @@ public class AdminService {
         return admins;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly = true)
     public Admin findById(UUID adminId) throws ResourceNotFoundException {
         log.debug("Finding admin by ID: {}", adminId);
@@ -63,7 +60,6 @@ public class AdminService {
         return admin;
     }
 
-    @PreAuthorize("hasRole('PHARMACIST')")
     @Transactional(readOnly = true)
     public Admin findByAccount(Account account) throws ResourceNotFoundException {
         log.debug("Finding admin by account ID: {}", account.getId());
@@ -78,7 +74,6 @@ public class AdminService {
         return admin;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void create(CreateAdminRequestDto request) throws UsernameAlreadyExistException {
         log.debug("Creating admin account: {}", request.email());
@@ -106,7 +101,6 @@ public class AdminService {
         }
     }
 
-    @PreAuthorize("hasRole('PHARMACIST')")
     @Transactional
     public void updateByAccount(Account account, UpdateAdminRequestDto request) throws AppException {
         log.debug("Updating admin profile for account: {}", account.getId());
@@ -129,7 +123,6 @@ public class AdminService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void deleteById(UUID id) throws AppException {
         log.debug("Deleting admin with ID: {}", id);
@@ -145,7 +138,6 @@ public class AdminService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void activateById(UUID id) throws AppException {
         log.debug("Activating admin with ID: {}", id);
@@ -167,7 +159,6 @@ public class AdminService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void deactivateById(UUID id) throws AppException {
         log.debug("Deactivating admin with ID: {}", id);
@@ -189,7 +180,6 @@ public class AdminService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void resetAccountPassword(UUID id) throws AppException {
         log.debug("Resetting password for admin with ID: {}", id);

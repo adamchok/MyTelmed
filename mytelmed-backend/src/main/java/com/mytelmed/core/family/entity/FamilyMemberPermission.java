@@ -22,13 +22,14 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "family_member_permission", 
-       uniqueConstraints = @UniqueConstraint(columnNames = {"family_member_id", "permission_type"}))
+@Table(name = "family_member_permission",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"family_member_id", "permission_type"}))
 public class FamilyMemberPermission {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -43,7 +44,7 @@ public class FamilyMemberPermission {
     private FamilyPermissionType permissionType;
 
     @Column(name = "is_granted", nullable = false)
-    private boolean isGranted;
+    private boolean granted;
 
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
@@ -60,6 +61,6 @@ public class FamilyMemberPermission {
     private Instant updatedAt;
 
     public boolean isActive() {
-        return isGranted && (expiryDate == null || !expiryDate.isBefore(LocalDate.now()));
+        return granted && (expiryDate == null || !expiryDate.isBefore(LocalDate.now()));
     }
 } 

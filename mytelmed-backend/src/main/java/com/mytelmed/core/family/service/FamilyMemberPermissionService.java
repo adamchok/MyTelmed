@@ -19,19 +19,20 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+
 @Slf4j
 @Service
 public class FamilyMemberPermissionService {
-    
+
     private final FamilyMemberPermissionRepository permissionRepository;
     private final FamilyMemberRepository familyMemberRepository;
     private final FamilyPermissionValidator permissionValidator;
     private final PatientService patientService;
 
     public FamilyMemberPermissionService(FamilyMemberPermissionRepository permissionRepository,
-                                       FamilyMemberRepository familyMemberRepository,
-                                       FamilyPermissionValidator permissionValidator,
-                                       PatientService patientService) {
+                                         FamilyMemberRepository familyMemberRepository,
+                                         FamilyPermissionValidator permissionValidator,
+                                         PatientService patientService) {
         this.permissionRepository = permissionRepository;
         this.familyMemberRepository = familyMemberRepository;
         this.permissionValidator = permissionValidator;
@@ -48,7 +49,7 @@ public class FamilyMemberPermissionService {
                     .orElseThrow(() -> new ResourceNotFoundException("Family member not found"));
 
             Patient patient = patientService.findPatientByAccountId(patientAccountId);
-            
+
             if (!familyMember.getPatient().getId().equals(patient.getId())) {
                 throw new AppException("Unauthorized to manage this family member's permissions");
             }
@@ -77,7 +78,7 @@ public class FamilyMemberPermissionService {
                     .orElseThrow(() -> new ResourceNotFoundException("Family member not found"));
 
             Patient patient = patientService.findPatientByAccountId(patientAccountId);
-            
+
             if (!familyMember.getPatient().getId().equals(patient.getId())) {
                 throw new AppException("Unauthorized to manage this family member's permissions");
             }
@@ -106,7 +107,7 @@ public class FamilyMemberPermissionService {
                     .orElseThrow(() -> new ResourceNotFoundException("Family member not found"));
 
             Patient patient = patientService.findPatientByAccountId(patientAccountId);
-            
+
             if (!familyMember.getPatient().getId().equals(patient.getId())) {
                 throw new AppException("Unauthorized to manage this family member's permissions");
             }
@@ -152,15 +153,15 @@ public class FamilyMemberPermissionService {
     @Transactional
     public void cleanupExpiredPermissions() {
         log.debug("Cleaning up expired permissions");
-        
+
         try {
             List<FamilyMemberPermission> expiredPermissions = permissionRepository.findExpiredPermissions(LocalDate.now());
-            
+
             for (FamilyMemberPermission permission : expiredPermissions) {
-                permission.setIsGranted(false);
+                permission.setGranted(false);
                 permission.setNotes("Automatically revoked due to expiry");
             }
-            
+
             permissionRepository.saveAll(expiredPermissions);
             log.info("Cleaned up {} expired permissions", expiredPermissions.size());
         } catch (Exception e) {
@@ -177,9 +178,9 @@ public class FamilyMemberPermissionService {
                         .permissionType(permissionType)
                         .build());
 
-        permission.setIsGranted(isGranted);
+        permission.setGranted(isGranted);
         permission.setExpiryDate(expiryDate);
-        
+
         permissionRepository.save(permission);
     }
 }

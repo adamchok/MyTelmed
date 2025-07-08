@@ -79,10 +79,11 @@ public class ReferralController {
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<ApiResponse<Page<ReferralDto>>> getReferralsByPatient(
             @PathVariable UUID patientId,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20) Pageable pageable,
+            @AuthenticationPrincipal Account account) {
         log.info("Fetching referrals for patient: {}", patientId);
 
-        Page<Referral> referralPage = referralService.findByPatientId(patientId, pageable);
+        Page<Referral> referralPage = referralService.findByPatientId(patientId, account, pageable);
         Page<ReferralDto> referralDtoPage = referralPage.map(referral -> referralMapper.toDto(referral, awsS3Service));
 
         return ResponseEntity.ok(ApiResponse.success(referralDtoPage));

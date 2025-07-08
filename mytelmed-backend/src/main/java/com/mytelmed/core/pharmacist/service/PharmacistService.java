@@ -24,7 +24,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -59,7 +58,6 @@ public class PharmacistService {
         return pharmacistRepository.existsPharmacistByAccountUsername(username);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly = true)
     public Page<Pharmacist> findAll(int page, int pageSize) {
         log.debug("Finding all pharmacists with page: {} and pageSize: {}", page, pageSize);
@@ -73,7 +71,6 @@ public class PharmacistService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly = true)
     public Page<Pharmacist> findAllByFacilityId(UUID facilityId, int page, int pageSize) {
         log.debug("Finding all pharmacists by facilityId {} with page: {} and pageSize: {}", facilityId, page,
@@ -89,7 +86,6 @@ public class PharmacistService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly = true)
     public Pharmacist findById(UUID pharmacistId) throws ResourceNotFoundException {
         log.debug("Finding pharmacist by ID: {}", pharmacistId);
@@ -104,7 +100,6 @@ public class PharmacistService {
         return pharmacist;
     }
 
-    @PreAuthorize("hasRole('PHARMACIST')")
     @Transactional(readOnly = true)
     public Pharmacist findByAccount(Account account) throws ResourceNotFoundException {
         log.debug("Finding pharmacist by account ID: {}", account.getId());
@@ -119,7 +114,6 @@ public class PharmacistService {
         return pharmacist;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public Pharmacist create(CreatePharmacistRequestDto request) throws UsernameAlreadyExistException {
         log.debug("Creating pharmacist account: {}", request.email());
@@ -157,7 +151,6 @@ public class PharmacistService {
         }
     }
 
-    @PreAuthorize("hasRole('PHARMACIST')")
     @Transactional
     public void updateByAccount(Account account, UpdatePharmacistProfileRequestDto request) throws AppException {
         log.debug("Updating pharmacist profile for account: {}", account.getId());
@@ -184,7 +177,6 @@ public class PharmacistService {
         }
     }
 
-    @PreAuthorize("hasRole('PHARMACIST')")
     @Transactional
     public void updateProfileImageByAccount(Account account, MultipartFile profileImage) throws AppException {
         log.debug("Updating pharmacist profile image for account: {}", account.getId());
@@ -207,7 +199,6 @@ public class PharmacistService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void uploadProfileImageById(UUID pharmacistId, MultipartFile profileImage) throws AppException {
         log.debug("Uploading image for pharmacist with ID: {}", pharmacistId);
@@ -230,7 +221,6 @@ public class PharmacistService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void updateFacilityById(UUID id, UpdatePharmacistFacilityRequestDto request) throws AppException {
         log.debug("Updating pharmacist facility with ID: {}", id);
@@ -255,7 +245,6 @@ public class PharmacistService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void deleteById(UUID id) throws AppException {
         log.debug("Deleting pharmacist with ID: {}", id);
@@ -283,7 +272,6 @@ public class PharmacistService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void activateById(UUID id) throws AppException {
         log.debug("Activating pharmacist with ID: {}", id);
@@ -305,7 +293,6 @@ public class PharmacistService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void deactivateById(UUID id) throws AppException {
         log.debug("Deactivating pharmacist with ID: {}", id);
@@ -327,7 +314,6 @@ public class PharmacistService {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void resetAccountPassword(UUID id) throws AppException {
         log.debug("Resetting password for pharmacist with ID: {}", id);

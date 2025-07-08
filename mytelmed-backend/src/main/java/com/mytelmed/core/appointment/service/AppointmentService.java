@@ -23,6 +23,8 @@ import com.mytelmed.core.document.service.DocumentService;
 import com.mytelmed.core.family.service.FamilyMemberPermissionService;
 import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.patient.service.PatientService;
+import com.mytelmed.core.payment.repository.BillRepository;
+import com.mytelmed.core.payment.service.PaymentRefundService;
 import com.mytelmed.core.timeslot.entity.TimeSlot;
 import com.mytelmed.core.timeslot.service.TimeSlotService;
 import com.mytelmed.core.videocall.entity.VideoCall;
@@ -32,14 +34,12 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import com.mytelmed.core.payment.repository.BillRepository;
-import com.mytelmed.core.payment.service.PaymentRefundService;
+
 
 /**
  * Service for managing appointments in Malaysian public healthcare
@@ -64,18 +64,18 @@ public class AppointmentService {
     private final PaymentRefundService paymentRefundService;
 
     public AppointmentService(AppointmentRepository appointmentRepository,
-            AppointmentDocumentRepository appointmentDocumentRepository,
-            TimeSlotService timeSlotService,
-            PatientService patientService,
-            DoctorService doctorService,
-            DocumentService documentService,
-            ChatService chatService,
-            ApplicationEventPublisher eventPublisher,
-            FamilyMemberPermissionService familyPermissionService,
-            VideoCallRepository videoCallRepository,
-            BillRepository billRepository,
-            AppointmentStateMachine appointmentStateMachine,
-            PaymentRefundService paymentRefundService) {
+                              AppointmentDocumentRepository appointmentDocumentRepository,
+                              TimeSlotService timeSlotService,
+                              PatientService patientService,
+                              DoctorService doctorService,
+                              DocumentService documentService,
+                              ChatService chatService,
+                              ApplicationEventPublisher eventPublisher,
+                              FamilyMemberPermissionService familyPermissionService,
+                              VideoCallRepository videoCallRepository,
+                              BillRepository billRepository,
+                              AppointmentStateMachine appointmentStateMachine,
+                              PaymentRefundService paymentRefundService) {
         this.appointmentRepository = appointmentRepository;
         this.appointmentDocumentRepository = appointmentDocumentRepository;
         this.timeSlotService = timeSlotService;
@@ -91,7 +91,6 @@ public class AppointmentService {
         this.paymentRefundService = paymentRefundService;
     }
 
-    @PreAuthorize("hasAnyRole('DOCTOR', 'PATIENT')")
     @Transactional(readOnly = true)
     public Appointment findById(UUID appointmentId) throws ResourceNotFoundException {
         log.debug("Finding appointment with ID {}", appointmentId);
@@ -106,7 +105,6 @@ public class AppointmentService {
         return appointment;
     }
 
-    @PreAuthorize("hasAnyRole('DOCTOR', 'PATIENT')")
     @Transactional(readOnly = true)
     public Page<Appointment> findByAccount(Account account, int page, int pageSize) throws AppException {
         Pageable pageable = PageRequest.of(page, pageSize);
@@ -138,7 +136,6 @@ public class AppointmentService {
         }
     }
 
-    @PreAuthorize("hasAnyRole('DOCTOR', 'PATIENT')")
     @Transactional(readOnly = true)
     public List<Appointment> findByAllAccount(Account account) throws AppException {
         switch (account.getPermission().getType()) {
@@ -168,7 +165,6 @@ public class AppointmentService {
         }
     }
 
-    @PreAuthorize("hasRole('PATIENT')")
     @Transactional
     public void book(Account account, BookAppointmentRequestDto request) throws AppException {
         log.debug("Booking {} appointment for account {} with request {}",
@@ -392,7 +388,7 @@ public class AppointmentService {
     private AppointmentStatus determineInitialAppointmentStatus(ConsultationMode consultationMode) {
         return switch (consultationMode) {
             case VIRTUAL -> AppointmentStatus.PENDING_PAYMENT; // Virtual consultations require payment before
-                                                               // confirmation
+            // confirmation
             case PHYSICAL -> AppointmentStatus.PENDING; // Physical consultations don't require upfront payment
         };
     }
@@ -405,7 +401,6 @@ public class AppointmentService {
                 slot2.getStartTime().isBefore(slot1.getEndTime());
     }
 
-    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
     @Transactional
     public void cancelAppointment(Account account, UUID appointmentId, String reason) throws AppException {
         log.debug("Cancelling appointment {} by account {}", appointmentId, account.getId());
@@ -493,7 +488,6 @@ public class AppointmentService {
      * This happens when both patient (or family member) and doctor join the video
      * call.
      */
-    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
     @Transactional
     public void startVirtualAppointment(UUID appointmentId, Account account) throws AppException {
         log.debug("Starting virtual appointment: {} by account: {}", appointmentId, account.getId());
@@ -548,7 +542,6 @@ public class AppointmentService {
      * Completes an appointment (both PHYSICAL and VIRTUAL).
      * This is manually triggered by the doctor when the appointment is finished.
      */
-    @PreAuthorize("hasRole('DOCTOR')")
     @Transactional
     public void completeAppointment(UUID appointmentId, Account doctorAccount, String doctorNotes) throws AppException {
         log.debug("Completing appointment: {}", appointmentId);
@@ -584,7 +577,6 @@ public class AppointmentService {
      * Updates appointment details (notes, reason, documents).
      * Only allowed for PENDING and PENDING_PAYMENT appointments.
      */
-    @PreAuthorize("hasRole('PATIENT')")
     @Transactional
     public void updateAppointmentDetails(Account account, UUID appointmentId, UpdateAppointmentRequestDto request)
             throws AppException {
@@ -685,8 +677,8 @@ public class AppointmentService {
     }
 
     private void attachDocumentsToAppointment(Appointment appointment,
-            List<AddAppointmentDocumentRequestDto> requestList,
-            Account requestingAccount) throws AppException {
+                                              List<AddAppointmentDocumentRequestDto> requestList,
+                                              Account requestingAccount) throws AppException {
         requestList.forEach(request -> {
             try {
                 // Find the document
@@ -727,8 +719,8 @@ public class AppointmentService {
     }
 
     private void updateAppointmentDocuments(Appointment appointment,
-            List<AddAppointmentDocumentRequestDto> requestList,
-            Account requestingAccount)
+                                            List<AddAppointmentDocumentRequestDto> requestList,
+                                            Account requestingAccount)
             throws AppException {
         // Remove existing documents
         appointmentDocumentRepository.deleteByAppointmentId(appointment.getId());
