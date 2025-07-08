@@ -5,6 +5,7 @@ public record GrantAccessRequestDto(
         String accountId,
         boolean canView,
         boolean canDownload,
+        boolean canAttach,
         String expiryDate
 ) {
 }

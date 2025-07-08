@@ -47,6 +47,9 @@ public class DocumentAccess {
     @Column(name = "can_download", nullable = false)
     private boolean canDownload;
 
+    @Column(name = "can_attach", nullable = false)
+    private boolean canAttach;
+
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
 

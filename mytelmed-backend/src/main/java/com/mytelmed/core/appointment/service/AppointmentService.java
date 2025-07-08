@@ -3,6 +3,7 @@ package com.mytelmed.core.appointment.service;
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constant.appointment.AppointmentStatus;
+import com.mytelmed.common.constant.family.FamilyPermissionType;
 import com.mytelmed.common.event.appointment.model.AppointmentBookedEvent;
 import com.mytelmed.common.event.appointment.model.AppointmentCancelledEvent;
 import com.mytelmed.core.appointment.dto.AddAppointmentDocumentRequestDto;
@@ -17,7 +18,9 @@ import com.mytelmed.core.chat.service.ChatService;
 import com.mytelmed.core.doctor.entity.Doctor;
 import com.mytelmed.core.doctor.service.DoctorService;
 import com.mytelmed.core.document.entity.Document;
+import com.mytelmed.core.document.service.DocumentAccessService;
 import com.mytelmed.core.document.service.DocumentService;
+import com.mytelmed.core.family.service.FamilyMemberPermissionService;
 import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.patient.service.PatientService;
 import com.mytelmed.core.timeslot.entity.TimeSlot;
@@ -34,7 +37,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 public class AppointmentService {
@@ -46,6 +48,8 @@ public class AppointmentService {
     private final DocumentService documentService;
     private final ChatService chatService;
     private final ApplicationEventPublisher eventPublisher;
+    private final DocumentAccessService documentAccessService;
+    private final FamilyMemberPermissionService familyPermissionService;
 
     public AppointmentService(AppointmentRepository appointmentRepository,
                               AppointmentDocumentRepository appointmentDocumentRepository,
@@ -54,7 +58,9 @@ public class AppointmentService {
                               DoctorService doctorService,
                               DocumentService documentService,
                               ChatService chatService,
-                              ApplicationEventPublisher eventPublisher) {
+                              ApplicationEventPublisher eventPublisher,
+                              DocumentAccessService documentAccessService,
+                              FamilyMemberPermissionService familyPermissionService) {
         this.appointmentRepository = appointmentRepository;
         this.appointmentDocumentRepository = appointmentDocumentRepository;
         this.timeSlotService = timeSlotService;
@@ -63,6 +69,8 @@ public class AppointmentService {
         this.documentService = documentService;
         this.chatService = chatService;
         this.eventPublisher = eventPublisher;
+        this.documentAccessService = documentAccessService;
+        this.familyPermissionService = familyPermissionService;
     }
 
     @PreAuthorize("hasAnyRole('DOCTOR', 'PATIENT')")
@@ -87,8 +95,18 @@ public class AppointmentService {
 
         switch (account.getPermission().getType()) {
             case PATIENT -> {
-                Patient patient = patientService.findPatientByAccountId(account.getId());
-                return appointmentRepository.findByPatientIdOrderByTimeSlotStartTimeDesc(patient.getId(), pageable);
+                // Get the patient ID this account is authorized to access
+                UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
+                if (authorizedPatientId == null) {
+                    throw new AppException("Account is not authorized to view any patient appointments");
+                }
+                
+                // Verify the account has VIEW_APPOINTMENT permission
+                if (!familyPermissionService.hasPermission(account, authorizedPatientId, FamilyPermissionType.VIEW_APPOINTMENT)) {
+                    throw new AppException("Insufficient permissions to view appointments");
+                }
+                
+                return appointmentRepository.findByPatientIdOrderByTimeSlotStartTimeDesc(authorizedPatientId, pageable);
             }
             case DOCTOR -> {
                 Doctor doctor = doctorService.findByAccount(account);
@@ -106,8 +124,18 @@ public class AppointmentService {
     public List<Appointment> findByAllAccount(Account account) throws AppException {
         switch (account.getPermission().getType()) {
             case PATIENT -> {
-                Patient patient = patientService.findPatientByAccountId(account.getId());
-                return appointmentRepository.findByPatientIdOrderByTimeSlotStartTimeDesc(patient.getId());
+                // Get the patient ID this account is authorized to access
+                UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
+                if (authorizedPatientId == null) {
+                    throw new AppException("Account is not authorized to view any patient appointments");
+                }
+                
+                // Verify the account has VIEW_APPOINTMENT permission
+                if (!familyPermissionService.hasPermission(account, authorizedPatientId, FamilyPermissionType.VIEW_APPOINTMENT)) {
+                    throw new AppException("Insufficient permissions to view appointments");
+                }
+                
+                return appointmentRepository.findByPatientIdOrderByTimeSlotStartTimeDesc(authorizedPatientId);
             }
             case DOCTOR -> {
                 Doctor doctor = doctorService.findByAccount(account);
@@ -123,29 +151,33 @@ public class AppointmentService {
     @PreAuthorize("hasRole('PATIENT')")
     @Transactional
     public void book(Account account, BookAppointmentRequestDto request) throws AppException {
-        log.debug("Booking appointment for patient account ID {}", account.getId());
+        log.debug("Booking appointment for account {} with request {}", account.getId(), request);
 
-        // Find the patient by account ID
-        Patient patient = patientService.findPatientByAccountId(account.getId());
-
-        // Find the doctor by doctor ID
-        Doctor doctor = doctorService.findById(request.doctorId());
-
-        // Find the time slot by time slot ID
-        TimeSlot timeSlot = timeSlotService.findById(request.timeSlotId());
-
-        if (!timeSlot.getDoctor().getId().equals(doctor.getId())) {
-            throw new AppException("Time slot does not belong to the selected doctor");
+        // Get the patient ID this account is authorized to access
+        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
+        if (authorizedPatientId == null) {
+            throw new AppException("Account is not authorized to book appointments for any patient");
         }
-
-        if (timeSlot.getIsBooked() && !timeSlot.getIsAvailable()) {
-            throw new AppException("Time slot is no longer available");
+        
+        // Verify the account has BOOK_APPOINTMENT permission
+        if (!familyPermissionService.hasPermission(account, authorizedPatientId, FamilyPermissionType.BOOK_APPOINTMENT)) {
+            throw new AppException("Insufficient permissions to book appointments");
         }
-
-        // Validate booking time logic
-        validateAppointmentTime(timeSlot.getStartTime());
 
         try {
+            Patient patient = patientService.findPatientById(authorizedPatientId);
+            Doctor doctor = doctorService.findDoctorById(request.doctorId());
+            TimeSlot timeSlot = timeSlotService.findById(request.timeSlotId());
+
+            // Validate time slot
+            if (timeSlot.getIsBooked()) {
+                throw new AppException("Time slot is already booked");
+            }
+
+            if (!timeSlot.getIsAvailable()) {
+                throw new AppException("Time slot is not available");
+            }
+
             // Update time slot
             timeSlot.setIsBooked(true);
 
@@ -162,9 +194,9 @@ public class AppointmentService {
             // Save appointment
             appointment = appointmentRepository.save(appointment);
 
-            // Attach document to appointment if any
+            // Attach document to appointment if any (with permission validation)
             if (request.documentRequestList() != null && !request.documentRequestList().isEmpty()) {
-                attachDocumentsToAppointment(appointment, request.documentRequestList());
+                attachDocumentsToAppointment(appointment, request.documentRequestList(), account);
             }
 
             // Create chat chat
@@ -173,8 +205,8 @@ public class AppointmentService {
             // Publish booking event to trigger notifications
             publishAppointmentBookedEvent(appointment);
 
-            log.info("Booked appointment with ID {} for patient {} with doctor {}",
-                    appointment.getId(), patient.getId(), request.doctorId());
+            log.info("Booked appointment with ID {} for patient {} with doctor {} by account {}",
+                    appointment.getId(), patient.getId(), request.doctorId(), account.getId());
         } catch (Exception e) {
             log.error("Unexpected error while booking appointment", e);
             throw new AppException("Failed to book appointment");
@@ -184,27 +216,17 @@ public class AppointmentService {
     @PreAuthorize("hasRole('DOCTOR')")
     @Transactional
     public void schedule(Appointment appointment) throws AppException {
-        log.debug("Scheduling appointment with ID {} for doctor {}", appointment.getId(), appointment.getDoctor().getId());
+        log.debug("Scheduling appointment with ID: {}", appointment.getId());
 
         validateAppointmentScheduling(appointment);
 
         try {
-            // Update time slot
-            appointment.getTimeSlot().setIsBooked(true);
+            appointment.setStatus(AppointmentStatus.READY_FOR_CALL);
+            appointmentRepository.save(appointment);
 
-            // Save appointment
-            appointment = appointmentRepository.save(appointment);
-
-            // Create chat chat
-            chatService.createChatAndStreamChannel(appointment.getPatient(), appointment.getDoctor());
-
-            // Publish booking event to trigger notifications
-            publishAppointmentBookedEvent(appointment);
-
-            log.info("Scheduled appointment with ID {} for patient {} with doctor {}",
-                    appointment.getId(), appointment.getPatient().getId(), appointment.getDoctor().getId());
+            log.info("Scheduled appointment with ID: {}", appointment.getId());
         } catch (Exception e) {
-            log.error("Unexpected error while scheduling appointment", e);
+            log.error("Unexpected error while scheduling appointment with ID: {}", appointment.getId(), e);
             throw new AppException("Failed to schedule appointment");
         }
     }
@@ -218,8 +240,8 @@ public class AppointmentService {
         // Find appointment
         Appointment appointment = findById(appointmentId);
 
-        // Verify authorization
-        if (!appointment.getPatient().getAccount().getId().equals(account.getId())) {
+        // Verify authorization - account must be authorized for this patient
+        if (!familyPermissionService.isAuthorizedForPatient(account, appointment.getPatient().getId(), FamilyPermissionType.VIEW_APPOINTMENT)) {
             throw new AppException("Unauthorized to modify this appointment");
         }
 
@@ -232,7 +254,7 @@ public class AppointmentService {
             // Update appointment
             appointment.setPatientNotes(request.patientNotes());
             appointment.setReasonForVisit(request.reasonForVisit());
-            updateAppointmentDocuments(appointment, request.documentRequestList());
+            updateAppointmentDocuments(appointment, request.documentRequestList(), account);
 
             // Save updated appointment
             appointmentRepository.save(appointment);
@@ -258,8 +280,20 @@ public class AppointmentService {
         }
 
         // Verify authorization
-        if (!appointment.getPatient().getAccount().getId().equals(account.getId()) ||
-                !appointment.getDoctor().getAccount().getId().equals(account.getId())) {
+        boolean isAuthorized = false;
+        
+        switch (account.getPermission().getType()) {
+            case PATIENT -> {
+                // Check if account is authorized for this patient and has cancel permission
+                isAuthorized = familyPermissionService.isAuthorizedForPatient(
+                    account, appointment.getPatient().getId(), FamilyPermissionType.CANCEL_APPOINTMENT);
+            }
+            case DOCTOR -> {
+                isAuthorized = appointment.getDoctor().getAccount().getId().equals(account.getId());
+            }
+        }
+        
+        if (!isAuthorized) {
             throw new AppException("Unauthorized to cancel this appointment");
         }
 
@@ -346,16 +380,24 @@ public class AppointmentService {
     }
 
     private void attachDocumentsToAppointment(Appointment appointment,
-                                              List<AddAppointmentDocumentRequestDto> requestList) throws AppException {
+                                              List<AddAppointmentDocumentRequestDto> requestList,
+                                              Account requestingAccount) throws AppException {
         requestList.forEach(request -> {
             try {
                 // Find the document
                 Document document = documentService.getDocumentById(request.documentId());
 
-                // Validate the document
+                // Validate the document belongs to the patient
                 if (!document.getPatient().getId().equals(appointment.getPatient().getId())) {
                     log.warn("Document {} does not belong to the patient {}",
                             request.documentId(), appointment.getPatient().getId());
+                    return;
+                }
+
+                // Validate the requesting account has attach permission for this document
+                if (!familyPermissionService.hasPermission(requestingAccount, appointment.getPatient().getId(), FamilyPermissionType.ATTACH_DOCUMENTS)) {
+                    log.warn("Account {} does not have attach permission for patient {} documents",
+                            requestingAccount.getId(), appointment.getPatient().getId());
                     return;
                 }
 
@@ -378,36 +420,47 @@ public class AppointmentService {
         });
     }
 
-    private void updateAppointmentDocuments(Appointment appointment, List<AddAppointmentDocumentRequestDto> requestList)
+    private void updateAppointmentDocuments(Appointment appointment, 
+                                          List<AddAppointmentDocumentRequestDto> requestList,
+                                          Account requestingAccount)
             throws AppException {
         // Remove existing documents
         appointmentDocumentRepository.deleteByAppointmentId(appointment.getId());
 
-        requestList.forEach(request -> {
-            try {
-                // Find the document
-                Document document = documentService.getDocumentById(request.documentId());
+        if (requestList != null && !requestList.isEmpty()) {
+            requestList.forEach(request -> {
+                try {
+                    // Find the document
+                    Document document = documentService.getDocumentById(request.documentId());
 
-                // Verify if the document belongs to the patient
-                if (!document.getPatient().getId().equals(appointment.getPatient().getId())) {
-                    log.warn("Document {} does not belong to the patient {}",
-                            document.getId(), appointment.getPatient().getId());
-                    return;
+                    // Verify if the document belongs to the patient
+                    if (!document.getPatient().getId().equals(appointment.getPatient().getId())) {
+                        log.warn("Document {} does not belong to the patient {}",
+                                document.getId(), appointment.getPatient().getId());
+                        return;
+                    }
+
+                    // Validate the requesting account has attach permission for this document
+                    if (!familyPermissionService.hasPermission(requestingAccount, appointment.getPatient().getId(), FamilyPermissionType.ATTACH_DOCUMENTS)) {
+                        log.warn("Account {} does not have attach permission for patient {} documents",
+                                requestingAccount.getId(), appointment.getPatient().getId());
+                        return;
+                    }
+
+                    // Create new appointment document
+                    AppointmentDocument appointmentDoc = AppointmentDocument.builder()
+                            .appointment(appointment)
+                            .document(document)
+                            .notes(request.notes())
+                            .build();
+
+                    // Save appointment document
+                    appointmentDocumentRepository.save(appointmentDoc);
+                } catch (ResourceNotFoundException e) {
+                    log.warn("Document {} not found for patient {}",
+                            request.documentId(), appointment.getPatient().getId(), e);
                 }
-
-                // Create new appointment document
-                AppointmentDocument appointmentDoc = AppointmentDocument.builder()
-                        .appointment(appointment)
-                        .document(document)
-                        .notes(request.notes())
-                        .build();
-
-                // Save appointment document
-                appointmentDocumentRepository.save(appointmentDoc);
-            } catch (ResourceNotFoundException e) {
-                log.warn("Document {} not found for patient {}",
-                        request.documentId(), appointment.getPatient().getId(), e);
-            }
-        });
+            });
+        }
     }
 }

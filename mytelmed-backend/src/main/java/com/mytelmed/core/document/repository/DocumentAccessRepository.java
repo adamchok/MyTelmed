@@ -15,5 +15,6 @@ public interface DocumentAccessRepository extends JpaRepository<DocumentAccess, 
     List<DocumentAccess> findByExpiryDateBefore(LocalDate date);
     List<DocumentAccess> findByPermittedAccountIdAndCanViewTrue(UUID accountId);
     List<DocumentAccess> findByPermittedAccountIdAndCanDownloadTrue(UUID accountId);
+    List<DocumentAccess> findByPermittedAccountIdAndCanAttachTrue(UUID accountId);
     void deleteByDocumentId(UUID documentId);
 }

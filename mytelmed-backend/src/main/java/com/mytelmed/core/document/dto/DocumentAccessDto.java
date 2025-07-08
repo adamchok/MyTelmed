@@ -7,6 +7,7 @@ public record DocumentAccessDto(
         String accountId,
         boolean canView,
         boolean canDownload,
+        boolean canAttach,
         String expiryDate
 ) {
 }

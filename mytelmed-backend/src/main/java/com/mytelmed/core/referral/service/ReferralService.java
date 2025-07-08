@@ -4,6 +4,7 @@ import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constant.appointment.AppointmentStatus;
+import com.mytelmed.common.constant.family.FamilyPermissionType;
 import com.mytelmed.common.constant.referral.ReferralStatus;
 import com.mytelmed.common.constant.referral.ReferralType;
 import com.mytelmed.common.utils.DateTimeUtil;
@@ -12,6 +13,7 @@ import com.mytelmed.core.appointment.service.AppointmentService;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.doctor.entity.Doctor;
 import com.mytelmed.core.doctor.service.DoctorService;
+import com.mytelmed.core.family.service.FamilyMemberPermissionService;
 import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.patient.service.PatientService;
 import com.mytelmed.core.referral.dto.CreateReferralRequestDto;
@@ -41,17 +43,20 @@ public class ReferralService {
     private final DoctorService doctorService;
     private final AppointmentService appointmentService;
     private final TimeSlotService timeSlotService;
+    private final FamilyMemberPermissionService familyPermissionService;
 
     public ReferralService(ReferralRepository referralRepository,
                            PatientService patientService,
                            DoctorService doctorService,
                            AppointmentService appointmentService,
-                           TimeSlotService timeSlotService) {
+                           TimeSlotService timeSlotService,
+                           FamilyMemberPermissionService familyPermissionService) {
         this.referralRepository = referralRepository;
         this.patientService = patientService;
         this.doctorService = doctorService;
         this.appointmentService = appointmentService;
         this.timeSlotService = timeSlotService;
+        this.familyPermissionService = familyPermissionService;
     }
 
     @Transactional(readOnly = true)
@@ -84,8 +89,13 @@ public class ReferralService {
     
     @PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR')")
     @Transactional(readOnly = true)
-    public Page<Referral> findByPatientId(UUID patientId, Pageable pageable) throws AppException {
-        log.debug("Finding referrals for patient: {}", patientId);
+    public Page<Referral> findByPatientId(UUID patientId, Account requestingAccount, Pageable pageable) throws AppException {
+        log.debug("Finding referrals for patient: {} by account: {}", patientId, requestingAccount.getId());
+
+        // Verify account is authorized to view referrals for this patient
+        if (!familyPermissionService.isAuthorizedForPatient(requestingAccount, patientId, FamilyPermissionType.VIEW_REFERRALS)) {
+            throw new AppException("Insufficient permissions to view referrals for this patient");
+        }
 
         Patient patient = patientService.findPatientById(patientId);
         return referralRepository.findByPatientOrderByCreatedAtDesc(patient, pageable);

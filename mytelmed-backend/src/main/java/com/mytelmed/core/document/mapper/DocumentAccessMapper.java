@@ -14,11 +14,20 @@ public interface DocumentAccessMapper {
     @Mapping(target = "documentId", source = "document.id", qualifiedByName = "mapUUID")
     @Mapping(target = "documentName", source = "document.documentName")
     @Mapping(target = "accountId", source = "permittedAccount.id", qualifiedByName = "mapUUID")
+    @Mapping(target = "canView", source = "canView")
+    @Mapping(target = "canDownload", source = "canDownload")
+    @Mapping(target = "canAttach", source = "canAttach")
+    @Mapping(target = "expiryDate", source = "expiryDate", qualifiedByName = "mapLocalDate")
     DocumentAccessDto toDto(DocumentAccess documentAccess);
 
     @Named("mapUUID")
     default String mapUUID(UUID id) {
         return id != null ? id.toString() : null;
+    }
+
+    @Named("mapLocalDate")
+    default String mapLocalDate(java.time.LocalDate date) {
+        return date != null ? date.toString() : null;
     }
 }
 

@@ -3,16 +3,21 @@ package com.mytelmed.core.document.service;
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
+import com.mytelmed.common.constant.family.FamilyPermissionType;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.document.entity.Document;
 import com.mytelmed.core.document.entity.DocumentAccess;
 import com.mytelmed.core.document.repository.DocumentAccessRepository;
+import com.mytelmed.core.family.service.FamilyMemberPermissionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -23,11 +28,16 @@ public class DocumentAccessService {
     private final DocumentAccessRepository documentAccessRepository;
     private final DocumentService documentService;
     private final AccountService accountService;
+    private final FamilyMemberPermissionService familyPermissionService;
 
-    public DocumentAccessService(DocumentAccessRepository documentAccessRepository, DocumentService documentService, AccountService accountService) {
+    public DocumentAccessService(DocumentAccessRepository documentAccessRepository, 
+                               DocumentService documentService, 
+                               AccountService accountService,
+                               FamilyMemberPermissionService familyPermissionService) {
         this.documentAccessRepository = documentAccessRepository;
         this.documentService = documentService;
         this.accountService = accountService;
+        this.familyPermissionService = familyPermissionService;
     }
 
     @Transactional(readOnly = true)
@@ -99,6 +109,22 @@ public class DocumentAccessService {
     }
 
     @Transactional(readOnly = true)
+    public List<Document> getAttachableDocuments(UUID accountId) throws AppException {
+        log.debug("Getting attachable documents for account {}", accountId);
+
+        try {
+            return documentAccessRepository.findByPermittedAccountIdAndCanAttachTrue(accountId)
+                    .stream()
+                    .filter(access -> access.getExpiryDate() == null || !access.getExpiryDate().isBefore(LocalDate.now()))
+                    .map(DocumentAccess::getDocument)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Unexpected error occurred while retrieving attachable access entries for account: {}", accountId, e);
+            throw new AppException("Failed to retrieve access entries");
+        }
+    }
+
+    @Transactional(readOnly = true)
     public List<DocumentAccess> findExpiredAccess() throws AppException {
         log.debug("Finding all expired document access entries");
 
@@ -133,8 +159,30 @@ public class DocumentAccessService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public boolean hasAttachAccess(UUID documentId, UUID accountId) {
+        log.debug("Checking if account {} has attach access to document {}", accountId, documentId);
+
+        try {
+            return documentAccessRepository.findByDocumentIdAndPermittedAccountId(documentId, accountId)
+                    .map(access -> {
+                        if (access.getExpiryDate() != null && access.getExpiryDate().isBefore(LocalDate.now())) {
+                            log.debug("Access expired on {} for account {} to document {}",
+                                    access.getExpiryDate(), accountId, documentId);
+                            return false;
+                        }
+
+                        return access.isCanAttach();
+                    })
+                    .orElse(false);
+        } catch (Exception e) {
+            log.error("Unexpected error occurred while checking attach access: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
     @Transactional
-    public void grantOrUpdateDocumentAccess(UUID documentId, UUID accountId, boolean canView, boolean canDownload,
+    public void grantOrUpdateDocumentAccess(UUID documentId, UUID accountId, boolean canView, boolean canDownload, boolean canAttach,
                                                                 LocalDate expiryDate) throws AppException {
         log.debug("Granting access to document {} for account {}", documentId, accountId);
 
@@ -151,6 +199,7 @@ public class DocumentAccessService {
 
                 existingAccess.setCanView(canView);
                 existingAccess.setCanDownload(canDownload);
+                existingAccess.setCanAttach(canAttach);
                 existingAccess.setExpiryDate(expiryDate);
                 documentAccessRepository.save(existingAccess);
 
@@ -163,6 +212,7 @@ public class DocumentAccessService {
                     .permittedAccount(account)
                     .canView(canView)
                     .canDownload(canDownload)
+                    .canAttach(canAttach)
                     .expiryDate(expiryDate)
                     .build();
 
@@ -177,7 +227,7 @@ public class DocumentAccessService {
     }
 
     @Transactional
-    public void updateAccess(UUID accessId, boolean canView, boolean canDownload, LocalDate expiryDate) throws AppException {
+    public void updateAccess(UUID accessId, boolean canView, boolean canDownload, boolean canAttach, LocalDate expiryDate) throws AppException {
         log.debug("Updating document access with ID: {}", accessId);
 
         try {
@@ -185,6 +235,7 @@ public class DocumentAccessService {
 
             access.setCanView(canView);
             access.setCanDownload(canDownload);
+            access.setCanAttach(canAttach);
             access.setExpiryDate(expiryDate);
 
             DocumentAccess updatedAccess = documentAccessRepository.save(access);
@@ -194,6 +245,58 @@ public class DocumentAccessService {
         } catch (Exception e) {
             log.error("Unexpected error occurred while updating document access: {}", accessId, e);
             throw new AppException("Failed to update access");
+        }
+    }
+
+    @Transactional
+    public void updateDocumentPermissionsByPatient(UUID documentId, UUID patientAccountId, boolean canView, boolean canDownload, boolean canAttach, LocalDate expiryDate) throws AppException {
+        log.debug("Patient {} updating permissions for document {}", patientAccountId, documentId);
+
+        try {
+            // Get the document and verify patient ownership
+            Document document = documentService.getDocumentById(documentId);
+            
+            if (!document.getPatient().getAccount().getId().equals(patientAccountId)) {
+                log.warn("Patient {} attempted to update permissions for document {} they don't own", patientAccountId, documentId);
+                throw new AppException("Unauthorized to modify this document's permissions");
+            }
+
+            // Find existing access for the patient
+            DocumentAccess existingAccess = documentAccessRepository
+                    .findByDocumentIdAndPermittedAccountId(documentId, patientAccountId)
+                    .orElse(null);
+
+            if (existingAccess != null) {
+                log.debug("Updating existing access for document {} and patient {}", documentId, patientAccountId);
+
+                existingAccess.setCanView(canView);
+                existingAccess.setCanDownload(canDownload);
+                existingAccess.setCanAttach(canAttach);
+                existingAccess.setExpiryDate(expiryDate);
+                documentAccessRepository.save(existingAccess);
+
+                log.info("Updated document permissions for patient {} on document {}", patientAccountId, documentId);
+            } else {
+                // Create new access entry for the patient
+                Account patientAccount = accountService.getAccountById(patientAccountId);
+                
+                DocumentAccess newAccess = DocumentAccess.builder()
+                        .document(document)
+                        .permittedAccount(patientAccount)
+                        .canView(canView)
+                        .canDownload(canDownload)
+                        .canAttach(canAttach)
+                        .expiryDate(expiryDate)
+                        .build();
+
+                DocumentAccess savedAccess = documentAccessRepository.save(newAccess);
+                log.info("Created new access permissions for patient {} on document {}", patientAccountId, documentId);
+            }
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error occurred while updating document permissions for patient: {}", patientAccountId, e);
+            throw new AppException("Failed to update document permissions");
         }
     }
 

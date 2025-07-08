@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -98,6 +99,16 @@ public class DocumentAccessController {
         return ResponseEntity.ok(ApiResponse.success(dtoList));
     }
 
+    @GetMapping("/account/{accountId}/attachable")
+    public ResponseEntity<ApiResponse<List<DocumentDto>>> getAttachableDocuments(@PathVariable UUID accountId) {
+        log.info("Received request to get attachable documents for account with ID: {}", accountId);
+        List<Document> documentList = documentAccessService.getAttachableDocuments(accountId);
+        List<DocumentDto> dtoList = documentList.stream()
+                .map(documentMapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success(dtoList));
+    }
+
     @GetMapping("/check")
     public ResponseEntity<ApiResponse<Boolean>> checkAccess(
             @RequestParam UUID documentId,
@@ -109,6 +120,16 @@ public class DocumentAccessController {
         return ResponseEntity.ok(ApiResponse.success(hasAccess));
     }
 
+    @GetMapping("/check/attach")
+    public ResponseEntity<ApiResponse<Boolean>> checkAttachAccess(
+            @RequestParam UUID documentId,
+            @RequestParam UUID accountId) {
+        log.info("Received request to check if account {} has attach access to document {}", accountId, documentId);
+
+        boolean hasAttachAccess = documentAccessService.hasAttachAccess(documentId, accountId);
+        return ResponseEntity.ok(ApiResponse.success(hasAttachAccess));
+    }
+
     @PostMapping("/grant")
     public ResponseEntity<ApiResponse<Void>> grantAccess(@Valid @RequestBody GrantAccessRequestDto request) {
         log.info("Received request to grant access to document {} for account {}", request.documentId(), request.accountId());
@@ -118,6 +139,7 @@ public class DocumentAccessController {
                 UUID.fromString(request.accountId()),
                 request.canView(),
                 request.canDownload(),
+                request.canAttach(),
                 DateTimeUtil.stringToLocalDate(request.expiryDate()).orElse(null)
         );
 
@@ -135,10 +157,31 @@ public class DocumentAccessController {
                 accessId,
                 request.canView(),
                 request.canDownload(),
+                request.canAttach(),
                 DateTimeUtil.stringToLocalDate(request.expiryDate()).orElse(null)
         );
 
         return ResponseEntity.ok(ApiResponse.success("Document access updated"));
+    }
+
+    @PreAuthorize("hasRole('PATIENT')")
+    @PutMapping("/patient/{documentId}/permissions")
+    public ResponseEntity<ApiResponse<Void>> updateDocumentPermissionsByPatient(
+            @PathVariable UUID documentId,
+            @Valid @RequestBody UpdateAccessRequestDto request,
+            @RequestParam UUID accountId) {
+        log.info("Received request from patient {} to update permissions for document {}", accountId, documentId);
+
+        documentAccessService.updateDocumentPermissionsByPatient(
+                documentId,
+                accountId,
+                request.canView(),
+                request.canDownload(),
+                request.canAttach(),
+                DateTimeUtil.stringToLocalDate(request.expiryDate()).orElse(null)
+        );
+
+        return ResponseEntity.ok(ApiResponse.success("Document permissions updated"));
     }
 
     @PatchMapping("/{accessId}/extend")

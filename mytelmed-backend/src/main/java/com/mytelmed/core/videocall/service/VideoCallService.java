@@ -4,11 +4,15 @@ import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constant.AccountType;
 import com.mytelmed.common.constant.appointment.AppointmentStatus;
+import com.mytelmed.common.constant.family.FamilyPermissionType;
 import com.mytelmed.common.dto.StreamTokenAndUserResponseDto;
 import com.mytelmed.core.appointment.entity.Appointment;
 import com.mytelmed.core.appointment.repository.AppointmentRepository;
 import com.mytelmed.core.appointment.service.AppointmentService;
 import com.mytelmed.core.auth.entity.Account;
+import com.mytelmed.core.family.service.FamilyMemberPermissionService;
+import com.mytelmed.core.patient.entity.Patient;
+import com.mytelmed.core.patient.service.PatientService;
 import com.mytelmed.core.videocall.entity.VideoCall;
 import com.mytelmed.core.videocall.repository.VideoCallRepository;
 import com.mytelmed.infrastructure.stream.service.StreamService;
@@ -21,7 +25,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 public class VideoCallService {
@@ -29,15 +32,21 @@ public class VideoCallService {
     private final AppointmentService appointmentService;
     private final AppointmentRepository appointmentRepository;
     private final StreamService streamService;
+    private final FamilyMemberPermissionService familyPermissionService;
+    private final PatientService patientService;
 
     public VideoCallService(VideoCallRepository videoCallRepository,
                             AppointmentService appointmentService,
                             AppointmentRepository appointmentRepository,
-                            StreamService streamService) {
+                            StreamService streamService,
+                            FamilyMemberPermissionService familyPermissionService,
+                            PatientService patientService) {
         this.videoCallRepository = videoCallRepository;
         this.appointmentService = appointmentService;
         this.appointmentRepository = appointmentRepository;
         this.streamService = streamService;
+        this.familyPermissionService = familyPermissionService;
+        this.patientService = patientService;
     }
 
     @Transactional(readOnly = true)
@@ -129,12 +138,8 @@ public class VideoCallService {
         validateUserCanJoinCall(appointment, account);
         validateCallTiming(appointment);
 
-        // Determine if user is patient or provider
-        boolean isPatient = isUserPatient(account);
-        String streamUserId = isPatient ? appointment.getPatient().getId().toString() :
-                appointment.getDoctor().getId().toString();
-        String streamUserName = isPatient ? appointment.getPatient().getName() :
-                appointment.getDoctor().getName();
+        // Determine user role and get appropriate info
+        UserCallInfo userCallInfo = getUserCallInfo(appointment, account);
 
         try {
             // Check if VideoCall exists; if not, create one
@@ -146,10 +151,10 @@ public class VideoCallService {
             });
 
             // Generate a new token using StreamService
-            String token = streamService.createOrUpdateUserAndGenerateToken(streamUserId, streamUserName);
+            String token = streamService.createOrUpdateUserAndGenerateToken(userCallInfo.userId, userCallInfo.userName);
 
             // Update video call with a token
-            if (isPatient) {
+            if (userCallInfo.isPatient) {
                 videoCall.setPatientToken(token);
                 if (videoCall.getPatientJoinedAt() == null) {
                     videoCall.setPatientJoinedAt(Instant.now());
@@ -176,8 +181,8 @@ public class VideoCallService {
 
             return StreamTokenAndUserResponseDto.builder()
                     .token(token)
-                    .userId(streamUserId)
-                    .name(streamUserName)
+                    .userId(userCallInfo.userId)
+                    .name(userCallInfo.userName)
                     .build();
         } catch (StreamException e) {
             log.error("Stream SDK error joining video call for appointment: {} by user with account ID: {}",
@@ -207,11 +212,11 @@ public class VideoCallService {
         validateUserCanJoinCall(appointment, account);
 
         try {
-            // Determine if user is patient or provider
-            boolean isPatient = isUserPatient(account);
+            // Determine user role
+            UserCallInfo userCallInfo = getUserCallInfo(appointment, account);
 
             // Update leave time
-            if (isPatient) {
+            if (userCallInfo.isPatient) {
                 videoCall.setPatientLeftAt(Instant.now());
             } else {
                 videoCall.setProviderLeftAt(Instant.now());
@@ -264,7 +269,14 @@ public class VideoCallService {
     private void validateUserCanJoinCall(Appointment appointment, Account account) throws AppException {
         switch (account.getPermission().getType()) {
             case PATIENT -> {
-                if (!appointment.getPatient().getAccount().getId().equals(account.getId())) {
+                // Check if account is the patient themselves or a family member with JOIN_VIDEO_CALL permission
+                if (appointment.getPatient().getAccount().getId().equals(account.getId())) {
+                    // Patient themselves - always allowed
+                    return;
+                }
+                
+                // Check if account is a family member with video call permission
+                if (!familyPermissionService.hasPermission(account, appointment.getPatient().getId(), FamilyPermissionType.JOIN_VIDEO_CALL)) {
                     throw new AppException("You are not authorized to join this video call");
                 }
             }
@@ -294,7 +306,50 @@ public class VideoCallService {
         }
     }
 
-    private boolean isUserPatient(Account account) {
-        return account.getPermission().getType().equals(AccountType.PATIENT);
+    private UserCallInfo getUserCallInfo(Appointment appointment, Account account) throws AppException {
+        switch (account.getPermission().getType()) {
+            case PATIENT -> {
+                if (appointment.getPatient().getAccount().getId().equals(account.getId())) {
+                    // Account is the patient themselves
+                    return new UserCallInfo(
+                        appointment.getPatient().getId().toString(),
+                        appointment.getPatient().getName(),
+                        true
+                    );
+                } else {
+                    // Account is a family member - get their info but mark as patient side
+                    try {
+                        Patient familyMemberPatient = patientService.findPatientByAccountId(account.getId());
+                        return new UserCallInfo(
+                            account.getId().toString(), // Use account ID as unique identifier
+                            familyMemberPatient.getName() + " (Family)",
+                            true // Still on patient side
+                        );
+                    } catch (Exception e) {
+                        throw new AppException("Unable to get family member information for video call");
+                    }
+                }
+            }
+            case DOCTOR -> {
+                return new UserCallInfo(
+                    appointment.getDoctor().getId().toString(),
+                    appointment.getDoctor().getName(),
+                    false
+                );
+            }
+            default -> throw new AppException("Invalid account type for video call");
+        }
+    }
+
+    private static class UserCallInfo {
+        final String userId;
+        final String userName;
+        final boolean isPatient;
+
+        UserCallInfo(String userId, String userName, boolean isPatient) {
+            this.userId = userId;
+            this.userName = userName;
+            this.isPatient = isPatient;
+        }
     }
 }
