@@ -1,23 +1,30 @@
-export interface Article {
-  id: string;
-  title: string;
-  content: string;
-  department: string;
-  author: string;
-  createdAt: string;
-  updatedAt: string;
-  imageUrl: string;
-  featured: boolean;
-  tags: string[];
+import { Article } from "../api/article/props";
+import { Tutorial } from "../api/tutorial/props";
+
+export type { Article, Tutorial };
+
+export interface KnowledgeSearchOptions {
+  category?: string;
+  type?: "article" | "tutorial";
+  page?: number;
+  size?: number;
 }
 
-export interface QA {
-  id: string;
-  question: string;
-  answer: string | null;
-  department: string;
-  answeredBy: string | null;
-  createdAt: string;
-  updatedAt: string;
-  lastAnsweredAt: string | null;
+export interface KnowledgeHubPageProps {
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  selectedCategory: string | undefined;
+  setSelectedCategory: (category: string | undefined) => void;
+  selectedType: "all" | "article" | "tutorial";
+  setSelectedType: (type: "all" | "article" | "tutorial") => void;
+  articles: Article[];
+  tutorials: Tutorial[];
+  loading: boolean;
+  categories: string[];
+}
+
+export interface ContentCardProps {
+  content: Article | Tutorial;
+  type: "article" | "tutorial";
+  onClick: () => void;
 }

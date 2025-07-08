@@ -1,4 +1,5 @@
-import { Facility, UserLocation } from "@/app/props";
+import { Facility } from "@/app/api/facility/props";
+import { UserLocation } from "../props";
 
 export interface FacilityCardProps {
   facility: Facility;

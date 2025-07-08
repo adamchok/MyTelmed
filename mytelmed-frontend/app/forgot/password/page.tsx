@@ -2,8 +2,7 @@
 
 import { message } from "antd";
 import { useRouter } from "next/navigation";
-import { PasswordResetLinkRequestOptions } from "@/app/api/auth/props";
-import { PasswordResetResponse } from "./props";
+import { InitiatePasswordResetRequestOptions } from "@/app/api/auth/props";
 import ForgotPasswordPageComponent from "./component";
 import AuthApi from "@/app/api/auth";
 
@@ -18,22 +17,30 @@ const ForgotPassword = () => {
       message.error("Please enter your IC number first.");
       return;
     }
-    const passwordResetRequest: PasswordResetLinkRequestOptions = {
+    const passwordResetRequest: InitiatePasswordResetRequestOptions = {
       nric: values.nric,
       email: values.email,
-    }
+    };
     try {
-      const response = await AuthApi.requestPasswordReset(passwordResetRequest);
-      const { isSuccess, message: msg }: PasswordResetResponse = response.data;
+      const response = await AuthApi.initiatePasswordReset(
+        passwordResetRequest
+      );
 
-      if (isSuccess) {
-        message.success(msg);
+      if (response.isSuccess) {
+        message.success(
+          response.message || "Password reset link sent successfully."
+        );
         router.push("/login");
       } else {
-        message.error(msg);
+        message.error(
+          response.message || "Failed to send password reset link."
+        );
       }
     } catch (err: any) {
-      message.error(err?.response?.data?.message ?? "Failed to send password reset link. Please try again.");
+      message.error(
+        err?.response?.data?.message ??
+          "Failed to send password reset link. Please try again."
+      );
     }
   };
 

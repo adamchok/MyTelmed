@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Form, Input, Button, Typography, message } from "antd";
-import { CreatePasswordFormProps, PasswordResetResponse } from "../props";
+import { CreatePasswordFormProps } from "../props";
 import AuthApi from "@/app/api/auth";
 import { ResetPasswordRequestOptions } from "@/app/api/auth/props";
 
@@ -31,22 +31,26 @@ export default function CreatePasswordPage() {
       return;
     }
     const resetPasswordRequest: ResetPasswordRequestOptions = {
-      id: id as string,
       password: values.password,
-    }
+    };
     try {
       setLoading(true);
-      const response = await AuthApi.resetPassword(resetPasswordRequest);
-      const { isSuccess, message: msg }: PasswordResetResponse = response.data;
+      const response = await AuthApi.resetPassword(
+        id as string,
+        resetPasswordRequest
+      );
 
-      if (isSuccess) {
-        message.success(msg);
+      if (response.isSuccess) {
+        message.success(response.message);
         router.push("/login");
       } else {
-        message.error(msg);
+        message.error(response.message);
       }
     } catch (err: any) {
-      message.error(err?.response?.data?.message ?? "Failed to reset password. Please try again.");
+      message.error(
+        err?.response?.data?.message ??
+          "Failed to reset password. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -55,7 +59,12 @@ export default function CreatePasswordPage() {
   return (
     <div className="flex items-center justify-center mt-8">
       <div className="w-[450px] h-auto bg-white rounded-lg shadow-lg px-8 pb-8">
-        <Title level={2} className="font-bold text-2xl mb-4 text-center text-blue-900">Create New Password</Title>
+        <Title
+          level={2}
+          className="font-bold text-2xl mb-4 text-center text-blue-900"
+        >
+          Create New Password
+        </Title>
         <Paragraph className="text-gray-600 mt-2 mb-6 text-center">
           Please enter your new password below.
         </Paragraph>
@@ -68,7 +77,9 @@ export default function CreatePasswordPage() {
           <Form.Item
             label="New Password"
             name="password"
-            rules={[{ required: true, message: "Please input your new password!" }]}
+            rules={[
+              { required: true, message: "Please input your new password!" },
+            ]}
             hasFeedback
           >
             <Input.Password className="h-10" placeholder="Enter new password" />
@@ -90,10 +101,18 @@ export default function CreatePasswordPage() {
               }),
             ]}
           >
-            <Input.Password className="h-10" placeholder="Confirm new password" />
+            <Input.Password
+              className="h-10"
+              placeholder="Confirm new password"
+            />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit" className="w-full font-bold h-9" loading={loading}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="w-full font-bold h-9"
+              loading={loading}
+            >
               Reset Password
             </Button>
           </Form.Item>

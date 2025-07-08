@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Form, Input, Button, Typography, message } from "antd";
-import { CreateEmailFormProps, EmailResetResponse } from "../props";
+import { CreateEmailFormProps } from "../props";
 import { ResetEmailRequestOptions } from "@/app/api/auth/props";
 import AuthApi from "@/app/api/auth";
 
@@ -31,22 +31,26 @@ export default function CreateEmailPage() {
       return;
     }
     const resetEmailRequest: ResetEmailRequestOptions = {
-      id: id as string,
       email: values.email,
-    }
+    };
     try {
       setLoading(true);
-      const response = await AuthApi.resetEmail(resetEmailRequest);
-      const { isSuccess, message: msg }: EmailResetResponse = response.data;
+      const response = await AuthApi.resetEmail(
+        id as string,
+        resetEmailRequest
+      );
 
-      if (isSuccess) {
-        message.success(msg);
+      if (response.isSuccess) {
+        message.success(response.message || "Email reset successfully.");
         router.push("/login");
       } else {
-        message.error(msg);
+        message.error(response.message || "Failed to reset email.");
       }
     } catch (err: any) {
-      message.error(err?.response?.data?.message ?? "Failed to reset email. Please try again.");
+      message.error(
+        err?.response?.data?.message ??
+          "Failed to reset email. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -55,7 +59,12 @@ export default function CreateEmailPage() {
   return (
     <div className="flex items-center justify-center mt-8">
       <div className="w-[450px] h-auto bg-white rounded-lg shadow-lg px-8 pb-8">
-        <Title level={2} className="font-bold text-2xl mb-4 text-center text-blue-900">Create New Email</Title>
+        <Title
+          level={2}
+          className="font-bold text-2xl mb-4 text-center text-blue-900"
+        >
+          Create New Email
+        </Title>
         <Paragraph className="text-gray-600 mt-2 mb-6 text-center">
           Please enter your new email below.
         </Paragraph>
@@ -68,7 +77,9 @@ export default function CreateEmailPage() {
           <Form.Item
             label="New Email"
             name="email"
-            rules={[{ required: true, message: "Please input your new email!" }]}
+            rules={[
+              { required: true, message: "Please input your new email!" },
+            ]}
             hasFeedback
           >
             <Input className="h-10" placeholder="Enter new email" />
@@ -93,7 +104,12 @@ export default function CreateEmailPage() {
             <Input className="h-10" placeholder="Confirm new email" />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit" className="w-full font-bold h-9" loading={loading}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="w-full font-bold h-9"
+              loading={loading}
+            >
               Reset Email
             </Button>
           </Form.Item>

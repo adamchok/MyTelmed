@@ -1,16 +1,13 @@
-'use client'
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { message } from 'antd';
-import { EmailResetLinkRequestOptions } from '@/app/api/auth/props';
-import { EmailResetResponse } from './props';
-import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import ForgotEmailPageComponent from './component';
-import AuthApi from '@/app/api/auth';
-
+import { useRouter } from "next/navigation";
+import { message } from "antd";
+import { InitiateEmailResetRequestOptions } from "@/app/api/auth/props";
+import ForgotEmailPageComponent from "./component";
+import AuthApi from "@/app/api/auth";
 
 const ForgotEmail = () => {
-  const router: AppRouterInstance = useRouter();
+  const router = useRouter();
 
   const onFinish = async (values: any) => {
     if (!values.email) {
@@ -29,25 +26,29 @@ const ForgotEmail = () => {
       message.error("Please enter your serial number first.");
       return;
     }
-    const emailResetRequest: EmailResetLinkRequestOptions = {
+    const emailResetRequest: InitiateEmailResetRequestOptions = {
       nric: values.nric,
       name: values.name,
       phone: values.phone,
       serialNumber: values.serialNumber,
       email: values.email,
-    }
+    };
     try {
-      const response = await AuthApi.requestEmailReset(emailResetRequest);
-      const { isSuccess, message: msg }: EmailResetResponse = response.data;
+      const response = await AuthApi.initiateEmailReset(emailResetRequest);
 
-      if (isSuccess) {
-        message.success(msg);
+      if (response.isSuccess) {
+        message.success(
+          response.message || "Email reset link sent successfully."
+        );
         router.push("/login");
       } else {
-        message.error(msg);
+        message.error(response.message || "Failed to send email reset link.");
       }
     } catch (err: any) {
-      message.error(err?.response?.data?.message ?? "Failed to send email reset link. Please try again.");
+      message.error(
+        err?.response?.data?.message ??
+          "Failed to send email reset link. Please try again."
+      );
     }
   };
 

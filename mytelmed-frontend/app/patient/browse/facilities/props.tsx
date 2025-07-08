@@ -1,4 +1,9 @@
-import { Facility, UserLocation } from "@/app/props";
+import { Facility } from "@/app/api/facility/props";
+
+export interface UserLocation {
+  latitude: number;
+  longitude: number;
+}
 
 export interface LocationOption {
   label: string;
