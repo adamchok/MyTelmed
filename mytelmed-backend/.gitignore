@@ -4,7 +4,7 @@
 !**/src/test/**/build/
 .gradle/
 /out/
-/target/
+target
 
 ### Maven Wrapper (Optional, if using Gradle Wrapper instead) ###
 .mvn/
