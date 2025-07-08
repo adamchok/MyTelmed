@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:pwa": "next build && next export",
+    "analyze": "ANALYZE=true next build",
+    "lighthouse": "npx lighthouse http://localhost:3000 --output-path=./lighthouse-report.html",
+    "pwa-check": "npx pwa-asset-generator ./public/assets/logos/mytelmed-logo.png ./public/icons --manifest ./public/manifest.json"
   },
   "dependencies": {
     "@ant-design/nextjs-registry": "^1.0.2",
@@ -14,12 +18,12 @@
     "@reduxjs/toolkit": "^2.7.0",
     "antd": "^5.25.1",
     "axios": "^1.9.0",
-    "i18next": "^25.0.2",
+    "dayjs": "^1.11.10",
+    "lucide": "^0.525.0",
+    "lucide-react": "^0.525.0",
     "next": "14.2.28",
-    "next-i18next": "^15.4.2",
     "react": "^18",
     "react-dom": "^18",
-    "react-i18next": "^15.5.1",
     "react-redux": "^9.2.0",
     "uuid": "^11.1.0"
   },

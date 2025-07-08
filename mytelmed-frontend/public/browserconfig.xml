@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<browserconfig>
+    <msapplication>
+        <tile>
+            <square150x150logo src="/assets/logos/mytelmed-logo.png"/>
+            <square310x310logo src="/assets/logos/mytelmed-logo.png"/>
+            <wide310x150logo src="/assets/logos/mytelmed-logo.png"/>
+            <TileColor>#1890ff</TileColor>
+        </tile>
+    </msapplication>
+</browserconfig> 

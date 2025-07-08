@@ -1,33 +1,82 @@
 {
-  "id": "1",
-  "name": "MyTelmed Application",
+  "id": "mytelmed-pwa",
+  "name": "MyTelmed - Telemedicine Application",
   "short_name": "MyTelmed",
+  "description": "Comprehensive telemedicine application for Malaysians. Connect with doctors, manage appointments, and access healthcare services.",
+  "categories": ["health", "medical", "lifestyle"],
+  "lang": "en",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#1890ff",
+  "background_color": "#ffffff",
   "icons": [
     {
-      "src": "/logos/logo-light-512.png",
+      "src": "/assets/logos/mytelmed-logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logos/logo-light-512.png",
+      "src": "/assets/logos/mytelmed-logo.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
-      "src": "/logos/logo-light-384.png",
+      "src": "/assets/logos/mytelmed-logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/logos/logo-light-192.png",
+      "src": "/assets/logos/mytelmed-logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "theme_color": "#FFFFFF",
-  "background_color": "#FFFFFF",
-  "start_url": "/",
-  "display": "standalone",
-  "orientation": "portrait"
+  "shortcuts": [
+    {
+      "name": "Book Appointment",
+      "short_name": "Book",
+      "description": "Quickly book a new appointment",
+      "url": "/appointments/book",
+      "icons": [
+        {
+          "src": "/assets/logos/mytelmed-logo.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "My Appointments",
+      "short_name": "Appointments",
+      "description": "View your appointments",
+      "url": "/appointments",
+      "icons": [
+        {
+          "src": "/assets/logos/mytelmed-logo.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Chat with Doctor",
+      "short_name": "Chat",
+      "description": "Start a conversation with your doctor",
+      "url": "/chat",
+      "icons": [
+        {
+          "src": "/assets/logos/mytelmed-logo.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

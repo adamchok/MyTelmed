@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://mytelmed.com/sitemap.xml
+
+# Disallow certain paths for privacy and security
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /private/
+
+# Allow important PWA files
+Allow: /manifest.json
+Allow: /sw.js
+Allow: /workbox-*.js 
