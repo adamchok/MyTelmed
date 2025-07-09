@@ -30,7 +30,7 @@ import {
   Shield,
 } from "lucide-react";
 import { usePushNotifications } from "../hooks/usePushNotifications";
-import { PushNotificationSettings } from "../api/pushNotification/props";
+import { PushNotificationSettings } from "../api/notification/props";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;

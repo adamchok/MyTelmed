@@ -26,7 +26,7 @@ public enum PrescriptionStatus {
      * Prescription completed - medication ready for pickup or handed to delivery
      * service
      */
-    COMPLETED,
+    READY,
 
     /**
      * Prescription expired before fulfillment

@@ -5,7 +5,7 @@ import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.doctor.dto.CreateDoctorRequestDto;
 import com.mytelmed.core.doctor.dto.DoctorDto;
 import com.mytelmed.core.doctor.dto.UpdateDoctorProfileRequestDto;
-import com.mytelmed.core.doctor.dto.UpdateDoctorSpecialitiesAndFacilityRequestDto;
+import com.mytelmed.core.doctor.dto.UpdateDoctorSpecialtiesAndFacilityRequestDto;
 import com.mytelmed.core.doctor.entity.Doctor;
 import com.mytelmed.core.doctor.mapper.DoctorMapper;
 import com.mytelmed.core.doctor.service.DoctorService;
@@ -15,9 +15,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -44,9 +46,11 @@ public class DoctorController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<DoctorDto>>> getAllDoctors(
+    @PreAuthorize("hasAnyRole('ADMIN', 'PATIENT')")
+    public ResponseEntity<ApiResponse<Page<DoctorDto>>> getDoctors(
             @RequestParam Integer page,
-            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize
+    ) {
         log.info("Received request to get all doctors with page: {} and page size: {}", page, pageSize);
 
         Page<Doctor> paginatedDoctor = doctorService.findAll(page, pageSize);
@@ -54,33 +58,8 @@ public class DoctorController {
         return ResponseEntity.ok(ApiResponse.success(paginatedDoctorDto));
     }
 
-    @GetMapping("/facility/{facilityId}")
-    public ResponseEntity<ApiResponse<Page<DoctorDto>>> getDoctorsByFacilityId(
-            @PathVariable UUID facilityId,
-            @RequestParam Integer page,
-            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        log.info("Received request to get doctors by facility ID: {} with page: {} and page size: {}", facilityId,
-                page, pageSize);
-
-        Page<Doctor> paginatedDoctor = doctorService.findAllByFacilityId(facilityId, page, pageSize);
-        Page<DoctorDto> paginatedDoctorDto = paginatedDoctor.map(doctor -> doctorMapper.toDto(doctor, awsS3Service));
-        return ResponseEntity.ok(ApiResponse.success(paginatedDoctorDto));
-    }
-
-    @GetMapping("/speciality")
-    public ResponseEntity<ApiResponse<Page<DoctorDto>>> getDoctorsBySpeciality(
-            @RequestParam String speciality,
-            @RequestParam Integer page,
-            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        log.info("Received request to get doctors by speciality: {} with page: {} and page size: {}", speciality,
-                page, pageSize);
-
-        Page<Doctor> paginatedDoctor = doctorService.findAllBySpeciality(speciality, page, pageSize);
-        Page<DoctorDto> paginatedDoctorDto = paginatedDoctor.map(doctor -> doctorMapper.toDto(doctor, awsS3Service));
-        return ResponseEntity.ok(ApiResponse.success(paginatedDoctorDto));
-    }
-
     @GetMapping("/{doctorId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<DoctorDto>> getDoctorById(@PathVariable UUID doctorId) {
         log.info("Received request to get doctor with ID: {}", doctorId);
 
@@ -90,6 +69,7 @@ public class DoctorController {
     }
 
     @GetMapping("/profile")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<DoctorDto>> getDoctorProfile(@AuthenticationPrincipal Account account) {
         log.info("Received request to get doctor profile for account with ID: {}", account.getId());
 
@@ -99,8 +79,8 @@ public class DoctorController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<DoctorDto>> createDoctor(
-            @Valid @RequestBody CreateDoctorRequestDto request) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<DoctorDto>> createDoctor(@Valid @RequestBody CreateDoctorRequestDto request) {
         log.info("Received request to create doctor with request: {}", request);
 
         Doctor doctor = doctorService.create(request);
@@ -108,10 +88,12 @@ public class DoctorController {
         return ResponseEntity.ok(ApiResponse.success(doctorDto, "Doctor created successfully"));
     }
 
-    @PutMapping("/profile")
+    @PatchMapping("/profile")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<Void>> updateDoctorProfile(
             @Valid @RequestBody UpdateDoctorProfileRequestDto request,
-            @AuthenticationPrincipal Account account) {
+            @AuthenticationPrincipal Account account
+    ) {
         log.info("Received request to update doctor profile for account with ID: {}", account.getId());
 
         doctorService.updateByAccount(account, request);
@@ -119,19 +101,22 @@ public class DoctorController {
     }
 
     @PutMapping(value = "/profile/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<Void>> updateDoctorProfileImage(
             @RequestPart(value = "profileImage") MultipartFile profileImage,
-            @AuthenticationPrincipal Account account) {
+            @AuthenticationPrincipal Account account
+    ) {
         log.info("Received request to update doctor profile image for account with ID: {}", account.getId());
 
         doctorService.updateProfileImageByAccount(account, profileImage);
         return ResponseEntity.ok(ApiResponse.success("Doctor profile image updated successfully"));
     }
 
-    @PutMapping("/specialities-facility/{doctorId}")
+    @PatchMapping("/specialities-facility/{doctorId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> updateDoctorSpecialitiesAndFacility(
             @PathVariable UUID doctorId,
-            @Valid @RequestBody UpdateDoctorSpecialitiesAndFacilityRequestDto request) {
+            @Valid @RequestBody UpdateDoctorSpecialtiesAndFacilityRequestDto request) {
         log.info("Received request to update doctor specialities and facility for doctor with ID: {}", doctorId);
 
         doctorService.updateSpecialitiesAndFacilityById(doctorId, request);
@@ -139,9 +124,11 @@ public class DoctorController {
     }
 
     @PostMapping(value = "/image/{doctorId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> uploadDoctorImage(
             @PathVariable UUID doctorId,
-            @RequestPart(value = "profileImage") MultipartFile profileImage) {
+            @RequestPart(value = "profileImage") MultipartFile profileImage
+    ) {
         log.info("Received request to upload image for doctor with ID: {}", doctorId);
 
         doctorService.uploadProfileImageById(doctorId, profileImage);
@@ -149,6 +136,7 @@ public class DoctorController {
     }
 
     @DeleteMapping("/{doctorId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteDoctor(@PathVariable UUID doctorId) {
         log.info("Received request to delete doctor with ID: {}", doctorId);
 
@@ -157,6 +145,7 @@ public class DoctorController {
     }
 
     @PostMapping("/activate/{doctorId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> activateDoctorById(@PathVariable UUID doctorId) {
         log.info("Received request to activate doctor with ID: {}", doctorId);
 
@@ -165,6 +154,7 @@ public class DoctorController {
     }
 
     @PostMapping("/deactivate/{doctorId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deactivateDoctorById(@PathVariable UUID doctorId) {
         log.info("Received request to deactivate doctor with ID: {}", doctorId);
 
@@ -173,6 +163,7 @@ public class DoctorController {
     }
 
     @PostMapping("/reset/password/{doctorId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> resetDoctorAccountPassword(@PathVariable UUID doctorId) {
         log.info("Received request to reset doctor account password for doctor with ID: {}", doctorId);
 

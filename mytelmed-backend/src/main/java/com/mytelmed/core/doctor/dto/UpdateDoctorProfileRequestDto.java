@@ -18,7 +18,7 @@ public record UpdateDoctorProfileRequestDto(
         @NotBlank(message = "Email is required")
         String email,
 
-        @Pattern(regexp = "^\\d{9}$", message = "Phone number must be exactly 9 digits")
+        @Pattern(regexp = "^\\d{10}$", message = "Phone number must be exactly 10 digits")
         @NotBlank(message = "Phone is required")
         String phone,
 

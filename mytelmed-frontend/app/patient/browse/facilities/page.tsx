@@ -41,12 +41,10 @@ const BrowseFacilitiesPage = () => {
   const stateOptions: LocationOption[] = useMemo(
     () =>
       Object.keys(stateAbbreviations).map((state) => ({
-        label: `${state.replace(/([A-Z])/g, " $1").trim()}, ${
-          stateAbbreviations[state]
-        }`,
-        value: `${state.replace(/([A-Z])/g, " $1").trim()}, ${
-          stateAbbreviations[state]
-        }`,
+        label: `${state.replace(/([A-Z])/g, " $1").trim()}, ${stateAbbreviations[state]
+          }`,
+        value: `${state.replace(/([A-Z])/g, " $1").trim()}, ${stateAbbreviations[state]
+          }`,
         type: "state",
       })),
     []
@@ -69,7 +67,7 @@ const BrowseFacilitiesPage = () => {
   const findAllFacilities = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await FacilityApi.findAllFacilities({
+      const response = await FacilityApi.findFacilities({
         page: currentPage - 1,
       });
 

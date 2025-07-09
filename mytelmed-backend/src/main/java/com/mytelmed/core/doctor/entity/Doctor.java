@@ -8,10 +8,11 @@ import com.mytelmed.common.utils.conveter.LanguageListConverter;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.facility.entity.Facility;
 import com.mytelmed.core.image.entity.Image;
-import com.mytelmed.core.speciality.entity.Speciality;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -19,8 +20,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
@@ -87,13 +86,13 @@ public class Doctor {
     @JoinColumn(name = "facility_id", nullable = false)
     private Facility facility;
 
-    @ManyToMany
-    @JoinTable(
+    @ElementCollection
+    @CollectionTable(
             name = "doctor_specialities",
-            joinColumns = @JoinColumn(name = "doctor_id"),
-            inverseJoinColumns = @JoinColumn(name = "speciality_id")
+            joinColumns = @JoinColumn(name = "doctor_id")
     )
-    private List<Speciality> specialityList;
+    @Column(name = "speciality_name")
+    private List<String> specialityList;
 
     @Convert(converter = LanguageListConverter.class)
     @Column(name = "languages", nullable = false)

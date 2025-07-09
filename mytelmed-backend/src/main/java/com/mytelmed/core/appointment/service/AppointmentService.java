@@ -682,7 +682,7 @@ public class AppointmentService {
         requestList.forEach(request -> {
             try {
                 // Find the document
-                Document document = documentService.getDocumentById(request.documentId());
+                Document document = documentService.findById(request.documentId());
 
                 // Validate the document belongs to the patient
                 if (!document.getPatient().getId().equals(appointment.getPatient().getId())) {
@@ -729,7 +729,7 @@ public class AppointmentService {
             requestList.forEach(request -> {
                 try {
                     // Find the document
-                    Document document = documentService.getDocumentById(request.documentId());
+                    Document document = documentService.findById(request.documentId());
 
                     // Verify if the document belongs to the patient
                     if (!document.getPatient().getId().equals(appointment.getPatient().getId())) {

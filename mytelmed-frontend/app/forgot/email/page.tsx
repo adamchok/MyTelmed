@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { message } from "antd";
-import { InitiateEmailResetRequestOptions } from "@/app/api/auth/props";
+import { InitiateEmailResetRequestDto } from "@/app/api/reset/props";
 import ForgotEmailPageComponent from "./component";
-import AuthApi from "@/app/api/auth";
+import ResetApi from "@/app/api/reset";
 
 const ForgotEmail = () => {
   const router = useRouter();
@@ -26,7 +26,7 @@ const ForgotEmail = () => {
       message.error("Please enter your serial number first.");
       return;
     }
-    const emailResetRequest: InitiateEmailResetRequestOptions = {
+    const emailResetRequest: InitiateEmailResetRequestDto = {
       nric: values.nric,
       name: values.name,
       phone: values.phone,
@@ -34,20 +34,22 @@ const ForgotEmail = () => {
       email: values.email,
     };
     try {
-      const response = await AuthApi.initiateEmailReset(emailResetRequest);
+      const response = await ResetApi.initiateEmailReset(emailResetRequest);
 
-      if (response.isSuccess) {
+      const responseData = response.data;
+
+      if (responseData.isSuccess) {
         message.success(
-          response.message || "Email reset link sent successfully."
+          responseData.message || "Email reset link sent successfully."
         );
         router.push("/login");
       } else {
-        message.error(response.message || "Failed to send email reset link.");
+        message.error(responseData.message || "Failed to send email reset link.");
       }
     } catch (err: any) {
       message.error(
         err?.response?.data?.message ??
-          "Failed to send email reset link. Please try again."
+        "Failed to send email reset link. Please try again."
       );
     }
   };

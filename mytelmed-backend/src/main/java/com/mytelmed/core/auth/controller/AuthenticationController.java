@@ -1,5 +1,6 @@
 package com.mytelmed.core.auth.controller;
 
+import com.mytelmed.common.constant.AccountType;
 import com.mytelmed.common.dto.ApiResponse;
 import com.mytelmed.core.auth.dto.JwtDto;
 import com.mytelmed.core.auth.dto.LoginRequestDto;
@@ -10,9 +11,11 @@ import com.mytelmed.core.auth.service.JwtService;
 import com.mytelmed.core.auth.service.RefreshTokenService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,26 +39,31 @@ public class AuthenticationController {
         this.refreshTokenService = refreshTokenService;
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse<JwtDto>> login(@Valid @RequestBody LoginRequestDto loginRequest) {
-        log.debug("Received login request for user: {}", loginRequest.username());
-
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.username(), loginRequest.password()));
-
-        log.debug("Authentication successful for user: {}", loginRequest.username());
-
-        String accessToken = jwtService.generateAccessToken(loginRequest.username());
-        String refreshToken = refreshTokenService.createOrGetRefreshToken(loginRequest.username()).getToken().toString();
-
-        JwtDto jwtDto = JwtDto.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
-
-        log.info("Login successful for user: {}", loginRequest.username());
-        return ResponseEntity.ok(ApiResponse.success(jwtDto));
+    // Open endpoint
+    @PostMapping("/login/patient")
+    public ResponseEntity<ApiResponse<JwtDto>> loginPatient(@Valid @RequestBody LoginRequestDto loginRequest) {
+        return authenticateUserByType(loginRequest, AccountType.PATIENT, "patient");
     }
 
+    // Open endpoint
+    @PostMapping("/login/doctor")
+    public ResponseEntity<ApiResponse<JwtDto>> loginDoctor(@Valid @RequestBody LoginRequestDto loginRequest) {
+        return authenticateUserByType(loginRequest, AccountType.DOCTOR, "doctor");
+    }
+
+    // Open endpoint
+    @PostMapping("/login/pharmacist")
+    public ResponseEntity<ApiResponse<JwtDto>> loginPharmacist(@Valid @RequestBody LoginRequestDto loginRequest) {
+        return authenticateUserByType(loginRequest, AccountType.PHARMACIST, "pharmacist");
+    }
+
+    // Open endpoint
+    @PostMapping("/login/admin")
+    public ResponseEntity<ApiResponse<JwtDto>> loginAdmin(@Valid @RequestBody LoginRequestDto loginRequest) {
+        return authenticateUserByType(loginRequest, AccountType.ADMIN, "admin");
+    }
+
+    // Open endpoint
     @PostMapping("/token/refresh")
     public ResponseEntity<ApiResponse<JwtDto>> refreshToken(@Valid @RequestBody RefreshTokenRequestDto request) {
         log.debug("Received refresh token request for user: {}", request.refreshToken());
@@ -84,5 +92,45 @@ public class AuthenticationController {
 
         log.info("Logout successful for user: {}", account.getUsername());
         return ResponseEntity.ok(ApiResponse.success("Logout successful"));
+    }
+
+    private ResponseEntity<ApiResponse<JwtDto>> authenticateUserByType(LoginRequestDto loginRequest, AccountType expectedType, String userTypeStr) {
+        log.debug("Received {} login request for user: {}", userTypeStr, loginRequest.username());
+
+        try {
+            // Authenticate user credentials
+            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.username(),
+                    loginRequest.password()));
+
+            // Load user account to check account type
+            Account account = (Account) authentication.getPrincipal();
+            AccountType userAccountType = account.getPermission().getType();
+
+            // Validate account type matches expected type
+            if (userAccountType != expectedType) {
+                log.warn("Account type mismatch for user: {}. Expected: {}, Actual: {}",
+                        loginRequest.username(), expectedType, userAccountType);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.failure(null, "Access denied. Please try again"));
+            }
+
+            log.debug("Authentication successful for {} user: {}", userTypeStr, loginRequest.username());
+
+            // Generate tokens
+            String accessToken = jwtService.generateAccessToken(loginRequest.username());
+            String refreshToken = refreshTokenService.createOrGetRefreshToken(loginRequest.username()).getToken().toString();
+
+            JwtDto jwtDto = JwtDto.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .build();
+
+            log.info("{} login successful for user: {}", userTypeStr, loginRequest.username());
+            return ResponseEntity.ok(ApiResponse.success(jwtDto));
+        } catch (Exception e) {
+            log.error("{} login failed for user: {}", userTypeStr, loginRequest.username(), e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.failure(null, "Invalid credentials or authentication failed"));
+        }
     }
 }

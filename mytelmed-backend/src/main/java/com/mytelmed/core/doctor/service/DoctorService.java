@@ -11,15 +11,13 @@ import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.doctor.dto.CreateDoctorRequestDto;
 import com.mytelmed.core.doctor.dto.UpdateDoctorProfileRequestDto;
-import com.mytelmed.core.doctor.dto.UpdateDoctorSpecialitiesAndFacilityRequestDto;
+import com.mytelmed.core.doctor.dto.UpdateDoctorSpecialtiesAndFacilityRequestDto;
 import com.mytelmed.core.doctor.entity.Doctor;
 import com.mytelmed.core.doctor.repository.DoctorRepository;
 import com.mytelmed.core.facility.entity.Facility;
 import com.mytelmed.core.facility.service.FacilityService;
 import com.mytelmed.core.image.entity.Image;
 import com.mytelmed.core.image.service.ImageService;
-import com.mytelmed.core.speciality.entity.Speciality;
-import com.mytelmed.core.speciality.service.SpecialityService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -29,9 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.S3Exception;
-import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 
@@ -40,19 +36,16 @@ import java.util.UUID;
 public class DoctorService {
     private final DoctorRepository doctorRepository;
     private final FacilityService facilityService;
-    private final SpecialityService specialityService;
     private final ImageService imageService;
     private final AccountService accountService;
     private final ApplicationEventPublisher eventPublisher;
 
     public DoctorService(DoctorRepository doctorRepository,
                          FacilityService facilityService,
-                         SpecialityService specialityService,
                          ImageService imageService, AccountService accountService,
                          ApplicationEventPublisher eventPublisher) {
         this.doctorRepository = doctorRepository;
         this.facilityService = facilityService;
-        this.specialityService = specialityService;
         this.imageService = imageService;
         this.accountService = accountService;
         this.eventPublisher = eventPublisher;
@@ -93,7 +86,7 @@ public class DoctorService {
 
         try {
             Pageable pageable = PageRequest.of(page, pageSize);
-            return doctorRepository.findDistinctBySpecialityListNameContainingIgnoreCase(speciality, pageable);
+            return doctorRepository.findDistinctBySpecialityListContainingIgnoreCase(speciality, pageable);
         } catch (Exception e) {
             log.error("Failed to fetch all doctors by speciality {} with page {} and page size {}", speciality, page,
                     pageSize, e);
@@ -136,9 +129,6 @@ public class DoctorService {
         // Find facility by ID
         Facility facility = facilityService.findFacilityById(request.facilityId());
 
-        // Get validated specialities
-        List<Speciality> specialities = getValidatedSpecialities(request.specialityIds());
-
         // Create a doctor account
         Account account = accountService.createDoctorAccount(request.email(), request.name());
 
@@ -155,7 +145,7 @@ public class DoctorService {
                     .dateOfBirth(dateOfBirth)
                     .gender(request.gender())
                     .facility(facility)
-                    .specialityList(specialities)
+                    .specialityList(request.specialityList())
                     .languageList(request.languageList())
                     .qualifications(request.qualifications())
                     .build();
@@ -245,7 +235,7 @@ public class DoctorService {
     }
 
     @Transactional
-    public void updateSpecialitiesAndFacilityById(UUID doctorId, UpdateDoctorSpecialitiesAndFacilityRequestDto request)
+    public void updateSpecialitiesAndFacilityById(UUID doctorId, UpdateDoctorSpecialtiesAndFacilityRequestDto request)
             throws AppException {
         log.debug("Updating doctor specialities and facility with ID: {}", doctorId);
 
@@ -255,13 +245,10 @@ public class DoctorService {
         // Find facility by facility ID
         Facility facility = facilityService.findFacilityById(request.facilityId());
 
-        // Get validated specialities
-        List<Speciality> specialities = getValidatedSpecialities(request.specialityIds());
-
         try {
             // Update doctor specialities and facility
             doctor.setFacility(facility);
-            doctor.setSpecialityList(specialities);
+            doctor.setSpecialityList(request.specialityList());
 
             // Save doctor
             doctorRepository.save(doctor);
@@ -363,15 +350,6 @@ public class DoctorService {
         }
     }
 
-    private List<Speciality> getValidatedSpecialities(List<UUID> specialityIds) throws ResourceNotFoundException {
-        List<Speciality> specialities = specialityService.findAllSpecialitiesByIdList(specialityIds);
-        if (specialities.isEmpty()) {
-            log.warn("Specialities not found: {}", specialityIds.toString());
-            throw new ResourceNotFoundException("Specialities not found");
-        }
-        return specialities;
-    }
-
     private LocalDate parseDateOfBirth(String dateOfBirthStr) throws InvalidInputException {
         return DateTimeUtil.stringToLocalDate(dateOfBirthStr)
                 .orElseThrow(() -> {
@@ -381,13 +359,13 @@ public class DoctorService {
     }
 
     private void processProfileImage(Doctor doctor, MultipartFile profileImage)
-            throws InvalidInputException, IOException, S3Exception {
+            throws InvalidInputException, S3Exception {
         if (profileImage == null || profileImage.isEmpty()) {
             return;
         }
 
-        // Save image to S3
-        Image image = imageService.saveAndGetImage(ImageType.PROFILE, doctor.getId(), profileImage);
+        // Update / Save image to S3
+        Image image = imageService.updateAndGetImage(ImageType.PROFILE, doctor.getId(), profileImage);
 
         // Update doctor profile image
         doctor.setProfileImage(image);

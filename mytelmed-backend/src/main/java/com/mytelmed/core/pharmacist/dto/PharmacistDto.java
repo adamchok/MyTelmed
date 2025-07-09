@@ -14,6 +14,7 @@ public record PharmacistDto(
         String gender,
         FacilityDto facility,
         String profileImageUrl,
+        boolean enabled,
         Instant createdAt,
         Instant updatedAt
 ) {

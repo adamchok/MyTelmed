@@ -12,6 +12,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,7 +25,7 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/video")
+@RequestMapping("/api/v1/video-call")
 public class VideoCallController {
     private final VideoCallService videoCallService;
     private final VideoCallMapper videoCallMapper;
@@ -35,6 +36,7 @@ public class VideoCallController {
     }
 
     @GetMapping("/appointment/{appointmentId}")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'PATIENT')")
     public ResponseEntity<ApiResponse<VideoCallDto>> getVideoCallByAppointmentId(
             @PathVariable UUID appointmentId,
             @AuthenticationPrincipal Account account
@@ -48,6 +50,7 @@ public class VideoCallController {
     }
 
     @PostMapping("/stream/call")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'PATIENT')")
     public ResponseEntity<ApiResponse<VideoCallDto>> createStreamCallAndGetVideoCall(
             @Valid @NotNull(message = "Appointment ID is required") @RequestBody UUID appointmentId,
             @AuthenticationPrincipal Account account
@@ -60,6 +63,7 @@ public class VideoCallController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('DOCTOR', 'PATIENT')")
     public ResponseEntity<ApiResponse<StreamTokenAndUserResponseDto>> createVideoCallAndGetStreamUserAndToken(
             @Valid @NotNull(message = "Appointment ID is required") @RequestBody UUID appointmentId,
             @AuthenticationPrincipal Account account
@@ -72,6 +76,7 @@ public class VideoCallController {
     }
 
     @PostMapping("/end/{appointmentId}")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'PATIENT')")
     public ResponseEntity<ApiResponse<Void>> endVideoCall(
             @PathVariable String appointmentId,
             @AuthenticationPrincipal Account account

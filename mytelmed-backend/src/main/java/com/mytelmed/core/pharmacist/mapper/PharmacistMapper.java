@@ -16,11 +16,11 @@ import java.time.LocalDate;
 
 @Mapper(componentModel = "spring", uses = {FacilityMapper.class})
 public interface PharmacistMapper {
-
     @Mapping(target = "id", source = "id", qualifiedByName = "mapUUID")
     @Mapping(target = "dateOfBirth", source = "dateOfBirth", qualifiedByName = "formatDate")
     @Mapping(target = "gender", source = "gender", qualifiedByName = "formatGender")
     @Mapping(target = "profileImageUrl", expression = "java(mapProfileImageUrl(pharmacist.getProfileImage(), awsS3Service))")
+    @Mapping(target = "enabled", source = "account.enabled")
     PharmacistDto toDto(Pharmacist pharmacist, @Context AwsS3Service awsS3Service);
 
     @Named("formatDate")

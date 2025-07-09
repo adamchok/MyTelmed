@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,6 +46,7 @@ public class ReferralController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<Void>> createReferral(
             @Valid @RequestBody CreateReferralRequestDto request,
             @AuthenticationPrincipal Account account
@@ -57,6 +59,7 @@ public class ReferralController {
     }
 
     @GetMapping("/{referralId}")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'PATIENT')")
     public ResponseEntity<ApiResponse<ReferralDto>> getReferralById(@PathVariable UUID referralId) {
         log.info("Fetching referral by ID: {}", referralId);
 
@@ -67,6 +70,7 @@ public class ReferralController {
     }
 
     @GetMapping("/number/{referralNumber}")
+    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
     public ResponseEntity<ApiResponse<ReferralDto>> getReferralByNumber(@PathVariable String referralNumber) {
         log.info("Fetching referral by number: {}", referralNumber);
 
@@ -77,6 +81,7 @@ public class ReferralController {
     }
 
     @GetMapping("/patient/{patientId}")
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<Page<ReferralDto>>> getReferralsByPatient(
             @PathVariable UUID patientId,
             @PageableDefault(size = 20) Pageable pageable,
@@ -90,6 +95,7 @@ public class ReferralController {
     }
 
     @GetMapping("/referring")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<Page<ReferralDto>>> getReferralsByReferringDoctor(
             @AuthenticationPrincipal Account account,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -102,6 +108,7 @@ public class ReferralController {
     }
 
     @GetMapping("/referred")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<Page<ReferralDto>>> getReferralsByReferredDoctor(
             @AuthenticationPrincipal Account account,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -114,6 +121,7 @@ public class ReferralController {
     }
 
     @GetMapping("/pending")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<List<ReferralDto>>> getPendingReferrals(@AuthenticationPrincipal Account account) {
         log.info("Fetching pending referrals for doctor: {}", account.getId());
 
@@ -126,6 +134,7 @@ public class ReferralController {
     }
 
     @PutMapping("/{referralId}/status")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<Void>> updateReferralStatus(
             @PathVariable UUID referralId,
             @Valid @RequestBody UpdateReferralStatusRequestDto request,
@@ -138,6 +147,7 @@ public class ReferralController {
     }
 
     @PostMapping("/{referralId}/schedule-appointment")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<Void>> scheduleAppointment(
             @PathVariable UUID referralId,
             @RequestParam UUID timeSlotId,
@@ -150,6 +160,7 @@ public class ReferralController {
     }
 
     @GetMapping("/statistics")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<ReferralStatisticsDto>> getReferralStatistics(
             @AuthenticationPrincipal Account account) {
         log.info("Fetching referral statistics for doctor: {}", account.getId());

@@ -19,14 +19,14 @@ import com.mytelmed.core.family.service.FamilyMemberPermissionService;
 import com.mytelmed.core.pharmacist.entity.Pharmacist;
 import com.mytelmed.core.pharmacist.service.PharmacistService;
 import com.mytelmed.core.prescription.entity.Prescription;
+import com.mytelmed.core.prescription.service.PrescriptionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -43,259 +43,262 @@ import java.util.stream.Collectors;
 @Service
 public class MedicationDeliveryService {
 
-  private final MedicationDeliveryRepository deliveryRepository;
-  private final AddressService addressService;
-  private final PharmacistService pharmacistService;
-  private final ApplicationEventPublisher applicationEventPublisher;
-  private final FamilyMemberPermissionService familyPermissionService;
-  private final Map<DeliveryMethod, DeliveryHandler> deliveryHandlers;
+    private final MedicationDeliveryRepository deliveryRepository;
+    private final AddressService addressService;
+    private final PharmacistService pharmacistService;
+    private final ApplicationEventPublisher applicationEventPublisher;
+    private final FamilyMemberPermissionService familyPermissionService;
+    private final Map<DeliveryMethod, DeliveryHandler> deliveryHandlers;
+    private final PrescriptionService prescriptionService;
 
-  public MedicationDeliveryService(MedicationDeliveryRepository deliveryRepository,
-      AddressService addressService,
-      PharmacistService pharmacistService,
-      ApplicationEventPublisher applicationEventPublisher,
-      FamilyMemberPermissionService familyPermissionService,
-      List<DeliveryHandler> deliveryHandlers) {
-    this.deliveryRepository = deliveryRepository;
-    this.addressService = addressService;
-    this.pharmacistService = pharmacistService;
-    this.applicationEventPublisher = applicationEventPublisher;
-    this.familyPermissionService = familyPermissionService;
-    this.deliveryHandlers = deliveryHandlers.stream()
-        .collect(Collectors.toMap(DeliveryHandler::getSupportedDeliveryMethod, Function.identity()));
-  }
-
-  @Transactional(readOnly = true)
-  public MedicationDelivery findById(UUID deliveryId) {
-    log.info("Finding delivery by ID: {}", deliveryId);
-
-    return deliveryRepository.findById(deliveryId)
-        .orElseThrow(() -> {
-          log.warn("Delivery not found for ID: {}", deliveryId);
-          return new ResourceNotFoundException("Delivery not found");
-        });
-  }
-
-  @Transactional(readOnly = true)
-  public MedicationDelivery findByPrescriptionId(UUID prescriptionId) {
-    log.info("Finding delivery by prescription ID: {}", prescriptionId);
-
-    return deliveryRepository.findByPrescriptionId(prescriptionId)
-        .orElseThrow(() -> {
-          log.warn("Delivery not found for prescription ID: {}", prescriptionId);
-          return new ResourceNotFoundException("Delivery not found for prescription");
-        });
-  }
-
-  @Transactional(readOnly = true)
-  public Page<MedicationDelivery> findByPatientId(UUID patientId, Pageable pageable) {
-    log.info("Finding deliveries for patient: {}", patientId);
-    return deliveryRepository.findByPatientId(patientId, pageable);
-  }
-
-  @Transactional(readOnly = true)
-  public Page<MedicationDelivery> findByFacilityId(UUID facilityId, Pageable pageable) {
-    log.info("Finding deliveries for facility: {}", facilityId);
-    return deliveryRepository.findByFacilityId(facilityId, pageable);
-  }
-
-  @Transactional(readOnly = true)
-  public Page<MedicationDelivery> findByStatus(DeliveryStatus status, Pageable pageable) {
-    log.info("Finding deliveries by status: {}", status);
-    return deliveryRepository.findByStatus(status, pageable);
-  }
-
-  @Transactional
-  public MedicationDelivery choosePickup(UUID prescriptionId, Account patientAccount) {
-    log.info("Patient choosing pickup for prescription: {}", prescriptionId);
-
-    MedicationDelivery delivery = initializeDelivery(prescriptionId, patientAccount, DeliveryMethod.PICKUP, null);
-
-    // Publish delivery created event
-    DeliveryCreatedEvent event = new DeliveryCreatedEvent(delivery);
-    applicationEventPublisher.publishEvent(event);
-
-    return delivery;
-  }
-
-  @Transactional
-  public MedicationDelivery chooseHomeDelivery(UUID prescriptionId, Account patientAccount, UUID addressId) {
-    log.info("Patient choosing home delivery for prescription: {} to address: {}", prescriptionId, addressId);
-
-    Address deliveryAddress = addressService.findAddressById(addressId);
-    MedicationDelivery delivery = initializeDelivery(prescriptionId, patientAccount, DeliveryMethod.HOME_DELIVERY,
-        deliveryAddress);
-
-    // Publish delivery created event
-    DeliveryCreatedEvent event = new DeliveryCreatedEvent(delivery);
-    applicationEventPublisher.publishEvent(event);
-
-    return delivery;
-  }
-
-  @Transactional
-  public void processPayment(UUID deliveryId, Account account) {
-    log.info("Processing payment for delivery: {}", deliveryId);
-
-    MedicationDelivery delivery = findById(deliveryId);
-    UUID patientId = delivery.getPrescription().getPatient().getId();
-
-    // Get the patient ID this account is authorized to access
-    UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
-    if (authorizedPatientId == null) {
-      throw new AppException("Account is not authorized to process payments for any patient");
+    public MedicationDeliveryService(MedicationDeliveryRepository deliveryRepository,
+                                     AddressService addressService,
+                                     PharmacistService pharmacistService,
+                                     ApplicationEventPublisher applicationEventPublisher,
+                                     FamilyMemberPermissionService familyPermissionService,
+                                     List<DeliveryHandler> deliveryHandlers, PrescriptionService prescriptionService) {
+        this.deliveryRepository = deliveryRepository;
+        this.addressService = addressService;
+        this.pharmacistService = pharmacistService;
+        this.applicationEventPublisher = applicationEventPublisher;
+        this.familyPermissionService = familyPermissionService;
+        this.deliveryHandlers = deliveryHandlers.stream()
+                .collect(Collectors.toMap(DeliveryHandler::getSupportedDeliveryMethod, Function.identity()));
+        this.prescriptionService = prescriptionService;
     }
 
-    // Verify the delivery belongs to the authorized patient
-    if (!patientId.equals(authorizedPatientId)) {
-      throw new AppException("Not authorized to process payment for this delivery");
+    @Transactional(readOnly = true)
+    public MedicationDelivery findById(UUID deliveryId) {
+        log.info("Finding delivery by ID: {}", deliveryId);
+
+        return deliveryRepository.findById(deliveryId)
+                .orElseThrow(() -> {
+                    log.warn("Delivery not found for ID: {}", deliveryId);
+                    return new ResourceNotFoundException("Delivery not found");
+                });
     }
 
-    // Verify the account has BOOK_APPOINTMENT permission (required for payment)
-    if (!familyPermissionService.hasPermission(account, patientId, FamilyPermissionType.BOOK_APPOINTMENT)) {
-      throw new AppException("Insufficient permissions to process payments");
+    @Transactional(readOnly = true)
+    public MedicationDelivery findByPrescriptionId(UUID prescriptionId) {
+        log.info("Finding delivery by prescription ID: {}", prescriptionId);
+
+        return deliveryRepository.findByPrescriptionId(prescriptionId)
+                .orElseThrow(() -> {
+                    log.warn("Delivery not found for prescription ID: {}", prescriptionId);
+                    return new ResourceNotFoundException("Delivery not found for prescription");
+                });
     }
 
-    if (delivery.getStatus() != DeliveryStatus.PENDING_PAYMENT) {
-      throw new AppException("Delivery is not pending payment");
+    @Transactional(readOnly = true)
+    public Page<MedicationDelivery> findByPatientId(UUID patientId, int page, int size) {
+        log.info("Finding deliveries for patient: {}", patientId);
+
+        Pageable pageable = PageRequest.of(page, size);
+        return deliveryRepository.findByPatientId(patientId, pageable);
     }
 
-    // Note: Actual payment processing is handled by PaymentService
-    // This method is called after successful payment confirmation
-    delivery.setStatus(DeliveryStatus.PAID);
-    deliveryRepository.save(delivery);
+    @Transactional(readOnly = true)
+    public Page<MedicationDelivery> findByPatientAccount(Account account, int page, int size) {
+        log.info("Finding deliveries for patient account with ID: {}", account.getId());
 
-    log.info("Payment processed successfully for delivery: {}", deliveryId);
-  }
-
-  @Transactional
-  public void processDelivery(UUID deliveryId, Account pharmacistAccount) {
-    log.info("Pharmacist processing delivery: {}", deliveryId);
-
-    Pharmacist pharmacist = pharmacistService.findByAccount(pharmacistAccount);
-    MedicationDelivery delivery = findById(deliveryId);
-
-    // Verify pharmacist facility matches prescription facility
-    if (!delivery.getPrescription().getFacility().getId().equals(pharmacist.getFacility().getId())) {
-      throw new AppException("Not authorized to process this delivery");
+        Pageable pageable = PageRequest.of(page, size);
+        return deliveryRepository.findByPrescriptionPatientAccount(account, pageable);
     }
 
-    DeliveryHandler handler = getDeliveryHandler(delivery.getDeliveryMethod());
-    handler.processDelivery(delivery);
-
-    deliveryRepository.save(delivery);
-    log.info("Delivery {} processed by pharmacist", deliveryId);
-  }
-
-  @Transactional
-  public void markOutForDelivery(UUID deliveryId, Account pharmacistAccount, String courierName,
-      String trackingReference, String contactPhone) {
-    log.info("Marking delivery {} as out for delivery", deliveryId);
-
-    Pharmacist pharmacist = pharmacistService.findByAccount(pharmacistAccount);
-    MedicationDelivery delivery = findById(deliveryId);
-
-    // Verify pharmacist facility matches prescription facility
-    if (!delivery.getPrescription().getFacility().getId().equals(pharmacist.getFacility().getId())) {
-      throw new AppException("Not authorized to process this delivery");
+    @Transactional(readOnly = true)
+    public Page<MedicationDelivery> findByFacilityId(UUID facilityId, Pageable pageable) {
+        log.info("Finding deliveries for facility: {}", facilityId);
+        return deliveryRepository.findByFacilityId(facilityId, pageable);
     }
 
-    if (delivery.getDeliveryMethod() != DeliveryMethod.HOME_DELIVERY) {
-      throw new AppException("Only home deliveries can be marked out for delivery");
+    @Transactional
+    public MedicationDelivery choosePickup(UUID prescriptionId, Account patientAccount) {
+        log.info("Patient choosing pickup for prescription: {}", prescriptionId);
+
+        MedicationDelivery delivery = initializeDelivery(prescriptionId, patientAccount, DeliveryMethod.PICKUP, null);
+
+        // Publish delivery created event
+        DeliveryCreatedEvent event = new DeliveryCreatedEvent(delivery);
+        applicationEventPublisher.publishEvent(event);
+
+        return delivery;
     }
 
-    HomeDeliveryHandler homeHandler = (HomeDeliveryHandler) getDeliveryHandler(DeliveryMethod.HOME_DELIVERY);
-    homeHandler.markOutForDelivery(delivery, courierName, trackingReference, contactPhone);
+    @Transactional
+    public MedicationDelivery chooseHomeDelivery(UUID prescriptionId, Account patientAccount, UUID addressId) {
+        log.info("Patient choosing home delivery for prescription: {} to address: {}", prescriptionId, addressId);
 
-    deliveryRepository.save(delivery);
+        Address deliveryAddress = addressService.findAddressById(addressId);
+        MedicationDelivery delivery = initializeDelivery(prescriptionId, patientAccount, DeliveryMethod.HOME_DELIVERY,
+                deliveryAddress);
 
-    // Publish out for delivery event
-    DeliveryOutForDeliveryEvent event = new DeliveryOutForDeliveryEvent(delivery);
-    applicationEventPublisher.publishEvent(event);
+        // Publish delivery created event
+        DeliveryCreatedEvent event = new DeliveryCreatedEvent(delivery);
+        applicationEventPublisher.publishEvent(event);
 
-    log.info("Delivery {} marked as out for delivery", deliveryId);
-  }
-
-  @Transactional
-  public void markAsCompleted(UUID deliveryId, Account account) {
-    log.info("Patient marking delivery {} as completed", deliveryId);
-
-    MedicationDelivery delivery = findById(deliveryId);
-    UUID patientId = delivery.getPrescription().getPatient().getId();
-
-    // Get the patient ID this account is authorized to access
-    UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
-    if (authorizedPatientId == null) {
-      throw new AppException("Account is not authorized to complete deliveries for any patient");
+        return delivery;
     }
 
-    // Verify the delivery belongs to the authorized patient
-    if (!patientId.equals(authorizedPatientId)) {
-      throw new AppException("Not authorized to complete this delivery");
+    @Transactional
+    public void processPayment(UUID deliveryId, Account account) {
+        log.info("Processing payment for delivery: {}", deliveryId);
+
+        MedicationDelivery delivery = findById(deliveryId);
+        UUID patientId = delivery.getPrescription().getPatient().getId();
+
+        // Get the patient ID this account is authorized to access
+        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
+        if (authorizedPatientId == null) {
+            throw new AppException("Account is not authorized to process payments for any patient");
+        }
+
+        // Verify the delivery belongs to the authorized patient
+        if (!patientId.equals(authorizedPatientId)) {
+            throw new AppException("Not authorized to process payment for this delivery");
+        }
+
+        // Verify the account has BOOK_APPOINTMENT permission (required for payment)
+        if (!familyPermissionService.hasPermission(account, patientId, FamilyPermissionType.BOOK_APPOINTMENT)) {
+            throw new AppException("Insufficient permissions to process payments");
+        }
+
+        if (delivery.getStatus() != DeliveryStatus.PENDING_PAYMENT) {
+            throw new AppException("Delivery is not pending payment");
+        }
+
+        // Note: Actual payment processing is handled by PaymentService
+        // This method is called after successful payment confirmation
+        delivery.setStatus(DeliveryStatus.PAID);
+        deliveryRepository.save(delivery);
+
+        log.info("Payment processed successfully for delivery: {}", deliveryId);
     }
 
-    // Verify the account has VIEW_APPOINTMENT permission (minimum required)
-    if (!familyPermissionService.hasPermission(account, patientId, FamilyPermissionType.VIEW_APPOINTMENT)) {
-      throw new AppException("Insufficient permissions to complete deliveries");
+    @Transactional
+    public void processDelivery(UUID deliveryId, Account pharmacistAccount) {
+        log.info("Pharmacist processing delivery: {}", deliveryId);
+
+        Pharmacist pharmacist = pharmacistService.findByAccount(pharmacistAccount);
+        MedicationDelivery delivery = findById(deliveryId);
+
+        // Verify pharmacist facility matches prescription facility
+        if (!delivery.getPrescription().getFacility().getId().equals(pharmacist.getFacility().getId())) {
+            throw new AppException("Not authorized to process this delivery");
+        }
+
+        DeliveryHandler handler = getDeliveryHandler(delivery.getDeliveryMethod());
+        handler.processDelivery(delivery);
+
+        deliveryRepository.save(delivery);
+        log.info("Delivery {} processed by pharmacist", deliveryId);
     }
 
-    DeliveryHandler handler = getDeliveryHandler(delivery.getDeliveryMethod());
-    handler.completeDelivery(delivery);
+    @Transactional
+    public void markOutForDelivery(UUID deliveryId, Account pharmacistAccount, String courierName,
+                                   String trackingReference, String contactPhone) {
+        log.info("Marking delivery {} as out for delivery", deliveryId);
 
-    deliveryRepository.save(delivery);
+        Pharmacist pharmacist = pharmacistService.findByAccount(pharmacistAccount);
+        MedicationDelivery delivery = findById(deliveryId);
 
-    // Publish delivery completed event
-    DeliveryCompletedEvent event = new DeliveryCompletedEvent(delivery);
-    applicationEventPublisher.publishEvent(event);
+        // Verify pharmacist facility matches prescription facility
+        if (!delivery.getPrescription().getFacility().getId().equals(pharmacist.getFacility().getId())) {
+            throw new AppException("Not authorized to process this delivery");
+        }
 
-    log.info("Delivery {} marked as completed", deliveryId);
-  }
+        if (delivery.getDeliveryMethod() != DeliveryMethod.HOME_DELIVERY) {
+            throw new AppException("Only home deliveries can be marked out for delivery");
+        }
 
-  @Transactional
-  public void cancelDelivery(UUID deliveryId, String reason) {
-    log.info("Cancelling delivery: {} with reason: {}", deliveryId, reason);
+        HomeDeliveryHandler homeHandler = (HomeDeliveryHandler) getDeliveryHandler(DeliveryMethod.HOME_DELIVERY);
+        homeHandler.markOutForDelivery(delivery, courierName, trackingReference, contactPhone);
 
-    MedicationDelivery delivery = findById(deliveryId);
+        deliveryRepository.save(delivery);
 
-    DeliveryHandler handler = getDeliveryHandler(delivery.getDeliveryMethod());
-    handler.cancelDelivery(delivery, reason);
+        // Publish out for delivery event
+        DeliveryOutForDeliveryEvent event = new DeliveryOutForDeliveryEvent(delivery);
+        applicationEventPublisher.publishEvent(event);
 
-    deliveryRepository.save(delivery);
-    log.info("Delivery {} cancelled", deliveryId);
-  }
-
-  // Private helper methods
-
-  private MedicationDelivery initializeDelivery(UUID prescriptionId, Account patientAccount,
-      DeliveryMethod deliveryMethod, Address deliveryAddress) {
-    // Verify prescription exists and patient owns it
-    // This would require prescription service injection, simplified for this
-    // example
-
-    if (deliveryRepository.existsByPrescriptionId(prescriptionId)) {
-      throw new AppException("Delivery already exists for this prescription");
+        log.info("Delivery {} marked as out for delivery", deliveryId);
     }
 
-    // Create a mock prescription for this example - in real implementation would
-    // fetch from service
-    Prescription prescription = new Prescription();
-    prescription.setId(prescriptionId);
+    @Transactional
+    public void markAsCompleted(UUID deliveryId, Account account) {
+        log.info("Patient marking delivery {} as completed", deliveryId);
 
-    DeliveryHandler handler = getDeliveryHandler(deliveryMethod);
-    MedicationDelivery delivery = handler.initializeDelivery(prescription);
+        MedicationDelivery delivery = findById(deliveryId);
+        UUID patientId = delivery.getPrescription().getPatient().getId();
 
-    if (deliveryAddress != null) {
-      delivery.setDeliveryAddress(deliveryAddress);
+        // Get the patient ID this account is authorized to access
+        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
+        if (authorizedPatientId == null) {
+            throw new AppException("Account is not authorized to complete deliveries for any patient");
+        }
+
+        // Verify the delivery belongs to the authorized patient
+        if (!patientId.equals(authorizedPatientId)) {
+            throw new AppException("Not authorized to complete this delivery");
+        }
+
+        // Verify the account has VIEW_APPOINTMENT permission (minimum required)
+        if (!familyPermissionService.hasPermission(account, patientId, FamilyPermissionType.VIEW_APPOINTMENT)) {
+            throw new AppException("Insufficient permissions to complete deliveries");
+        }
+
+        DeliveryHandler handler = getDeliveryHandler(delivery.getDeliveryMethod());
+        handler.completeDelivery(delivery);
+
+        deliveryRepository.save(delivery);
+
+        // Publish delivery completed event
+        DeliveryCompletedEvent event = new DeliveryCompletedEvent(delivery);
+        applicationEventPublisher.publishEvent(event);
+
+        log.info("Delivery {} marked as completed", deliveryId);
     }
 
-    return deliveryRepository.save(delivery);
-  }
+    @Transactional
+    public void cancelDelivery(UUID deliveryId, String reason) {
+        log.info("Cancelling delivery: {} with reason: {}", deliveryId, reason);
 
-  private DeliveryHandler getDeliveryHandler(DeliveryMethod deliveryMethod) {
-    DeliveryHandler handler = deliveryHandlers.get(deliveryMethod);
-    if (handler == null) {
-      throw new AppException("No handler available for delivery method: " + deliveryMethod);
+        MedicationDelivery delivery = findById(deliveryId);
+
+        DeliveryHandler handler = getDeliveryHandler(delivery.getDeliveryMethod());
+        handler.cancelDelivery(delivery, reason);
+
+        deliveryRepository.save(delivery);
+        log.info("Delivery {} cancelled", deliveryId);
     }
-    return handler;
-  }
+
+    // Private helper methods
+
+    private MedicationDelivery initializeDelivery(UUID prescriptionId, Account patientAccount,
+                                                  DeliveryMethod deliveryMethod, Address deliveryAddress) throws AppException {
+        Prescription prescription = prescriptionService.findById(prescriptionId);
+
+        if (!prescription.getPatient().getAccount().getId().equals(patientAccount.getId())) {
+            throw new AppException("Action not authorized: Prescription does not belong to patient.");
+        }
+
+        if (deliveryRepository.existsByPrescriptionId(prescriptionId)) {
+            throw new AppException("Delivery already exists for this prescription.");
+        }
+
+        DeliveryHandler handler = getDeliveryHandler(deliveryMethod);
+        MedicationDelivery delivery = handler.initializeDelivery(prescription);
+
+        if (deliveryAddress != null) {
+            delivery.setDeliveryAddress(deliveryAddress);
+        }
+
+        return deliveryRepository.save(delivery);
+    }
+
+    private DeliveryHandler getDeliveryHandler(DeliveryMethod deliveryMethod) {
+        DeliveryHandler handler = deliveryHandlers.get(deliveryMethod);
+        if (handler == null) {
+            throw new AppException("No handler available for delivery method: " + deliveryMethod);
+        }
+        return handler;
+    }
 }

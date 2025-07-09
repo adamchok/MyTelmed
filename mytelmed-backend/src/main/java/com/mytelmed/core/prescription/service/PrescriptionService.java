@@ -81,22 +81,6 @@ public class PrescriptionService {
     }
 
     @Transactional(readOnly = true)
-    public Prescription findByFacilityIdAndPrescriptionNumber(UUID facilityId, String prescriptionNumber) {
-        log.info("Fetching prescription by facility: {} and number: {}", facilityId, prescriptionNumber);
-
-        Prescription prescription = prescriptionRepository
-                .findByFacilityIdAndPrescriptionNumber(facilityId, prescriptionNumber)
-                .orElseThrow(() -> {
-                    log.warn("Prescription not found for facility: {} and prescription number: {}", facilityId,
-                            prescriptionNumber);
-                    return new ResourceNotFoundException("Prescription not found or not accessible by this facility");
-                });
-
-        log.debug("Found prescription with facility: {} and prescription number: {}", facilityId, prescriptionNumber);
-        return prescription;
-    }
-
-    @Transactional(readOnly = true)
     public Page<Prescription> findByPatientId(UUID patientId, Pageable pageable) {
         log.info("Fetching prescriptions for patient: {}", patientId);
 
@@ -120,24 +104,6 @@ public class PrescriptionService {
 
         Page<Prescription> prescriptions = prescriptionRepository.findByFacilityId(facilityId, pageable);
         log.debug("Found {} prescriptions for facility: {}", prescriptions.getTotalElements(), facilityId);
-        return prescriptions;
-    }
-
-    @Transactional(readOnly = true)
-    public Page<Prescription> findByPharmacistId(UUID pharmacistId, Pageable pageable) {
-        log.info("Fetching prescriptions by pharmacist: {}", pharmacistId);
-
-        Page<Prescription> prescriptions = prescriptionRepository.findByPharmacistId(pharmacistId, pageable);
-        log.debug("Found {} prescriptions for pharmacist: {}", prescriptions.getTotalElements(), pharmacistId);
-        return prescriptions;
-    }
-
-    @Transactional(readOnly = true)
-    public Page<Prescription> findByStatus(PrescriptionStatus status, Pageable pageable) {
-        log.info("Fetching prescriptions by status: {}", status);
-
-        Page<Prescription> prescriptions = prescriptionRepository.findByStatus(status, pageable);
-        log.debug("Found {} prescriptions with status: {}", prescriptions.getTotalElements(), status);
         return prescriptions;
     }
 
@@ -280,8 +246,8 @@ public class PrescriptionService {
     }
 
     @Transactional
-    public void markAsCompleted(UUID prescriptionId, Account pharmacistAccount) throws AppException {
-        log.info("Pharmacist completing prescription: {}", prescriptionId);
+    public void markAsReady(UUID prescriptionId, Account pharmacistAccount) throws AppException {
+        log.info("Pharmacist completing prescription processing: {}", prescriptionId);
 
         // Find pharmacist by Account
         Pharmacist pharmacist = pharmacistService.findByAccount(pharmacistAccount);
@@ -306,15 +272,15 @@ public class PrescriptionService {
 
         try {
             // Update prescription to completed
-            prescription.setStatus(PrescriptionStatus.COMPLETED);
+            prescription.setStatus(PrescriptionStatus.READY);
 
             // Save prescription
             prescriptionRepository.save(prescription);
 
-            log.info("Prescription completed by pharmacist: {} -> {}", prescriptionId, prescription.getStatus());
+            log.info("Prescription readied by pharmacist: {} -> {}", prescriptionId, prescription.getStatus());
         } catch (Exception e) {
-            log.error("Failed to complete prescription: {}", prescriptionId, e);
-            throw new AppException("Failed to complete prescription");
+            log.error("Failed to ready prescription: {}", prescriptionId, e);
+            throw new AppException("Failed to ready prescription");
         }
     }
 
@@ -324,7 +290,7 @@ public class PrescriptionService {
 
         Prescription prescription = findById(prescriptionId);
 
-        if (prescription.getStatus() == PrescriptionStatus.COMPLETED ||
+        if (prescription.getStatus() == PrescriptionStatus.READY ||
                 prescription.getStatus() == PrescriptionStatus.CANCELLED) {
             throw new AppException("Cannot expire a completed or cancelled prescription");
         }
@@ -346,7 +312,7 @@ public class PrescriptionService {
 
         Prescription prescription = findById(prescriptionId);
 
-        if (prescription.getStatus() == PrescriptionStatus.COMPLETED) {
+        if (prescription.getStatus() == PrescriptionStatus.READY) {
             throw new AppException("Cannot cancel a completed prescription");
         }
 

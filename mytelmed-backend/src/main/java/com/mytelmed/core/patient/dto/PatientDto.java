@@ -15,6 +15,7 @@ public record PatientDto(
         String dateOfBirth,
         String gender,
         String profileImageUrl,
+        boolean enabled,
         Instant createdAt,
         Instant updatedAt
 ) {

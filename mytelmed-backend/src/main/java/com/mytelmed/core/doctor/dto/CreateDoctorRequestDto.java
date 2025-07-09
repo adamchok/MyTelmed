@@ -23,7 +23,7 @@ public record CreateDoctorRequestDto(
         @NotBlank(message = "Email is required")
         String email,
 
-        @Pattern(regexp = "^\\d{9}$", message = "Phone number must be exactly 9 digits")
+        @Pattern(regexp = "^\\d{10}$", message = "Phone number must be exactly 10 digits")
         @NotBlank(message = "Phone is required")
         String phone,
 
@@ -36,9 +36,9 @@ public record CreateDoctorRequestDto(
         @NotNull(message = "Facility ID is required")
         UUID facilityId,
 
-        @NotNull(message = "Specialities are required")
+        @NotNull(message = "Specialties are required")
         @Size(min = 1, message = "At least one speciality is required")
-        List<UUID> specialityIds,
+        List<String> specialityList,
 
         @NotNull(message = "Languages are required")
         @Size(min = 1, message = "At least one language is required")

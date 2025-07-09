@@ -10,7 +10,7 @@ public record InitiateEmailResetRequestDto(
         @NotBlank(message = "NRIC is required")
         String nric,
 
-        @Pattern(regexp = "\\d{9}", message = "Phone number must be 9 digits")
+        @Pattern(regexp = "\\d{10}", message = "Phone number must be 10 digits")
         @NotBlank(message = "Phone number is required")
         String phone,
 

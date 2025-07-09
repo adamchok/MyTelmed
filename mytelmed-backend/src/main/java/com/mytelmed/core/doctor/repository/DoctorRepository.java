@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Repository
 public interface DoctorRepository extends JpaRepository<Doctor, UUID> {
-    Page<Doctor> findDistinctBySpecialityListNameContainingIgnoreCase(String name, Pageable pageable);
+    Page<Doctor> findDistinctBySpecialityListContainingIgnoreCase(String name, Pageable pageable);
 
     Page<Doctor> findAllByFacilityId(UUID facilityId, Pageable pageable);
 

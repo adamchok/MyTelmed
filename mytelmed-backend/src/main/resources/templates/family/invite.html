@@ -1,157 +1,150 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Family Invitation - MyTelmed</title>
-    <style>
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        line-height: 1.6;
-        color: #333333;
-        padding: 20px;
-        background-color: #f8f9fa;
-      }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Family Invitation - MyTelmed</title>
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333333;
+                padding: 20px;
+                background-color: #f8f9fa;
+            }
 
-      .container {
-        background-color: #ffffff;
-        border-radius: 10px;
-        padding: 30px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      }
+            .container {
+                background-color: #ffffff;
+                border-radius: 10px;
+                padding: 30px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
 
-      .header {
-        text-align: center;
-        justify-content: center;
-        border-bottom: 3px solid #17a2b8;
-        padding-bottom: 20px;
-        margin-bottom: 30px;
-      }
+            .header {
+                text-align: center;
+                justify-content: center;
+                border-bottom: 3px solid #17a2b8;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+            }
 
-      .logo {
-        width: 192px;
-      }
+            .logo {
+                width: 192px;
+            }
 
-      .invite-details {
-        background-color: #f8f9fa;
-        border-left: 4px solid #17a2b8;
-        padding: 20px;
-        margin: 20px 0;
-        border-radius: 5px;
-      }
+            .invite-details {
+                background-color: #f8f9fa;
+                border-left: 4px solid #17a2b8;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 5px;
+            }
 
-      .detail-row {
-        display: flex;
-        margin-bottom: 12px;
-        align-items: center;
-      }
+            .detail-row {
+                display: flex;
+                margin-bottom: 12px;
+                align-items: center;
+            }
 
-      .detail-label {
-        font-weight: bold;
-        color: #17a2b8;
-        min-width: 140px;
-        margin-right: 10px;
-      }
+            .detail-label {
+                font-weight: bold;
+                color: #17a2b8;
+                min-width: 140px;
+                margin-right: 10px;
+            }
 
-      .detail-value {
-        color: #333;
-        flex: 1;
-      }
+            .detail-value {
+                color: #333;
+                flex: 1;
+            }
 
-      .action-buttons {
-        text-align: center;
-        margin: 30px 0;
-      }
+            .action-buttons {
+                text-align: center;
+                margin: 30px 0;
+            }
 
-      .btn {
-        display: inline-block;
-        padding: 12px 24px;
-        margin: 0 10px;
-        background-color: #007bff;
-        color: #ffffff;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: bold;
-      }
+            .btn {
+                display: inline-block;
+                padding: 12px 24px;
+                margin: 0 10px;
+                background-color: #007bff;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+            }
 
-      .btn:hover {
-        background-color: #0056b3;
-      }
+            .btn:hover {
+                background-color: #0056b3;
+            }
 
-      .footer {
-        border-top: 1px solid #dee2e6;
-        padding-top: 20px;
-        margin-top: 30px;
-        text-align: center;
-        color: #6c757d;
-        font-size: 14px;
-      }
+            .footer {
+                border-top: 1px solid #dee2e6;
+                padding-top: 20px;
+                margin-top: 30px;
+                text-align: center;
+                color: #6c757d;
+                font-size: 14px;
+            }
 
-      a {
-        color: #007bff;
-      }
+            a {
+                color: #007bff;
+            }
 
-      a:hover {
-        text-decoration: underline;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <img th:src="@{/mytelmed-logo.png}" alt="MyTelmed Logo" class="logo" />
-        <h2 style="color: #495057; margin: 0">
-          You've been invited to join a family account
-        </h2>
-      </div>
+            a:hover {
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2 style="color: #495057; margin: 0">You've been invited to join a family account</h2>
+            </div>
 
-      <p>Dear <strong th:text="${inviteeName}">Invitee Name</strong>,</p>
+            <p>Dear <strong th:text="${inviteeName}">Invitee Name</strong>,</p>
 
-      <p>
-        <strong th:text="${inviterName}">Inviter Name</strong> has invited you
-        to join their family account on MyTelmed. This will allow you to manage
-        healthcare appointments and information together.
-      </p>
+            <p>
+                <strong th:text="${inviterName}">Inviter Name</strong> has invited you to join their family account on
+                MyTelmed. This will allow you to manage healthcare appointments and information together.
+            </p>
 
-      <div class="invite-details">
-        <h3 style="color: #17a2b8; margin-top: 0">Invitation Details</h3>
+            <div class="invite-details">
+                <h3 style="color: #17a2b8; margin-top: 0">Invitation Details</h3>
 
-        <div class="detail-row">
-          <span class="detail-label">Invited by:</span>
-          <span class="detail-value" th:text="${inviterName}">-</span>
+                <div class="detail-row">
+                    <span class="detail-label">Invited by:</span>
+                    <span class="detail-value" th:text="${inviterName}">-</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">Relationship:</span>
+                    <span class="detail-value" th:text="${relationship}">-</span>
+                </div>
+            </div>
+
+            <p>By accepting this invitation, you will be able to:</p>
+            <ul>
+                <li>View and manage family member appointments</li>
+                <li>Access shared health information</li>
+                <li>Receive notifications about family health updates</li>
+                <li>Coordinate healthcare activities together</li>
+            </ul>
+
+            <div class="action-buttons">
+                <a th:href="${inviteUrl}" class="btn"> Accept Invitation </a>
+            </div>
+
+            <p>If you have any questions about this invitation, please contact our support team.</p>
+
+            <div class="footer">
+                <p>This is an automated message, please do not reply to this email.</p>
+                <p>&copy; 2025 MyTelmed. All rights reserved.</p>
+                <p>
+                    <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
+                    <a th:href="${uiHost + '/terms'}">Terms of Service</a>
+                </p>
+            </div>
         </div>
-
-        <div class="detail-row">
-          <span class="detail-label">Relationship:</span>
-          <span class="detail-value" th:text="${relationship}">-</span>
-        </div>
-      </div>
-
-      <p>By accepting this invitation, you will be able to:</p>
-      <ul>
-        <li>View and manage family member appointments</li>
-        <li>Access shared health information</li>
-        <li>Receive notifications about family health updates</li>
-        <li>Coordinate healthcare activities together</li>
-      </ul>
-
-      <div class="action-buttons">
-        <a th:href="${inviteUrl}" class="btn"> Accept Invitation </a>
-      </div>
-
-      <p>
-        If you have any questions about this invitation, please contact our
-        support team.
-      </p>
-
-      <div class="footer">
-        <p>This is an automated message, please do not reply to this email.</p>
-        <p>&copy; 2025 MyTelmed. All rights reserved.</p>
-        <p>
-          <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
-          <a th:href="${uiHost + '/terms'}">Terms of Service</a>
-        </p>
-      </div>
-    </div>
-  </body>
+    </body>
 </html>

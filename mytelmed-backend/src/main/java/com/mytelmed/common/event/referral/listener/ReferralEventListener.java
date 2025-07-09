@@ -109,11 +109,13 @@ public class ReferralEventListener {
             // Internal referral - referred doctor within MyTelmed system
             if (event.referral().getReferredDoctor() != null) {
                 variables.put("referredDoctorName", "Dr. " + event.referral().getReferredDoctor().getName());
-                // Note: We'd need to enhance Doctor entity to include speciality if needed
-                // variables.put("referredDoctorSpeciality",
-                // event.referral().getReferredDoctor().getSpeciality());
-                // variables.put("referredFacilityName",
-                // event.referral().getReferredDoctor().getFacility().getName());
+
+                // Convert List<String> to comma-separated format
+                List<String> specialities = event.referral().getReferredDoctor().getSpecialityList();
+                String formattedSpecialities = String.join(", ", specialities);
+                variables.put("referredDoctorSpeciality", formattedSpecialities);
+
+                variables.put("referredFacilityName", event.referral().getReferredDoctor().getFacility().getName());
             }
         } else {
             // External referral - outside MyTelmed system

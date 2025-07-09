@@ -41,58 +41,6 @@ public class PatientService {
         this.imageService = imageService;
     }
 
-    private LocalDate parseAndValidateDateOfBirth(String dateOfBirthStr) throws InvalidInputException {
-        LocalDate dateOfBirth = DateTimeUtil.stringToLocalDate(dateOfBirthStr)
-                .orElseThrow(() -> {
-                    log.warn("Invalid date of birth format: {}", dateOfBirthStr);
-                    return new InvalidInputException("Invalid date of birth format");
-                });
-
-        LocalDate today = LocalDate.now();
-
-        if (dateOfBirth.isAfter(today)) {
-            log.warn("Date of birth is in the future: {}", dateOfBirth);
-            throw new InvalidInputException("Date of birth cannot be in the future");
-        }
-
-        Period age = Period.between(dateOfBirth, today);
-
-        if (age.getYears() < 12) {
-            log.warn("Date of birth indicates age less than 12: {}", dateOfBirth);
-            throw new InvalidInputException("User must be at least 12 years old");
-        }
-
-        return dateOfBirth;
-    }
-
-    private Patient buildPatient(CreatePatientRequestDto request, LocalDate dateOfBirth, Account account) {
-        return Patient.builder()
-                .name(request.name())
-                .account(account)
-                .nric(request.nric())
-                .email(request.email())
-                .serialNumber(request.serialNumber())
-                .phone(request.phone())
-                .dateOfBirth(dateOfBirth)
-                .gender(request.gender())
-                .build();
-    }
-
-    private void updatePatientDetails(Patient patient, UpdatePatientProfileRequestDto request, LocalDate dateOfBirth) {
-        patient.setName(request.name());
-        patient.setPhone(request.phone());
-        patient.setEmail(request.email());
-        patient.setDateOfBirth(dateOfBirth);
-        patient.setGender(request.gender());
-    }
-
-    private void processProfileImage(MultipartFile profileImage, Patient patient) throws InvalidInputException, IOException, S3Exception {
-        Image image = imageService.saveAndGetImage(ImageType.PROFILE, patient.getId(), profileImage);
-        patient.setProfileImage(image);
-        patientRepository.save(patient);
-        log.info("Uploaded profile image for doctor with ID: {}", patient.getId());
-    }
-
     @Transactional(readOnly = true)
     public Patient findPatientById(UUID patientId) throws ResourceNotFoundException {
         log.debug("Finding patient with ID: {}", patientId);
@@ -246,5 +194,81 @@ public class PatientService {
             log.error("Unexpected error while deleting patient: {}", patientId, e);
             throw new AppException("Failed to delete patient");
         }
+    }
+
+    @Transactional
+    public void updateAccountPassword(Account patientAccount, String newRawPassword) throws AppException {
+        log.debug("Updating password for patient with account ID: {}", patientAccount.getId());
+
+        // Find patient by ID
+        Patient patient = findPatientByAccountId(patientAccount.getId());
+
+        try {
+            // Update account password
+            accountService.changePasswordById(patient.getAccount().getId(), newRawPassword);
+
+            log.info("Updated password for patient with account ID: {}", patientAccount.getId());
+        } catch (Exception e) {
+            log.error("Error updating patient password: {}", e.getMessage(), e);
+            throw new AppException("Failed to update password");
+        }
+    }
+
+    private LocalDate parseAndValidateDateOfBirth(String dateOfBirthStr) throws InvalidInputException {
+        LocalDate dateOfBirth = DateTimeUtil.stringToLocalDate(dateOfBirthStr)
+                .orElseThrow(() -> {
+                    log.warn("Invalid date of birth format: {}", dateOfBirthStr);
+                    return new InvalidInputException("Invalid date of birth format");
+                });
+
+        LocalDate today = LocalDate.now();
+
+        if (dateOfBirth.isAfter(today)) {
+            log.warn("Date of birth is in the future: {}", dateOfBirth);
+            throw new InvalidInputException("Date of birth cannot be in the future");
+        }
+
+        Period age = Period.between(dateOfBirth, today);
+
+        if (age.getYears() < 12) {
+            log.warn("Date of birth indicates age less than 12: {}", dateOfBirth);
+            throw new InvalidInputException("User must be at least 12 years old");
+        }
+
+        return dateOfBirth;
+    }
+
+    private Patient buildPatient(CreatePatientRequestDto request, LocalDate dateOfBirth, Account account) {
+        return Patient.builder()
+                .name(request.name())
+                .account(account)
+                .nric(request.nric())
+                .email(request.email())
+                .serialNumber(request.serialNumber())
+                .phone(request.phone())
+                .dateOfBirth(dateOfBirth)
+                .gender(request.gender())
+                .build();
+    }
+
+    private void updatePatientDetails(Patient patient, UpdatePatientProfileRequestDto request, LocalDate dateOfBirth) {
+        patient.setName(request.name());
+        patient.setPhone(request.phone());
+        patient.setEmail(request.email());
+        patient.setDateOfBirth(dateOfBirth);
+        patient.setGender(request.gender());
+    }
+
+    private void processProfileImage(MultipartFile profileImage, Patient patient) throws InvalidInputException, IOException, S3Exception {
+        if (profileImage == null || profileImage.isEmpty()) {
+            return;
+        }
+
+        // Update / Save image to S3
+        Image image = imageService.updateAndGetImage(ImageType.PROFILE, patient.getId(), profileImage);
+
+        patient.setProfileImage(image);
+        patientRepository.save(patient);
+        log.info("Uploaded profile image for doctor with ID: {}", patient.getId());
     }
 }

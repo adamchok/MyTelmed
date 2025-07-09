@@ -25,7 +25,7 @@ public record CreatePatientRequestDto(
         @Pattern(regexp = "^[A-Za-z0-9]{10}$", message = "Serial number must be exactly 10 alphanumeric characters")
         String serialNumber,
 
-        @Pattern(regexp = "^\\d{9}$", message = "Phone number must be exactly 9 digits")
+        @Pattern(regexp = "^\\d{10}$", message = "Phone number must be exactly 10 digits")
         @NotBlank(message = "Phone is required")
         String phone,
 

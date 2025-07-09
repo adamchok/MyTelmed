@@ -10,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface AddressRepository extends JpaRepository<Address, UUID> {
     List<Address> findByPatientAccountId(UUID accountId);
+
+    List<Address> findByPatientId(UUID patientId);
 }

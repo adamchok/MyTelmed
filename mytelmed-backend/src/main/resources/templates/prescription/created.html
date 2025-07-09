@@ -1,145 +1,133 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>New Prescription Created - MyTelmed</title>
-    <style>
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        line-height: 1.6;
-        color: #333333;
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: #f8f9fa;
-      }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>New Prescription Created - MyTelmed</title>
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f8f9fa;
+            }
 
-      .container {
-        background-color: #ffffff;
-        border-radius: 10px;
-        padding: 30px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      }
+            .container {
+                background-color: #ffffff;
+                border-radius: 10px;
+                padding: 30px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
 
-      .header {
-        text-align: center;
-        justify-content: center;
-        border-bottom: 3px solid #28a745;
-        padding-bottom: 20px;
-        margin-bottom: 30px;
-      }
+            .header {
+                text-align: center;
+                justify-content: center;
+                border-bottom: 3px solid #28a745;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+            }
 
-      .logo {
-        width: 192px;
-        height: auto;
-        max-width: 100%;
-        display: block;
-        margin: 0 auto;
-      }
+            .logo {
+                width: 192px;
+                height: auto;
+                max-width: 100%;
+                display: block;
+                margin: 0 auto;
+            }
 
-      .expiry-highlight {
-        background-color: #fff3cd;
-        border: 1px solid #ffeaa7;
-        border-radius: 8px;
-        padding: 15px;
-        margin: 20px 0;
-      }
+            .expiry-highlight {
+                background-color: #fff3cd;
+                border: 1px solid #ffeaa7;
+                border-radius: 8px;
+                padding: 15px;
+                margin: 20px 0;
+            }
 
-      .expiry-highlight .expiry-date {
-        font-size: 18px;
-        font-weight: bold;
-        color: #856404;
-        margin-bottom: 5px;
-      }
+            .expiry-highlight .expiry-date {
+                font-size: 18px;
+                font-weight: bold;
+                color: #856404;
+                margin-bottom: 5px;
+            }
 
-      .action-buttons {
-        text-align: center;
-        margin: 30px 0;
-      }
+            .action-buttons {
+                text-align: center;
+                margin: 30px 0;
+            }
 
-      .btn {
-        display: inline-block;
-        padding: 12px 24px;
-        margin: 0 10px;
-        background-color: #007bff;
-        color: #ffffff;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: bold;
-      }
+            .btn {
+                display: inline-block;
+                padding: 12px 24px;
+                margin: 0 10px;
+                background-color: #007bff;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+            }
 
-      .btn:hover {
-        background-color: #0056b3;
-      }
+            .btn:hover {
+                background-color: #0056b3;
+            }
 
-      .footer {
-        border-top: 1px solid #dee2e6;
-        padding-top: 20px;
-        margin-top: 30px;
-        text-align: center;
-        color: #6c757d;
-        font-size: 14px;
-      }
+            .footer {
+                border-top: 1px solid #dee2e6;
+                padding-top: 20px;
+                margin-top: 30px;
+                text-align: center;
+                color: #6c757d;
+                font-size: 14px;
+            }
 
-      a {
-        color: #007bff;
-      }
+            a {
+                color: #007bff;
+            }
 
-      a:hover {
-        text-decoration: underline;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <img th:src="@{/mytelmed-logo.png}" alt="MyTelmed Logo" class="logo" />
-        <h2 style="color: #495057; margin: 0">
-          Your prescription has been created successfully!
-        </h2>
-      </div>
+            a:hover {
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2 style="color: #495057; margin: 0">Your prescription has been created successfully!</h2>
+            </div>
 
-      <p>Dear <strong th:text="${patientName}">Patient Name</strong>,</p>
+            <p>Dear <strong th:text="${patientName}">Patient Name</strong>,</p>
 
-      <p>
-        Dr. <strong th:text="${doctorName}">Doctor Name</strong> (<strong
-          th:text="${facilityName}"
-          >Facility Name</strong
-        >) has created a new prescription for you. Please review the details
-        below and choose your preferred delivery method.
-      </p>
+            <p>
+                Dr. <strong th:text="${doctorName}">Doctor Name</strong> (<strong th:text="${facilityName}"
+                    >Facility Name</strong
+                >) has created a new prescription for you. Please review the details below and choose your preferred delivery
+                method.
+            </p>
 
-      <div class="expiry-highlight">
-        <div class="expiry-date">
-          ⏰ Expires on:
-          <span th:text="${#temporals.format(expiryDate, 'EEEE, MMMM d, yyyy')}"
-            >-</span
-          >
+            <div class="expiry-highlight">
+                <div class="expiry-date">
+                    ⏰ Expires on:
+                    <span th:text="${#temporals.format(expiryDate, 'EEEE, MMMM d, yyyy')}">-</span>
+                </div>
+                <p style="margin: 5px 0 0 0; color: #856404">
+                    Please complete your prescription within this timeframe to ensure timely delivery.
+                </p>
+            </div>
+
+            <div class="action-buttons">
+                <a th:href="${uiHost + '/patient/prescription/' + prescriptionId}" class="btn"> View Prescription </a>
+            </div>
+
+            <div class="footer">
+                <p>This is an automated message, please do not reply to this email.</p>
+                <p>&copy; 2025 MyTelmed. All rights reserved.</p>
+                <p>
+                    <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
+                    <a th:href="${uiHost + '/terms'}">Terms of Service</a>
+                </p>
+            </div>
         </div>
-        <p style="margin: 5px 0 0 0; color: #856404">
-          Please complete your prescription within this timeframe to ensure
-          timely delivery.
-        </p>
-      </div>
-
-      <div class="action-buttons">
-        <a
-          th:href="${uiHost + '/patient/prescription/' + prescriptionId}"
-          class="btn"
-        >
-          View Prescription
-        </a>
-      </div>
-
-      <div class="footer">
-        <p>This is an automated message, please do not reply to this email.</p>
-        <p>&copy; 2025 MyTelmed. All rights reserved.</p>
-        <p>
-          <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
-          <a th:href="${uiHost + '/terms'}">Terms of Service</a>
-        </p>
-      </div>
-    </div>
-  </body>
+    </body>
 </html>

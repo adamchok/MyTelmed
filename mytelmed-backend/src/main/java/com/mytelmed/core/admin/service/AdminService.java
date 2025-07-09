@@ -1,22 +1,28 @@
 package com.mytelmed.core.admin.service;
 
 import com.mytelmed.common.advice.AppException;
+import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.advice.exception.UsernameAlreadyExistException;
+import com.mytelmed.common.constant.file.ImageType;
 import com.mytelmed.common.utils.PasswordGenerator;
 import com.mytelmed.core.admin.dto.CreateAdminRequestDto;
-import com.mytelmed.core.admin.dto.UpdateAdminRequestDto;
+import com.mytelmed.core.admin.dto.UpdateAdminProfileRequestDto;
 import com.mytelmed.core.admin.entity.Admin;
 import com.mytelmed.core.admin.repository.AdminRepository;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
+import com.mytelmed.core.image.entity.Image;
+import com.mytelmed.core.image.service.ImageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import java.io.IOException;
 import java.util.UUID;
 
 @Slf4j
@@ -24,10 +30,12 @@ import java.util.UUID;
 public class AdminService {
     private final AdminRepository adminRepository;
     private final AccountService accountService;
+    private final ImageService imageService;
 
-    public AdminService(AdminRepository adminRepository, AccountService accountService) {
+    public AdminService(AdminRepository adminRepository, AccountService accountService, ImageService imageService) {
         this.adminRepository = adminRepository;
         this.accountService = accountService;
+        this.imageService = imageService;
     }
 
     @Transactional(readOnly = true)
@@ -102,7 +110,7 @@ public class AdminService {
     }
 
     @Transactional
-    public void updateByAccount(Account account, UpdateAdminRequestDto request) throws AppException {
+    public void updateByAccount(Account account, UpdateAdminProfileRequestDto request) throws AppException {
         log.debug("Updating admin profile for account: {}", account.getId());
 
         // Find admin by account
@@ -120,6 +128,28 @@ public class AdminService {
         } catch (Exception e) {
             log.error("Error updating admin profile: {}", e.getMessage(), e);
             throw new AppException("Failed to update admin profile");
+        }
+    }
+
+    @Transactional
+    public void updateProfileImageByAccount(Account account, MultipartFile profileImage) throws AppException {
+        log.debug("Updating admin profile image for account: {}", account.getId());
+
+        if (profileImage == null || profileImage.isEmpty()) {
+            throw new InvalidInputException("Profile image is required");
+        }
+
+        // Find admin by account
+        Admin admin = findByAccount(account);
+
+        try {
+            // Process profile image
+            processProfileImage(admin, profileImage);
+
+            log.info("Updated admin profile image for account: {}", account.getId());
+        } catch (Exception e) {
+            log.error("Error updating admin profile image: {}", e.getMessage(), e);
+            throw new AppException("Failed to update admin profile image");
         }
     }
 
@@ -199,5 +229,23 @@ public class AdminService {
             log.error("Error resetting admin password: {}", e.getMessage(), e);
             throw new AppException("Failed to reset admin password");
         }
+    }
+
+    private void processProfileImage(Admin admin, MultipartFile profileImage)
+            throws InvalidInputException, IOException, S3Exception {
+        if (profileImage == null || profileImage.isEmpty()) {
+            return;
+        }
+
+        // Save image to S3
+        Image image = imageService.updateAndGetImage(ImageType.PROFILE, admin.getId(), profileImage);
+
+        // Update admin profile image
+        admin.setProfileImage(image);
+
+        // Save admin
+        adminRepository.save(admin);
+
+        log.info("Uploaded profile image for admin with ID: {}", admin.getId());
     }
 }

@@ -28,7 +28,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.S3Exception;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -344,13 +343,13 @@ public class PharmacistService {
     }
 
     private void processProfileImage(Pharmacist pharmacist, MultipartFile profileImage)
-            throws InvalidInputException, IOException, S3Exception {
+            throws InvalidInputException, S3Exception {
         if (profileImage == null || profileImage.isEmpty()) {
             return;
         }
 
         // Save image to S3
-        Image image = imageService.saveAndGetImage(ImageType.PROFILE, pharmacist.getId(), profileImage);
+        Image image = imageService.updateAndGetImage(ImageType.PROFILE, pharmacist.getId(), profileImage);
 
         // Update pharmacist profile image
         pharmacist.setProfileImage(image);

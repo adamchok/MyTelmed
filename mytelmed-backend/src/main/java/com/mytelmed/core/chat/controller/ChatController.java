@@ -6,7 +6,6 @@ import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.chat.service.ChatService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("/chat")
+@RequestMapping("/api/v1/chat")
 public class ChatController {
     private final ChatService chatService;
 
@@ -23,8 +22,7 @@ public class ChatController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<StreamTokenAndUserResponseDto>> createAndGetStreamUserAndToken(
-            @AuthenticationPrincipal Account account) {
+    public ResponseEntity<ApiResponse<StreamTokenAndUserResponseDto>> createAndGetStreamUserAndToken(@AuthenticationPrincipal Account account) {
         log.info("Received request to update Stream user and generate Stream token for account with ID: {}",
                 account.getId());
         StreamTokenAndUserResponseDto response = chatService.createAndGetStreamUserAndToken(account);

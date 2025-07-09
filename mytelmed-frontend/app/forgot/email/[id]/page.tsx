@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Form, Input, Button, Typography, message } from "antd";
 import { CreateEmailFormProps } from "../props";
-import { ResetEmailRequestOptions } from "@/app/api/auth/props";
-import AuthApi from "@/app/api/auth";
+import { ResetEmailRequestDto } from "@/app/api/reset/props";
+import ResetApi from "@/app/api/reset";
 
 const { Title, Paragraph } = Typography;
 
@@ -30,26 +30,28 @@ export default function CreateEmailPage() {
       message.error("Emails do not match.");
       return;
     }
-    const resetEmailRequest: ResetEmailRequestOptions = {
+    const resetEmailRequest: ResetEmailRequestDto = {
       email: values.email,
     };
     try {
       setLoading(true);
-      const response = await AuthApi.resetEmail(
+      const response = await ResetApi.resetEmail(
         id as string,
         resetEmailRequest
       );
 
-      if (response.isSuccess) {
-        message.success(response.message || "Email reset successfully.");
+      const responseData = response.data;
+
+      if (responseData.isSuccess) {
+        message.success(responseData.message || "Email reset successfully.");
         router.push("/login");
       } else {
-        message.error(response.message || "Failed to reset email.");
+        message.error(responseData.message || "Failed to reset email.");
       }
     } catch (err: any) {
       message.error(
         err?.response?.data?.message ??
-          "Failed to reset email. Please try again."
+        "Failed to reset email. Please try again."
       );
     } finally {
       setLoading(false);

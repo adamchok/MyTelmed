@@ -19,6 +19,7 @@ public interface PatientMapper {
     @Mapping(target = "dateOfBirth", source = "dateOfBirth", qualifiedByName = "formatDate")
     @Mapping(target = "gender", source = "gender", qualifiedByName = "mapGender")
     @Mapping(target = "profileImageUrl", expression = "java(mapProfileImageUrl(patient, awsS3Service))")
+    @Mapping(target = "enabled", source = "account.enabled")
     PatientDto toDto(Patient patient, @Context AwsS3Service awsS3Service);
 
     @Named("mapUUID")

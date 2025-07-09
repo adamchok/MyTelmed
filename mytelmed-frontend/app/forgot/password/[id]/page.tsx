@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Form, Input, Button, Typography, message } from "antd";
 import { CreatePasswordFormProps } from "../props";
-import AuthApi from "@/app/api/auth";
-import { ResetPasswordRequestOptions } from "@/app/api/auth/props";
+import { ResetPasswordRequestDto } from "@/app/api/reset/props";
+import ResetApi from "@/app/api/reset";
 
 const { Title, Paragraph } = Typography;
 
@@ -30,26 +30,28 @@ export default function CreatePasswordPage() {
       message.error("Passwords do not match.");
       return;
     }
-    const resetPasswordRequest: ResetPasswordRequestOptions = {
+    const resetPasswordRequest: ResetPasswordRequestDto = {
       password: values.password,
     };
     try {
       setLoading(true);
-      const response = await AuthApi.resetPassword(
+      const response = await ResetApi.resetPassword(
         id as string,
         resetPasswordRequest
       );
 
-      if (response.isSuccess) {
-        message.success(response.message);
+      const responseData = response.data;
+
+      if (responseData.isSuccess) {
+        message.success(responseData.message);
         router.push("/login");
       } else {
-        message.error(response.message);
+        message.error(responseData.message);
       }
     } catch (err: any) {
       message.error(
         err?.response?.data?.message ??
-          "Failed to reset password. Please try again."
+        "Failed to reset password. Please try again."
       );
     } finally {
       setLoading(false);

@@ -1,335 +1,338 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MyTelmed - Payment Receipt</title>
-    <style>
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        line-height: 1.6;
-        color: #333333;
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: #f8f9fa;
-      }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MyTelmed - Payment Receipt</title>
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f8f9fa;
+            }
 
-      .container {
-        background-color: #ffffff;
-        border-radius: 10px;
-        padding: 30px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      }
+            .container {
+                background-color: #ffffff;
+                border-radius: 10px;
+                padding: 30px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
 
-      .header {
-        text-align: center;
-        justify-content: center;
-        border-bottom: 3px solid #28a745;
-        padding-bottom: 20px;
-        margin-bottom: 30px;
-      }
+            .header {
+                text-align: center;
+                justify-content: center;
+                border-bottom: 3px solid #28a745;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+            }
 
-      .logo {
-        width: 192px;
-        height: auto;
-        max-width: 100%;
-        display: block;
-        margin: 0 auto;
-      }
+            .logo {
+                width: 192px;
+                height: auto;
+                max-width: 100%;
+                display: block;
+                margin: 0 auto;
+            }
 
-      .payment-status {
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        border-radius: 8px;
-        padding: 20px;
-        margin: 20px 0;
-        text-align: center;
-      }
+            .payment-status {
+                background-color: #d4edda;
+                border: 1px solid #c3e6cb;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+                text-align: center;
+            }
 
-      .payment-status .status-icon {
-        font-size: 48px;
-        color: #28a745;
-        margin-bottom: 10px;
-      }
+            .payment-status .status-icon {
+                font-size: 48px;
+                color: #28a745;
+                margin-bottom: 10px;
+            }
 
-      .payment-status h3 {
-        color: #155724;
-        margin: 0 0 10px 0;
-      }
+            .payment-status h3 {
+                color: #155724;
+                margin: 0 0 10px 0;
+            }
 
-      .receipt-header {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 30px;
-        align-items: flex-start;
-      }
+            .receipt-header {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 30px;
+                align-items: flex-start;
+            }
 
-      .receipt-details {
-        background-color: #f8f9fa;
-        border-left: 4px solid #28a745;
-        padding: 20px;
-        margin: 20px 0;
-        border-radius: 5px;
-      }
+            .receipt-details {
+                background-color: #f8f9fa;
+                border-left: 4px solid #28a745;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 5px;
+            }
 
-      .receipt-number {
-        font-size: 18px;
-        font-weight: bold;
-        color: #28a745;
-        margin-bottom: 10px;
-      }
+            .receipt-number {
+                font-size: 18px;
+                font-weight: bold;
+                color: #28a745;
+                margin-bottom: 10px;
+            }
 
-      .transaction-info {
-        background-color: #e9ecef;
-        border-radius: 8px;
-        padding: 20px;
-        margin: 20px 0;
-      }
+            .transaction-info {
+                background-color: #e9ecef;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+            }
 
-      .info-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 10px;
-        padding: 5px 0;
-      }
+            .info-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 10px;
+                padding: 5px 0;
+            }
 
-      .info-row.total {
-        border-top: 2px solid #28a745;
-        padding-top: 15px;
-        margin-top: 15px;
-        font-weight: bold;
-        font-size: 18px;
-        color: #28a745;
-      }
+            .info-row.total {
+                border-top: 2px solid #28a745;
+                padding-top: 15px;
+                margin-top: 15px;
+                font-weight: bold;
+                font-size: 18px;
+                color: #28a745;
+            }
 
-      .amount {
-        font-weight: bold;
-        color: #28a745;
-      }
+            .amount {
+                font-weight: bold;
+                color: #28a745;
+            }
 
-      .payment-method {
-        background-color: #f1f3f4;
-        border-radius: 8px;
-        padding: 15px;
-        margin: 20px 0;
-      }
+            .payment-method {
+                background-color: #f1f3f4;
+                border-radius: 8px;
+                padding: 15px;
+                margin: 20px 0;
+            }
 
-      .action-buttons {
-        text-align: center;
-        margin: 30px 0;
-      }
+            .action-buttons {
+                text-align: center;
+                margin: 30px 0;
+            }
 
-      .btn {
-        display: inline-block;
-        padding: 12px 24px;
-        margin: 0 10px;
-        background-color: #007bff;
-        color: #ffffff;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: bold;
-      }
+            .btn {
+                display: inline-block;
+                padding: 12px 24px;
+                margin: 0 10px;
+                background-color: #007bff;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+            }
 
-      .btn:hover {
-        background-color: #0056b3;
-      }
+            .btn:hover {
+                background-color: #0056b3;
+            }
 
-      .btn-success {
-        background-color: #28a745;
-      }
+            .btn-success {
+                background-color: #28a745;
+            }
 
-      .btn-success:hover {
-        background-color: #1e7e34;
-      }
+            .btn-success:hover {
+                background-color: #1e7e34;
+            }
 
-      .footer {
-        border-top: 1px solid #dee2e6;
-        padding-top: 20px;
-        margin-top: 30px;
-        text-align: center;
-        color: #6c757d;
-        font-size: 14px;
-      }
+            .footer {
+                border-top: 1px solid #dee2e6;
+                padding-top: 20px;
+                margin-top: 30px;
+                text-align: center;
+                color: #6c757d;
+                font-size: 14px;
+            }
 
-      .service-details {
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        margin: 20px 0;
-      }
+            .service-details {
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                margin: 20px 0;
+            }
 
-      .service-header {
-        background-color: #28a745;
-        color: white;
-        padding: 15px;
-        border-radius: 8px 8px 0 0;
-        font-weight: bold;
-      }
+            .service-header {
+                background-color: #28a745;
+                color: white;
+                padding: 15px;
+                border-radius: 8px 8px 0 0;
+                font-weight: bold;
+            }
 
-      .service-body {
-        padding: 15px;
-      }
+            .service-body {
+                padding: 15px;
+            }
 
-      @media (max-width: 600px) {
-        .receipt-header {
-          flex-direction: column;
-        }
+            @media (max-width: 600px) {
+                .receipt-header {
+                    flex-direction: column;
+                }
 
-        .info-row {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <img th:src="@{/mytelmed-logo.png}" alt="MyTelmed Logo" class="logo" />
-        <h2 style="color: #495057; margin: 10px 0 0 0">Payment Receipt</h2>
-      </div>
+                .info-row {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2 style="color: #495057; margin: 10px 0 0 0">Payment Receipt</h2>
+            </div>
 
-      <div class="payment-status">
-        <div class="status-icon">✅</div>
-        <h3>Payment Successful!</h3>
-        <p style="margin: 0; color: #155724">
-          Your payment has been processed successfully. Thank you for using MyTelmed services.
-        </p>
-      </div>
+            <div class="payment-status">
+                <div class="status-icon">✅</div>
+                <h3>Payment Successful!</h3>
+                <p style="margin: 0; color: #155724">
+                    Your payment has been processed successfully. Thank you for using MyTelmed services.
+                </p>
+            </div>
 
-      <div class="receipt-header">
-        <div>
-          <h3 style="margin: 0 0 10px 0; color: #495057">Paid By:</h3>
-          <strong th:text="${patientName}">Patient Name</strong><br />
-          <span th:text="${patientEmail}">patient@email.com</span>
+            <div class="receipt-header">
+                <div>
+                    <h3 style="margin: 0 0 10px 0; color: #495057">Paid By:</h3>
+                    <strong th:text="${patientName}">Patient Name</strong><br />
+                    <span th:text="${patientEmail}">patient@email.com</span>
+                </div>
+                <div style="text-align: right">
+                    <div class="receipt-number">Receipt #<span th:text="${transactionNumber}">RCP-001</span></div>
+                    <div>
+                        <strong>Payment Date:</strong>
+                        <span th:text="${#temporals.format(paidAt, 'dd/MM/yyyy HH:mm')}">Date</span>
+                    </div>
+                    <div>
+                        <strong>Invoice #:</strong>
+                        <span th:text="${billNumber}">INV-001</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="receipt-details">
+                <h4 style="margin: 0 0 15px 0; color: #28a745">Service Information</h4>
+                <div>
+                    <strong>Service Type:</strong>
+                    <span th:text="${billType == 'CONSULTATION' ? 'Virtual Consultation' : 'Medication Delivery'}"
+                        >Service</span
+                    >
+                </div>
+                <div th:if="${facilityName}">
+                    <strong>Healthcare Facility:</strong>
+                    <span th:text="${facilityName}">Facility Name</span>
+                </div>
+                <div th:if="${doctorName}">
+                    <strong>Attending Doctor:</strong>
+                    <span th:text="${doctorName}">Dr. Name</span>
+                </div>
+                <div th:if="${appointmentDate}">
+                    <strong>Appointment Date:</strong>
+                    <span th:text="${#temporals.format(appointmentDate, 'EEEE, dd MMMM yyyy HH:mm')}">Date</span>
+                </div>
+                <div th:if="${description}">
+                    <strong>Description:</strong>
+                    <span th:text="${description}">Service description</span>
+                </div>
+            </div>
+
+            <div class="transaction-info">
+                <h4 style="margin: 0 0 20px 0; color: #495057">Transaction Details</h4>
+
+                <div class="info-row">
+                    <span>Transaction ID</span>
+                    <span th:text="${transactionNumber}">TXN-123456</span>
+                </div>
+
+                <div class="info-row">
+                    <span>Payment Method</span>
+                    <span th:text="${paymentMethod}">Credit Card</span>
+                </div>
+
+                <div class="info-row" th:if="${stripeChargeId}">
+                    <span>Stripe Charge ID</span>
+                    <span th:text="${stripeChargeId}">ch_123456</span>
+                </div>
+
+                <div class="info-row">
+                    <span>Currency</span>
+                    <span th:text="${currency}">MYR</span>
+                </div>
+
+                <div class="info-row">
+                    <span th:text="${billType == 'CONSULTATION' ? 'Consultation Fee' : 'Delivery Fee'}">Service Fee</span>
+                    <span class="amount"
+                        >RM <span th:text="${#numbers.formatDecimal(amount, 1, 'COMMA', 2, 'POINT')}">0.00</span></span
+                    >
+                </div>
+
+                <div class="info-row">
+                    <span>Service Tax (0%)</span>
+                    <span class="amount">RM 0.00</span>
+                </div>
+
+                <div class="info-row total">
+                    <span>Total Paid</span>
+                    <span>RM <span th:text="${#numbers.formatDecimal(amount, 1, 'COMMA', 2, 'POINT')}">0.00</span></span>
+                </div>
+            </div>
+
+            <div class="payment-method">
+                <h4 style="margin: 0 0 10px 0; color: #495057"><i class="icon">💳</i> Payment Processing</h4>
+                <p style="margin: 0">
+                    Payment processed securely through Stripe. Your card details are encrypted and never stored on our
+                    servers. This transaction is covered under Malaysian consumer protection laws.
+                </p>
+            </div>
+
+            <div class="action-buttons">
+                <a th:href="${uiHost + '/patient/billing/' + billId}" class="btn btn-success"> View Invoice Details </a>
+                <a th:href="${uiHost + '/patient/billing/receipts/' + transactionId}" class="btn"> Download Receipt </a>
+            </div>
+
+            <div th:if="${billType == 'CONSULTATION'}">
+                <p>
+                    <strong>Next Steps:</strong> Your virtual consultation appointment is now confirmed. You will receive a
+                    reminder email 24 hours before your scheduled appointment with access details.
+                </p>
+            </div>
+
+            <div th:if="${billType == 'MEDICATION'}">
+                <p>
+                    <strong>Next Steps:</strong> Your medication delivery payment is confirmed. Your prescription will be
+                    processed and dispatched according to your selected delivery method. You will receive tracking
+                    information once your medication is dispatched.
+                </p>
+            </div>
+
+            <p>
+                If you have any questions about this payment or need assistance, please contact our billing support team or
+                visit your nearest participating healthcare facility.
+            </p>
+
+            <p>
+                Best regards,<br />
+                MyTelmed Billing Department<br />
+                Malaysian Public Healthcare Telemedicine Services
+            </p>
+
+            <div class="footer">
+                <p>
+                    Keep this receipt for your records. This is an electronic receipt and is valid for tax and reimbursement
+                    purposes.
+                </p>
+                <p>&copy; 2025 MyTelmed. All rights reserved.</p>
+                <p>
+                    <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
+                    <a th:href="${uiHost + '/terms'}">Terms of Service</a> |
+                    <a th:href="${uiHost + '/billing-policy'}">Billing Policy</a>
+                </p>
+            </div>
         </div>
-        <div style="text-align: right">
-          <div class="receipt-number">Receipt #<span th:text="${transactionNumber}">RCP-001</span></div>
-          <div>
-            <strong>Payment Date:</strong>
-            <span th:text="${#temporals.format(paidAt, 'dd/MM/yyyy HH:mm')}">Date</span>
-          </div>
-          <div>
-            <strong>Invoice #:</strong>
-            <span th:text="${billNumber}">INV-001</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="receipt-details">
-        <h4 style="margin: 0 0 15px 0; color: #28a745">Service Information</h4>
-        <div>
-          <strong>Service Type:</strong>
-          <span th:text="${billType == 'CONSULTATION' ? 'Virtual Consultation' : 'Medication Delivery'}">Service</span>
-        </div>
-        <div th:if="${facilityName}">
-          <strong>Healthcare Facility:</strong>
-          <span th:text="${facilityName}">Facility Name</span>
-        </div>
-        <div th:if="${doctorName}">
-          <strong>Attending Doctor:</strong>
-          <span th:text="${doctorName}">Dr. Name</span>
-        </div>
-        <div th:if="${appointmentDate}">
-          <strong>Appointment Date:</strong>
-          <span th:text="${#temporals.format(appointmentDate, 'EEEE, dd MMMM yyyy HH:mm')}">Date</span>
-        </div>
-        <div th:if="${description}">
-          <strong>Description:</strong>
-          <span th:text="${description}">Service description</span>
-        </div>
-      </div>
-
-      <div class="transaction-info">
-        <h4 style="margin: 0 0 20px 0; color: #495057">Transaction Details</h4>
-
-        <div class="info-row">
-          <span>Transaction ID</span>
-          <span th:text="${transactionNumber}">TXN-123456</span>
-        </div>
-
-        <div class="info-row">
-          <span>Payment Method</span>
-          <span th:text="${paymentMethod}">Credit Card</span>
-        </div>
-
-        <div class="info-row" th:if="${stripeChargeId}">
-          <span>Stripe Charge ID</span>
-          <span th:text="${stripeChargeId}">ch_123456</span>
-        </div>
-
-        <div class="info-row">
-          <span>Currency</span>
-          <span th:text="${currency}">MYR</span>
-        </div>
-
-        <div class="info-row">
-          <span th:text="${billType == 'CONSULTATION' ? 'Consultation Fee' : 'Delivery Fee'}">Service Fee</span>
-          <span class="amount"
-            >RM <span th:text="${#numbers.formatDecimal(amount, 1, 'COMMA', 2, 'POINT')}">0.00</span></span
-          >
-        </div>
-
-        <div class="info-row">
-          <span>Service Tax (0%)</span>
-          <span class="amount">RM 0.00</span>
-        </div>
-
-        <div class="info-row total">
-          <span>Total Paid</span>
-          <span>RM <span th:text="${#numbers.formatDecimal(amount, 1, 'COMMA', 2, 'POINT')}">0.00</span></span>
-        </div>
-      </div>
-
-      <div class="payment-method">
-        <h4 style="margin: 0 0 10px 0; color: #495057"><i class="icon">💳</i> Payment Processing</h4>
-        <p style="margin: 0">
-          Payment processed securely through Stripe. Your card details are encrypted and never stored on our servers. This
-          transaction is covered under Malaysian consumer protection laws.
-        </p>
-      </div>
-
-      <div class="action-buttons">
-        <a th:href="${uiHost + '/patient/billing/' + billId}" class="btn btn-success"> View Invoice Details </a>
-        <a th:href="${uiHost + '/patient/billing/receipts/' + transactionId}" class="btn"> Download Receipt </a>
-      </div>
-
-      <div th:if="${billType == 'CONSULTATION'}">
-        <p>
-          <strong>Next Steps:</strong> Your virtual consultation appointment is now confirmed. You will receive a reminder
-          email 24 hours before your scheduled appointment with access details.
-        </p>
-      </div>
-
-      <div th:if="${billType == 'MEDICATION'}">
-        <p>
-          <strong>Next Steps:</strong> Your medication delivery payment is confirmed. Your prescription will be processed and
-          dispatched according to your selected delivery method. You will receive tracking information once your medication
-          is dispatched.
-        </p>
-      </div>
-
-      <p>
-        If you have any questions about this payment or need assistance, please contact our billing support team or visit
-        your nearest participating healthcare facility.
-      </p>
-
-      <p>
-        Best regards,<br />
-        MyTelmed Billing Department<br />
-        Malaysian Public Healthcare Telemedicine Services
-      </p>
-
-      <div class="footer">
-        <p>
-          Keep this receipt for your records. This is an electronic receipt and is valid for tax and reimbursement purposes.
-        </p>
-        <p>&copy; 2025 MyTelmed. All rights reserved.</p>
-        <p>
-          <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> | <a th:href="${uiHost + '/terms'}">Terms of Service</a> |
-          <a th:href="${uiHost + '/billing-policy'}">Billing Policy</a>
-        </p>
-      </div>
-    </div>
-  </body>
+    </body>
 </html>

@@ -21,7 +21,6 @@ public class AdminAccountFactory implements AccountAbstractFactory {
     }
 
     @Override
-    @Deprecated
     public Account createAccount(String email, String name) {
         String rawPassword = PasswordGenerator.generateRandomPassword();
         String encodedPassword = passwordEncoder.encode(rawPassword);
@@ -52,6 +51,7 @@ public class AdminAccountFactory implements AccountAbstractFactory {
      * @throws UnsupportedOperationException if called on AdminAccountFactory
      */
     @Override
+    @Deprecated
     public Account createAccount(String username, String password, String name) {
         throw new UnsupportedOperationException("This method is not supported for AdminAccountFactory");
     }

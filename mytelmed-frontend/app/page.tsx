@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Button, Card, Row, Col, Typography, Space, Divider } from "antd";
+import { Button, Card, Row, Col, Typography, Divider } from "antd";
 import {
   Video,
   Pill,
@@ -297,9 +297,8 @@ export default function LandingPage() {
             style={{
               top: "10%",
               left: "5%",
-              transform: `translate(${mousePosition.x * 0.02}px, ${
-                mousePosition.y * 0.02
-              }px)`,
+              transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02
+                }px)`,
             }}
           />
           <div
@@ -307,9 +306,8 @@ export default function LandingPage() {
             style={{
               top: "60%",
               right: "10%",
-              transform: `translate(${mousePosition.x * -0.01}px, ${
-                mousePosition.y * -0.01
-              }px)`,
+              transform: `translate(${mousePosition.x * -0.01}px, ${mousePosition.y * -0.01
+                }px)`,
             }}
           />
           <div
@@ -317,9 +315,8 @@ export default function LandingPage() {
             style={{
               bottom: "20%",
               left: "20%",
-              transform: `translate(${mousePosition.x * 0.015}px, ${
-                mousePosition.y * 0.015
-              }px)`,
+              transform: `translate(${mousePosition.x * 0.015}px, ${mousePosition.y * 0.015
+                }px)`,
             }}
           />
         </div>
@@ -348,9 +345,8 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center min-h-[70vh]">
               {/* Left Content - Enhanced */}
               <div
-                className={`lg:col-span-7 space-y-8 ${
-                  isVisible ? "animate-fade-in-left" : "opacity-0"
-                }`}
+                className={`lg:col-span-7 space-y-8 ${isVisible ? "animate-fade-in-left" : "opacity-0"
+                  }`}
               >
                 {/* Logo and Branding */}
                 <div className="flex flex-col sm:flex-row items-center sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-8 text-center sm:text-left">
@@ -399,24 +395,10 @@ export default function LandingPage() {
                     and access
                     <span className="font-semibold text-white">
                       {" "}
-                      nationwide healthcare services
+                      healthcare services
                     </span>{" "}
                     from the comfort of your home.
                   </Paragraph>
-                </div>
-
-                {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center sm:justify-start">
-                  <Link href="/login">
-                    <Button
-                      type="primary"
-                      size="large"
-                      className="bg-transparent border-2 border-white text-white hover:bg-white hover:border-white hover:text-blue-700 font-semibold px-10 py-7 h-auto text-lg transition-all duration-300 hover:scale-105"
-                      icon={<ChevronRight className="w-6 h-6" />}
-                    >
-                      Get Started Today
-                    </Button>
-                  </Link>
                 </div>
 
                 {/* Trust Indicators */}
@@ -436,13 +418,37 @@ export default function LandingPage() {
                     </span>
                   </div>
                 </div>
+
+                {/* Call to Action */}
+                <div className="pt-8">
+                  <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4">
+                    <Link href="/patient/register/user-info">
+                      <Button
+                        type="primary"
+                        size="large"
+                        className="bg-white text-blue-600 border-0 hover:bg-blue-50 hover:text-blue-700 font-semibold px-8 py-3 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                        icon={<ChevronRight className="w-5 h-5 ml-1" />}
+                      >
+                        Get Started Free
+                      </Button>
+                    </Link>
+                    <div className="flex items-center space-x-2 text-blue-100">
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <span className="text-sm">No credit card required</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 text-center sm:text-left">
+                    <Text className="text-blue-200 text-sm">
+                      Join thousands of Malaysians already using MyTelmed for better healthcare
+                    </Text>
+                  </div>
+                </div>
               </div>
 
               {/* Right Content - Modern Card Design */}
               <div
-                className={`lg:col-span-5 ${
-                  isVisible ? "animate-fade-in-right" : "opacity-0"
-                }`}
+                className={`lg:col-span-5 ${isVisible ? "animate-fade-in-right" : "opacity-0"
+                  }`}
               >
                 <div className="relative">
                   {/* Main Feature Card */}
@@ -503,14 +509,6 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-
-            {/* Scroll Indicator */}
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce hidden sm:block">
-              <div className="flex flex-col items-center space-y-2">
-                <Text className="text-white/70 text-sm">Scroll to explore</Text>
-                <ChevronRight className="w-6 h-6 text-white/70 rotate-90" />
-              </div>
-            </div>
           </div>
         </section>
 
@@ -521,9 +519,8 @@ export default function LandingPage() {
               {stats.map((stat, index) => (
                 <Col xs={12} sm={6} md={6} key={index}>
                   <div
-                    className={`text-center group ${
-                      isVisible ? "animate-fade-in-up" : "opacity-0"
-                    }`}
+                    className={`text-center group ${isVisible ? "animate-fade-in-up" : "opacity-0"
+                      }`}
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     <div className="text-blue-600 text-4xl mb-2 transition-transform group-hover:scale-110 flex justify-center">
@@ -566,9 +563,8 @@ export default function LandingPage() {
               {features.map((feature, index) => (
                 <Col xs={24} sm={12} lg={8} key={index}>
                   <Card
-                    className={`h-full shadow-soft hover:shadow-hard transition-all duration-300 border-0 card-hover group ${
-                      isVisible ? "animate-fade-in-up" : "opacity-0"
-                    }`}
+                    className={`h-full shadow-soft hover:shadow-hard transition-all duration-300 border-0 card-hover group ${isVisible ? "animate-fade-in-up" : "opacity-0"
+                      }`}
                     style={{ animationDelay: `${index * 0.1}s` }}
                     bodyStyle={{ padding: "2rem" }}
                   >
@@ -611,11 +607,10 @@ export default function LandingPage() {
               {testimonials.map((testimonial, index) => (
                 <Col xs={24} sm={12} lg={8} key={index}>
                   <Card
-                    className={`h-full shadow-soft hover:shadow-medium transition-all duration-300 border-0 ${
-                      isVisible ? "animate-fade-in-up" : "opacity-0"
-                    }`}
+                    className={`h-full shadow-soft hover:shadow-medium transition-all duration-300 border-0 ${isVisible ? "animate-fade-in-up" : "opacity-0"
+                      }`}
                     style={{ animationDelay: `${(index + 6) * 0.1}s` }}
-                    bodyStyle={{ padding: "2rem" }}
+                    styles={{ body: { padding: "2rem" } }}
                   >
                     <div className="flex mb-4">
                       {[...Array(testimonial.rating)].map((_, i) => (
@@ -738,19 +733,41 @@ export default function LandingPage() {
               </Paragraph>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
-              <Link href="/login?type=doctor">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 max-w-4xl mx-auto">
+              <Link href="/login/patient">
                 <Card
                   className="h-full shadow-soft hover:shadow-medium transition-all duration-300 border-0 card-hover group cursor-pointer"
                   bodyStyle={{ padding: "2rem" }}
                 >
                   <div className="text-center">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-4 shadow-lg group-hover:scale-105 transition-transform">
-                      <Stethoscope className="w-8 h-8 text-white" />
+                      <User className="w-8 h-8 text-white" />
                     </div>
                     <Title
                       level={4}
                       className="text-lg font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors"
+                    >
+                      Patient Portal
+                    </Title>
+                    <Text className="text-gray-600 text-sm">
+                      Book appointments and manage health records
+                    </Text>
+                  </div>
+                </Card>
+              </Link>
+
+              <Link href="/login/doctor">
+                <Card
+                  className="h-full shadow-soft hover:shadow-medium transition-all duration-300 border-0 card-hover group cursor-pointer"
+                  bodyStyle={{ padding: "2rem" }}
+                >
+                  <div className="text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl mb-4 shadow-lg group-hover:scale-105 transition-transform">
+                      <Stethoscope className="w-8 h-8 text-white" />
+                    </div>
+                    <Title
+                      level={4}
+                      className="text-lg font-bold text-gray-800 mb-2 group-hover:text-green-600 transition-colors"
                     >
                       Doctor Portal
                     </Title>
@@ -761,18 +778,18 @@ export default function LandingPage() {
                 </Card>
               </Link>
 
-              <Link href="/login?type=pharmacist">
+              <Link href="/login/pharmacist">
                 <Card
                   className="h-full shadow-soft hover:shadow-medium transition-all duration-300 border-0 card-hover group cursor-pointer"
                   bodyStyle={{ padding: "2rem" }}
                 >
                   <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl mb-4 shadow-lg group-hover:scale-105 transition-transform">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl mb-4 shadow-lg group-hover:scale-105 transition-transform">
                       <Pill className="w-8 h-8 text-white" />
                     </div>
                     <Title
                       level={4}
-                      className="text-lg font-bold text-gray-800 mb-2 group-hover:text-green-600 transition-colors"
+                      className="text-lg font-bold text-gray-800 mb-2 group-hover:text-purple-600 transition-colors"
                     >
                       Pharmacist Portal
                     </Title>
@@ -783,18 +800,18 @@ export default function LandingPage() {
                 </Card>
               </Link>
 
-              <Link href="/login?type=admin">
+              <Link href="/login/admin">
                 <Card
                   className="h-full shadow-soft hover:shadow-medium transition-all duration-300 border-0 card-hover group cursor-pointer"
                   bodyStyle={{ padding: "2rem" }}
                 >
                   <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl mb-4 shadow-lg group-hover:scale-105 transition-transform">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl mb-4 shadow-lg group-hover:scale-105 transition-transform">
                       <Shield className="w-8 h-8 text-white" />
                     </div>
                     <Title
                       level={4}
-                      className="text-lg font-bold text-gray-800 mb-2 group-hover:text-purple-600 transition-colors"
+                      className="text-lg font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors"
                     >
                       Admin Portal
                     </Title>
@@ -805,58 +822,6 @@ export default function LandingPage() {
                 </Card>
               </Link>
             </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-blue-600 to-blue-800 relative overflow-hidden">
-          <div className="absolute inset-0 bg-black opacity-10"></div>
-          <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative">
-            <Title level={2} className="text-4xl font-bold text-white mb-6">
-              Ready to Experience Better Healthcare?
-            </Title>
-            <Paragraph className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of Malaysians who trust MyTelmed for their
-              healthcare needs. Get started today and take control of your
-              health journey.
-            </Paragraph>
-
-            <Space direction="vertical" size="large" className="w-full">
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Link href="/register/user-info">
-                  <Button
-                    type="primary"
-                    size="large"
-                    className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-blue-700 font-semibold px-8 py-6 h-auto text-lg floating-shadow transition-all"
-                  >
-                    Create Account
-                  </Button>
-                </Link>
-                <Link href="/login">
-                  <Button
-                    size="large"
-                    className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-700 font-semibold px-8 py-6 h-auto text-lg transition-all"
-                  >
-                    Sign In
-                  </Button>
-                </Link>
-              </div>
-
-              <div className="text-blue-200 text-sm flex flex-wrap justify-center items-center gap-4">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="text-green-400 w-5 h-5" />
-                  <span>Free registration</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Shield className="text-green-400 w-5 h-5" />
-                  <span>Secure platform</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="text-green-400 w-5 h-5" />
-                  <span>Ministry of Health approved</span>
-                </div>
-              </div>
-            </Space>
           </div>
         </section>
 

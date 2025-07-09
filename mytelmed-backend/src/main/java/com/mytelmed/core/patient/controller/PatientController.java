@@ -14,9 +14,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -43,6 +45,7 @@ public class PatientController {
     }
 
     @GetMapping("/{patientId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PatientDto>> getPatientById(@PathVariable UUID patientId) {
         log.info("Received request to get patient with ID: {}", patientId);
 
@@ -51,7 +54,8 @@ public class PatientController {
         return ResponseEntity.ok(ApiResponse.success(patientDto));
     }
 
-    @GetMapping("/account")
+    @GetMapping("/profile")
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<PatientDto>> getPatientByAccountId(@AuthenticationPrincipal Account account) {
         log.info("Received request to get patient with Account ID: {}", account.getId());
 
@@ -61,8 +65,9 @@ public class PatientController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<PatientDto>>> getAllPaginatedPatients(
-            @RequestParam(value = "page", defaultValue = "0") Integer page,
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Page<PatientDto>>> getAllPatients(
+            @RequestParam(value = "page") Integer page,
             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
         log.info("Received request to get all paginated patients");
 
@@ -72,13 +77,15 @@ public class PatientController {
         return ResponseEntity.ok(ApiResponse.success(paginatedPatientDto));
     }
 
+    // Open endpoint
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Void>> createPatient(@Valid @RequestBody CreatePatientRequestDto request) {
         patientService.createPatient(request);
         return ResponseEntity.ok(ApiResponse.success("Registration successful"));
     }
 
-    @PutMapping("/profile")
+    @PatchMapping("/profile")
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<Void>> updatePatientProfile(
             @RequestBody UpdatePatientProfileRequestDto request,
             @AuthenticationPrincipal Account account) {
@@ -87,6 +94,7 @@ public class PatientController {
     }
 
     @PutMapping(value = "/profile/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<Void>> uploadPatientProfileImage(
             @RequestPart(value = "profileImage") MultipartFile profileImage,
             @AuthenticationPrincipal Account account) {
@@ -95,6 +103,7 @@ public class PatientController {
     }
 
     @DeleteMapping("/{patientId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deletePatient(@PathVariable UUID patientId) {
         patientService.deletePatientByPatientId(patientId);
         return ResponseEntity.ok(ApiResponse.success("Patient deleted successfully"));

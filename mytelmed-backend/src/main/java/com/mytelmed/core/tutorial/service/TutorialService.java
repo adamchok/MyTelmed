@@ -61,11 +61,16 @@ public class TutorialService {
         log.debug("Finding tutorial with category {} with page {} and size {}", category, page, size);
 
         Pageable pageable = PageRequest.of(page, size);
+
+        if (category == null || category.isBlank()) {
+            return tutorialRepository.findAll(pageable);
+        }
+
         return tutorialRepository.findByCategory(category, pageable);
     }
 
     @Transactional
-    public Tutorial create(CreateTutorialRequestDto request) throws AppException {
+    public void create(CreateTutorialRequestDto request) throws AppException {
         log.debug("Creating tutorial with request: {}", request);
 
         try {
@@ -78,7 +83,6 @@ public class TutorialService {
             tutorial = tutorialRepository.save(tutorial);
 
             log.info("Created tutorial with ID: {}", tutorial.getId());
-            return tutorial;
         } catch (Exception e) {
             log.error("Unexpected error while creating tutorial: {}", request, e);
             throw new AppException("Failed to create tutorial");

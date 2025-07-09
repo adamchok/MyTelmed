@@ -1,193 +1,188 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>MyTelmed - Medication Out for Delivery</title>
-    <style>
-        body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MyTelmed - Medication Out for Delivery</title>
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f8f9fa;
+            }
 
-        .container {
-            background-color: #ffffff;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
+            .container {
+                background-color: #ffffff;
+                border-radius: 10px;
+                padding: 30px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
 
-        .header {
-            text-align: center;
-            justify-content: center;
-            border-bottom: 3px solid #fd7e14;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
+            .header {
+                text-align: center;
+                justify-content: center;
+                border-bottom: 3px solid #fd7e14;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+            }
 
-        .logo {
-            width: 192px;
-            height: auto;
-            max-width: 100%;
-            display: block;
-            margin: 0 auto;
-        }
+            .logo {
+                width: 192px;
+                height: auto;
+                max-width: 100%;
+                display: block;
+                margin: 0 auto;
+            }
 
-        .delivery-highlight {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
-        }
+            .delivery-highlight {
+                background-color: #fff3cd;
+                border: 1px solid #ffeaa7;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+                text-align: center;
+            }
 
-        .delivery-highlight .delivery-date {
-            font-size: 24px;
-            font-weight: bold;
-            color: #856404;
-            margin-bottom: 10px;
-        }
+            .delivery-highlight .delivery-date {
+                font-size: 24px;
+                font-weight: bold;
+                color: #856404;
+                margin-bottom: 10px;
+            }
 
-        .delivery-details {
-            background-color: #f8f9fa;
-            border-left: 4px solid #fd7e14;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 5px;
-        }
+            .delivery-details {
+                background-color: #f8f9fa;
+                border-left: 4px solid #fd7e14;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 5px;
+            }
 
-        .detail-row {
-            display: flex;
-            margin-bottom: 12px;
-            align-items: center;
-        }
+            .detail-row {
+                display: flex;
+                margin-bottom: 12px;
+                align-items: center;
+            }
 
-        .detail-value {
-            color: #333;
-            flex: 1;
-        }
+            .detail-value {
+                color: #333;
+                flex: 1;
+            }
 
-        .important-info {
-            background-color: #d1ecf1;
-            border: 1px solid #bee5eb;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-        }
+            .important-info {
+                background-color: #d1ecf1;
+                border: 1px solid #bee5eb;
+                border-radius: 8px;
+                padding: 15px;
+                margin: 20px 0;
+            }
 
-        .important-info h4 {
-            color: #0c5460;
-            margin-top: 0;
-        }
+            .important-info h4 {
+                color: #0c5460;
+                margin-top: 0;
+            }
 
-        .tracking-info h4 {
-            color: #383d41;
-            margin-top: 0;
-        }
+            .tracking-info h4 {
+                color: #383d41;
+                margin-top: 0;
+            }
 
-        .action-buttons {
-            text-align: center;
-            margin: 30px 0;
-        }
+            .action-buttons {
+                text-align: center;
+                margin: 30px 0;
+            }
 
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            margin: 0 10px;
-            background-color: #007bff;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-        }
+            .btn {
+                display: inline-block;
+                padding: 12px 24px;
+                margin: 0 10px;
+                background-color: #007bff;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+            }
 
-        .btn:hover {
-            background-color: #0056b3;
-        }
+            .btn:hover {
+                background-color: #0056b3;
+            }
 
-        .footer {
-            border-top: 1px solid #dee2e6;
-            padding-top: 20px;
-            margin-top: 30px;
-            text-align: center;
-            color: #6c757d;
-            font-size: 14px;
-        }
+            .footer {
+                border-top: 1px solid #dee2e6;
+                padding-top: 20px;
+                margin-top: 30px;
+                text-align: center;
+                color: #6c757d;
+                font-size: 14px;
+            }
 
-        a {
-            color: #007bff;
-        }
+            a {
+                color: #007bff;
+            }
 
-        a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <img th:src="@{/mytelmed-logo.png}" alt="MyTelmed Logo" class="logo">
-        <h2 style="color: #495057; margin: 0">
-            Your medication is on its way!
-        </h2>
-    </div>
+            a:hover {
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2 style="color: #495057; margin: 0">Your medication is on its way!</h2>
+            </div>
 
-    <p>Dear <strong th:text="${patientName}">Patient Name</strong>,</p>
+            <p>Dear <strong th:text="${patientName}">Patient Name</strong>,</p>
 
-    <p>
-        Exciting news! Your prescription has been dispatched and is currently
-        out for delivery. Please ensure someone is available to receive the
-        package.
-    </p>
+            <p>
+                Exciting news! Your prescription has been dispatched and is currently out for delivery. Please ensure someone
+                is available to receive the package.
+            </p>
 
-    <div class="delivery-highlight">
-        <div class="delivery-date">
-            📅 Estimated Delivery:
-            <span>1 to 3 days</span>
+            <div class="delivery-highlight">
+                <div class="delivery-date">
+                    📅 Estimated Delivery:
+                    <span>1 to 3 days</span>
+                </div>
+                <p style="margin: 5px 0 0 0; color: #856404">
+                    Delivery time may vary depending on your location and traffic conditions.
+                </p>
+            </div>
+
+            <div class="delivery-details">
+                <h3 style="color: #fd7e14; margin-top: 0">Delivery Address</h3>
+                <div class="detail-row">
+                    <span class="detail-value" th:text="${deliveryAddress}">-</span>
+                </div>
+            </div>
+
+            <div class="important-info">
+                <h4>📋 Delivery Instructions</h4>
+                <ul style="margin: 10px 0; padding-left: 20px">
+                    <li>Please ensure someone is available to receive the package</li>
+                    <li>Have your identification ready for verification</li>
+                    <li>Check the package contents before signing</li>
+                    <li>Contact us immediately if there are any issues</li>
+                </ul>
+            </div>
+
+            <div class="action-buttons">
+                <a th:href="${uiHost + '/patient/prescription/' + prescriptionId}" class="btn">
+                    View Prescription Details
+                </a>
+            </div>
+
+            <div class="footer">
+                <p>This is an automated message, please do not reply to this email.</p>
+                <p>&copy; 2025 MyTelmed. All rights reserved.</p>
+                <p>
+                    <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
+                    <a th:href="${uiHost + '/terms'}">Terms of Service</a>
+                </p>
+            </div>
         </div>
-        <p style="margin: 5px 0 0 0; color: #856404">
-            Delivery time may vary depending on your location and traffic
-            conditions.
-        </p>
-    </div>
-
-    <div class="delivery-details">
-        <h3 style="color: #fd7e14; margin-top: 0">Delivery Address</h3>
-        <div class="detail-row">
-            <span class="detail-value" th:text="${deliveryAddress}">-</span>
-        </div>
-    </div>
-
-    <div class="important-info">
-        <h4>📋 Delivery Instructions</h4>
-        <ul style="margin: 10px 0; padding-left: 20px">
-            <li>Please ensure someone is available to receive the package</li>
-            <li>Have your identification ready for verification</li>
-            <li>Check the package contents before signing</li>
-            <li>Contact us immediately if there are any issues</li>
-        </ul>
-    </div>
-
-    <div class="action-buttons">
-        <a th:href="${uiHost + '/patient/prescription/' + prescriptionId}" class="btn">
-            View Prescription Details
-        </a>
-    </div>
-
-    <div class="footer">
-        <p>This is an automated message, please do not reply to this email.</p>
-        <p>&copy; 2025 MyTelmed. All rights reserved.</p>
-        <p>
-            <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
-            <a th:href="${uiHost + '/terms'}">Terms of Service</a>
-        </p>
-    </div>
-</div>
-</body>
+    </body>
 </html>

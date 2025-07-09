@@ -15,9 +15,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -45,6 +47,7 @@ public class PharmacistController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Page<PharmacistDto>>> getAllPharmacists(
             @RequestParam Integer page,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
@@ -56,21 +59,8 @@ public class PharmacistController {
         return ResponseEntity.ok(ApiResponse.success(paginatedPharmacistDto));
     }
 
-    @GetMapping("/facility/{facilityId}")
-    public ResponseEntity<ApiResponse<Page<PharmacistDto>>> getPharmacistsByFacilityId(
-            @PathVariable UUID facilityId,
-            @RequestParam Integer page,
-            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        log.info("Received request to get pharmacists by facility ID: {} with page: {} and page size: {}", facilityId,
-                page, pageSize);
-
-        Page<Pharmacist> paginatedPharmacist = pharmacistService.findAllByFacilityId(facilityId, page, pageSize);
-        Page<PharmacistDto> paginatedPharmacistDto = paginatedPharmacist
-                .map(pharmacist -> pharmacistMapper.toDto(pharmacist, awsS3Service));
-        return ResponseEntity.ok(ApiResponse.success(paginatedPharmacistDto));
-    }
-
     @GetMapping("/{pharmacistId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PharmacistDto>> getPharmacistById(@PathVariable UUID pharmacistId) {
         log.info("Received request to get pharmacist with ID: {}", pharmacistId);
 
@@ -80,6 +70,7 @@ public class PharmacistController {
     }
 
     @GetMapping("/profile")
+    @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<ApiResponse<PharmacistDto>> getPharmacistProfile(@AuthenticationPrincipal Account account) {
         log.info("Received request to get pharmacist profile for account with ID: {}", account.getId());
 
@@ -89,6 +80,7 @@ public class PharmacistController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PharmacistDto>> createPharmacist(
             @Valid @RequestBody CreatePharmacistRequestDto request) {
         log.info("Received request to create pharmacist with request: {}", request);
@@ -99,6 +91,7 @@ public class PharmacistController {
     }
 
     @PutMapping("/profile")
+    @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<ApiResponse<Void>> updatePharmacistProfile(
             @Valid @RequestBody UpdatePharmacistProfileRequestDto request,
             @AuthenticationPrincipal Account account) {
@@ -109,6 +102,7 @@ public class PharmacistController {
     }
 
     @PutMapping(value = "/profile/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<ApiResponse<Void>> updatePharmacistProfileImage(
             @RequestPart(value = "profileImage") MultipartFile profileImage,
             @AuthenticationPrincipal Account account) {
@@ -118,7 +112,8 @@ public class PharmacistController {
         return ResponseEntity.ok(ApiResponse.success("Pharmacist profile image updated successfully"));
     }
 
-    @PutMapping("/{pharmacistId}/facility")
+    @PatchMapping("/{pharmacistId}/facility")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> updatePharmacistFacility(
             @PathVariable UUID pharmacistId,
             @Valid @RequestBody UpdatePharmacistFacilityRequestDto request) {
@@ -129,6 +124,7 @@ public class PharmacistController {
     }
 
     @DeleteMapping("/{pharmacistId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deletePharmacist(@PathVariable UUID pharmacistId) {
         log.info("Received request to delete pharmacist with ID: {}", pharmacistId);
 
@@ -137,6 +133,7 @@ public class PharmacistController {
     }
 
     @PostMapping("/activate/{pharmacistId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> activatePharmacistById(@PathVariable UUID pharmacistId) {
         log.info("Received request to activate pharmacist with ID: {}", pharmacistId);
 
@@ -145,6 +142,7 @@ public class PharmacistController {
     }
 
     @PostMapping("/deactivate/{pharmacistId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deactivatePharmacistById(@PathVariable UUID pharmacistId) {
         log.info("Received request to deactivate pharmacist with ID: {}", pharmacistId);
 
@@ -153,6 +151,7 @@ public class PharmacistController {
     }
 
     @PostMapping("/reset/password/{pharmacistId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> resetPharmacistAccountPassword(@PathVariable UUID pharmacistId) {
         log.info("Received request to reset pharmacist account password for pharmacist with ID: {}", pharmacistId);
 
@@ -160,7 +159,8 @@ public class PharmacistController {
         return ResponseEntity.ok(ApiResponse.success("Pharmacist account password reset successfully"));
     }
 
-    @PostMapping(value = "/{pharmacistId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PatchMapping(value = "/{pharmacistId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> uploadPharmacistImage(
             @PathVariable UUID pharmacistId,
             @RequestPart(value = "profileImage") MultipartFile profileImage) {

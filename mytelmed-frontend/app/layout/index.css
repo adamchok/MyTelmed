@@ -1,7 +1,7 @@
 .main-layout {
-  height: calc(100vh - 56px);
+    height: calc(100vh - 56px);
 }
 
 .landing-page {
-  height: 100vh;
+    height: 100vh;
 }

@@ -4,8 +4,6 @@ import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.core.article.dto.CreateArticleRequestDto;
 import com.mytelmed.core.article.dto.UpdateArticleRequestDto;
 import com.mytelmed.core.article.entity.Article;
-import com.mytelmed.core.speciality.entity.Speciality;
-import com.mytelmed.core.speciality.service.SpecialityService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -22,17 +20,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 
 @Slf4j
 @Service
 public class ArticleService {
     private final DynamoDbTable<Article> articleTable;
-    private final SpecialityService specialityService;
 
-    public ArticleService(DynamoDbTable<Article> articleTable, SpecialityService specialityService) {
+    public ArticleService(DynamoDbTable<Article> articleTable) {
         this.articleTable = articleTable;
-        this.specialityService = specialityService;
     }
 
     public Article findArticleById(UUID id) throws ResourceNotFoundException {
@@ -53,6 +50,19 @@ public class ArticleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Article not found"));
     }
 
+    public List<Article> findAllArticles() {
+        // Create a scan request without any filters (retrieves everything)
+        ScanEnhancedRequest request = ScanEnhancedRequest.builder().build();
+
+        // Perform the scan operation, which returns paginated results
+        PageIterable<Article> pages = articleTable.scan(request);
+
+        // Flatten all pages into a single list of items
+        return pages.stream()
+                .flatMap(page -> page.items().stream())
+                .collect(Collectors.toList());
+    }
+
     public List<Article> findArticlesBySpeciality(String speciality) {
         Key key = Key.builder()
                 .partitionValue(speciality)
@@ -71,12 +81,10 @@ public class ArticleService {
     }
 
     public void createArticle(CreateArticleRequestDto request) throws ResourceNotFoundException {
-        Speciality speciality = specialityService.findSpecialityById(request.specialityId());
-
         Article article = Article.builder()
                 .id(UUID.randomUUID().toString())
                 .title(request.title())
-                .speciality(speciality.getName())
+                .speciality(request.speciality())
                 .content(request.content())
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())

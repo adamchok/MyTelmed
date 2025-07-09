@@ -5,7 +5,6 @@ import com.mytelmed.common.utils.DateTimeUtil;
 import com.mytelmed.core.doctor.dto.DoctorDto;
 import com.mytelmed.core.doctor.entity.Doctor;
 import com.mytelmed.core.facility.mapper.FacilityMapper;
-import com.mytelmed.core.speciality.mapper.SpecialityMapper;
 import com.mytelmed.infrastructure.aws.service.AwsS3Service;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
@@ -16,13 +15,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
-@Mapper(componentModel = "spring", uses = {FacilityMapper.class, SpecialityMapper.class})
+@Mapper(componentModel = "spring", uses = {FacilityMapper.class})
 public interface DoctorMapper {
     @Mapping(target = "id", source = "id", qualifiedByName = "mapUUID")
     @Mapping(target = "dateOfBirth", source = "dateOfBirth", qualifiedByName = "formatDate")
     @Mapping(target = "gender", source = "gender", qualifiedByName = "mapGender")
     @Mapping(target = "languageList", source = "languageList", qualifiedByName = "mapLanguages")
     @Mapping(target = "profileImageUrl", expression = "java(mapProfileImageUrl(doctor, awsS3Service))")
+    @Mapping(target = "enabled", source = "account.enabled")
     DoctorDto toDto(Doctor doctor, @Context AwsS3Service awsS3Service);
 
     @Named("formatDate")

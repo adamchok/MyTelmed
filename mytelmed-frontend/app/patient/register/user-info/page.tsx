@@ -23,7 +23,7 @@ export default function UserInfoPage() {
       ...values,
       dob: values.dob.format("YYYY-MM-DD"),
     }));
-    router.push("/register/verify-email");
+    router.push("/patient/register/verify-email");
   };
 
   const handleCancel = () => {

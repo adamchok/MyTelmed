@@ -1,6 +1,5 @@
 package com.mytelmed.core.prescription.controller;
 
-import com.mytelmed.common.constant.prescription.PrescriptionStatus;
 import com.mytelmed.common.dto.ApiResponse;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.prescription.dto.CreatePrescriptionRequestDto;
@@ -16,7 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,6 +42,7 @@ public class PrescriptionController {
     }
 
     @GetMapping("/{prescriptionId}")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'PATIENT')")
     public ResponseEntity<ApiResponse<PrescriptionDto>> getPrescriptionById(
             @PathVariable UUID prescriptionId) {
         log.info("Received request to fetch prescription by ID: {}", prescriptionId);
@@ -53,6 +53,7 @@ public class PrescriptionController {
     }
 
     @GetMapping("/number/{prescriptionNumber}")
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<PrescriptionDto>> getPrescriptionByPrescriptionNumber(
             @PathVariable String prescriptionNumber) {
         log.info("Fetching prescription by number: {}", prescriptionNumber);
@@ -62,20 +63,8 @@ public class PrescriptionController {
         return ResponseEntity.ok(ApiResponse.success(prescriptionDto));
     }
 
-    @GetMapping("/facility/{facilityId}/number/{prescriptionNumber}")
-    public ResponseEntity<ApiResponse<PrescriptionDto>> getPrescriptionByFacilityAndNumber(
-            @PathVariable UUID facilityId,
-            @PathVariable String prescriptionNumber) {
-        log.info("Fetching prescription by facility: {} and number: {}", facilityId, prescriptionNumber);
-
-        Prescription prescription = prescriptionService
-                .findByFacilityIdAndPrescriptionNumber(facilityId, prescriptionNumber);
-        PrescriptionDto prescriptionDto = prescriptionMapper.toDto(prescription, awsS3Service);
-
-        return ResponseEntity.ok(ApiResponse.success(prescriptionDto));
-    }
-
     @GetMapping("/patient/{patientId}")
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<Page<PrescriptionDto>>> getPrescriptionsByPatient(
             @PathVariable UUID patientId,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -89,6 +78,7 @@ public class PrescriptionController {
     }
 
     @GetMapping("/doctor/{doctorId}")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<Page<PrescriptionDto>>> getPrescriptionsByDoctor(
             @PathVariable UUID doctorId,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -102,6 +92,7 @@ public class PrescriptionController {
     }
 
     @GetMapping("/facility/{facilityId}")
+    @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<ApiResponse<Page<PrescriptionDto>>> getPrescriptionsByFacility(
             @PathVariable UUID facilityId,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -114,36 +105,12 @@ public class PrescriptionController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @GetMapping("/pharmacist/{pharmacistId}")
-    public ResponseEntity<ApiResponse<Page<PrescriptionDto>>> getPrescriptionsByPharmacist(
-            @PathVariable UUID pharmacistId,
-            @PageableDefault(size = 20) Pageable pageable) {
-        log.info("Fetching prescriptions by pharmacist: {}", pharmacistId);
-
-        Page<Prescription> prescriptions = prescriptionService.findByPharmacistId(pharmacistId, pageable);
-        Page<PrescriptionDto> response = prescriptions
-                .map(prescription -> prescriptionMapper.toDto(prescription, awsS3Service));
-
-        return ResponseEntity.ok(ApiResponse.success(response));
-    }
-
-    @GetMapping("/status/{status}")
-    public ResponseEntity<ApiResponse<Page<PrescriptionDto>>> getPrescriptionsByStatus(
-            @PathVariable PrescriptionStatus status,
-            @PageableDefault(size = 20) Pageable pageable) {
-        log.info("Fetching prescriptions by status: {}", status);
-
-        Page<Prescription> prescriptions = prescriptionService.findByStatus(status, pageable);
-        Page<PrescriptionDto> response = prescriptions
-                .map(prescription -> prescriptionMapper.toDto(prescription, awsS3Service));
-
-        return ResponseEntity.ok(ApiResponse.success(response));
-    }
-
     @PostMapping
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<PrescriptionDto>> createPrescription(
             @Valid @RequestBody CreatePrescriptionRequestDto request,
-            @AuthenticationPrincipal Account account) {
+            @AuthenticationPrincipal Account account
+    ) {
         log.info("Received request to create prescription for appointment: {}", request.appointmentId());
 
         Prescription prescription = prescriptionService.createPrescription(account, request);
@@ -154,9 +121,11 @@ public class PrescriptionController {
     }
 
     @PutMapping("/{prescriptionId}/ready-for-processing")
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<Void>> markAsReadyForProcessing(
             @PathVariable UUID prescriptionId,
-            @AuthenticationPrincipal Account account) {
+            @AuthenticationPrincipal Account account
+    ) {
         log.info("Patient marking prescription as ready for processing: {}", prescriptionId);
 
         prescriptionService.markAsReadyForProcessing(prescriptionId, account);
@@ -165,9 +134,11 @@ public class PrescriptionController {
     }
 
     @PutMapping("/{prescriptionId}/start-processing")
+    @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<ApiResponse<Void>> startProcessing(
             @PathVariable UUID prescriptionId,
-            @AuthenticationPrincipal Account account) {
+            @AuthenticationPrincipal Account account
+    ) {
         log.info("Pharmacist starting to process prescription: {}", prescriptionId);
 
         prescriptionService.startProcessing(prescriptionId, account);
@@ -176,17 +147,19 @@ public class PrescriptionController {
     }
 
     @PutMapping("/{prescriptionId}/complete")
-    public ResponseEntity<ApiResponse<Void>> markAsCompleted(
+    @PreAuthorize("hasRole('PHARMACIST')")
+    public ResponseEntity<ApiResponse<Void>> markAsReady(
             @PathVariable UUID prescriptionId,
             @AuthenticationPrincipal Account account) {
         log.info("Pharmacist completing prescription: {}", prescriptionId);
 
-        prescriptionService.markAsCompleted(prescriptionId, account);
+        prescriptionService.markAsReady(prescriptionId, account);
 
         return ResponseEntity.ok(ApiResponse.success("Prescription completed successfully"));
     }
 
     @PutMapping("/{prescriptionId}/expire")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<Void>> markAsExpired(
             @PathVariable UUID prescriptionId) {
         log.info("Marking prescription as expired: {}", prescriptionId);
@@ -197,6 +170,7 @@ public class PrescriptionController {
     }
 
     @PutMapping("/{prescriptionId}/cancel")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<Void>> cancelPrescription(
             @PathVariable UUID prescriptionId,
             @RequestBody String reason) {

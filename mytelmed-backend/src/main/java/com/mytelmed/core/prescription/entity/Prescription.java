@@ -128,6 +128,6 @@ public class Prescription {
      * Checks if prescription is completed
      */
     public boolean isCompleted() {
-        return status == PrescriptionStatus.COMPLETED;
+        return status == PrescriptionStatus.READY;
     }
 }

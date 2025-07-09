@@ -11,6 +11,7 @@ import com.mytelmed.core.timeslot.service.TimeSlotService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -42,6 +43,7 @@ public class TimeSlotController {
         }
 
         @GetMapping("/{doctorId}/available")
+        @PreAuthorize("hasAnyRole('DOCTOR', 'PATIENT')")
         public ResponseEntity<ApiResponse<List<TimeSlotDto>>> getAvailableTimeSlots(
                         @PathVariable UUID doctorId,
                         @RequestParam LocalDateTime startDate,
@@ -57,6 +59,7 @@ public class TimeSlotController {
         }
 
         @GetMapping
+        @PreAuthorize("hasRole('DOCTOR')")
         public ResponseEntity<ApiResponse<List<TimeSlotDto>>> getDoctorTimeSlots(
                         @RequestParam(required = false) LocalDateTime fromDate,
                         @AuthenticationPrincipal Account account) {
@@ -72,6 +75,7 @@ public class TimeSlotController {
         }
 
         @PostMapping
+        @PreAuthorize("hasRole('DOCTOR')")
         public ResponseEntity<ApiResponse<Void>> createTimeSlot(
                         @Valid @RequestBody CreateTimeSlotRequestDto request,
                         @AuthenticationPrincipal Account account) {
@@ -84,6 +88,7 @@ public class TimeSlotController {
         }
 
         @PatchMapping("/{timeSlotId}")
+        @PreAuthorize("hasRole('DOCTOR')")
         public ResponseEntity<ApiResponse<Void>> updateTimeSlot(
                         @PathVariable UUID timeSlotId,
                         @Valid @RequestBody UpdateTimeSlotRequestDto request,
@@ -96,6 +101,7 @@ public class TimeSlotController {
         }
 
         @PatchMapping("/enable/{timeSlotId}")
+        @PreAuthorize("hasRole('DOCTOR')")
         public ResponseEntity<ApiResponse<Void>> enableTimeSlot(
                         @PathVariable UUID timeSlotId,
                         @AuthenticationPrincipal Account account) {
@@ -106,6 +112,7 @@ public class TimeSlotController {
         }
 
         @PatchMapping("/disable/{timeSlotId}")
+        @PreAuthorize("hasRole('DOCTOR')")
         public ResponseEntity<ApiResponse<Void>> disableTimeSlot(
                         @PathVariable UUID timeSlotId,
                         @AuthenticationPrincipal Account account) {

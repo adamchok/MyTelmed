@@ -2,7 +2,7 @@ package com.mytelmed.core.delivery.dto;
 
 import com.mytelmed.common.constant.delivery.DeliveryMethod;
 import com.mytelmed.common.constant.delivery.DeliveryStatus;
-
+import com.mytelmed.core.prescription.dto.PrescriptionDto;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -13,7 +13,7 @@ import java.util.UUID;
  */
 public record MedicationDeliveryDto(
     UUID id,
-    UUID prescriptionId,
+    PrescriptionDto prescription,
     DeliveryMethod deliveryMethod,
     DeliveryStatus status,
     String deliveryInstructions,

@@ -4,6 +4,7 @@ import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constant.file.DocumentType;
+import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.document.dto.RequestDocumentDto;
 import com.mytelmed.core.document.entity.Document;
 import com.mytelmed.core.document.repository.DocumentRepository;
@@ -18,7 +19,6 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import java.io.IOException;
-import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,7 +36,7 @@ public class DocumentService {
         this.patientService = patientService;
     }
 
-    public Document getDocumentById(UUID documentId) throws ResourceNotFoundException {
+    public Document findById(UUID documentId) throws ResourceNotFoundException {
         log.debug("Retrieving document with ID: {}", documentId);
 
         return documentRepository.findById(documentId)
@@ -46,7 +46,7 @@ public class DocumentService {
                 });
     }
 
-    public List<Document> getDocumentsByPatientId(UUID patientId) throws AppException {
+    public List<Document> findAllByPatientId(UUID patientId) throws AppException {
         log.debug("Fetching all documents for patient with ID: {}", patientId);
 
         try {
@@ -57,22 +57,18 @@ public class DocumentService {
         }
     }
 
-    public String getPresignedDocumentUrl(UUID documentId) throws AppException {
-        log.debug("Generating pre-signed URL for document with ID: {}", documentId);
+    public List<Document> findAllByPatientAccount(Account account) throws AppException {
+        log.debug("Fetching all documents for patient account with ID: {}", account.getId());
 
         try {
-            Document document = getDocumentById(documentId);
-            String presignedUrl = awsS3Service.generatePresignedDocumentUrl(document.getDocumentKey());
-
-            log.info("Generated pre-signed URL for document: {} (expires in 10 minutes)", documentId);
-            return presignedUrl;
+            return documentRepository.findByPatientAccount(account);
         } catch (Exception e) {
-            log.error("Failed to generate pre-signed URL for document: {}", documentId, e);
-            throw new AppException("Failed to generate the document's pre-signed URL");
+            log.error("Unexpected error while fetching documents for patient account with ID: {}", account.getId(), e);
+            throw new AppException("Failed to fetch documents");
         }
     }
 
-    public List<Document> findDocumentsByPatientAndType(UUID patientId, DocumentType documentType) throws AppException {
+    public List<Document> findAllByPatientIdAndDocumentType(UUID patientId, DocumentType documentType) throws AppException {
         log.debug("Finding {} documents for patient with ID: {}", documentType, patientId);
 
         try {
@@ -85,7 +81,7 @@ public class DocumentService {
     }
 
     @Transactional
-    public void saveDocument(RequestDocumentDto request, UUID patientId, MultipartFile documentFile)
+    public void save(RequestDocumentDto request, UUID patientId, MultipartFile documentFile)
             throws AppException {
         if (documentFile == null || documentFile.isEmpty()) {
             log.warn("Attempted to save empty or null document file for patient: {}", patientId);
@@ -143,12 +139,12 @@ public class DocumentService {
     }
 
     @Transactional
-    public void updateDocument(RequestDocumentDto request, UUID documentId, MultipartFile documentFile)
+    public void update(RequestDocumentDto request, UUID documentId, MultipartFile documentFile)
             throws AppException {
         log.debug("Updating document: {} of type: {}", documentId, request.documentType());
 
         try {
-            Document existingDocument = getDocumentById(documentId);
+            Document existingDocument = findById(documentId);
 
             if (documentFile != null) {
                 String documentKey = awsS3Service.updateFile(existingDocument.getDocumentKey(), documentFile);
@@ -174,11 +170,11 @@ public class DocumentService {
     }
 
     @Transactional
-    public void deleteDocument(UUID documentId) throws AppException {
+    public void delete(UUID documentId) throws AppException {
         log.debug("Deleting document: {}", documentId);
 
         try {
-            Document document = getDocumentById(documentId);
+            Document document = findById(documentId);
             awsS3Service.deleteFile(document.getDocumentKey());
 
             documentRepository.delete(document);

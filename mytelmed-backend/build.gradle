@@ -99,13 +99,14 @@ tasks.named('test') {
 }
 
 // Configure the compiler to use annotation processors with proper ordering
-tasks.withType(JavaCompile) {
-    options.compilerArgs = [
-        '-Amapstruct.defaultComponentModel=spring',
-        '-Amapstruct.suppressGeneratorTimestamp=true',
-        '-Amapstruct.suppressGeneratorVersionInfoComment=true'
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += [
+            '-Amapstruct.defaultComponentModel=spring',
+            '-Amapstruct.suppressGeneratorTimestamp=true',
+            '-Amapstruct.suppressGeneratorVersionInfoComment=true',
+            '-parameters'
     ]
-    
+
     // Ensure annotation processors are available on the classpath
     options.annotationProcessorPath = configurations.annotationProcessor
 }

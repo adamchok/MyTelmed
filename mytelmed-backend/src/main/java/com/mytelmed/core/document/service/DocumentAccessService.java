@@ -3,7 +3,6 @@ package com.mytelmed.core.document.service;
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
-import com.mytelmed.common.constant.family.FamilyPermissionType;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.document.entity.Document;
@@ -14,10 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -54,7 +50,7 @@ public class DocumentAccessService {
     public List<DocumentAccess> getAccessForDocument(UUID documentId) throws AppException {
         log.debug("Retrieving all access entries for document with ID: {}", documentId);
 
-        documentService.getDocumentById(documentId);
+        documentService.findById(documentId);
 
         try {
             return documentAccessRepository.findByDocumentId(documentId);
@@ -187,7 +183,7 @@ public class DocumentAccessService {
         log.debug("Granting access to document {} for account {}", documentId, accountId);
 
         try {
-            Document document = documentService.getDocumentById(documentId);
+            Document document = documentService.findById(documentId);
             Account account = accountService.getAccountById(accountId);
 
             DocumentAccess existingAccess = documentAccessRepository
@@ -254,7 +250,7 @@ public class DocumentAccessService {
 
         try {
             // Get the document and verify patient ownership
-            Document document = documentService.getDocumentById(documentId);
+            Document document = documentService.findById(documentId);
             
             if (!document.getPatient().getAccount().getId().equals(patientAccountId)) {
                 log.warn("Patient {} attempted to update permissions for document {} they don't own", patientAccountId, documentId);

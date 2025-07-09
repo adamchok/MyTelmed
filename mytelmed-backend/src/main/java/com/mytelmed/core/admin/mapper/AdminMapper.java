@@ -14,6 +14,7 @@ import java.util.UUID;
 public interface AdminMapper {
     @Mapping(target = "id", source = "id", qualifiedByName = "mapUUID")
     @Mapping(target = "profileImageUrl", expression = "java(mapProfileImageUrl(admin, awsS3Service))")
+    @Mapping(target = "enabled", source = "account.enabled")
     AdminDto toDto(Admin admin, @Context AwsS3Service awsS3Service);
 
     @Named("mapUUID")

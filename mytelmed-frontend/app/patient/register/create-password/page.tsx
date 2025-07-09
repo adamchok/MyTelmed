@@ -5,12 +5,11 @@ import { Form, message } from "antd";
 import { resetRegistration } from "@/lib/reducers/registration-reducer";
 import type { RootState } from "@/lib/reducers";
 import { Dispatch, useState } from "react";
-import AuthApi from "@/app/api/auth";
 import CreatePasswordPageComponent from "./component";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useRouter } from "next/navigation";
-import { RegistrationRequestOptions } from "@/app/api/auth/props";
-import { RegistrationResponse } from "./props";
+import { CreatePatientRequest } from "@/app/api/patient/props";
+import PatientApi from "@/app/api/patient";
 
 export default function CreatePasswordPage() {
   const dispatch: Dispatch<any> = useDispatch();
@@ -27,27 +26,27 @@ export default function CreatePasswordPage() {
       message.error("Passwords do not match.");
       return;
     }
-    const registrationRequest: RegistrationRequestOptions = {
+    const registrationRequest: CreatePatientRequest = {
       name: userInfo.name,
       nric: userInfo.nric,
       serialNumber: userInfo.serialNumber,
       email: email,
       phone: userInfo.phone,
       gender: userInfo.gender,
-      dob: userInfo.dob,
+      dateOfBirth: userInfo.dob,
       password: values.password
     }
     try {
       setLoading(true);
-      const response = await AuthApi.register(registrationRequest);
-      const { isSuccess, message: msg }: RegistrationResponse = response.data;
+      const response = await PatientApi.createPatient(registrationRequest);
+      const responseData = response.data;
 
-      if (isSuccess) {
-        message.success(msg);
+      if (responseData.isSuccess) {
+        message.success(responseData.message);
         dispatch(resetRegistration());
-        router.push("/login");
+        router.push("/login/patient");
       } else {
-        message.error(msg);
+        message.error(responseData.message);
       }
     } catch (err: any) {
       message.error(err?.response?.data?.message ?? "Registration failed. Please try again.");

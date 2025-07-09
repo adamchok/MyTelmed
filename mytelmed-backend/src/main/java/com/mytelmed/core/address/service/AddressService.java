@@ -26,6 +26,18 @@ public class AddressService {
     }
 
     @Transactional(readOnly = true)
+    public List<Address> findAddressListByPatientId(UUID patientId) throws AppException {
+        log.debug("Fetching addresses for patient ID: {}", patientId);
+
+        try {
+            return addressRepository.findByPatientId(patientId);
+        } catch (Exception e) {
+            log.error("Unexpected error while fetching addresses for patient ID: {}", patientId, e);
+            throw new AppException("Failed to fetch addresses");
+        }
+    }
+
+    @Transactional(readOnly = true)
     public List<Address> findAddressListByPatientAccountId(UUID accountId) throws AppException {
         log.debug("Fetching addresses for patient with account ID: {}", accountId);
 

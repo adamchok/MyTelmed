@@ -12,6 +12,7 @@ public record AdminDto(
         String email,
         String phone,
         String profileImageUrl,
+        boolean enabled,
         Instant createdAt,
         Instant updatedAt
 ) {

@@ -2,6 +2,8 @@ package com.mytelmed.core.delivery.mapper;
 
 import com.mytelmed.core.delivery.dto.MedicationDeliveryDto;
 import com.mytelmed.core.delivery.entity.MedicationDelivery;
+import com.mytelmed.core.prescription.mapper.PrescriptionMapper;
+import com.mytelmed.infrastructure.aws.service.AwsS3Service;
 import org.springframework.stereotype.Component;
 
 /**
@@ -9,60 +11,38 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class MedicationDeliveryMapper {
+    private final PrescriptionMapper prescriptionMapper;
+    private final AwsS3Service awsS3Service;
 
-  /**
-   * Converts MedicationDelivery entity to DTO
-   */
-  public MedicationDeliveryDto toDto(MedicationDelivery delivery) {
-    if (delivery == null) {
-      return null;
+    public MedicationDeliveryMapper(PrescriptionMapper prescriptionMapper,  AwsS3Service awsS3Service) {
+        this.prescriptionMapper = prescriptionMapper;
+        this.awsS3Service = awsS3Service;
     }
 
-    return new MedicationDeliveryDto(
-        delivery.getId(),
-        delivery.getPrescription() != null ? delivery.getPrescription().getId() : null,
-        delivery.getDeliveryMethod(),
-        delivery.getStatus(),
-        delivery.getDeliveryInstructions(),
-        delivery.getDeliveryFee(),
-        delivery.getEstimatedDeliveryDate(),
-        delivery.getActualDeliveryDate(),
-        delivery.getPickupDate(),
-        delivery.getTrackingReference(),
-        delivery.getCourierName(),
-        delivery.getDeliveryContactPhone(),
-        delivery.getDeliveryNotes(),
-        delivery.getCancellationReason(),
-        delivery.getCreatedAt(),
-        delivery.getUpdatedAt());
-  }
+    /**
+     * Converts MedicationDelivery entity to DTO
+     */
+    public MedicationDeliveryDto toDto(MedicationDelivery delivery) {
+        if (delivery == null) {
+            return null;
+        }
 
-  /**
-   * Converts MedicationDelivery DTO to entity
-   * Note: This method doesn't set all fields as some require special handling
-   * (like prescription relationship)
-   */
-  public MedicationDelivery toEntity(MedicationDeliveryDto dto) {
-    if (dto == null) {
-      return null;
+        return new MedicationDeliveryDto(
+                delivery.getId(),
+                delivery.getPrescription() != null ? prescriptionMapper.toDto(delivery.getPrescription(), awsS3Service) : null,
+                delivery.getDeliveryMethod(),
+                delivery.getStatus(),
+                delivery.getDeliveryInstructions(),
+                delivery.getDeliveryFee(),
+                delivery.getEstimatedDeliveryDate(),
+                delivery.getActualDeliveryDate(),
+                delivery.getPickupDate(),
+                delivery.getTrackingReference(),
+                delivery.getCourierName(),
+                delivery.getDeliveryContactPhone(),
+                delivery.getDeliveryNotes(),
+                delivery.getCancellationReason(),
+                delivery.getCreatedAt(),
+                delivery.getUpdatedAt());
     }
-
-    return MedicationDelivery.builder()
-        .id(dto.id())
-        .deliveryMethod(dto.deliveryMethod())
-        .status(dto.status())
-        .deliveryInstructions(dto.deliveryInstructions())
-        .deliveryFee(dto.deliveryFee())
-        .estimatedDeliveryDate(dto.estimatedDeliveryDate())
-        .actualDeliveryDate(dto.actualDeliveryDate())
-        .pickupDate(dto.pickupDate())
-        .trackingReference(dto.trackingReference())
-        .courierName(dto.courierName())
-        .deliveryContactPhone(dto.deliveryContactPhone())
-        .deliveryNotes(dto.deliveryNotes())
-        .cancellationReason(dto.cancellationReason())
-        .createdAt(dto.createdAt())
-        .updatedAt(dto.updatedAt())
-        .build();
-  }
 }

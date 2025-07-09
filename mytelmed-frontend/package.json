@@ -13,9 +13,13 @@
     "pwa-check": "npx pwa-asset-generator ./public/assets/logos/mytelmed-logo.png ./public/icons --manifest ./public/manifest.json"
   },
   "dependencies": {
+    "@ant-design/cssinjs": "^1.18.2",
     "@ant-design/nextjs-registry": "^1.0.2",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@reduxjs/toolkit": "^2.7.0",
+    "@stream-io/video-react-sdk": "^1.18.11",
+    "@stripe/react-stripe-js": "^3.7.0",
+    "@stripe/stripe-js": "^7.4.0",
     "antd": "^5.25.1",
     "axios": "^1.9.0",
     "dayjs": "^1.11.10",
@@ -25,7 +29,10 @@
     "react": "^18",
     "react-dom": "^18",
     "react-redux": "^9.2.0",
-    "uuid": "^11.1.0"
+    "stream-chat": "^9.10.1",
+    "stream-chat-react": "^13.2.1",
+    "uuid": "^11.1.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/node": "^20",
