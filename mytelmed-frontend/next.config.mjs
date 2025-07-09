@@ -11,6 +11,16 @@ const withPWA = withPWAInit({
   aggressiveFrontEndNavCaching: true,
   cacheStartUrl: true,
   dynamicStartUrl: false,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: process.env.NEXT_PUBLIC_S3_HOSTNAME || "localhost",
+        port: "",
+        pathname: "/**",
+      },
+    ],
+  },
   fallbacks: {
     document: "/offline",
     image: "/assets/logos/mytelmed-logo.png",
