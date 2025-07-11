@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -42,7 +43,7 @@ public class EmailVerificationService {
 
         try {
             // Create a verification token with email
-            VerificationToken token = createVerificationToken(email);
+            VerificationToken token = getOrCreateVerificationToken(email);
 
             // Send verification email
             EmailVerificationEvent event = EmailVerificationEvent.builder()
@@ -87,22 +88,30 @@ public class EmailVerificationService {
     }
 
     /**
-     * Creates a verification token for email verification
+     * Creates or updates a verification token for email verification
      */
     @Transactional
-    protected VerificationToken createVerificationToken(String email) {
-        // Delete any existing verification tokens for this account
-        verificationTokenRepository.deleteByEmail(email);
-
+    protected VerificationToken getOrCreateVerificationToken(String email) {
         // Generate a new verification token
         String token = generateVerificationToken();
-        VerificationToken verificationToken = VerificationToken.builder()
-                .email(email)
-                .token(token)
-                .expiredAt(Instant.now().plus(tokenExpirationMinutes, ChronoUnit.MINUTES))
-                .build();
+        Instant newExpiry = Instant.now().plus(tokenExpirationMinutes, ChronoUnit.MINUTES);
 
-        // Save verification token
+        // Find existing token by email (if any)
+        Optional<VerificationToken> verificationTokenOpt = verificationTokenRepository.findByEmail(email);
+
+        VerificationToken verificationToken = verificationTokenOpt
+                .map(existingToken -> {
+                    existingToken.setToken(token);
+                    existingToken.setExpiredAt(newExpiry);
+                    existingToken.setLastUpdated(Instant.now());
+                    return existingToken;
+                })
+                .orElseGet(() -> VerificationToken.builder()
+                        .email(email)
+                        .token(token)
+                        .expiredAt(newExpiry)
+                        .build());
+
         return verificationTokenRepository.save(verificationToken);
     }
 

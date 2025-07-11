@@ -2,18 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Typography, Tag, Spin, Alert, Button, Space, message } from "antd";
-import {
-    BookOutlined,
-    CalendarOutlined,
-    ArrowLeftOutlined,
-    ShareAltOutlined,
-} from "@ant-design/icons";
+import { Typography, Tag, Spin, Alert, Button, message } from "antd";
+import { BookOutlined, CalendarOutlined, ArrowLeftOutlined, ShareAltOutlined } from "@ant-design/icons";
 import ArticleApi from "../../../api/article";
 import { Article } from "../../../api/article/props";
+import BreadcrumbNav from "../../components/BreadcrumbNav";
 import BackButton from "../../../components/BackButton/BackButton";
+import Footer from "../../../components/Footer/Footer";
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Text } = Typography;
 
 export default function ArticleDetailPage() {
     const [article, setArticle] = useState<Article | null>(null);
@@ -65,7 +62,7 @@ export default function ArticleDetailPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-blue-50 flex items-center justify-center">
                 <Spin size="large" tip="Loading article..." />
             </div>
         );
@@ -73,18 +70,14 @@ export default function ArticleDetailPage() {
 
     if (error || !article) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-blue-50 flex items-center justify-center">
                 <div className="max-w-md mx-auto p-6">
                     <Alert
                         message="Article Not Found"
                         description={error || "The requested article could not be found."}
                         type="error"
                         showIcon
-                        action={
-                            <Button onClick={() => router.push("/knowledge")}>
-                                Back to Knowledge Hub
-                            </Button>
-                        }
+                        action={<Button onClick={() => router.push("/knowledge")}>Back to Knowledge Hub</Button>}
                     />
                 </div>
             </div>
@@ -92,79 +85,111 @@ export default function ArticleDetailPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="container mx-auto px-4 py-6 max-w-4xl">
-                <div className="bg-white rounded-lg shadow-sm">
-                    <div className="p-6 border-b border-gray-100">
-                        <div className="flex items-center justify-between mb-4">
+        <div className="min-h-screen bg-blue-50">
+            {/* Hero Banner */}
+            <section className="relative bg-blue-800 py-12 px-4 flex flex-col items-center justify-center text-center">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-6">
+                    <div className="flex flex-col items-center justify-center text-center w-full">
+                        <h1 className="text-white text-4xl md:text-5xl font-bold mb-1">Knowledge Hub</h1>
+                        <p className="text-blue-100 text-lg max-w-xl mx-auto">
+                            Explore trusted medical articles and interactive tutorials to empower your healthcare
+                            journey with MyTelmed.
+                        </p>
+                        {/* Desktop Breadcrumb */}
+                        <div className="hidden md:block">
+                            <BreadcrumbNav currentPage="article" currentPageTitle={article.title} showHome={true} />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Article Content Card */}
+            <div className="relative max-w-6xl mx-auto -mt-16 z-10 px-4 mb-24">
+                <div
+                    className="bg-white/95 rounded-3xl shadow-2xl border-4 border-blue-400 p-4 sm:p-8 md:p-12"
+                    style={{ boxShadow: "0 0 48px 16px rgba(59,130,246,0.15)" }}
+                >
+                    {/* Header Section */}
+                    <div className="mb-8">
+                        <div className="flex items-center justify-between mb-6">
                             <BackButton backLink="/knowledge" />
                             <Button
                                 icon={<ShareAltOutlined />}
                                 onClick={handleShare}
                                 type="text"
+                                className="hover:bg-blue-800 hover:text-gray-50 rounded-lg"
                             >
                                 Share
                             </Button>
                         </div>
 
-                        <div className="mb-4">
-                            <Tag color="blue" className="mb-2">
-                                <BookOutlined className="mr-1" />
+                        <div className="mb-6 flex flex-wrap gap-2">
+                            <Tag color="blue" className="font-medium text-sm px-3 py-1 rounded-lg">
+                                <BookOutlined className="mr-2" />
                                 Article
                             </Tag>
-                            <Tag color="default">{article.speciality}</Tag>
+                            <Tag color="default" className="font-medium text-sm px-3 py-1 rounded-lg">
+                                {article.subject}
+                            </Tag>
                         </div>
 
-                        <Title level={1} className="mb-4 text-blue-900">
+                        <Title
+                            level={1}
+                            className="mb-6 text-blue-900 text-2xl sm:text-3xl md:text-4xl font-bold leading-tight"
+                        >
                             {article.title}
                         </Title>
 
-                        <div className="flex items-center text-gray-500 text-sm">
-                            <CalendarOutlined className="mr-1" />
-                            <Text type="secondary">
+                        <div className="flex items-center text-gray-500 text-sm bg-gray-50 rounded-lg p-3">
+                            <CalendarOutlined className="mr-2 text-blue-500" />
+                            <Text type="secondary" className="font-medium">
                                 Published on{" "}
-                                {new Date(article.createdAt).toLocaleDateString("en-US", {
+                                {new Date(Number(article.createdAt) * 1000).toLocaleDateString("en-US", {
                                     year: "numeric",
                                     month: "long",
                                     day: "numeric",
                                 })}
                             </Text>
                             {article.updatedAt !== article.createdAt && (
-                                <Text type="secondary" className="ml-4">
-                                    • Updated {new Date(article.updatedAt).toLocaleDateString()}
+                                <Text type="secondary" className="ml-4 font-medium">
+                                    • Updated {new Date(Number(article.updatedAt) * 1000).toLocaleDateString()}
                                 </Text>
                             )}
                         </div>
                     </div>
 
-                    <div className="p-6">
+                    {/* Article Content */}
+                    <div className="mb-8">
                         <div className="prose prose-lg max-w-none">
-                            <Paragraph
-                                className="text-gray-700 leading-relaxed text-base"
-                                style={{ whiteSpace: "pre-wrap" }}
-                            >
-                                {article.content}
-                            </Paragraph>
+                            <div
+                                className="text-gray-700 leading-relaxed text-base bg-white rounded-xl border border-gray-100 p-4"
+                                dangerouslySetInnerHTML={{ __html: article.content }}
+                            />
                         </div>
                     </div>
 
-                    <div className="p-6 bg-gray-50 border-t border-gray-100">
-                        <div className="flex items-center justify-between">
-                            <Space>
-                                <Button
-                                    icon={<ArrowLeftOutlined />}
-                                    onClick={() => router.push("/knowledge")}
-                                >
-                                    Back to Knowledge Hub
-                                </Button>
-                            </Space>
-                            <Button type="primary" onClick={() => router.push("/knowledge")}>
-                                Explore More Articles
-                            </Button>
-                        </div>
+                    {/* Footer Actions */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-gray-200 gap-4">
+                        <Button
+                            icon={<ArrowLeftOutlined />}
+                            onClick={() => router.push("/knowledge")}
+                            className="rounded-lg w-full sm:w-auto"
+                        >
+                            Back to Knowledge Hub
+                        </Button>
+                        <Button
+                            type="primary"
+                            onClick={() => router.push("/knowledge")}
+                            className="rounded-lg bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+                        >
+                            Explore More Articles
+                        </Button>
                     </div>
                 </div>
             </div>
+
+            {/* Footer */}
+            <Footer showKnowledgeHubLink={false} />
         </div>
     );
 }

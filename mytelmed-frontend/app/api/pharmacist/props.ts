@@ -15,6 +15,16 @@ export interface CreatePharmacistRequest {
     facilityId: string;
 }
 
+export interface UpdatePharmacistRequest {
+    name: string;
+    nric: string;
+    email: string;
+    phone: string;
+    dateOfBirth: string;
+    gender: string;
+    facilityId: string;
+}
+
 export interface UpdatePharmacistProfileRequest {
     name: string;
     email: string;
@@ -24,6 +34,16 @@ export interface UpdatePharmacistProfileRequest {
 }
 
 export interface UpdatePharmacistFacilityRequest {
+    facilityId: string;
+}
+
+export interface UpdatePharmacistRequest {
+    name: string;
+    nric: string;
+    email: string;
+    phone: string;
+    dateOfBirth: string;
+    gender: string;
     facilityId: string;
 }
 

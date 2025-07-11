@@ -5,9 +5,14 @@ import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.advice.exception.UsernameAlreadyExistException;
 import com.mytelmed.common.constant.file.ImageType;
+import com.mytelmed.common.event.account.model.AccountActivatedEvent;
+import com.mytelmed.common.event.account.model.AccountDeactivatedEvent;
+import com.mytelmed.common.event.account.model.AccountDeletionEvent;
+import com.mytelmed.common.event.account.model.AccountPasswordResetEvent;
 import com.mytelmed.common.utils.PasswordGenerator;
 import com.mytelmed.core.admin.dto.CreateAdminRequestDto;
 import com.mytelmed.core.admin.dto.UpdateAdminProfileRequestDto;
+import com.mytelmed.core.admin.dto.UpdateAdminRequestDto;
 import com.mytelmed.core.admin.entity.Admin;
 import com.mytelmed.core.admin.repository.AdminRepository;
 import com.mytelmed.core.auth.entity.Account;
@@ -15,6 +20,7 @@ import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.image.entity.Image;
 import com.mytelmed.core.image.service.ImageService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,8 +28,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.S3Exception;
-import java.io.IOException;
 import java.util.UUID;
+
 
 @Slf4j
 @Service
@@ -31,11 +37,14 @@ public class AdminService {
     private final AdminRepository adminRepository;
     private final AccountService accountService;
     private final ImageService imageService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    public AdminService(AdminRepository adminRepository, AccountService accountService, ImageService imageService) {
+    public AdminService(AdminRepository adminRepository, AccountService accountService, ImageService imageService,
+                        ApplicationEventPublisher applicationEventPublisher) {
         this.adminRepository = adminRepository;
         this.accountService = accountService;
         this.imageService = imageService;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -110,6 +119,30 @@ public class AdminService {
     }
 
     @Transactional
+    public void update(UUID adminId, UpdateAdminRequestDto request) throws AppException {
+        log.debug("Updating admin with ID: {}", adminId);
+
+        // Find admin by ID
+        Admin admin = findById(adminId);
+
+        try {
+            // Update admin
+            admin.setNric(request.nric());
+            admin.setName(request.name());
+            admin.setEmail(request.email());
+            admin.setPhone(request.phone());
+
+            // Save the admin
+            adminRepository.save(admin);
+
+            log.info("Updated admin with ID: {}", adminId);
+        } catch (Exception e) {
+            log.error("Unexpected error while updating admin account: {}", request.email(), e);
+            throw new AppException("Failed to update admin account");
+        }
+    }
+
+    @Transactional
     public void updateByAccount(Account account, UpdateAdminProfileRequestDto request) throws AppException {
         log.debug("Updating admin profile for account: {}", account.getId());
 
@@ -157,9 +190,20 @@ public class AdminService {
     public void deleteById(UUID id) throws AppException {
         log.debug("Deleting admin with ID: {}", id);
 
+        // Find admin
+        Admin admin = findById(id);
+
         try {
             // Delete admin
             adminRepository.deleteById(id);
+
+            // Notify admin about their account deletion
+            AccountDeletionEvent event = AccountDeletionEvent.builder()
+                    .email(admin.getEmail())
+                    .name(admin.getName())
+                    .build();
+
+            applicationEventPublisher.publishEvent(event);
 
             log.info("Deleted admin with ID: {}", id);
         } catch (Exception e) {
@@ -182,6 +226,13 @@ public class AdminService {
             // Save admin
             adminRepository.save(admin);
 
+            AccountActivatedEvent event = AccountActivatedEvent.builder()
+                    .email(admin.getEmail())
+                    .name(admin.getName())
+                    .build();
+
+            applicationEventPublisher.publishEvent(event);
+
             log.info("Activated admin with ID: {}", id);
         } catch (Exception e) {
             log.error("Error activating admin: {}", e.getMessage(), e);
@@ -202,6 +253,13 @@ public class AdminService {
 
             // Save admin
             adminRepository.save(admin);
+
+            AccountDeactivatedEvent event = AccountDeactivatedEvent.builder()
+                    .email(admin.getEmail())
+                    .name(admin.getName())
+                    .build();
+
+            applicationEventPublisher.publishEvent(event);
 
             log.info("Deactivated admin with ID: {}", id);
         } catch (Exception e) {
@@ -224,6 +282,16 @@ public class AdminService {
             // Reset account password
             accountService.changePasswordById(admin.getAccount().getId(), newPassword);
 
+            // Notify admin about password reset
+            AccountPasswordResetEvent event = AccountPasswordResetEvent.builder()
+                    .email(admin.getEmail())
+                    .name(admin.getName())
+                    .password(newPassword)
+                    .username(admin.getAccount().getUsername())
+                    .build();
+
+            applicationEventPublisher.publishEvent(event);
+
             log.info("Reset password for admin with ID: {}", id);
         } catch (Exception e) {
             log.error("Error resetting admin password: {}", e.getMessage(), e);
@@ -231,8 +299,7 @@ public class AdminService {
         }
     }
 
-    private void processProfileImage(Admin admin, MultipartFile profileImage)
-            throws InvalidInputException, IOException, S3Exception {
+    private void processProfileImage(Admin admin, MultipartFile profileImage) throws InvalidInputException, S3Exception {
         if (profileImage == null || profileImage.isEmpty()) {
             return;
         }

@@ -162,7 +162,7 @@ public class PrescriptionService {
                         prescriptionItemRepository.save(item);
                     });
 
-            // Notify patient
+            // Notify patient about the new prescription
             PrescriptionCreatedEvent event = new PrescriptionCreatedEvent(prescription);
             applicationEventPublisher.publishEvent(event);
 

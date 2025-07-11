@@ -363,7 +363,7 @@ public class AppointmentService {
      */
     private void validateDoctorVirtualCapability(Doctor doctor) throws AppException {
         // Check if doctor is authorized for virtual consultations
-        // This could be a field in doctor entity or determined by speciality
+        // This could be a field in doctor entity or determined by subject
 
         // For now, assume all doctors can do virtual consultations
         // In real implementation, you might check doctor.isVirtualConsultationEnabled()

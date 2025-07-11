@@ -18,13 +18,13 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     boolean existsAccountByUsername(String username);
 
     @Modifying
-    @Query("UPDATE Account a SET a.username = :password WHERE a.id = :id")
+    @Query("UPDATE Account a SET a.username = :username WHERE a.id = :id")
     void updateUsernameById(@Param("id") UUID id, @Param("username") String username);
 
     @Modifying
     @Query("UPDATE Account a SET a.password = :password WHERE a.id = :id")
     void updatePasswordById(@Param("id") UUID id, @Param("password") String password);
-    
+
     /**
      * Count accounts created between specific dates for growth statistics.
      */

@@ -5,6 +5,9 @@ import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.advice.exception.UsernameAlreadyExistException;
 import com.mytelmed.common.constant.file.ImageType;
+import com.mytelmed.common.event.account.model.AccountActivatedEvent;
+import com.mytelmed.common.event.account.model.AccountDeactivatedEvent;
+import com.mytelmed.common.event.account.model.AccountPasswordResetEvent;
 import com.mytelmed.common.event.image.ImageDeletedEvent;
 import com.mytelmed.common.utils.DateTimeUtil;
 import com.mytelmed.common.utils.PasswordGenerator;
@@ -17,6 +20,7 @@ import com.mytelmed.core.image.service.ImageService;
 import com.mytelmed.core.pharmacist.dto.CreatePharmacistRequestDto;
 import com.mytelmed.core.pharmacist.dto.UpdatePharmacistFacilityRequestDto;
 import com.mytelmed.core.pharmacist.dto.UpdatePharmacistProfileRequestDto;
+import com.mytelmed.core.pharmacist.dto.UpdatePharmacistRequestDto;
 import com.mytelmed.core.pharmacist.entity.Pharmacist;
 import com.mytelmed.core.pharmacist.repository.PharmacistRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -53,11 +57,6 @@ public class PharmacistService {
     }
 
     @Transactional(readOnly = true)
-    public boolean isPharmacistExistsByUsername(String username) {
-        return pharmacistRepository.existsPharmacistByAccountUsername(username);
-    }
-
-    @Transactional(readOnly = true)
     public Page<Pharmacist> findAll(int page, int pageSize) {
         log.debug("Finding all pharmacists with page: {} and pageSize: {}", page, pageSize);
 
@@ -67,21 +66,6 @@ public class PharmacistService {
         } catch (Exception e) {
             log.error("Failed to fetch all paginated pharmacists with page {} and page size {}", page, pageSize, e);
             throw new AppException("Failed to fetch all paginated pharmacists");
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public Page<Pharmacist> findAllByFacilityId(UUID facilityId, int page, int pageSize) {
-        log.debug("Finding all pharmacists by facilityId {} with page: {} and pageSize: {}", facilityId, page,
-                pageSize);
-
-        try {
-            Pageable pageable = PageRequest.of(page, pageSize);
-            return pharmacistRepository.findAllByFacilityId(facilityId, pageable);
-        } catch (Exception e) {
-            log.error("Failed to fetch all pharmacists by facility {} with page {} and page size {}", facilityId, page,
-                    pageSize, e);
-            throw new AppException("Failed to fetch all paginated pharmacists by facility");
         }
     }
 
@@ -114,7 +98,7 @@ public class PharmacistService {
     }
 
     @Transactional
-    public Pharmacist create(CreatePharmacistRequestDto request) throws UsernameAlreadyExistException {
+    public void create(CreatePharmacistRequestDto request) throws UsernameAlreadyExistException {
         log.debug("Creating pharmacist account: {}", request.email());
 
         // Create a pharmacist account
@@ -142,8 +126,38 @@ public class PharmacistService {
             pharmacist = pharmacistRepository.save(pharmacist);
 
             log.info("Created pharmacist account: {}", request.email());
+        } catch (Exception e) {
+            log.error("Unexpected error while creating pharmacist account: {}", request.email(), e);
+            throw new AppException("Failed to create pharmacist account");
+        }
+    }
 
-            return pharmacist;
+    @Transactional
+    public void update(UUID pharmacistId, UpdatePharmacistRequestDto request) throws UsernameAlreadyExistException {
+        log.debug("Updating pharmacist account: {}", request.email());
+
+        // Find pharmacist
+        Pharmacist pharmacist = findById(pharmacistId);
+
+        // Find facility by ID
+        Facility facility = facilityService.findFacilityById(request.facilityId());
+
+        // Verify date of birth
+        LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
+
+        try {
+            // Update pharmacist
+            pharmacist.setName(request.name());
+            pharmacist.setEmail(request.email());
+            pharmacist.setPhone(request.phone());
+            pharmacist.setDateOfBirth(dateOfBirth);
+            pharmacist.setGender(request.gender());
+            pharmacist.setFacility(facility);
+
+            // Save the pharmacist
+            pharmacist = pharmacistRepository.save(pharmacist);
+
+            log.info("Updated pharmacist with ID: {}", pharmacistId);
         } catch (Exception e) {
             log.error("Unexpected error while creating pharmacist account: {}", request.email(), e);
             throw new AppException("Failed to create pharmacist account");
@@ -285,6 +299,13 @@ public class PharmacistService {
             // Save pharmacist
             pharmacistRepository.save(pharmacist);
 
+            AccountActivatedEvent event = AccountActivatedEvent.builder()
+                    .email(pharmacist.getEmail())
+                    .name(pharmacist.getName())
+                    .build();
+
+            eventPublisher.publishEvent(event);
+
             log.info("Activated pharmacist with ID: {}", id);
         } catch (Exception e) {
             log.error("Error activating pharmacist: {}", e.getMessage(), e);
@@ -306,6 +327,13 @@ public class PharmacistService {
             // Save pharmacist
             pharmacistRepository.save(pharmacist);
 
+            AccountDeactivatedEvent event = AccountDeactivatedEvent.builder()
+                    .email(pharmacist.getEmail())
+                    .name(pharmacist.getName())
+                    .build();
+
+            eventPublisher.publishEvent(event);
+
             log.info("Deactivated pharmacist with ID: {}", id);
         } catch (Exception e) {
             log.error("Error deactivating pharmacist: {}", e.getMessage(), e);
@@ -326,6 +354,15 @@ public class PharmacistService {
 
             // Reset account password
             accountService.changePasswordById(pharmacist.getAccount().getId(), newPassword);
+
+            AccountPasswordResetEvent event = AccountPasswordResetEvent.builder()
+                    .email(pharmacist.getEmail())
+                    .name(pharmacist.getName())
+                    .username(pharmacist.getAccount().getUsername())
+                    .password(newPassword)
+                    .build();
+
+            eventPublisher.publishEvent(event);
 
             log.info("Reset password for pharmacist with ID: {}", id);
         } catch (Exception e) {

@@ -5,7 +5,7 @@ import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.doctor.dto.CreateDoctorRequestDto;
 import com.mytelmed.core.doctor.dto.DoctorDto;
 import com.mytelmed.core.doctor.dto.UpdateDoctorProfileRequestDto;
-import com.mytelmed.core.doctor.dto.UpdateDoctorSpecialtiesAndFacilityRequestDto;
+import com.mytelmed.core.doctor.dto.UpdateDoctorRequestDto;
 import com.mytelmed.core.doctor.entity.Doctor;
 import com.mytelmed.core.doctor.mapper.DoctorMapper;
 import com.mytelmed.core.doctor.service.DoctorService;
@@ -17,7 +17,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID;
+
 
 @Slf4j
 @RestController
@@ -80,12 +80,11 @@ public class DoctorController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<DoctorDto>> createDoctor(@Valid @RequestBody CreateDoctorRequestDto request) {
+    public ResponseEntity<ApiResponse<Void>> createDoctor(@Valid @RequestBody CreateDoctorRequestDto request) {
         log.info("Received request to create doctor with request: {}", request);
 
-        Doctor doctor = doctorService.create(request);
-        DoctorDto doctorDto = doctorMapper.toDto(doctor, awsS3Service);
-        return ResponseEntity.ok(ApiResponse.success(doctorDto, "Doctor created successfully"));
+        doctorService.create(request);
+        return ResponseEntity.ok(ApiResponse.success("Doctor created successfully"));
     }
 
     @PatchMapping("/profile")
@@ -97,6 +96,18 @@ public class DoctorController {
         log.info("Received request to update doctor profile for account with ID: {}", account.getId());
 
         doctorService.updateByAccount(account, request);
+        return ResponseEntity.ok(ApiResponse.success("Doctor profile updated successfully"));
+    }
+
+    @PatchMapping("/{doctorId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> updateDoctor(
+            @Valid @RequestBody UpdateDoctorRequestDto request,
+            @PathVariable UUID doctorId
+    ) {
+        log.info("Received request to update doctor with ID: {}", doctorId);
+
+        doctorService.update(doctorId, request);
         return ResponseEntity.ok(ApiResponse.success("Doctor profile updated successfully"));
     }
 
@@ -112,17 +123,6 @@ public class DoctorController {
         return ResponseEntity.ok(ApiResponse.success("Doctor profile image updated successfully"));
     }
 
-    @PatchMapping("/specialities-facility/{doctorId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> updateDoctorSpecialitiesAndFacility(
-            @PathVariable UUID doctorId,
-            @Valid @RequestBody UpdateDoctorSpecialtiesAndFacilityRequestDto request) {
-        log.info("Received request to update doctor specialities and facility for doctor with ID: {}", doctorId);
-
-        doctorService.updateSpecialitiesAndFacilityById(doctorId, request);
-        return ResponseEntity.ok(ApiResponse.success("Doctor specialities and facility updated successfully"));
-    }
-
     @PostMapping(value = "/image/{doctorId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> uploadDoctorImage(
@@ -133,15 +133,6 @@ public class DoctorController {
 
         doctorService.uploadProfileImageById(doctorId, profileImage);
         return ResponseEntity.ok(ApiResponse.success("Doctor image uploaded successfully"));
-    }
-
-    @DeleteMapping("/{doctorId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> deleteDoctor(@PathVariable UUID doctorId) {
-        log.info("Received request to delete doctor with ID: {}", doctorId);
-
-        doctorService.deleteById(doctorId);
-        return ResponseEntity.ok(ApiResponse.success("Doctor deleted successfully"));
     }
 
     @PostMapping("/activate/{doctorId}")
@@ -167,7 +158,7 @@ public class DoctorController {
     public ResponseEntity<ApiResponse<Void>> resetDoctorAccountPassword(@PathVariable UUID doctorId) {
         log.info("Received request to reset doctor account password for doctor with ID: {}", doctorId);
 
-        doctorService.resetAccountPassword(doctorId);
+        doctorService.resetAccountPasswordById(doctorId);
         return ResponseEntity.ok(ApiResponse.success("Doctor account password reset successfully"));
     }
 }

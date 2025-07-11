@@ -30,14 +30,14 @@ public record CreateDoctorRequestDto(
         @NotBlank(message = "Date of birth is required")
         String dateOfBirth,
 
-        @NotBlank(message = "Gender is required")
+        @NotNull(message = "Gender is required")
         Gender gender,
 
         @NotNull(message = "Facility ID is required")
         UUID facilityId,
 
         @NotNull(message = "Specialties are required")
-        @Size(min = 1, message = "At least one speciality is required")
+        @Size(min = 1, message = "At least one subject is required")
         List<String> specialityList,
 
         @NotNull(message = "Languages are required")

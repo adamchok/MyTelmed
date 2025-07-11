@@ -1,7 +1,7 @@
 import { AxiosResponse } from "axios";
 import repository from "../RepositoryManager";
 import { ApiResponse } from "../props";
-import { Admin, CreateAdminRequest, UpdateAdminProfileRequest } from "./props";
+import { Admin, CreateAdminRequest, UpdateAdminProfileRequest, UpdateAdminRequest } from "./props";
 import { PaginatedResponse } from "../props";
 
 const ADMIN_BASE = "/api/v1/admin";
@@ -36,6 +36,10 @@ const AdminApi = {
 
     createAdmin(data: CreateAdminRequest): Promise<AxiosResponse<ApiResponse<void>>> {
         return repository.post<ApiResponse<void>>(`${ADMIN_BASE}`, data);
+    },
+
+    updateAdmin(adminId: string, data: UpdateAdminRequest): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.patch<ApiResponse<void>>(`${ADMIN_BASE}/${adminId}`, data);
     },
 
     deleteAdmin(adminId: string): Promise<AxiosResponse<ApiResponse<void>>> {

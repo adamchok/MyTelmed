@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { GoogleOutlined } from "@ant-design/icons";
 import { MapFrameProps } from "./props";
@@ -16,12 +16,16 @@ const MapFrame = ({ selectedFacility }: MapFrameProps) => {
             height="500"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
-            src={`https://www.google.com/maps?q=${encodeURIComponent(selectedFacility.address)}&z=16&output=embed`}
+            src={`https://www.google.com/maps?q=${encodeURIComponent(
+              selectedFacility.address
+            )}&z=16&output=embed`}
             className="rounded-xl border-none"
           />
           <div className="absolute top-4 right-4 flex gap-2 z-10">
             <Link
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedFacility.address)}`}
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                selectedFacility.address
+              )}`}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-white rounded-full shadow p-2 hover:bg-blue-100 transition"
@@ -30,13 +34,21 @@ const MapFrame = ({ selectedFacility }: MapFrameProps) => {
               <GoogleOutlined className="text-[24px] text-blue-600" />
             </Link>
             <Link
-              href={`https://waze.com/ul?q=${encodeURIComponent(selectedFacility.address)}&navigate=yes`}
+              href={`https://waze.com/ul?q=${encodeURIComponent(
+                selectedFacility.address
+              )}&navigate=yes`}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-white rounded-full shadow p-2 hover:bg-blue-100 transition"
               title="Open in Waze"
             >
-              <Image src="/icons/waze-icon.png" alt="Waze" width={24} height={24} preview={false} />
+              <Image
+                src="/icons/waze-icon.png"
+                alt="Waze"
+                width={24}
+                height={24}
+                preview={false}
+              />
             </Link>
           </div>
         </>

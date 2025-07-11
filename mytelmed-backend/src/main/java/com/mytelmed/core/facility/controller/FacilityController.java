@@ -101,7 +101,7 @@ class FacilityController {
         return ResponseEntity.ok(ApiResponse.success("Facility deleted successfully"));
     }
 
-    @PatchMapping(value = "/image/{facilityId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/image/{facilityId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<Void>> uploadImage(
             @RequestParam("file") MultipartFile file,
             @PathVariable UUID facilityId

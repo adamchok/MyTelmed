@@ -19,8 +19,9 @@ import java.time.Instant;
 public class Article {
     private String id;
     private String title;
-    private String speciality;
+    private String subject;
     private String content;
+    private String imageId;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -36,14 +37,19 @@ public class Article {
     }
 
     @DynamoDbPartitionKey
-    @DynamoDbAttribute("speciality")
-    public String getSpeciality() {
-        return speciality;
+    @DynamoDbAttribute("subject")
+    public String getSubject() {
+        return subject;
     }
 
     @DynamoDbAttribute("content")
     public String getContent() {
         return content;
+    }
+
+    @DynamoDbAttribute("image_id")
+    public String getImageId() {
+        return imageId;
     }
 
     @DynamoDbAttribute("createdAt")

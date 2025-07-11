@@ -4,6 +4,7 @@ import com.mytelmed.common.event.account.model.AccountActivatedEvent;
 import com.mytelmed.common.event.account.model.AccountCreatedEvent;
 import com.mytelmed.common.event.account.model.AccountDeactivatedEvent;
 import com.mytelmed.common.event.account.model.AccountDeletionEvent;
+import com.mytelmed.common.event.account.model.AccountPasswordResetEvent;
 import com.mytelmed.infrastructure.email.constant.EmailType;
 import com.mytelmed.infrastructure.email.factory.EmailSenderFactoryRegistry;
 import lombok.extern.slf4j.Slf4j;
@@ -67,5 +68,17 @@ public class AccountEventListener {
         variables.put("uiHost", frontendUrl);
 
         emailService.getEmailSender(EmailType.ACCOUNT_DELETED).sendEmail(event.email(), variables);
+    }
+
+    @Async
+    @EventListener
+    public void handleAccountPasswordReset(AccountPasswordResetEvent event) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("name", event.name());
+        variables.put("username", event.username());
+        variables.put("password", event.password());
+        variables.put("uiHost", frontendUrl);
+
+        emailService.getEmailSender(EmailType.ACCOUNT_PASSWORD_RESET).sendEmail(event.email(), variables);
     }
 }

@@ -1,8 +1,7 @@
 import { AxiosResponse } from "axios";
 import repository from "../RepositoryManager";
-import { ApiResponse } from "../props";
+import { ApiResponse, PaginatedResponse } from "../props";
 import { Patient, CreatePatientRequest, UpdatePatientProfileRequest, PatientSearchOptions } from "./props";
-import { PaginatedResponse } from "../admin/props";
 
 const RESOURCE: string = "/api/v1/patient";
 const DEFAULT_PAGE_SIZE: number = 10;
@@ -62,6 +61,27 @@ const PatientApi = {
      */
     deletePatient(patientId: string): Promise<AxiosResponse<ApiResponse<void>>> {
         return repository.delete<ApiResponse<void>>(`${RESOURCE}/${patientId}`);
+    },
+
+    /**
+     * Activate patient (Admin only)
+     */
+    activatePatient(patientId: string): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.post<ApiResponse<void>>(`${RESOURCE}/activate/${patientId}`);
+    },
+
+    /**
+     * Deactivate patient (Admin only)
+     */
+    deactivatePatient(patientId: string): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.post<ApiResponse<void>>(`${RESOURCE}/deactivate/${patientId}`);
+    },
+
+    /**
+     * Reset patient password (Admin only)
+     */
+    resetPatientPassword(patientId: string): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.post<ApiResponse<void>>(`${RESOURCE}/reset/password/${patientId}`);
     },
 };
 

@@ -4,8 +4,12 @@ import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constant.file.ImageType;
+import com.mytelmed.common.event.account.model.AccountActivatedEvent;
+import com.mytelmed.common.event.account.model.AccountDeactivatedEvent;
+import com.mytelmed.common.event.account.model.AccountPasswordResetEvent;
 import com.mytelmed.common.utils.DateTimeUtil;
 import com.mytelmed.common.utils.HashUtil;
+import com.mytelmed.common.utils.PasswordGenerator;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.image.entity.Image;
@@ -15,6 +19,7 @@ import com.mytelmed.core.patient.dto.UpdatePatientProfileRequestDto;
 import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.patient.repository.PatientRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,11 +39,13 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final AccountService accountService;
     private final ImageService imageService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    public PatientService(PatientRepository patientRepository, AccountService accountService, ImageService imageService) {
+    public PatientService(PatientRepository patientRepository, AccountService accountService, ImageService imageService, ApplicationEventPublisher applicationEventPublisher) {
         this.patientRepository = patientRepository;
         this.accountService = accountService;
         this.imageService = imageService;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -123,7 +130,7 @@ public class PatientService {
 
         try {
             LocalDate dateOfBirth = parseAndValidateDateOfBirth(request.dateOfBirth());
-            Account account = accountService.createPatientAccount(request.nric(), request.password());
+            Account account = accountService.createPatientAccount(request.nric(), request.password(), request.name());
 
             Patient patient = buildPatient(request, dateOfBirth, account);
             patientRepository.save(patient);
@@ -197,20 +204,88 @@ public class PatientService {
     }
 
     @Transactional
-    public void updateAccountPassword(Account patientAccount, String newRawPassword) throws AppException {
-        log.debug("Updating password for patient with account ID: {}", patientAccount.getId());
+    public void activatePatientById(UUID id) throws AppException {
+        log.debug("Activating patient with ID: {}", id);
 
         // Find patient by ID
-        Patient patient = findPatientByAccountId(patientAccount.getId());
+        Patient patient = findPatientById(id);
 
         try {
-            // Update account password
-            accountService.changePasswordById(patient.getAccount().getId(), newRawPassword);
+            // Activate patient account
+            patient.getAccount().setEnabled(true);
 
-            log.info("Updated password for patient with account ID: {}", patientAccount.getId());
+            // Save patient
+            patientRepository.save(patient);
+
+            AccountActivatedEvent event = AccountActivatedEvent.builder()
+                    .email(patient.getEmail())
+                    .name(patient.getName())
+                    .build();
+
+            applicationEventPublisher.publishEvent(event);
+
+            log.info("Activated patient with ID: {}", id);
         } catch (Exception e) {
-            log.error("Error updating patient password: {}", e.getMessage(), e);
-            throw new AppException("Failed to update password");
+            log.error("Error activating patient: {}", e.getMessage(), e);
+            throw new AppException("Failed to activate patient");
+        }
+    }
+
+    @Transactional
+    public void deactivatePatientById(UUID id) throws AppException {
+        log.debug("Deactivating patient with ID: {}", id);
+
+        // Find patient by ID
+        Patient patient = findPatientById(id);
+
+        try {
+            // Disable patient account
+            patient.getAccount().setEnabled(false);
+
+            // Save patient
+            patientRepository.save(patient);
+
+            AccountDeactivatedEvent event = AccountDeactivatedEvent.builder()
+                    .email(patient.getEmail())
+                    .name(patient.getName())
+                    .build();
+
+            applicationEventPublisher.publishEvent(event);
+
+            log.info("Deactivated patient with ID: {}", id);
+        } catch (Exception e) {
+            log.error("Error deactivating patient: {}", e.getMessage(), e);
+            throw new AppException("Failed to deactivate patient");
+        }
+    }
+
+    @Transactional
+    public void resetPatientAccountPasswordById(UUID id) throws AppException {
+        log.debug("Resetting password for patient with ID: {}", id);
+
+        // Find patient by ID
+        Patient patient = findPatientById(id);
+
+        try {
+            // Generate a new random password
+            String newPassword = PasswordGenerator.generateRandomPassword();
+
+            // Reset account password
+            accountService.changePasswordById(patient.getAccount().getId(), newPassword);
+
+            AccountPasswordResetEvent event = AccountPasswordResetEvent.builder()
+                    .email(patient.getEmail())
+                    .name(patient.getName())
+                    .username(patient.getAccount().getUsername())
+                    .password(newPassword)
+                    .build();
+
+            applicationEventPublisher.publishEvent(event);
+
+            log.info("Reset password for patient with ID: {}", id);
+        } catch (Exception e) {
+            log.error("Error resetting patient password: {}", e.getMessage(), e);
+            throw new AppException("Failed to reset patient password");
         }
     }
 

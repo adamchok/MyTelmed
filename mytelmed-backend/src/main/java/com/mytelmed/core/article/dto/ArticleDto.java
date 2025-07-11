@@ -1,7 +1,6 @@
 package com.mytelmed.core.article.dto;
 
 import lombok.Builder;
-
 import java.time.Instant;
 
 
@@ -9,8 +8,9 @@ import java.time.Instant;
 public record ArticleDto(
         String id,
         String title,
-        String speciality,
+        String subject,
         String content,
+        String thumbnailUrl,
         Instant createdAt,
         Instant updatedAt
 ) {

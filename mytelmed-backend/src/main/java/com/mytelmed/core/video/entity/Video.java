@@ -44,7 +44,7 @@ public class Video {
     private UUID entityId;
 
     @Column(name = "duration_seconds")
-    private Integer durationSeconds;
+    private Long durationSeconds;
 
     @Column(name = "file_size")
     private Long fileSize;

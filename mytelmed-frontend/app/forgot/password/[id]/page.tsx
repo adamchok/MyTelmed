@@ -10,116 +10,92 @@ import ResetApi from "@/app/api/reset";
 const { Title, Paragraph } = Typography;
 
 export default function CreatePasswordPage() {
-  const [form] = Form.useForm();
-  const router = useRouter();
-  const params = useParams();
-  const { id } = params;
-  const [loading, setLoading] = useState(false);
+    const [form] = Form.useForm();
+    const router = useRouter();
+    const params = useParams();
+    const { id } = params;
+    const [loading, setLoading] = useState(false);
 
-  const onFinish = async (values: CreatePasswordFormProps) => {
-    if (!id) {
-      message.error("Invalid password reset link.");
-      return;
-    } else if (!values.password) {
-      message.error("Please enter your new password.");
-      return;
-    } else if (!values.confirmPassword) {
-      message.error("Please confirm your new password.");
-      return;
-    } else if (values.password !== values.confirmPassword) {
-      message.error("Passwords do not match.");
-      return;
-    }
-    const resetPasswordRequest: ResetPasswordRequestDto = {
-      password: values.password,
+    const onFinish = async (values: CreatePasswordFormProps) => {
+        if (!id) {
+            message.error("Invalid password reset link.");
+            return;
+        } else if (!values.password) {
+            message.error("Please enter your new password.");
+            return;
+        } else if (!values.confirmPassword) {
+            message.error("Please confirm your new password.");
+            return;
+        } else if (values.password !== values.confirmPassword) {
+            message.error("Passwords do not match.");
+            return;
+        }
+        const resetPasswordRequest: ResetPasswordRequestDto = {
+            password: values.password,
+        };
+        try {
+            setLoading(true);
+            const response = await ResetApi.resetPassword(id as string, resetPasswordRequest);
+
+            const responseData = response.data;
+
+            if (responseData.isSuccess) {
+                message.success(responseData.message);
+                router.push("/");
+            } else {
+                message.error(responseData.message);
+            }
+        } catch (err: any) {
+            message.error(err?.response?.data?.message ?? "Failed to reset password. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     };
-    try {
-      setLoading(true);
-      const response = await ResetApi.resetPassword(
-        id as string,
-        resetPasswordRequest
-      );
 
-      const responseData = response.data;
-
-      if (responseData.isSuccess) {
-        message.success(responseData.message);
-        router.push("/login");
-      } else {
-        message.error(responseData.message);
-      }
-    } catch (err: any) {
-      message.error(
-        err?.response?.data?.message ??
-        "Failed to reset password. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="flex items-center justify-center mt-8">
-      <div className="w-[450px] h-auto bg-white rounded-lg shadow-lg px-8 pb-8">
-        <Title
-          level={2}
-          className="font-bold text-2xl mb-4 text-center text-blue-900"
-        >
-          Create New Password
-        </Title>
-        <Paragraph className="text-gray-600 mt-2 mb-6 text-center">
-          Please enter your new password below.
-        </Paragraph>
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          autoComplete="off"
-        >
-          <Form.Item
-            label="New Password"
-            name="password"
-            rules={[
-              { required: true, message: "Please input your new password!" },
-            ]}
-            hasFeedback
-          >
-            <Input.Password className="h-10" placeholder="Enter new password" />
-          </Form.Item>
-          <Form.Item
-            label="Confirm Password"
-            name="confirmPassword"
-            dependencies={["password"]}
-            hasFeedback
-            rules={[
-              { required: true, message: "Please confirm your password!" },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue("password") === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error("Passwords do not match!"));
-                },
-              }),
-            ]}
-          >
-            <Input.Password
-              className="h-10"
-              placeholder="Confirm new password"
-            />
-          </Form.Item>
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              className="w-full font-bold h-9"
-              loading={loading}
-            >
-              Reset Password
-            </Button>
-          </Form.Item>
-        </Form>
-      </div>
-    </div>
-  );
+    return (
+        <div className="flex items-center justify-center mt-8">
+            <div className="w-[450px] h-auto bg-white rounded-lg shadow-lg px-8 pb-8">
+                <Title level={2} className="font-bold text-2xl mb-4 text-center text-blue-900">
+                    Create New Password
+                </Title>
+                <Paragraph className="text-gray-600 mt-2 mb-6 text-center">
+                    Please enter your new password below.
+                </Paragraph>
+                <Form form={form} layout="vertical" onFinish={onFinish} autoComplete="off">
+                    <Form.Item
+                        label="New Password"
+                        name="password"
+                        rules={[{ required: true, message: "Please input your new password!" }]}
+                        hasFeedback
+                    >
+                        <Input.Password className="h-10" placeholder="Enter new password" />
+                    </Form.Item>
+                    <Form.Item
+                        label="Confirm Password"
+                        name="confirmPassword"
+                        dependencies={["password"]}
+                        hasFeedback
+                        rules={[
+                            { required: true, message: "Please confirm your password!" },
+                            ({ getFieldValue }) => ({
+                                validator(_, value) {
+                                    if (!value || getFieldValue("password") === value) {
+                                        return Promise.resolve();
+                                    }
+                                    return Promise.reject(new Error("Passwords do not match!"));
+                                },
+                            }),
+                        ]}
+                    >
+                        <Input.Password className="h-10" placeholder="Confirm new password" />
+                    </Form.Item>
+                    <Form.Item>
+                        <Button type="primary" htmlType="submit" className="w-full font-bold h-9" loading={loading}>
+                            Reset Password
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </div>
+        </div>
+    );
 }

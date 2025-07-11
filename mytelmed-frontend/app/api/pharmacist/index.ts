@@ -1,14 +1,14 @@
 import { AxiosResponse } from "axios";
 import repository from "../RepositoryManager";
-import { ApiResponse } from "../props";
+import { ApiResponse, PaginatedResponse } from "../props";
 import {
     Pharmacist,
     CreatePharmacistRequest,
     UpdatePharmacistProfileRequest,
     UpdatePharmacistFacilityRequest,
     PharmacistSearchOptions,
+    UpdatePharmacistRequest,
 } from "./props";
-import { PaginatedResponse } from "../admin/props";
 
 const RESOURCE: string = "/api/v1/pharmacist";
 const DEFAULT_PAGE_SIZE: number = 10;
@@ -43,8 +43,15 @@ const PharmacistApi = {
     /**
      * Create a new pharmacist (Admin only)
      */
-    createPharmacist(request: CreatePharmacistRequest): Promise<AxiosResponse<ApiResponse<Pharmacist>>> {
-        return repository.post<ApiResponse<Pharmacist>>(`${RESOURCE}`, request);
+    createPharmacist(request: CreatePharmacistRequest): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.post<ApiResponse<void>>(`${RESOURCE}`, request);
+    },
+
+    updatePharmacist(
+        pharmacistId: string,
+        request: UpdatePharmacistRequest
+    ): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.patch<ApiResponse<void>>(`${RESOURCE}/${pharmacistId}`, request);
     },
 
     /**

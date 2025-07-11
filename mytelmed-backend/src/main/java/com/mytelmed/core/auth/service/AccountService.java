@@ -152,7 +152,7 @@ public class AccountService {
         try {
             if (accountRepository.findByUsername(email).isPresent()) {
                 log.warn("Admin's account already exists with name: {}", email);
-                throw new UsernameAlreadyExistException("Admin's account already exists with provided email");
+                throw new UsernameAlreadyExistException("An account already exists with provided email");
             }
 
             Account account = factoryProducer.getFactory(AccountType.ADMIN).createAccount(email, name);
@@ -170,7 +170,7 @@ public class AccountService {
     }
 
     @Transactional
-    public Account createPatientAccount(String nric, String password) throws UsernameAlreadyExistException {
+    public Account createPatientAccount(String nric, String password, String name) throws UsernameAlreadyExistException {
         log.debug("Creating patient account with NRIC: {}", nric);
 
         try {
@@ -179,7 +179,7 @@ public class AccountService {
                 throw new UsernameAlreadyExistException("Account already exists with provided NRIC");
             }
 
-            Account account = factoryProducer.getFactory(AccountType.PATIENT).createAccount(nric, password);
+            Account account = factoryProducer.getFactory(AccountType.PATIENT).createAccount(nric, password, name);
             account = accountRepository.save(account);
 
             log.info("Created patient account with name: {}", nric);

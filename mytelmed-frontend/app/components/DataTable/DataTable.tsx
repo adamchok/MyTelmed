@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Table, Input, Button, Space, Card, Typography } from 'antd';
-import { SearchOutlined, PlusOutlined } from '@ant-design/icons';
-import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
+import React, { useState } from "react";
+import { Table, Input, Button, Space, Card, Typography, Tooltip } from "antd";
+import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
+import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 
 const { Title } = Typography;
 const { Search } = Input;
@@ -19,10 +19,12 @@ export interface DataTableColumn<T> {
 export interface DataTableAction<T> {
     label: string;
     onClick: (record: T) => void;
-    type?: 'primary' | 'default' | 'dashed' | 'link' | 'text';
+    type?: "primary" | "default" | "dashed" | "link" | "text";
     danger?: boolean;
     icon?: React.ReactNode;
     disabled?: (record: T) => boolean;
+    showLabel?: boolean;
+    tooltip?: string;
 }
 
 export interface DataTableProps<T> {
@@ -36,9 +38,11 @@ export interface DataTableProps<T> {
     addButtonText?: string;
     actions?: DataTableAction<T>[];
     rowKey: keyof T | ((record: T) => string);
-    size?: 'small' | 'middle' | 'large';
+    size?: "small" | "middle" | "large";
     bordered?: boolean;
     searchPlaceholder?: string;
+    actionButtonSize?: "small" | "middle" | "large";
+    actionColumnWidth?: number | string;
 }
 
 function DataTable<T extends Record<string, any>>({
@@ -52,15 +56,17 @@ function DataTable<T extends Record<string, any>>({
     addButtonText = "Add New",
     actions = [],
     rowKey,
-    size = 'middle',
+    size = "middle",
     bordered = true,
-    searchPlaceholder = "Search..."
+    searchPlaceholder = "Search...",
+    actionButtonSize = "middle",
+    actionColumnWidth = "auto",
 }: Readonly<DataTableProps<T>>) {
-    const [searchValue, setSearchValue] = useState('');
+    const [searchValue, setSearchValue] = useState("");
 
     // Convert custom columns to Ant Design table columns
     const tableColumns: ColumnsType<T> = [
-        ...columns.map(col => ({
+        ...columns.map((col) => ({
             title: col.title,
             dataIndex: col.dataIndex as string,
             key: col.key,
@@ -75,59 +81,61 @@ function DataTable<T extends Record<string, any>>({
                             value={selectedKeys[0]}
                             onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
                             onPressEnter={() => confirm()}
-                            style={{ marginBottom: 8, display: 'block' }}
+                            style={{ marginBottom: 8, display: "block" }}
                         />
                         <Space>
-                            <Button
-                                type="primary"
-                                onClick={() => confirm()}
-                                size="small"
-                                style={{ width: 90 }}
-                            >
+                            <Button type="primary" onClick={() => confirm()} size="small" style={{ width: 90 }}>
                                 Search
                             </Button>
-                            <Button
-                                onClick={() => clearFilters && clearFilters()}
-                                size="small"
-                                style={{ width: 90 }}
-                            >
+                            <Button onClick={() => clearFilters && clearFilters()} size="small" style={{ width: 90 }}>
                                 Reset
                             </Button>
                         </Space>
                     </div>
                 ),
                 filterIcon: (filtered: boolean) => (
-                    <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
+                    <SearchOutlined style={{ color: filtered ? "#1890ff" : undefined }} />
                 ),
                 onFilter: (value: any, record: T) =>
-                    record[col.dataIndex]
-                        ?.toString()
-                        .toLowerCase()
-                        .includes(value.toLowerCase()),
+                    record[col.dataIndex]?.toString().toLowerCase().includes(value.toLowerCase()),
             }),
         })),
-        ...(actions.length > 0 ? [{
-            title: 'Actions',
-            key: 'actions',
-            width: actions.length * 80,
-            render: (_: any, record: T) => (
-                <Space size="small">
-                    {actions.map((action, index) => (
-                        <Button
-                            key={index}
-                            type={action.type || 'default'}
-                            size="small"
-                            danger={action.danger}
-                            icon={action.icon}
-                            disabled={action.disabled ? action.disabled(record) : false}
-                            onClick={() => action.onClick(record)}
-                        >
-                            {action.label}
-                        </Button>
-                    ))}
-                </Space>
-            ),
-        }] : []),
+        ...(actions.length > 0
+            ? [
+                  {
+                      title: "Actions",
+                      key: "actions",
+                      width: actionColumnWidth === "auto" ? undefined : actionColumnWidth,
+                      render: (_: any, record: T) => (
+                          <Space size="small">
+                              {actions.map((action, index) => {
+                                  const button = (
+                                      <Button
+                                          key={index}
+                                          type={action.type || "default"}
+                                          size={actionButtonSize}
+                                          danger={action.danger}
+                                          icon={action.icon}
+                                          disabled={action.disabled ? action.disabled(record) : false}
+                                          onClick={() => action.onClick(record)}
+                                      >
+                                          {action.showLabel === false ? undefined : action.label}
+                                      </Button>
+                                  );
+
+                                  return action.tooltip ? (
+                                      <Tooltip key={index} title={action.tooltip}>
+                                          {button}
+                                      </Tooltip>
+                                  ) : (
+                                      button
+                                  );
+                              })}
+                          </Space>
+                      ),
+                  },
+              ]
+            : []),
     ];
 
     const handleSearch = (value: string) => {
@@ -140,7 +148,9 @@ function DataTable<T extends Record<string, any>>({
     return (
         <Card>
             <div className="flex justify-between items-center mb-4">
-                <Title level={3} className="mb-0">{title}</Title>
+                <Title level={3} className="mb-0">
+                    {title}
+                </Title>
                 <Space>
                     {onSearch && (
                         <Search
@@ -153,11 +163,7 @@ function DataTable<T extends Record<string, any>>({
                         />
                     )}
                     {onAdd && (
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={onAdd}
-                        >
+                        <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
                             {addButtonText}
                         </Button>
                     )}
@@ -172,8 +178,7 @@ function DataTable<T extends Record<string, any>>({
                 pagination={pagination}
                 size={size}
                 bordered={bordered}
-                scroll={{ x: 'max-content' }}
-                className="admin-data-table"
+                scroll={{ x: "max-content" }}
             />
         </Card>
     );

@@ -137,7 +137,7 @@ public class FacilityService {
         try {
             Facility facility = findFacilityById(facilityId);
 
-            Image image = imageService.saveAndGetImage(ImageType.FACILITY, facility.getId(), file);
+            Image image = imageService.updateAndGetImage(ImageType.FACILITY, facility.getId(), file);
             facility.setThumbnailImage(image);
             facilityRepository.save(facility);
 

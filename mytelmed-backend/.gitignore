@@ -50,3 +50,6 @@ gradle/wrapper/gradle-wrapper.jar
 ### OS Generated ###
 .DS_Store
 Thumbs.db
+
+### Logs ###
+logs

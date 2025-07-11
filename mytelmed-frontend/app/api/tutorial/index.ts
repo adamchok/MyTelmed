@@ -52,7 +52,7 @@ const TutorialApi = {
         });
     },
     updateTutorial(tutorialId: string, data: UpdateTutorialRequest): Promise<AxiosResponse<ApiResponse<void>>> {
-        return repository.put<ApiResponse<void>>(`${RESOURCE}/${tutorialId}`, data);
+        return repository.patch<ApiResponse<void>>(`${RESOURCE}/${tutorialId}`, data);
     },
     deleteTutorial(tutorialId: string): Promise<AxiosResponse<ApiResponse<void>>> {
         return repository.delete<ApiResponse<void>>(`${RESOURCE}/${tutorialId}`);

@@ -72,13 +72,12 @@ public class PasswordResetService {
 
             Account account = patient.getAccount();
             ResetToken token = createPasswordResetToken(account);
-            String resetUrl = frontendUrl + "/forgot/password/" + token.getToken();
 
             PasswordResetEvent event = PasswordResetEvent.builder()
                     .email(patient.getEmail())
                     .name(patient.getName())
                     .expirationMinutes(tokenExpirationMinutes)
-                    .resetUrl(resetUrl)
+                    .resetToken(token.getToken())
                     .build();
 
             applicationEventPublisher.publishEvent(event);

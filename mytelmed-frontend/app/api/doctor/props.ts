@@ -21,6 +21,19 @@ export interface CreateDoctorRequest {
     qualifications: string;
 }
 
+export interface UpdateDoctorRequest {
+    name: string;
+    nric: string;
+    email: string;
+    phone: string;
+    dateOfBirth: string;
+    gender: string;
+    facilityId: string;
+    specialityList: string[];
+    languageList: string[];
+    qualifications: string;
+}
+
 export interface UpdateDoctorProfileRequest {
     name: string;
     email: string;
@@ -29,11 +42,6 @@ export interface UpdateDoctorProfileRequest {
     gender: string;
     languageList: string[];
     qualifications: string;
-}
-
-export interface UpdateDoctorSpecialitiesAndFacilityRequest {
-    facilityId: string;
-    specialityList: string[];
 }
 
 export type DoctorSearchOptions = SearchOptions;

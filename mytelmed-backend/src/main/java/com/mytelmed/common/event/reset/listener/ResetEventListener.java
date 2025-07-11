@@ -32,7 +32,7 @@ public class ResetEventListener {
 
         Map<String, Object> variables = new HashMap<>();
         variables.put("name", event.name());
-        variables.put("resetUrl", event.resetUrl());
+        variables.put("resetToken", event.resetToken());
         variables.put("expiration", String.valueOf(event.expirationMinutes()));
         variables.put("uiHost", frontendUrl);
 

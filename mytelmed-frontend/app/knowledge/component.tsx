@@ -2,20 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import {
-    Card,
-    Button,
-    Typography,
-    Input,
-    Select,
-    Row,
-    Col,
-    Empty,
-    Spin,
-    Tag,
-    Space,
-} from "antd";
+import { Card, Button, Typography, Input, Select, Row, Col, Empty, Spin, Tag, Space, Image } from "antd";
 import {
     SearchOutlined,
     BookOutlined,
@@ -24,15 +11,11 @@ import {
     FileTextOutlined,
     FilterOutlined,
 } from "@ant-design/icons";
-import {
-    KnowledgeHubPageProps,
-    ContentCardProps,
-    Article,
-    Tutorial,
-} from "./props";
-import BackButton from "../components/BackButton/BackButton";
+import { KnowledgeHubPageProps, ContentCardProps, Article, Tutorial } from "./props";
+import BreadcrumbNav from "./components/BreadcrumbNav";
+import Footer from "../components/Footer/Footer";
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 const { Search } = Input;
 const { Option } = Select;
 
@@ -42,43 +25,63 @@ const ContentCard = ({ content, type, onClick }: ContentCardProps) => {
     const tutorial = content as Tutorial;
 
     const renderCover = () => {
-        if (!isArticle && tutorial.thumbnailUrl) {
-            return (
-                <div className="relative overflow-hidden h-48">
-                    <Image
-                        src={tutorial.thumbnailUrl}
-                        alt={content.title}
-                        fill
-                        className="object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
-                        <PlayCircleOutlined className="text-white text-4xl" />
+        if (isArticle) {
+            if (article.thumbnailUrl) {
+                return (
+                    <div className="relative overflow-hidden h-48 rounded-t-lg">
+                        <Image
+                            src={article.thumbnailUrl}
+                            alt={content.title}
+                            className="object-cover"
+                            preview={false}
+                        />
                     </div>
+                );
+            }
+            return (
+                <div className="relative overflow-hidden h-48 rounded-t-lg">
+                    <FileTextOutlined className="text-blue-400 text-6xl" />
+                </div>
+            );
+        } else {
+            if (tutorial.thumbnailUrl) {
+                return (
+                    <div className="relative overflow-hidden h-48 rounded-t-lg">
+                        <Image
+                            src={tutorial.thumbnailUrl}
+                            alt={content.title}
+                            className="object-cover"
+                            preview={false}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                            <PlayCircleOutlined className="text-white text-4xl" />
+                        </div>
+                    </div>
+                );
+            }
+            return (
+                <div className="relative overflow-hidden h-48 rounded-t-lg">
+                    <FileTextOutlined className="text-blue-400 text-6xl" />
                 </div>
             );
         }
-
-        return (
-            <div className="h-48 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-                {isArticle ? (
-                    <FileTextOutlined className="text-blue-400 text-6xl" />
-                ) : (
-                    <PlayCircleOutlined className="text-blue-400 text-6xl" />
-                )}
-            </div>
-        );
     };
 
     return (
         <Card
             hoverable
-            className="h-full rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300"
+            className="h-full rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 border border-gray-100"
             onClick={onClick}
             cover={renderCover()}
+            styles={{
+                body: {
+                    padding: 16,
+                },
+            }}
         >
             <div className="p-2">
                 <div className="flex items-center justify-between mb-2">
-                    <Tag color={isArticle ? "blue" : "purple"} className="mb-0">
+                    <Tag color={isArticle ? "blue" : "purple"} className="mb-0 font-medium text-xs px-2 py-1 rounded">
                         {isArticle ? (
                             <>
                                 <BookOutlined className="mr-1" />
@@ -91,31 +94,30 @@ const ContentCard = ({ content, type, onClick }: ContentCardProps) => {
                             </>
                         )}
                     </Tag>
-                    {!isArticle && tutorial.duration && (
-                        <Text type="secondary" className="text-sm">
+                    {!isArticle && tutorial.duration !== undefined && (
+                        <Text type="secondary" className="text-xs">
                             <ClockCircleOutlined className="mr-1" />
                             {tutorial.duration} min
                         </Text>
                     )}
                 </div>
 
-                <Title level={5} className="mb-2 line-clamp-2 h-12">
+                <Title level={5} className="mb-2 line-clamp-2 h-12 text-blue-900">
                     {content.title}
                 </Title>
 
-                <Paragraph
-                    className="text-gray-600 mb-3 line-clamp-3"
-                    ellipsis={{ rows: 3 }}
-                >
-                    {isArticle ? article.content : tutorial.description}
-                </Paragraph>
+                <div className="prose prose-sm text-gray-600 mb-3 line-clamp-3 max-w-none">
+                    {isArticle
+                        ? article.content.replace(/<[^>]*>/g, "").substring(0, 150) + "..."
+                        : tutorial.description}
+                </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mt-2">
                     <Tag color="default" className="text-xs">
-                        {isArticle ? article.speciality : tutorial.category}
+                        {isArticle ? article.subject : tutorial.category}
                     </Tag>
                     <Text type="secondary" className="text-xs">
-                        {new Date(content.createdAt).toLocaleDateString()}
+                        {new Date(Number(content.createdAt) * 1000).toLocaleDateString()}
                     </Text>
                 </div>
             </div>
@@ -123,7 +125,7 @@ const ContentCard = ({ content, type, onClick }: ContentCardProps) => {
     );
 };
 
-const KnowledgeHubPageComponent = ({
+export default function KnowledgeHubPageComponent({
     searchTerm,
     setSearchTerm,
     selectedCategory,
@@ -134,7 +136,7 @@ const KnowledgeHubPageComponent = ({
     tutorials,
     loading,
     categories,
-}: KnowledgeHubPageProps) => {
+}: Readonly<KnowledgeHubPageProps>) {
     const router = useRouter();
 
     // Filter and search content
@@ -165,9 +167,7 @@ const KnowledgeHubPageComponent = ({
         if (selectedCategory) {
             allContent = allContent.filter((item) => {
                 const category =
-                    item.type === "article"
-                        ? (item.content as Article).speciality
-                        : (item.content as Tutorial).category;
+                    item.type === "article" ? (item.content as Article).subject : (item.content as Tutorial).category;
                 return category === selectedCategory;
             });
         }
@@ -178,7 +178,7 @@ const KnowledgeHubPageComponent = ({
                 const title = item.content.title.toLowerCase();
                 const description =
                     item.type === "article"
-                        ? (item.content as Article).content.toLowerCase()
+                        ? (item.content as Article).content.replace(/<[^>]*>/g, "").toLowerCase()
                         : (item.content as Tutorial).description.toLowerCase();
                 const search = searchTerm.toLowerCase();
                 return title.includes(search) || description.includes(search);
@@ -188,10 +188,7 @@ const KnowledgeHubPageComponent = ({
         return allContent;
     }, [articles, tutorials, selectedType, selectedCategory, searchTerm]);
 
-    const handleContentClick = (
-        content: Article | Tutorial,
-        type: "article" | "tutorial"
-    ) => {
+    const handleContentClick = (content: Article | Tutorial, type: "article" | "tutorial") => {
         if (type === "article") {
             router.push(`/knowledge/article/${content.id}`);
         } else {
@@ -225,14 +222,14 @@ const KnowledgeHubPageComponent = ({
         }
 
         return (
-            <div className="bg-white rounded-lg shadow-sm p-12">
+            <div className="bg-white rounded-lg shadow-sm p-12 flex flex-col items-center justify-center">
                 <Empty
                     description={
                         <div>
-                            <Title level={4} className="text-gray-400 mb-2">
+                            <Title level={4} className="text-gray-400 mb-2 text-center">
                                 No content found
                             </Title>
-                            <Text type="secondary">
+                            <Text type="secondary" className="text-center">
                                 {searchTerm || selectedCategory
                                     ? "Try adjusting your search or filters"
                                     : "No articles or tutorials available at the moment"}
@@ -243,12 +240,8 @@ const KnowledgeHubPageComponent = ({
                 >
                     {(searchTerm || selectedCategory) && (
                         <Space>
-                            <Button onClick={() => setSearchTerm("")}>
-                                Clear Search
-                            </Button>
-                            <Button onClick={() => setSelectedCategory(undefined)}>
-                                Clear Filters
-                            </Button>
+                            <Button onClick={() => setSearchTerm("")}>Clear Search</Button>
+                            <Button onClick={() => setSelectedCategory(undefined)}>Clear Filters</Button>
                         </Space>
                     )}
                 </Empty>
@@ -257,92 +250,86 @@ const KnowledgeHubPageComponent = ({
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="container mx-auto px-4 py-6 max-w-7xl">
-                <div className="bg-white rounded-lg shadow-sm mb-6">
-                    <div className="p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <BackButton backLink="/dashboard" />
-                            <Title level={2} className="mb-0 text-blue-900">
-                                Knowledge Hub
-                            </Title>
-                            <div />
+        <div className="min-h-screen bg-blue-50">
+            {/* Hero Banner */}
+            <section className="relative bg-blue-800 py-12 px-4 flex flex-col items-center justify-center text-center">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-6">
+                    <div className="flex flex-col items-center justify-center text-center w-full">
+                        <h1 className="text-white text-4xl md:text-5xl font-bold mb-1">Knowledge Hub</h1>
+                        <p className="text-blue-100 text-lg max-w-xl mx-auto">
+                            Explore trusted medical articles and interactive tutorials to empower your healthcare
+                            journey with MyTelmed.
+                        </p>
+                        <BreadcrumbNav currentPage="knowledge" showHome={true} />
+                    </div>
+                </div>
+            </section>
+
+            {/* Search and Filters Card */}
+            <div className="relative max-w-5xl mx-auto -mt-16 z-10">
+                <div
+                    className="bg-white/95 rounded-2xl shadow-2xl border border-blue-100 p-6 md:p-10 flex flex-col gap-6 items-center"
+                    style={{ boxShadow: "0 0 32px 8px rgba(59,130,246,0.10)" }}
+                >
+                    <div className="w-full flex flex-col md:flex-row gap-4 md:gap-6 items-center justify-center">
+                        <div className="w-full md:w-1/2">
+                            <Search
+                                placeholder="Search articles and tutorials..."
+                                prefix={<SearchOutlined />}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                allowClear
+                                size="large"
+                                className="rounded-lg shadow-sm w-full"
+                            />
                         </div>
-
-                        <Paragraph className="text-gray-600 text-center mb-6 max-w-2xl mx-auto">
-                            Explore our comprehensive collection of medical articles and
-                            interactive tutorials to enhance your healthcare knowledge and
-                            understanding.
-                        </Paragraph>
-
-                        {/* Search and Filters */}
-                        <Row gutter={[16, 16]} className="mb-6">
-                            <Col xs={24} md={12} lg={10}>
-                                <Search
-                                    placeholder="Search articles and tutorials..."
-                                    prefix={<SearchOutlined />}
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    allowClear
-                                    size="large"
-                                />
-                            </Col>
-                            <Col xs={12} md={6} lg={7}>
-                                <Select
-                                    placeholder="Select category"
-                                    value={selectedCategory}
-                                    onChange={setSelectedCategory}
-                                    allowClear
-                                    size="large"
-                                    className="w-full"
-                                    suffixIcon={<FilterOutlined />}
-                                >
-                                    {categories.map((category) => (
-                                        <Option key={category} value={category}>
-                                            {category}
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </Col>
-                            <Col xs={12} md={6} lg={7}>
-                                <Select
-                                    value={selectedType}
-                                    onChange={setSelectedType}
-                                    size="large"
-                                    className="w-full"
-                                >
-                                    <Option value="all">All Content</Option>
-                                    <Option value="article">Articles Only</Option>
-                                    <Option value="tutorial">Tutorials Only</Option>
-                                </Select>
-                            </Col>
-                        </Row>
-
-                        {/* Stats */}
-                        <div className="flex flex-wrap gap-4 mb-6">
-                            <div className="flex items-center bg-blue-50 px-4 py-2 rounded-lg">
-                                <BookOutlined className="text-blue-500 mr-2" />
-                                <Text strong>{articles.length} Articles</Text>
-                            </div>
-                            <div className="flex items-center bg-purple-50 px-4 py-2 rounded-lg">
-                                <PlayCircleOutlined className="text-purple-500 mr-2" />
-                                <Text strong>{tutorials.length} Tutorials</Text>
-                            </div>
-                            {searchTerm && (
-                                <div className="flex items-center bg-green-50 px-4 py-2 rounded-lg">
-                                    <SearchOutlined className="text-green-500 mr-2" />
-                                    <Text strong>{filteredContent.length} Results</Text>
-                                </div>
-                            )}
+                        <div className="w-full md:w-1/4">
+                            <Select
+                                placeholder="Select category"
+                                value={selectedCategory}
+                                onChange={setSelectedCategory}
+                                allowClear
+                                size="large"
+                                className="w-full rounded-lg shadow-sm"
+                                suffixIcon={<FilterOutlined />}
+                            >
+                                {categories.map((category) => (
+                                    <Option key={category} value={category}>
+                                        {category}
+                                    </Option>
+                                ))}
+                            </Select>
+                        </div>
+                        <div className="w-full md:w-1/4">
+                            <Select
+                                placeholder="Type"
+                                value={selectedType}
+                                onChange={setSelectedType}
+                                size="large"
+                                className="w-full rounded-lg shadow-sm"
+                            >
+                                <Option value="all">All</Option>
+                                <Option value="article">Articles</Option>
+                                <Option value="tutorial">Tutorials</Option>
+                            </Select>
                         </div>
                     </div>
                 </div>
-
-                {/* Content Grid */}
-                {renderContent()}
             </div>
+
+            {/* Main Content Card with Glowing Border */}
+            <div className="relative max-w-7xl mx-auto mt-16 px-4 mb-24">
+                <div
+                    className="relative bg-white/95 rounded-3xl shadow-2xl border-4 border-blue-400 p-8 md:p-12"
+                    style={{ boxShadow: "0 0 48px 16px rgba(59,130,246,0.15)" }}
+                >
+                    {/* Content Grid */}
+                    {renderContent()}
+                </div>
+            </div>
+
+            {/* Footer */}
+            <Footer />
         </div>
     );
-};
-
-export default KnowledgeHubPageComponent;
+}

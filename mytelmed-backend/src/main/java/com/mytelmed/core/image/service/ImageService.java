@@ -2,6 +2,7 @@ package com.mytelmed.core.image.service;
 
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
+import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constant.file.FileType;
 import com.mytelmed.common.constant.file.ImageType;
 import com.mytelmed.core.image.entity.Image;
@@ -30,54 +31,18 @@ public class ImageService {
         this.awsS3Service = awsS3Service;
     }
 
-    @Transactional
-    public Image saveAndGetImage(ImageType imageType, UUID entityId, MultipartFile imageFile)
-            throws IOException, S3Exception, AppException {
-        String imageKey = null;
+    @Transactional(readOnly = true)
+    public Image getImageById(UUID id) throws ResourceNotFoundException {
+        log.debug("Fetching image with ID: {}", id);
 
-        if (imageFile == null || imageFile.isEmpty()) {
-            log.warn("Attempted to save empty or null image file for entity: {}", entityId);
-            throw new InvalidInputException("Image file cannot be empty");
-        }
+        Image image = imageRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Image not found with ID: {}", id);
+                    return new ResourceNotFoundException("Image not found");
+                });
 
-        try {
-            S3StorageOptions storageOptions = S3StorageOptions.builder()
-                    .fileType(FileType.IMAGE)
-                    .folderName(imageType.name().toLowerCase())
-                    .entityId(entityId.toString())
-                    .build();
-
-            log.debug("Uploading image for entity: {} of type: {}", entityId, imageType);
-            imageKey = awsS3Service.uploadFileAndGetKey(storageOptions, imageFile);
-            String imageUrl = awsS3Service.generatePresignedViewUrl(imageKey);
-
-            Image image = Image.builder()
-                    .imageKey(imageKey)
-                    .imageType(imageType)
-                    .entityId(entityId)
-                    .imageUrl(imageUrl)
-                    .build();
-
-            image = imageRepository.save(image);
-            log.info("Saved image to database for entity: {}", entityId);
-            return image;
-        } catch (IOException | S3Exception e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Unexpected error while saving image for entity: {}", entityId, e);
-
-            if (imageKey != null) {
-                try {
-                    log.info("Rolling back S3 upload for entity: {} due to database failure", entityId);
-                    awsS3Service.deleteFile(imageKey);
-                } catch (Exception rollbackEx) {
-                    log.error("Failed to roll back S3 upload for entity: {} (key: {})", entityId, imageKey, rollbackEx);
-                }
-            }
-
-            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            throw e;
-        }
+        log.info("Found image with ID: {}", id);
+        return image;
     }
 
     @Transactional
@@ -99,13 +64,12 @@ public class ImageService {
             log.debug("Updating image for entity: {} of type: {}", entityId, imageType);
             String imageKey = awsS3Service.updateFile(image.getImageKey(), imageFile);
             image.setImageKey(imageKey);
-            image.setImageUrl(awsS3Service.generatePresignedViewUrl(imageKey));
 
             log.debug("Updating image metadata to database for entity: {}", entityId);
             image = imageRepository.save(image);
 
             log.info("Updated image metadata to database for entity: {}", entityId);
-            
+
             return image;
         } catch (IOException e) {
             log.error("Failed to read image file data for entity: {}", entityId, e);
@@ -116,6 +80,54 @@ public class ImageService {
         } catch (Exception e) {
             log.error("Unexpected error while updating image for entity: {}", entityId, e);
             throw new AppException("Failed to update image");
+        }
+    }
+
+    @Transactional
+    protected Image saveAndGetImage(ImageType imageType, UUID entityId, MultipartFile imageFile)
+            throws IOException, S3Exception, AppException {
+        String imageKey = null;
+
+        if (imageFile == null || imageFile.isEmpty()) {
+            log.warn("Attempted to save empty or null image file for entity: {}", entityId);
+            throw new InvalidInputException("Image file cannot be empty");
+        }
+
+        try {
+            S3StorageOptions storageOptions = S3StorageOptions.builder()
+                    .fileType(FileType.IMAGE)
+                    .folderName(imageType.name().toLowerCase())
+                    .entityId(entityId.toString())
+                    .build();
+
+            log.debug("Uploading image for entity: {} of type: {}", entityId, imageType);
+            imageKey = awsS3Service.uploadFileAndGetKey(storageOptions, imageFile);
+
+            Image image = Image.builder()
+                    .imageKey(imageKey)
+                    .imageType(imageType)
+                    .entityId(entityId)
+                    .build();
+
+            image = imageRepository.save(image);
+            log.info("Saved image to database for entity: {}", entityId);
+            return image;
+        } catch (IOException | S3Exception e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while saving image for entity: {}", entityId, e);
+
+            if (imageKey != null) {
+                try {
+                    log.info("Rolling back S3 upload for entity: {} due to database failure", entityId);
+                    awsS3Service.deleteFile(imageKey);
+                } catch (Exception rollbackEx) {
+                    log.error("Failed to roll back S3 upload for entity: {} (key: {})", entityId, imageKey, rollbackEx);
+                }
+            }
+
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            throw e;
         }
     }
 }

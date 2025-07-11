@@ -1,65 +1,87 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Typography, Tag, Button, Form, Input, Select, Modal, message } from 'antd';
-import {
-    EditOutlined,
-    DeleteOutlined,
-    ExclamationCircleOutlined,
-    EyeOutlined,
-} from '@ant-design/icons';
-import AdminLayout from '../layout';
-import DataTable, { DataTableColumn, DataTableAction } from '../../components/DataTable/DataTable';
-import FormModal from '../../components/FormModal/FormModal';
-import { Article, CreateArticleRequest, UpdateArticleRequest } from '../../api/admin';
+import React, { useState, useEffect, forwardRef } from "react";
+import { Typography, Tag, Button, Form, Input, Select, Modal, message, Tooltip } from "antd";
+import { EditOutlined, DeleteOutlined, ExclamationCircleOutlined, EyeOutlined } from "@ant-design/icons";
+import dynamic from "next/dynamic";
+import DataTable, { DataTableColumn, DataTableAction } from "../../components/DataTable/DataTable";
+import FormModal from "../../components/FormModal/FormModal";
+import { Article, CreateArticleRequest, UpdateArticleRequest } from "../../api/article/props";
+import ArticleApi from "../../api/article";
+
+// Dynamically import ReactQuill to avoid SSR issues
+const ReactQuill = dynamic(() => import("react-quill"), {
+    ssr: false,
+    loading: () => <div className="h-32 bg-gray-100 rounded animate-pulse"></div>,
+});
 
 const { Title } = Typography;
 const { Option } = Select;
-const { TextArea } = Input;
 const { confirm } = Modal;
 
-// Mock data - in real app, this would come from AdminApi
-const mockArticles: Article[] = [
-    {
-        id: '1',
-        title: 'Heart Health Guidelines',
-        content: 'Comprehensive guide on maintaining cardiovascular health...',
-        speciality: 'Cardiology',
-        createdAt: '2023-10-01T10:00:00Z',
-        updatedAt: '2023-10-01T10:00:00Z',
-    },
-    {
-        id: '2',
-        title: 'Diabetes Management Tips',
-        content: 'Essential tips for managing diabetes effectively...',
-        speciality: 'Endocrinology',
-        createdAt: '2023-10-02T11:00:00Z',
-        updatedAt: '2023-10-02T11:00:00Z',
-    },
-    {
-        id: '3',
-        title: 'Skin Care Basics',
-        content: 'Basic skin care routines for healthy skin...',
-        speciality: 'Dermatology',
-        createdAt: '2023-10-03T12:00:00Z',
-        updatedAt: '2023-10-03T12:00:00Z',
-    },
+// Quill editor configuration
+const quillModules = {
+    toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        [{ color: [] }, { background: [] }],
+        [{ align: [] }],
+        ["link", "image"],
+        ["clean"],
+    ],
+};
+
+const quillFormats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "bullet",
+    "color",
+    "background",
+    "align",
+    "link",
+    "image",
 ];
 
-const specialities = [
-    'Cardiology',
-    'Dermatology',
-    'Endocrinology',
-    'Gastroenterology',
-    'Neurology',
-    'Orthopedics',
-    'Pediatrics',
-    'Psychiatry',
-    'General Medicine',
+// Custom QuillEditor component that integrates with Ant Design Form
+const QuillEditor = forwardRef<any, any>(({ value, onChange, placeholder, ...props }) => {
+    return (
+        <div className="border border-gray-300 rounded-lg">
+            <ReactQuill
+                theme="snow"
+                value={value || ""}
+                onChange={onChange}
+                modules={quillModules}
+                formats={quillFormats}
+                placeholder={placeholder}
+                style={{ height: "300px" }}
+                {...props}
+            />
+        </div>
+    );
+});
+
+QuillEditor.displayName = "QuillEditor";
+
+const subjects = [
+    "Cardiology",
+    "Dermatology",
+    "Endocrinology",
+    "Gastroenterology",
+    "Neurology",
+    "Orthopedics",
+    "Pediatrics",
+    "Psychiatry",
+    "General Medicine",
 ];
 
 const ArticleManagement = () => {
     const [articles, setArticles] = useState<Article[]>([]);
+    const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
     const [loading, setLoading] = useState(true);
     const [createModalVisible, setCreateModalVisible] = useState(false);
     const [editModalVisible, setEditModalVisible] = useState(false);
@@ -67,6 +89,8 @@ const ArticleManagement = () => {
     const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
     const [createLoading, setCreateLoading] = useState(false);
     const [editLoading, setEditLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedSubject, setSelectedSubject] = useState<string | undefined>(undefined);
     const [createForm] = Form.useForm();
     const [editForm] = Form.useForm();
 
@@ -77,17 +101,46 @@ const ArticleManagement = () => {
     const loadArticles = async () => {
         setLoading(true);
         try {
-            // In real app: const response = await AdminApi.getAllArticles();
-            // Simulating API call
-            setTimeout(() => {
-                setArticles(mockArticles);
-                setLoading(false);
-            }, 1000);
+            const response = await ArticleApi.getAllArticles();
+            const responseData = response.data;
+
+            if (responseData.isSuccess && responseData.data) {
+                setArticles(responseData.data);
+                setFilteredArticles(responseData.data);
+            } else {
+                message.error(responseData.message);
+            }
+
+            setLoading(false);
         } catch {
-            message.error('Failed to load articles');
+            message.error("Failed to load articles");
             setLoading(false);
         }
     };
+
+    // Filter and search effect
+    useEffect(() => {
+        let filtered = [...articles];
+
+        // Search filter
+        if (searchTerm) {
+            filtered = filtered.filter(
+                (article) =>
+                    article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    article.content
+                        .replace(/<[^>]*>/g, "")
+                        .toLowerCase()
+                        .includes(searchTerm.toLowerCase())
+            );
+        }
+
+        // Subject filter
+        if (selectedSubject) {
+            filtered = filtered.filter((article) => article.subject === selectedSubject);
+        }
+
+        setFilteredArticles(filtered);
+    }, [articles, searchTerm, selectedSubject]);
 
     const handleCreateArticle = async () => {
         try {
@@ -97,21 +150,24 @@ const ArticleManagement = () => {
             const createData: CreateArticleRequest = {
                 title: values.title,
                 content: values.content,
-                speciality: values.speciality,
+                subject: values.subject,
             };
 
-            // In real app: await AdminApi.createArticle(createData);
-            console.log('Creating article:', createData);
-            // Simulating API call
-            setTimeout(() => {
-                message.success('Article created successfully');
-                setCreateModalVisible(false);
-                createForm.resetFields();
-                setCreateLoading(false);
+            const response = await ArticleApi.createArticle(createData);
+            const responseData = response.data;
+
+            if (responseData.isSuccess) {
+                message.success("Article created successfully");
                 loadArticles();
-            }, 1000);
+            } else {
+                message.error(responseData.message);
+            }
+
+            setCreateModalVisible(false);
+            createForm.resetFields();
+            setCreateLoading(false);
         } catch {
-            message.error('Failed to create article');
+            message.error("Failed to create article");
             setCreateLoading(false);
         }
     };
@@ -126,39 +182,47 @@ const ArticleManagement = () => {
             const updateData: UpdateArticleRequest = {
                 title: values.title,
                 content: values.content,
-                speciality: values.speciality,
             };
 
-            // In real app: await AdminApi.updateArticle(selectedArticle.id, updateData);
-            console.log('Updating article:', updateData);
-            // Simulating API call
-            setTimeout(() => {
-                message.success('Article updated successfully');
-                setEditModalVisible(false);
-                setSelectedArticle(null);
-                editForm.resetFields();
-                setEditLoading(false);
+            const response = await ArticleApi.updateArticle(selectedArticle.id, updateData);
+            const responseData = response.data;
+
+            if (responseData.isSuccess) {
+                message.success("Article updated successfully");
                 loadArticles();
-            }, 1000);
+            } else {
+                message.error(responseData.message);
+            }
+
+            setEditModalVisible(false);
+            setSelectedArticle(null);
+            editForm.resetFields();
+            setEditLoading(false);
         } catch {
-            message.error('Failed to update article');
+            message.error("Failed to update article");
             setEditLoading(false);
         }
     };
 
     const handleDeleteArticle = async (articleId: string) => {
         confirm({
-            title: 'Delete Article',
+            title: "Delete Article",
             icon: <ExclamationCircleOutlined />,
-            content: 'Are you sure you want to delete this article? This action cannot be undone.',
-            okType: 'danger',
+            content: "Are you sure you want to delete this article? This action cannot be undone.",
+            okType: "danger",
             onOk: async () => {
                 try {
-                    // In real app: await AdminApi.deleteArticle(articleId);
-                    message.success('Article deleted successfully');
-                    loadArticles();
-                } catch (error) {
-                    message.error('Failed to delete article');
+                    const response = await ArticleApi.deleteArticle(articleId);
+                    const responseData = response.data;
+
+                    if (responseData.isSuccess) {
+                        message.success("Article deleted successfully");
+                        loadArticles();
+                    } else {
+                        message.error(responseData.message);
+                    }
+                } catch {
+                    message.error("Failed to delete article");
                 }
             },
         });
@@ -174,68 +238,88 @@ const ArticleManagement = () => {
         editForm.setFieldsValue({
             title: article.title,
             content: article.content,
-            speciality: article.speciality,
+            subject: article.subject,
         });
         setEditModalVisible(true);
     };
 
     const columns: DataTableColumn<Article>[] = [
         {
-            title: 'Title',
-            dataIndex: 'title',
-            key: 'title',
+            title: "Title",
+            dataIndex: "title",
+            key: "title",
+            width: 250,
             render: (value) => (
-                <div className="font-medium">{value}</div>
-            ),
-        },
-        {
-            title: 'Speciality',
-            dataIndex: 'speciality',
-            key: 'speciality',
-            render: (value) => <Tag color="blue">{value}</Tag>,
-        },
-        {
-            title: 'Content Preview',
-            dataIndex: 'content',
-            key: 'content',
-            render: (value) => (
-                <div className="text-sm text-gray-600 max-w-xs truncate">
-                    {value.substring(0, 100)}...
+                <div className="font-medium">
+                    <div className="line-clamp-3 leading-relaxed">{value}</div>
                 </div>
             ),
         },
         {
-            title: 'Created',
-            dataIndex: 'createdAt',
-            key: 'createdAt',
-            render: (value) => new Date(value).toLocaleDateString(),
+            title: "Subject",
+            dataIndex: "subject",
+            key: "subject",
+            render: (value) => <Tag color="blue">{value}</Tag>,
         },
         {
-            title: 'Updated',
-            dataIndex: 'updatedAt',
-            key: 'updatedAt',
-            render: (value) => new Date(value).toLocaleDateString(),
+            title: "Content Preview",
+            dataIndex: "content",
+            key: "content",
+            width: 400,
+            render: (value) => {
+                // Strip HTML tags for preview
+                const plainText = value.replace(/<[^>]*>/g, "");
+                return (
+                    <div className="text-sm text-gray-600">
+                        <div className="line-clamp-3 leading-relaxed">{plainText}</div>
+                    </div>
+                );
+            },
+        },
+        {
+            title: "Created",
+            dataIndex: "createdAt",
+            key: "createdAt",
+            render: (value) => new Date(Number(value) * 1000).toLocaleDateString(),
+        },
+        {
+            title: "Updated",
+            dataIndex: "updatedAt",
+            key: "updatedAt",
+            render: (value) => new Date(Number(value) * 1000).toLocaleDateString(),
         },
     ];
 
     const actions: DataTableAction<Article>[] = [
         {
-            label: 'View',
+            label: "",
             onClick: (record) => handleViewArticle(record),
-            icon: <EyeOutlined />,
-            type: 'default',
+            icon: (
+                <Tooltip title="View article details">
+                    <EyeOutlined />
+                </Tooltip>
+            ),
+            type: "default",
         },
         {
-            label: 'Edit',
+            label: "",
             onClick: (record) => handleEditClick(record),
-            icon: <EditOutlined />,
-            type: 'primary',
+            icon: (
+                <Tooltip title="Edit article">
+                    <EditOutlined />
+                </Tooltip>
+            ),
+            type: "primary",
         },
         {
-            label: 'Delete',
+            label: "",
             onClick: (record) => handleDeleteArticle(record.id),
-            icon: <DeleteOutlined />,
-            type: 'default',
+            icon: (
+                <Tooltip title="Delete article">
+                    <DeleteOutlined />
+                </Tooltip>
+            ),
+            type: "default",
             danger: true,
         },
     ];
@@ -243,20 +327,74 @@ const ArticleManagement = () => {
     return (
         <div>
             <div className="mb-6">
-                <Title level={2} className="mb-2">Article Management</Title>
+                <Title level={2} className="mb-2">
+                    Article Management
+                </Title>
+            </div>
+
+            {/* Search and Filter Controls */}
+            <div className="bg-white p-4 rounded-lg shadow-sm mb-6 border">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                        <Input
+                            placeholder="Search by title or content..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            allowClear
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                        <Select
+                            placeholder="All subjects"
+                            value={selectedSubject}
+                            onChange={setSelectedSubject}
+                            allowClear
+                            className="w-full"
+                        >
+                            {subjects.map((subject) => (
+                                <Option key={subject} value={subject}>
+                                    {subject}
+                                </Option>
+                            ))}
+                        </Select>
+                    </div>
+                </div>
+
+                {/* Filter Summary */}
+                <div className="mt-4 flex items-center justify-between">
+                    <div className="text-sm text-gray-500">
+                        Showing {filteredArticles.length} of {articles.length} articles
+                    </div>
+                    {(searchTerm || selectedSubject) && (
+                        <Button
+                            size="small"
+                            onClick={() => {
+                                setSearchTerm("");
+                                setSelectedSubject(undefined);
+                            }}
+                        >
+                            Clear All Filters
+                        </Button>
+                    )}
+                </div>
             </div>
 
             <DataTable<Article>
                 title="Health Articles"
-                data={articles}
+                data={filteredArticles}
                 columns={columns}
                 loading={loading}
                 onAdd={() => setCreateModalVisible(true)}
                 addButtonText="Create Article"
                 actions={actions}
                 rowKey="id"
+                actionButtonSize="large"
+                actionColumnWidth="auto"
                 pagination={{
                     pageSize: 10,
+                    total: filteredArticles.length,
                     showSizeChanger: true,
                     showQuickJumper: true,
                     showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} articles`,
@@ -274,24 +412,26 @@ const ArticleManagement = () => {
                 onOk={handleCreateArticle}
                 loading={createLoading}
                 form={createForm}
-                width={800}
+                width={900}
             >
                 <Form.Item
                     label="Title"
                     name="title"
-                    rules={[{ required: true, message: 'Please enter article title' }]}
+                    rules={[{ required: true, message: "Please enter article title" }]}
                 >
                     <Input placeholder="Enter article title" />
                 </Form.Item>
 
                 <Form.Item
-                    label="Speciality"
-                    name="speciality"
-                    rules={[{ required: true, message: 'Please select speciality' }]}
+                    label="Subject"
+                    name="subject"
+                    rules={[{ required: true, message: "Please select subject" }]}
                 >
-                    <Select placeholder="Select speciality">
-                        {specialities.map(speciality => (
-                            <Option key={speciality} value={speciality}>{speciality}</Option>
+                    <Select placeholder="Select subject">
+                        {subjects.map((subject) => (
+                            <Option key={subject} value={subject}>
+                                {subject}
+                            </Option>
                         ))}
                     </Select>
                 </Form.Item>
@@ -299,12 +439,9 @@ const ArticleManagement = () => {
                 <Form.Item
                     label="Content"
                     name="content"
-                    rules={[{ required: true, message: 'Please enter article content' }]}
+                    rules={[{ required: true, message: "Please enter article content" }]}
                 >
-                    <TextArea
-                        rows={8}
-                        placeholder="Enter article content..."
-                    />
+                    <QuillEditor placeholder="Write your article content here..." />
                 </Form.Item>
             </FormModal>
 
@@ -320,24 +457,26 @@ const ArticleManagement = () => {
                 onOk={handleEditArticle}
                 loading={editLoading}
                 form={editForm}
-                width={800}
+                width={900}
             >
                 <Form.Item
                     label="Title"
                     name="title"
-                    rules={[{ required: true, message: 'Please enter article title' }]}
+                    rules={[{ required: true, message: "Please enter article title" }]}
                 >
                     <Input placeholder="Enter article title" />
                 </Form.Item>
 
                 <Form.Item
-                    label="Speciality"
-                    name="speciality"
-                    rules={[{ required: true, message: 'Please select speciality' }]}
+                    label="Subject"
+                    name="subject"
+                    rules={[{ required: true, message: "Please select subject" }]}
                 >
-                    <Select placeholder="Select speciality">
-                        {specialities.map(speciality => (
-                            <Option key={speciality} value={speciality}>{speciality}</Option>
+                    <Select placeholder="Select subject">
+                        {subjects.map((subject) => (
+                            <Option key={subject} value={subject}>
+                                {subject}
+                            </Option>
                         ))}
                     </Select>
                 </Form.Item>
@@ -345,12 +484,9 @@ const ArticleManagement = () => {
                 <Form.Item
                     label="Content"
                     name="content"
-                    rules={[{ required: true, message: 'Please enter article content' }]}
+                    rules={[{ required: true, message: "Please enter article content" }]}
                 >
-                    <TextArea
-                        rows={8}
-                        placeholder="Enter article content..."
-                    />
+                    <QuillEditor placeholder="Write your article content here..." />
                 </Form.Item>
             </FormModal>
 
@@ -377,23 +513,24 @@ const ArticleManagement = () => {
                         Edit Article
                     </Button>,
                 ]}
-                width={800}
+                width={900}
             >
                 {selectedArticle && (
                     <div className="space-y-4">
                         <div>
-                            <Title level={5}>Speciality</Title>
-                            <Tag color="blue">{selectedArticle.speciality}</Tag>
+                            <Title level={5}>Subject</Title>
+                            <Tag color="blue">{selectedArticle.subject}</Tag>
                         </div>
                         <div>
                             <Title level={5}>Content</Title>
-                            <div className="whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">
-                                {selectedArticle.content}
-                            </div>
+                            <div
+                                className="bg-gray-50 p-4 rounded-lg prose max-w-none"
+                                dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
+                            />
                         </div>
                         <div className="flex justify-between text-sm text-gray-500">
-                            <span>Created: {new Date(selectedArticle.createdAt).toLocaleString()}</span>
-                            <span>Updated: {new Date(selectedArticle.updatedAt).toLocaleString()}</span>
+                            <span>Created: {new Date(Number(selectedArticle.createdAt) * 1000).toLocaleString()}</span>
+                            <span>Updated: {new Date(Number(selectedArticle.updatedAt) * 1000).toLocaleString()}</span>
                         </div>
                     </div>
                 )}
@@ -403,11 +540,7 @@ const ArticleManagement = () => {
 };
 
 const ArticleManagementPage = () => {
-    return (
-        <AdminLayout>
-            <ArticleManagement />
-        </AdminLayout>
-    );
+    return <ArticleManagement />;
 };
 
-export default ArticleManagementPage; 
+export default ArticleManagementPage;

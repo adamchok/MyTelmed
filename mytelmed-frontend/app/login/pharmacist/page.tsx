@@ -1,60 +1,132 @@
 "use client";
 
-import { message } from "antd";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
+import { Form, Input, Button, Typography, message } from "antd";
+import { User, Lock, Pill, ArrowLeft } from "lucide-react";
 import AuthApi from "../../api/auth";
-import LoginForm from "../../components/LoginForm/LoginForm";
+
+const { Title, Text } = Typography;
 
 const PharmacistLogin = () => {
-  const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
-  const router = useRouter();
-  const dispatch = useDispatch();
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [form] = Form.useForm();
+    const router = useRouter();
+    const dispatch = useDispatch();
 
-  const onFinish = async (values: any) => {
-    if (isLoggingIn) return;
-
-    setIsLoggingIn(true);
-    const body = {
-      username: values.username,
-      password: values.password,
+    const onFinish = async (values: any) => {
+        if (isLoggingIn) return;
+        setIsLoggingIn(true);
+        const body = {
+            username: values.username,
+            password: values.password,
+        };
+        try {
+            const response = await AuthApi.loginPharmacist(body);
+            const responseData = response.data;
+            if (responseData.isSuccess && responseData.data) {
+                message.success("Successfully signed in as pharmacist");
+                localStorage.setItem("accessToken", responseData.data.accessToken);
+                localStorage.setItem("refreshToken", responseData.data.refreshToken);
+                localStorage.setItem("isLogin", "true");
+                localStorage.setItem("userType", "pharmacist");
+                dispatch({ type: "SET_LOGIN_STATUS", payload: true });
+                router.push("/pharmacist/dashboard");
+            } else {
+                const errorMessage = responseData.message || "Sign-in failed, please try again";
+                message.error(errorMessage);
+            }
+        } catch (err) {
+            message.error("Sign-in failed, please try again");
+            console.log(err);
+        } finally {
+            setIsLoggingIn(false);
+        }
     };
 
-    try {
-      const response = await AuthApi.loginPharmacist(body);
-      const responseData = response.data;
-
-      if (responseData.isSuccess && responseData.data) {
-        message.success("Successfully signed in as pharmacist");
-        localStorage.setItem("accessToken", responseData.data.accessToken);
-        localStorage.setItem("refreshToken", responseData.data.refreshToken);
-        localStorage.setItem("isLogin", "true");
-        localStorage.setItem("userType", "pharmacist");
-        dispatch({ type: "SET_LOGIN_STATUS", payload: true });
-
-        // Redirect to pharmacist dashboard
-        router.push("/pharmacist/dashboard");
-      } else {
-        const errorMessage = responseData.message || "Sign-in failed, please try again";
-        message.error(errorMessage);
-      }
-    } catch (err) {
-      const errorMessage = "Sign-in failed, please try again";
-      message.error(errorMessage);
-      console.log(err);
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
-  return (
-    <LoginForm
-      userType="pharmacist"
-      onFinish={onFinish}
-      isLoading={isLoggingIn}
-    />
-  );
+    return (
+        <div className="min-h-screen flex flex-col justify-center items-center bg-purple-700 py-8 px-4">
+            {/* Login Card */}
+            <div className="relative z-10 w-full max-w-md">
+                <div className="bg-white/95 rounded-3xl shadow-2xl border border-purple-900/20 p-8 md:p-12">
+                    <div className="text-center mb-8">
+                        <Pill className="text-purple-700" size={48} strokeWidth={2.2} />
+                        <Title level={3} className="mb-2 text-purple-800">
+                            Pharmacist Sign In
+                        </Title>
+                        <Text className="text-gray-500">Sign in to access your pharmacist dashboard</Text>
+                    </div>
+                    <Form form={form} layout="vertical" onFinish={onFinish} autoComplete="off" className="space-y-6">
+                        <Form.Item
+                            label={
+                                <span className="text-sm font-medium text-gray-700 flex items-center">
+                                    <User className="mr-2 text-purple-700" size={18} strokeWidth={2.2} /> Username
+                                </span>
+                            }
+                            name="username"
+                            rules={[{ required: true, message: "Username is required" }]}
+                        >
+                            <Input
+                                placeholder="Enter your username"
+                                className="h-12 rounded-xl border-gray-200 hover:border-purple-700 focus:border-purple-800 transition-colors"
+                                size="large"
+                                autoFocus
+                            />
+                        </Form.Item>
+                        <Form.Item
+                            label={
+                                <span className="text-sm font-medium text-gray-700 flex items-center">
+                                    <Lock className="mr-2 text-purple-700" size={18} strokeWidth={2.2} /> Password
+                                </span>
+                            }
+                            name="password"
+                            rules={[{ required: true, message: "Password is required" }]}
+                        >
+                            <Input.Password
+                                placeholder="Enter your password"
+                                className="h-12 rounded-xl border-gray-200 hover:border-purple-700 focus:border-purple-800 transition-colors"
+                                size="large"
+                            />
+                        </Form.Item>
+                        <Form.Item>
+                            <Button
+                                type="primary"
+                                htmlType="submit"
+                                loading={isLoggingIn}
+                                className="h-12 w-full rounded-xl bg-purple-700 border-0 hover:bg-purple-900 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                                size="large"
+                            >
+                                Sign In
+                            </Button>
+                        </Form.Item>
+                        <div className="flex justify-between items-center text-center">
+                            <Button
+                                type="link"
+                                className="text-gray-700 hover:underline font-medium transition-colors px-0"
+                                onClick={() => router.push("/")}
+                            >
+                                <ArrowLeft size={18} strokeWidth={2.2} /> Back to Home
+                            </Button>
+                            <Button
+                                type="link"
+                                className="text-purple-700 hover:text-purple-900 hover:underline font-medium transition-colors px-0"
+                                onClick={() => router.push("/forgot/password")}
+                            >
+                                Forgot Password?
+                            </Button>
+                        </div>
+                    </Form>
+                </div>
+                <div className="text-center mt-8">
+                    <p className="text-gray-50 text-sm">
+                        Your login credentials are encrypted and secure. We use industry-standard security measures to
+                        protect your account.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default PharmacistLogin;

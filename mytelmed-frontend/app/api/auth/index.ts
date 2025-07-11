@@ -19,7 +19,10 @@ const AuthApi = {
         return repository.post<ApiResponse<JwtResponse>>(`${AUTH_BASE}/login/admin`, credentials);
     },
     refreshToken(refreshToken: string): Promise<AxiosResponse<ApiResponse<JwtResponse>>> {
-        const request: RefreshTokenRequestOptions = { refreshToken };
+        // Ensure refreshToken is properly formatted for backend UUID expectation
+        const request: RefreshTokenRequestOptions = {
+            refreshToken: refreshToken.trim(), // Remove any whitespace that might cause UUID parsing issues
+        };
         return repository.post<ApiResponse<JwtResponse>>(`${AUTH_BASE}/token/refresh`, request);
     },
     logout(): Promise<AxiosResponse<ApiResponse<void>>> {

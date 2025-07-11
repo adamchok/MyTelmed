@@ -10,6 +10,13 @@ export interface CreateAdminRequest {
     phone: string;
 }
 
+export interface UpdateAdminRequest {
+    name: string;
+    nric: string;
+    email: string;
+    phone: string;
+}
+
 export interface UpdateAdminProfileRequest {
     name: string;
     email: string;

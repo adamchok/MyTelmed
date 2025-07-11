@@ -21,10 +21,10 @@ const ArticleApi = {
     },
 
     /**
-     * Get articles by speciality (Open endpoint)
+     * Get articles by subject (Open endpoint)
      */
-    getArticlesBySpeciality(speciality: string): Promise<AxiosResponse<ApiResponse<Article[]>>> {
-        return repository.get<ApiResponse<Article[]>>(`${RESOURCE}/${speciality}`);
+    getArticlesBySubject(subject: string): Promise<AxiosResponse<ApiResponse<Article[]>>> {
+        return repository.get<ApiResponse<Article[]>>(`${RESOURCE}/${subject}`);
     },
 
     /**
@@ -32,6 +32,17 @@ const ArticleApi = {
      */
     createArticle(request: CreateArticleRequest): Promise<AxiosResponse<ApiResponse<void>>> {
         return repository.post<ApiResponse<void>>(`${RESOURCE}`, request);
+    },
+
+    /**
+     * Upload article thumbnail (Admin only)
+     */
+    uploadArticleThumbnail(articleId: string, file: File): Promise<AxiosResponse<ApiResponse<void>>> {
+        const formData = new FormData();
+        formData.append("thumbnail", file);
+        return repository.post<ApiResponse<void>>(`${RESOURCE}/${articleId}/thumbnail`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
     },
 
     /**

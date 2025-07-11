@@ -36,10 +36,6 @@ public class Image {
     @Column(name = "key", nullable = false, unique = true)
     private String imageKey;
 
-    @Convert(converter = EncryptionConverter.class)
-    @Column(name = "url", nullable = false)
-    private String imageUrl;
-
     @Column(name = "type")
     @Enumerated(EnumType.STRING)
     private ImageType imageType;

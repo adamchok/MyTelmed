@@ -6,6 +6,7 @@ import com.mytelmed.core.pharmacist.dto.CreatePharmacistRequestDto;
 import com.mytelmed.core.pharmacist.dto.PharmacistDto;
 import com.mytelmed.core.pharmacist.dto.UpdatePharmacistFacilityRequestDto;
 import com.mytelmed.core.pharmacist.dto.UpdatePharmacistProfileRequestDto;
+import com.mytelmed.core.pharmacist.dto.UpdatePharmacistRequestDto;
 import com.mytelmed.core.pharmacist.entity.Pharmacist;
 import com.mytelmed.core.pharmacist.mapper.PharmacistMapper;
 import com.mytelmed.core.pharmacist.service.PharmacistService;
@@ -81,13 +82,25 @@ public class PharmacistController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<PharmacistDto>> createPharmacist(
-            @Valid @RequestBody CreatePharmacistRequestDto request) {
+    public ResponseEntity<ApiResponse<Void>> createPharmacist(
+            @Valid @RequestBody CreatePharmacistRequestDto request
+    ) {
         log.info("Received request to create pharmacist with request: {}", request);
 
-        Pharmacist pharmacist = pharmacistService.create(request);
-        PharmacistDto pharmacistDto = pharmacistMapper.toDto(pharmacist, awsS3Service);
-        return ResponseEntity.ok(ApiResponse.success(pharmacistDto, "Pharmacist created successfully"));
+        pharmacistService.create(request);
+        return ResponseEntity.ok(ApiResponse.success("Pharmacist created successfully"));
+    }
+
+    @PatchMapping("/{pharmacistId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> updatePharmacist(
+            @PathVariable UUID pharmacistId,
+            @Valid @RequestBody UpdatePharmacistRequestDto request
+    ) {
+        log.info("Received request to update pharmacist with ID: {}", pharmacistId);
+
+        pharmacistService.update(pharmacistId, request);
+        return ResponseEntity.ok(ApiResponse.success("Pharmacist updated successfully"));
     }
 
     @PutMapping("/profile")

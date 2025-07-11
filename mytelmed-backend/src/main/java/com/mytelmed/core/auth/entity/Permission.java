@@ -44,6 +44,6 @@ public class Permission {
     private Instant updatedAt;
 
     public String getAccess() {
-        return type.name().toLowerCase();
+        return type.name();
     }
 }

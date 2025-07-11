@@ -25,7 +25,7 @@ public record UpdateDoctorProfileRequestDto(
         @NotBlank(message = "Date of birth is required")
         String dateOfBirth,
 
-        @NotBlank(message = "Gender is required")
+        @NotNull(message = "Gender is required")
         Gender gender,
 
         @NotNull(message = "Languages are required")

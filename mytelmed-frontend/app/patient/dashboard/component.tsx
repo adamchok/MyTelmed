@@ -1,359 +1,584 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Typography, Row, Col, Card, Statistic, Button, List, Tag, Calendar, Badge, Empty } from 'antd';
-import {
-  CalendarOutlined,
-  ClockCircleOutlined,
-  FileTextOutlined,
-  UserOutlined,
-  MedicineBoxOutlined,
-  PlusOutlined,
-  RightOutlined
-} from '@ant-design/icons';
-import Link from 'next/link';
-import type { Dayjs } from 'dayjs';
+import { useState, useEffect } from "react";
+import { Typography, Row, Col, Card, Statistic, Button, List, Tag, Empty, Alert, Avatar } from "antd";
+import { Calendar, Clock, FileText, User, Pill, Plus, ChevronRight, AlertCircle, Shield } from "lucide-react";
+import Link from "next/link";
+import dayjs from "dayjs";
+import AppointmentApi from "@/app/api/appointment";
+import ReferralApi from "@/app/api/referral";
+import PrescriptionApi from "@/app/api/prescription";
+import PatientApi from "@/app/api/patient";
+import { AppointmentDto } from "@/app/api/appointment/props";
+import { ReferralDto, ReferralStatus } from "@/app/api/referral/props";
+import { PrescriptionDto } from "@/app/api/prescription/props";
+import { Patient } from "@/app/api/patient/props";
 
 const { Title, Text } = Typography;
 
-// Mock data (in real app, this would come from API)
-const upcomingAppointments = [
-  {
-    id: '1',
-    doctorName: 'Dr. Michael Chang',
-    specialty: 'Cardiology',
-    date: '2023-11-15',
-    time: '10:00 AM',
-    facility: 'Central Medical Center',
-    status: 'confirmed'
-  },
-  {
-    id: '2',
-    doctorName: 'Dr. Lisa Wong',
-    specialty: 'Dermatology',
-    date: '2023-11-20',
-    time: '2:30 PM',
-    facility: 'Harbor Skin Clinic',
-    status: 'pending'
-  }
-];
-
-const activeReferrals = [
-  {
-    id: '1',
-    type: 'Cardiology Consultation',
-    referringDoctor: 'Dr. Michael Chang',
-    expiryDate: '2023-12-01',
-    daysRemaining: 25
-  },
-  {
-    id: '3',
-    type: 'Orthopedic Assessment',
-    referringDoctor: 'Dr. David Martinez',
-    expiryDate: '2024-01-20',
-    daysRemaining: 75
-  }
-];
-
-const recentMedicalRecords = [
-  {
-    id: '1',
-    type: 'Lab Results',
-    date: '2023-10-30',
-    provider: 'Central Medical Center'
-  },
-  {
-    id: '2',
-    type: 'Prescription',
-    date: '2023-10-25',
-    provider: 'Dr. Lisa Wong'
-  }
-];
-
-// Format dates for better display
-const formatDate = (dateString: string): string => {
-  const options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  };
-  return new Date(dateString).toLocaleDateString('en-US', options);
-};
-
-interface ListData {
-  type: string;
-  content: string;
+// Dashboard data interfaces
+interface DashboardData {
+    appointments: AppointmentDto[];
+    referrals: ReferralDto[];
+    prescriptions: PrescriptionDto[];
+    patientProfile?: Patient;
+    stats: {
+        upcomingAppointments: number;
+        activeReferrals: number;
+        activePrescriptions: number;
+    };
 }
 
-const getListData = (value: Dayjs): ListData[] => {
-  const listData: ListData[] = [];
-
-  // Convert appointments to calendar events
-  upcomingAppointments.forEach(appointment => {
-    if (value.format('YYYY-MM-DD') === appointment.date) {
-      listData.push({
-        type: 'success',
-        content: `${appointment.time} - ${appointment.doctorName}`
-      });
-    }
-  });
-
-  return listData;
-};
-
-const dateCellRender = (value: Dayjs) => {
-  const listData = getListData(value);
-  return (
-    <ul className="events">
-      {listData.map((item, index) => (
-        <li key={index}>
-          <Badge status={item.type as any} text={item.content} />
-        </li>
-      ))}
-    </ul>
-  );
-};
-
 const Component = () => {
-  const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [dashboardData, setDashboardData] = useState<DashboardData>({
+        appointments: [],
+        referrals: [],
+        prescriptions: [],
+        stats: {
+            upcomingAppointments: 0,
+            activeReferrals: 0,
+            activePrescriptions: 0,
+        },
+    });
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-  }, []);
+    // Fetch dashboard data
+    const fetchDashboardData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
 
-  return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="flex justify-center items-center">
-        <Title level={2} className="my-4 text-blue-900 dark:text-blue-100">Dashboard</Title>
-      </div>
+            // Fetch patient profile first
+            let patientProfile: Patient | undefined;
+            try {
+                const profileResponse = await PatientApi.getPatientProfile();
+                patientProfile = profileResponse.data.data;
+            } catch (profileError) {
+                console.warn("Failed to fetch patient profile:", profileError);
+            }
 
-      {/* Quick Stats */}
-      <Row gutter={[16, 16]} className="mb-6">
-        <Col xs={24} sm={12} md={8}>
-          <Card loading={loading}>
-            <Statistic
-              title="Upcoming Appointments"
-              value={upcomingAppointments.length}
-              prefix={<CalendarOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8}>
-          <Card loading={loading}>
-            <Statistic
-              title="Active Referrals"
-              value={activeReferrals.length}
-              prefix={<FileTextOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8}>
-          <Card loading={loading}>
-            <Statistic
-              title="Medical Records"
-              value={recentMedicalRecords.length}
-              prefix={<MedicineBoxOutlined />}
-            />
-          </Card>
-        </Col>
-      </Row>
+            // Fetch appointments (upcoming appointments)
+            const appointmentsResponse = await AppointmentApi.getAllAppointmentsByAccount();
+            const appointments = appointmentsResponse.data.data || [];
 
-      {/* Quick Actions */}
-      <Row gutter={[16, 16]} className="mb-6">
-        <Col xs={24}>
-          <Card
-            title={<Title level={4} className="m-0">Quick Actions</Title>}
-            loading={loading}
-          >
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Link href="/browse/doctors" className="no-underline">
-                <Card
-                  hoverable
-                  className="text-center py-4 h-full flex flex-col justify-center"
-                >
-                  <CalendarOutlined className="text-2xl text-blue-500 mb-2" />
-                  <Text strong>Book Appointment</Text>
-                </Card>
-              </Link>
-              <Link href="/medical-records" className="no-underline">
-                <Card
-                  hoverable
-                  className="text-center py-4 h-full flex flex-col justify-center"
-                >
-                  <FileTextOutlined className="text-2xl text-blue-500 mb-2" />
-                  <Text strong>View Medical Records</Text>
-                </Card>
-              </Link>
-              <Link href="/referrals" className="no-underline">
-                <Card
-                  hoverable
-                  className="text-center py-4 h-full flex flex-col justify-center"
-                >
-                  <MedicineBoxOutlined className="text-2xl text-blue-500 mb-2" />
-                  <Text strong>Manage Referrals</Text>
-                </Card>
-              </Link>
-              <Link href="/family-access" className="no-underline">
-                <Card
-                  hoverable
-                  className="text-center py-4 h-full flex flex-col justify-center"
-                >
-                  <UserOutlined className="text-2xl text-blue-500 mb-2" />
-                  <Text strong>Family Access</Text>
-                </Card>
-              </Link>
-            </div>
-          </Card>
-        </Col>
-      </Row>
+            // Filter upcoming appointments (status not cancelled/completed and date in future)
+            const upcomingAppointments = appointments.filter((appointment) => {
+                const appointmentDate = dayjs(appointment.appointmentDateTime);
+                const isUpcoming =
+                    appointmentDate.isAfter(dayjs()) &&
+                    appointment.status !== "CANCELLED" &&
+                    appointment.status !== "COMPLETED";
+                return isUpcoming;
+            });
 
-      {/* Content Rows */}
-      <Row gutter={[16, 16]}>
-        {/* Left Column */}
-        <Col xs={24} lg={16}>
-          {/* Upcoming Appointments */}
-          <Card
-            title={<Title level={4} className="m-0">Upcoming Appointments</Title>}
-            extra={<Link href="/appointments">View All</Link>}
-            className="mb-6"
-            loading={loading}
-          >
-            {upcomingAppointments.length > 0 ? (
-              <List
-                itemLayout="horizontal"
-                dataSource={upcomingAppointments}
-                renderItem={(appointment) => (
-                  <List.Item
-                    actions={[
-                      <Link key="view" href={`/appointments/${appointment.id}`}>
-                        View Details
-                      </Link>
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={
-                        <div className="flex items-center">
-                          <span>{appointment.doctorName}</span>
-                          <Tag
-                            color={appointment.status === 'confirmed' ? 'green' : 'orange'}
-                            className="ml-2"
-                          >
-                            {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                          </Tag>
-                        </div>
-                      }
-                      description={
-                        <div>
-                          <div><CalendarOutlined className="mr-2" />{formatDate(appointment.date)} at {appointment.time}</div>
-                          <div><MedicineBoxOutlined className="mr-2" />{appointment.specialty} - {appointment.facility}</div>
-                        </div>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
-            ) : (
-              <div className="text-center py-4">
-                <Text>No upcoming appointments</Text>
-                <div className="mt-2">
-                  <Link href="/browse/doctors">
-                    <Button type="primary" icon={<PlusOutlined />}>Book an Appointment</Button>
-                  </Link>
-                </div>
-              </div>
-            )}
-          </Card>
+            // Fetch referrals (active referrals) - only if we have patient profile
+            let activeReferrals: ReferralDto[] = [];
+            if (patientProfile?.id) {
+                try {
+                    const referralsResponse = await ReferralApi.getReferralsByPatient(patientProfile.id);
+                    const referrals = referralsResponse.data.data?.content || [];
 
-          {/* Calendar View */}
-          <Card
-            title={<Title level={4} className="m-0">Calendar</Title>}
-            className="mb-6"
-            loading={loading}
-          >
-            <Calendar fullscreen={false} cellRender={dateCellRender} />
-          </Card>
-        </Col>
+                    // Filter active referrals (not expired, cancelled, or completed)
+                    activeReferrals = referrals.filter((referral) => {
+                        const expiryDate = dayjs(referral.expiryDate);
+                        const isActive =
+                            expiryDate.isAfter(dayjs()) &&
+                            referral.status !== ReferralStatus.EXPIRED &&
+                            referral.status !== ReferralStatus.CANCELLED &&
+                            referral.status !== ReferralStatus.COMPLETED;
+                        return isActive;
+                    });
+                } catch (referralError) {
+                    console.warn("Failed to fetch referrals:", referralError);
+                }
+            }
 
-        {/* Right Column */}
-        <Col xs={24} lg={8}>
-          {/* Active Referrals */}
-          <Card
-            title={<Title level={4} className="m-0">Active Referrals</Title>}
-            extra={<Link href="/referrals">View All</Link>}
-            className="mb-6"
-            loading={loading}
-          >
-            <List
-              itemLayout="vertical"
-              dataSource={activeReferrals}
-              renderItem={(referral) => (
-                <List.Item>
-                  <div>
-                    <Text strong>{referral.type}</Text>
-                    <div className="text-sm">
-                      <UserOutlined className="mr-1" /> {referral.referringDoctor}
-                    </div>
-                    <div className="text-sm mt-1">
-                      <ClockCircleOutlined className="mr-1" /> Expires: {formatDate(referral.expiryDate)}
-                      <Text
-                        type={referral.daysRemaining < 7 ? "danger" : "secondary"}
-                        strong={referral.daysRemaining < 7}
-                        className="ml-2"
-                      >
-                        ({referral.daysRemaining} days)
-                      </Text>
-                    </div>
-                    <div className="mt-2">
-                      <Link href={`/browse/doctors?referral=${referral.id}`}>
-                        <Button type="primary" size="small">
-                          Use Referral <RightOutlined />
+            // Fetch prescriptions (active prescriptions) - only if we have patient profile
+            let activePrescriptions: PrescriptionDto[] = [];
+            if (patientProfile?.id) {
+                try {
+                    const prescriptionsResponse = await PrescriptionApi.getPrescriptionsByPatient(patientProfile.id);
+                    const prescriptions = prescriptionsResponse.data.data?.content || [];
+
+                    // Filter active prescriptions (not expired or cancelled)
+                    activePrescriptions = prescriptions.filter((prescription) => {
+                        const isActive = prescription.status !== "EXPIRED" && prescription.status !== "CANCELLED";
+                        return isActive;
+                    });
+                } catch (prescriptionError) {
+                    console.warn("Failed to fetch prescriptions:", prescriptionError);
+                }
+            }
+
+            setDashboardData({
+                appointments: upcomingAppointments,
+                referrals: activeReferrals,
+                prescriptions: activePrescriptions,
+                patientProfile,
+                stats: {
+                    upcomingAppointments: upcomingAppointments.length,
+                    activeReferrals: activeReferrals.length,
+                    activePrescriptions: activePrescriptions.length,
+                },
+            });
+        } catch (err: any) {
+            console.error("Failed to fetch dashboard data:", err);
+            setError(err.response?.data?.message || "Failed to load dashboard data. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    // Format date for display
+    const formatDate = (dateString: string): string => {
+        return dayjs(dateString).format("MMM DD, YYYY");
+    };
+
+    // Format time for display
+    const formatTime = (dateTimeString: string): string => {
+        return dayjs(dateTimeString).format("h:mm A");
+    };
+
+    // Get appointment status color
+    const getAppointmentStatusColor = (status: string): string => {
+        switch (status) {
+            case "CONFIRMED":
+                return "green";
+            case "PENDING":
+                return "orange";
+            case "CANCELLED":
+                return "red";
+            default:
+                return "default";
+        }
+    };
+
+    // Get referral status color
+    const getReferralStatusColor = (status: ReferralStatus): string => {
+        switch (status) {
+            case ReferralStatus.ACCEPTED:
+                return "green";
+            case ReferralStatus.PENDING:
+                return "orange";
+            case ReferralStatus.REJECTED:
+                return "red";
+            case ReferralStatus.SCHEDULED:
+                return "blue";
+            default:
+                return "default";
+        }
+    };
+
+    // Calculate days remaining for referral
+    const getDaysRemaining = (expiryDate: string): number => {
+        return dayjs(expiryDate).diff(dayjs(), "day");
+    };
+
+    // Handle refresh
+    const handleRefresh = () => {
+        fetchDashboardData();
+    };
+
+    if (error) {
+        return (
+            <div className="container mx-auto px-4 py-6">
+                <Alert
+                    message="Error Loading Dashboard"
+                    description={error}
+                    type="error"
+                    showIcon
+                    action={
+                        <Button size="small" danger onClick={handleRefresh}>
+                            Retry
                         </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </List.Item>
-              )}
-            />
-            {activeReferrals.length === 0 && (
-              <Empty description="No active referrals" />
-            )}
-          </Card>
-
-          {/* Recent Medical Records */}
-          <Card
-            title={<Title level={4} className="m-0">Recent Medical Records</Title>}
-            extra={<Link href="/medical-records">View All</Link>}
-            loading={loading}
-          >
-            <List
-              itemLayout="horizontal"
-              dataSource={recentMedicalRecords}
-              renderItem={(record) => (
-                <List.Item>
-                  <List.Item.Meta
-                    title={record.type}
-                    description={
-                      <div>
-                        <CalendarOutlined className="mr-1" /> {formatDate(record.date)}
-                        <br />
-                        <MedicineBoxOutlined className="mr-1" /> {record.provider}
-                      </div>
                     }
-                  />
-                </List.Item>
-              )}
-            />
-            {recentMedicalRecords.length === 0 && (
-              <Empty description="No recent medical records" />
-            )}
-          </Card>
-        </Col>
-      </Row>
-    </div>
-  );
+                />
+            </div>
+        );
+    }
+
+    return (
+        <div className="container mx-auto">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-8">
+                <div>
+                    <Title level={2} className="text-gray-800 mb-2 mt-0 text-xl md:text-3xl">
+                        Welcome back, {dashboardData.patientProfile?.name || "Patient"}!
+                    </Title>
+                    <Text className="text-gray-600 text-sm md:text-base">
+                        Here&apos;s your health overview for today
+                    </Text>
+                </div>
+            </div>
+
+            {/* Quick Stats */}
+            <Row gutter={[16, 16]} className="mb-8">
+                <Col xs={24} sm={12} md={8}>
+                    <Card className="shadow-lg border-0 bg-white" styles={{ body: { padding: "24px" } }}>
+                        <Statistic
+                            title={
+                                <div className="flex items-center">
+                                    <Calendar className="w-6 h-6 text-blue-500 mr-3" />
+                                    <Text className="text-gray-700 text-sm md:text-lg font-bold">
+                                        Upcoming Appointments
+                                    </Text>
+                                </div>
+                            }
+                            value={dashboardData.stats.upcomingAppointments}
+                            valueStyle={{ color: "#1890ff", fontSize: "32px", fontWeight: "bold" }}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                    <Card className="shadow-lg border-0 bg-white" styles={{ body: { padding: "24px" } }}>
+                        <Statistic
+                            title={
+                                <div className="flex items-center">
+                                    <FileText className="w-6 h-6 text-green-500 mr-3" />
+                                    <Text className="text-gray-700 text-sm md:text-lg font-bold">Active Referrals</Text>
+                                </div>
+                            }
+                            value={dashboardData.stats.activeReferrals}
+                            valueStyle={{ color: "#52c41a", fontSize: "32px", fontWeight: "bold" }}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                    <Card className="shadow-lg border-0 bg-white" styles={{ body: { padding: "24px" } }}>
+                        <Statistic
+                            title={
+                                <div className="flex items-center">
+                                    <Pill className="w-6 h-6 text-purple-500 mr-3" />
+                                    <Text className="text-gray-700 text-sm md:text-lg font-bold">
+                                        Active Prescriptions
+                                    </Text>
+                                </div>
+                            }
+                            value={dashboardData.stats.activePrescriptions}
+                            valueStyle={{ color: "#722ed1", fontSize: "32px", fontWeight: "bold" }}
+                        />
+                    </Card>
+                </Col>
+            </Row>
+
+            {/* Quick Actions */}
+            <Row gutter={[16, 16]} className="mb-8">
+                <Col xs={24}>
+                    <Card
+                        title={
+                            <div className="flex items-center">
+                                <Shield className="w-6 h-6 text-blue-500 mr-3" />
+                                <Title level={4} className="m-0 text-gray-800 text-base md:text-lg">
+                                    Quick Actions
+                                </Title>
+                            </div>
+                        }
+                        className="shadow-lg border-0 bg-white"
+                        styles={{ body: { padding: "24px" } }}
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <Link href="/patient/booking" className="no-underline">
+                                <Card
+                                    hoverable
+                                    className="text-center py-6 h-full justify-center border-2 border-blue-200 hover:border-blue-500 transition-all duration-200"
+                                >
+                                    <div className="flex flex-col items-center justify-center">
+                                        <Calendar className="w-12 h-12 text-blue-500 mb-4" />
+                                        <Text strong className="text-gray-800 text-sm md:text-lg">
+                                            Book Appointment
+                                        </Text>
+                                        <Text className="text-gray-500 text-xs md:text-sm mt-2">
+                                            Schedule a consultation
+                                        </Text>
+                                    </div>
+                                </Card>
+                            </Link>
+                            <Link href="/patient/medical-records" className="no-underline">
+                                <Card
+                                    hoverable
+                                    className="text-center py-6 h-full flex flex-col justify-center border-2 border-green-200 hover:border-green-500 transition-all duration-200"
+                                >
+                                    <div className="flex flex-col items-center justify-center">
+                                        <FileText className="w-12 h-12 text-green-500 mb-4" />
+                                        <Text strong className="text-gray-800 text-sm md:text-lg">
+                                            Medical Records
+                                        </Text>
+                                        <Text className="text-gray-500 text-xs md:text-sm mt-2">
+                                            View your health data
+                                        </Text>
+                                    </div>
+                                </Card>
+                            </Link>
+                            <Link href="/patient/referrals" className="no-underline">
+                                <Card
+                                    hoverable
+                                    className="text-center py-6 h-full flex flex-col justify-center border-2 border-orange-200 hover:border-orange-500 transition-all duration-200"
+                                >
+                                    <div className="flex flex-col items-center justify-center">
+                                        <Pill className="w-12 h-12 text-orange-500 mb-4" />
+                                        <Text strong className="text-gray-800 text-sm md:text-lg">
+                                            Manage Referrals
+                                        </Text>
+                                        <Text className="text-gray-500 text-xs md:text-sm mt-2">
+                                            Track your referrals
+                                        </Text>
+                                    </div>
+                                </Card>
+                            </Link>
+                            <Link href="/patient/family-access" className="no-underline">
+                                <Card
+                                    hoverable
+                                    className="text-center py-6 h-full flex flex-col justify-center border-2 border-purple-200 hover:border-purple-500 transition-all duration-200"
+                                >
+                                    <div className="flex flex-col items-center justify-center">
+                                        <User className="w-12 h-12 text-purple-500 mb-4" />
+                                        <Text strong className="text-gray-800 text-sm md:text-lg">
+                                            Family Access
+                                        </Text>
+                                        <Text className="text-gray-500 text-xs md:text-sm mt-2">
+                                            Manage family members
+                                        </Text>
+                                    </div>
+                                </Card>
+                            </Link>
+                        </div>
+                    </Card>
+                </Col>
+            </Row>
+
+            {/* Content Rows */}
+            <Row gutter={[24, 24]}>
+                {/* Left Column */}
+                <Col xs={24} lg={16}>
+                    {/* Upcoming Appointments */}
+                    <Card
+                        title={
+                            <div className="flex items-center">
+                                <Calendar className="w-6 h-6 text-blue-500 mr-3" />
+                                <Title level={4} className="m-0 text-gray-800 text-base md:text-lg">
+                                    Upcoming Appointments
+                                </Title>
+                            </div>
+                        }
+                        extra={
+                            <Link href="/patient/appointments" className="text-blue-500 hover:text-blue-700">
+                                View All <ChevronRight className="w-4 h-4 inline" />
+                            </Link>
+                        }
+                        className="shadow-lg border-0 bg-white mb-6"
+                        loading={loading}
+                    >
+                        {dashboardData.appointments.length > 0 ? (
+                            <List
+                                itemLayout="horizontal"
+                                dataSource={dashboardData.appointments}
+                                renderItem={(appointment) => (
+                                    <List.Item
+                                        actions={[
+                                            <Link key="view" href={`/patient/appointments/${appointment.id}`}>
+                                                <Button type="link" className="text-blue-500">
+                                                    View Details
+                                                </Button>
+                                            </Link>,
+                                        ]}
+                                        className="border-b border-gray-100 last:border-b-0"
+                                    >
+                                        <List.Item.Meta
+                                            avatar={
+                                                <Avatar
+                                                    size={48}
+                                                    className="bg-blue-100 text-blue-600"
+                                                    icon={<User className="w-6 h-6" />}
+                                                />
+                                            }
+                                            title={
+                                                <div className="flex items-center">
+                                                    <span className="font-semibold text-gray-800">
+                                                        Dr. {appointment.doctor.name}
+                                                    </span>
+                                                    <Tag
+                                                        color={getAppointmentStatusColor(appointment.status)}
+                                                        className="ml-3"
+                                                    >
+                                                        {appointment.status.charAt(0).toUpperCase() +
+                                                            appointment.status.slice(1).toLowerCase()}
+                                                    </Tag>
+                                                </div>
+                                            }
+                                            description={
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center text-gray-600">
+                                                        <Calendar className="w-4 h-4 mr-2" />
+                                                        {formatDate(appointment.appointmentDateTime)} at{" "}
+                                                        {formatTime(appointment.appointmentDateTime)}
+                                                    </div>
+                                                    <div className="flex items-center text-gray-600">
+                                                        <Pill className="w-4 h-4 mr-2" />
+                                                        {appointment.doctor.specialityList.join(", ")} •{" "}
+                                                        {appointment.consultationMode}
+                                                    </div>
+                                                    {appointment.reasonForVisit && (
+                                                        <div className="text-gray-500 text-sm">
+                                                            Reason: {appointment.reasonForVisit}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            }
+                                        />
+                                    </List.Item>
+                                )}
+                            />
+                        ) : (
+                            <div className="text-center py-8">
+                                <Calendar className="w-12 h-12 text-gray-300 mb-4 mx-auto" />
+                                <Text className="text-gray-500 block mb-4">No upcoming appointments</Text>
+                                <Link href="/patient/booking">
+                                    <Button type="primary" icon={<Plus className="w-5 h-5" />} size="large">
+                                        Book an Appointment
+                                    </Button>
+                                </Link>
+                            </div>
+                        )}
+                    </Card>
+                </Col>
+
+                {/* Right Column */}
+                <Col xs={24} lg={8}>
+                    {/* Active Referrals */}
+                    <Card
+                        title={
+                            <div className="flex items-center">
+                                <FileText className="w-6 h-6 text-green-500 mr-3" />
+                                <Title level={4} className="m-0 text-gray-800 text-base md:text-lg">
+                                    Active Referrals
+                                </Title>
+                            </div>
+                        }
+                        extra={
+                            <Link href="/patient/referrals" className="text-green-500 hover:text-green-700">
+                                View All <ChevronRight className="w-4 h-4 inline" />
+                            </Link>
+                        }
+                        className="shadow-lg border-0 bg-white mb-6"
+                        loading={loading}
+                    >
+                        {dashboardData.referrals.length > 0 ? (
+                            <List
+                                itemLayout="vertical"
+                                dataSource={dashboardData.referrals}
+                                renderItem={(referral) => {
+                                    const daysRemaining = getDaysRemaining(referral.expiryDate);
+                                    return (
+                                        <List.Item className="border-b border-gray-100 last:border-b-0">
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <Text strong className="text-gray-800">
+                                                        {referral.reasonForReferral}
+                                                    </Text>
+                                                    <Tag color={getReferralStatusColor(referral.status)}>
+                                                        {referral.status}
+                                                    </Tag>
+                                                </div>
+                                                <div className="text-sm text-gray-600">
+                                                    <div className="flex items-center mb-1">
+                                                        <User className="w-4 h-4 mr-1" />
+                                                        Dr. {referral.referringDoctor.name}
+                                                    </div>
+                                                    <div className="flex items-center mb-2">
+                                                        <Clock className="w-4 h-4 mr-1" />
+                                                        Expires: {formatDate(referral.expiryDate)}
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <AlertCircle className="w-4 h-4 mr-1" />
+                                                        <Text
+                                                            type={daysRemaining < 7 ? "danger" : "secondary"}
+                                                            strong={daysRemaining < 7}
+                                                        >
+                                                            {daysRemaining} days remaining
+                                                        </Text>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-3">
+                                                    <Link href={`/patient/booking?referral=${referral.id}`}>
+                                                        <Button type="primary" size="small" className="w-full">
+                                                            Use Referral <ChevronRight className="w-4 h-4 inline" />
+                                                        </Button>
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </List.Item>
+                                    );
+                                }}
+                            />
+                        ) : (
+                            <Empty description="No active referrals" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                        )}
+                    </Card>
+
+                    {/* Active Prescriptions */}
+                    <Card
+                        title={
+                            <div className="flex items-center">
+                                <Pill className="w-6 h-6 text-purple-500 mr-3" />
+                                <Title level={4} className="m-0 text-gray-800 text-base md:text-lg">
+                                    Active Prescriptions
+                                </Title>
+                            </div>
+                        }
+                        extra={
+                            <Link href="/patient/prescriptions" className="text-purple-500 hover:text-purple-700">
+                                View All <ChevronRight className="w-4 h-4 inline" />
+                            </Link>
+                        }
+                        className="shadow-lg border-0 bg-white"
+                        loading={loading}
+                    >
+                        {dashboardData.prescriptions.length > 0 ? (
+                            <List
+                                itemLayout="horizontal"
+                                dataSource={dashboardData.prescriptions}
+                                renderItem={(prescription) => (
+                                    <List.Item className="border-b border-gray-100 last:border-b-0">
+                                        <List.Item.Meta
+                                            title={
+                                                <div className="flex items-center">
+                                                    <span className="font-semibold text-gray-800">
+                                                        {prescription.prescriptionNumber}
+                                                    </span>
+                                                    <Tag color="purple" className="ml-2">
+                                                        {prescription.status}
+                                                    </Tag>
+                                                </div>
+                                            }
+                                            description={
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center text-gray-600">
+                                                        <Calendar className="w-4 h-4 mr-1" />
+                                                        {formatDate(prescription.createdAt)}
+                                                    </div>
+                                                    <div className="flex items-center text-gray-600">
+                                                        <User className="w-4 h-4 mr-1" />
+                                                        Dr. {prescription.appointment.doctor.name}
+                                                    </div>
+                                                </div>
+                                            }
+                                        />
+                                    </List.Item>
+                                )}
+                            />
+                        ) : (
+                            <Empty description="No active prescriptions" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                        )}
+                    </Card>
+                </Col>
+            </Row>
+        </div>
+    );
 };
 
 export default Component;

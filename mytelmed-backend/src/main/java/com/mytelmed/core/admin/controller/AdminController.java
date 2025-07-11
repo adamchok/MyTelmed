@@ -4,6 +4,7 @@ import com.mytelmed.common.dto.ApiResponse;
 import com.mytelmed.core.admin.dto.AdminDto;
 import com.mytelmed.core.admin.dto.CreateAdminRequestDto;
 import com.mytelmed.core.admin.dto.UpdateAdminProfileRequestDto;
+import com.mytelmed.core.admin.dto.UpdateAdminRequestDto;
 import com.mytelmed.core.admin.entity.Admin;
 import com.mytelmed.core.admin.mapper.AdminMapper;
 import com.mytelmed.core.admin.service.AdminService;
@@ -12,6 +13,7 @@ import com.mytelmed.infrastructure.aws.service.AwsS3Service;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -51,11 +54,27 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Page<AdminDto>>> getAllAdmin(
             @RequestParam Integer page,
-            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+            @AuthenticationPrincipal Account account
+    ) {
         log.info("Received request to get all admins with page: {} and page size: {}", page, pageSize);
 
         Page<Admin> paginatedAdmin = adminService.findAll(page, pageSize);
-        Page<AdminDto> paginatedAdminDto = paginatedAdmin.map((admin -> adminMapper.toDto(admin, awsS3Service)));
+
+        // Filter out the currently authenticated user's Admin
+        List<Admin> filteredAdmins = paginatedAdmin.getContent()
+                .stream()
+                .filter(admin -> !admin.getAccount().getId().equals(account.getId()))
+                .toList();
+
+        Page<Admin> filteredPage = new PageImpl<>(
+                filteredAdmins,
+                paginatedAdmin.getPageable(),
+                paginatedAdmin.getTotalElements() - 1
+        );
+
+        Page<AdminDto> paginatedAdminDto = filteredPage.map(admin -> adminMapper.toDto(admin, awsS3Service));
+
         return ResponseEntity.ok(ApiResponse.success(paginatedAdminDto));
     }
 
@@ -88,10 +107,24 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Admin created successfully"));
     }
 
+    @PatchMapping("/{adminId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> updateAdmin(
+            @PathVariable UUID adminId,
+            @Valid @RequestBody UpdateAdminRequestDto request
+    ) {
+        log.info("Received request to update admin with ID: {}", adminId);
+
+        adminService.update(adminId, request);
+        return ResponseEntity.ok(ApiResponse.success("Admin updated successfully"));
+    }
+
     @PatchMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> updateAdminProfile(@RequestBody UpdateAdminProfileRequestDto request,
-                                                                @AuthenticationPrincipal Account account) {
+    public ResponseEntity<ApiResponse<Void>> updateAdminProfile(
+            @RequestBody UpdateAdminProfileRequestDto request,
+            @AuthenticationPrincipal Account account
+    ) {
         log.info("Received request to update admin profile for account with ID: {}", account.getId());
 
         adminService.updateByAccount(account, request);

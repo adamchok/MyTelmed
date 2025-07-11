@@ -1,20 +1,16 @@
 import { AxiosResponse } from "axios";
 import repository from "../RepositoryManager";
-import { ApiResponse } from "../props";
-import {
-    Doctor,
-    CreateDoctorRequest,
-    UpdateDoctorProfileRequest,
-    UpdateDoctorSpecialitiesAndFacilityRequest,
-    PaginatedResponse,
-} from "./props";
+import { ApiResponse, PaginatedResponse } from "../props";
+import { Doctor, CreateDoctorRequest, UpdateDoctorProfileRequest, UpdateDoctorRequest } from "./props";
 
 const DOCTOR_BASE = "/api/v1/doctor";
 
 const DoctorApi = {
     // Get all doctors (paginated) - matches GET /api/v1/doctor
     getDoctors(page = 0, pageSize = 10): Promise<AxiosResponse<ApiResponse<PaginatedResponse<Doctor>>>> {
-        return repository.get<ApiResponse<PaginatedResponse<Doctor>>>(`${DOCTOR_BASE}?page=${page}&pageSize=${pageSize}`);
+        return repository.get<ApiResponse<PaginatedResponse<Doctor>>>(
+            `${DOCTOR_BASE}?page=${page}&pageSize=${pageSize}`
+        );
     },
 
     // Get doctors by facility ID - matches GET /api/v1/doctor/facility/{facilityId}
@@ -25,17 +21,6 @@ const DoctorApi = {
     ): Promise<AxiosResponse<ApiResponse<PaginatedResponse<Doctor>>>> {
         return repository.get<ApiResponse<PaginatedResponse<Doctor>>>(
             `${DOCTOR_BASE}/facility/${facilityId}?page=${page}&pageSize=${pageSize}`
-        );
-    },
-
-    // Get doctors by speciality - matches GET /api/v1/doctor/speciality
-    getDoctorsBySpeciality(
-        speciality: string,
-        page = 0,
-        pageSize = 10
-    ): Promise<AxiosResponse<ApiResponse<PaginatedResponse<Doctor>>>> {
-        return repository.get<ApiResponse<PaginatedResponse<Doctor>>>(
-            `${DOCTOR_BASE}/speciality?speciality=${speciality}&page=${page}&pageSize=${pageSize}`
         );
     },
 
@@ -50,8 +35,12 @@ const DoctorApi = {
     },
 
     // Create doctor - matches POST /api/v1/doctor
-    createDoctor(data: CreateDoctorRequest): Promise<AxiosResponse<ApiResponse<Doctor>>> {
-        return repository.post<ApiResponse<Doctor>>(`${DOCTOR_BASE}`, data);
+    createDoctor(data: CreateDoctorRequest): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.post<ApiResponse<void>>(`${DOCTOR_BASE}`, data);
+    },
+
+    updateDoctor(doctorId: string, data: UpdateDoctorRequest): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.patch<ApiResponse<void>>(`${DOCTOR_BASE}/${doctorId}`, data);
     },
 
     // Update doctor profile - matches PATCH /api/v1/doctor/profile
@@ -68,14 +57,6 @@ const DoctorApi = {
         });
     },
 
-    // Update doctor specialities and facility - matches PATCH /api/v1/doctor/specialities-facility/{doctorId}
-    updateDoctorSpecialitiesAndFacility(
-        doctorId: string,
-        data: UpdateDoctorSpecialitiesAndFacilityRequest
-    ): Promise<AxiosResponse<ApiResponse<void>>> {
-        return repository.patch<ApiResponse<void>>(`${DOCTOR_BASE}/specialities-facility/${doctorId}`, data);
-    },
-
     // Upload doctor image - matches POST /api/v1/doctor/image/{doctorId}
     uploadDoctorImage(doctorId: string, profileImage: File): Promise<AxiosResponse<ApiResponse<void>>> {
         const formData = new FormData();
@@ -83,11 +64,6 @@ const DoctorApi = {
         return repository.post<ApiResponse<void>>(`${DOCTOR_BASE}/image/${doctorId}`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
         });
-    },
-
-    // Delete doctor - matches DELETE /api/v1/doctor/{doctorId}
-    deleteDoctor(doctorId: string): Promise<AxiosResponse<ApiResponse<void>>> {
-        return repository.delete<ApiResponse<void>>(`${DOCTOR_BASE}/${doctorId}`);
     },
 
     // Activate doctor - matches POST /api/v1/doctor/activate/{doctorId}

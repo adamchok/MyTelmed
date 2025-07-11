@@ -101,6 +101,7 @@ export interface BaseUser extends BaseEntity {
     email: string;
     phone: string;
     profileImageUrl?: string;
+    enabled: boolean;
 }
 
 // Extended User Interface (for entities with additional personal info)

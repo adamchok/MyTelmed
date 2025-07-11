@@ -12,21 +12,17 @@ const KnowledgeHubPage = () => {
     const [tutorials, setTutorials] = useState<Tutorial[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [searchTerm, setSearchTerm] = useState<string>("");
-    const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
-        undefined
-    );
-    const [selectedType, setSelectedType] = useState<
-        "all" | "article" | "tutorial"
-    >("all");
+    const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+    const [selectedType, setSelectedType] = useState<"all" | "article" | "tutorial">("all");
     const [categories, setCategories] = useState<string[]>([]);
 
     const fetchArticles = useCallback(async () => {
         try {
-            // For now, we'll fetch articles by a general speciality
-            // In production, you might want to fetch all articles or paginate
-            const response = await ArticleApi.getArticlesBySpeciality("general");
-            if (response.data?.isSuccess) {
-                setArticles(response.data.data || []);
+            const response = await ArticleApi.getAllArticles();
+            const responseData = response.data;
+
+            if (responseData.isSuccess && responseData.data) {
+                setArticles(responseData.data);
             }
         } catch (error) {
             console.error("Error fetching articles:", error);
@@ -42,12 +38,8 @@ const KnowledgeHubPage = () => {
                 const tutorialData = responseData.data;
                 if (tutorialData && "content" in tutorialData) {
                     setTutorials(tutorialData.content);
-                    const tutorialCategories = Array.from(
-                        new Set(tutorialData.content.map((t) => t.category))
-                    );
-                    setCategories((prev) =>
-                        Array.from(new Set([...prev, ...tutorialCategories]))
-                    );
+                    const tutorialCategories = Array.from(new Set(tutorialData.content.map((t) => t.category)));
+                    setCategories((prev) => Array.from(new Set([...prev, ...tutorialCategories])));
                 }
             }
         } catch (error) {
@@ -73,12 +65,8 @@ const KnowledgeHubPage = () => {
 
     // Extract unique categories from articles as well
     useEffect(() => {
-        const articleCategories = Array.from(
-            new Set(articles.map((a) => a.speciality))
-        );
-        setCategories((prev) =>
-            Array.from(new Set([...prev, ...articleCategories]))
-        );
+        const articleCategories = Array.from(new Set(articles.map((a) => a.subject)));
+        setCategories((prev) => Array.from(new Set([...prev, ...articleCategories])));
     }, [articles]);
 
     return (

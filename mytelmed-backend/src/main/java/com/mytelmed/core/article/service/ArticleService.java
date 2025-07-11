@@ -1,11 +1,19 @@
 package com.mytelmed.core.article.service;
 
+import com.mytelmed.common.advice.AppException;
+import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
+import com.mytelmed.common.constant.file.ImageType;
+import com.mytelmed.common.event.image.ImageDeletedEvent;
 import com.mytelmed.core.article.dto.CreateArticleRequestDto;
 import com.mytelmed.core.article.dto.UpdateArticleRequestDto;
 import com.mytelmed.core.article.entity.Article;
+import com.mytelmed.core.image.entity.Image;
+import com.mytelmed.core.image.service.ImageService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
@@ -27,9 +35,13 @@ import java.util.stream.Collectors;
 @Service
 public class ArticleService {
     private final DynamoDbTable<Article> articleTable;
+    private final ImageService imageService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    public ArticleService(DynamoDbTable<Article> articleTable) {
+    public ArticleService(DynamoDbTable<Article> articleTable, ImageService imageService, ApplicationEventPublisher applicationEventPublisher) {
         this.articleTable = articleTable;
+        this.imageService = imageService;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     public Article findArticleById(UUID id) throws ResourceNotFoundException {
@@ -63,9 +75,9 @@ public class ArticleService {
                 .collect(Collectors.toList());
     }
 
-    public List<Article> findArticlesBySpeciality(String speciality) {
+    public List<Article> findArticlesBySubject(String subject) {
         Key key = Key.builder()
-                .partitionValue(speciality)
+                .partitionValue(subject)
                 .build();
 
         QueryEnhancedRequest request = QueryEnhancedRequest.builder()
@@ -84,13 +96,38 @@ public class ArticleService {
         Article article = Article.builder()
                 .id(UUID.randomUUID().toString())
                 .title(request.title())
-                .speciality(request.speciality())
+                .subject(request.subject())
                 .content(request.content())
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
 
         articleTable.putItem(article);
+    }
+
+    public void uploadThumbnail(UUID articleId, MultipartFile thumbnailImageFile) throws AppException {
+        log.debug("Uploading thumbnail for article with ID: {}", articleId);
+
+        Article article = findArticleById(articleId);
+
+        if (thumbnailImageFile == null || thumbnailImageFile.isEmpty()) {
+            throw new InvalidInputException("Article thumbnail image is required");
+        }
+
+        try {
+            Image image = imageService.updateAndGetImage(ImageType.ARTICLE, articleId, thumbnailImageFile);
+            article.setImageId(image.getId().toString());
+
+            articleTable.updateItem(article);
+
+            log.info("Uploaded thumbnail for article with ID: {}", articleId);
+        } catch (Exception e) {
+            if (e instanceof AppException) {
+                throw (AppException) e;
+            }
+            log.error("Unexpected error while uploading thumbnail for article: {}", articleId, e);
+            throw new AppException("Failed to upload article thumbnail");
+        }
     }
 
     public void updateArticle(UUID articleId, UpdateArticleRequestDto request) throws ResourceNotFoundException {
@@ -107,10 +144,20 @@ public class ArticleService {
         Article article = findArticleById(id);
 
         Key key = Key.builder()
-                .partitionValue(article.getSpeciality())
+                .partitionValue(article.getSubject())
                 .sortValue(article.getId())
                 .build();
 
         articleTable.deleteItem(key);
+
+        if (article.getImageId() == null) {
+            return;
+        }
+
+        Image image = imageService.getImageById(id);
+        
+        if (image.getImageKey() != null) {
+            applicationEventPublisher.publishEvent(new ImageDeletedEvent(id, image.getImageKey()));
+        }
     }
 }

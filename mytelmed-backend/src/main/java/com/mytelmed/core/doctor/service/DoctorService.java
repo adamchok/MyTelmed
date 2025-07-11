@@ -4,6 +4,9 @@ import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constant.file.ImageType;
+import com.mytelmed.common.event.account.model.AccountActivatedEvent;
+import com.mytelmed.common.event.account.model.AccountDeactivatedEvent;
+import com.mytelmed.common.event.account.model.AccountPasswordResetEvent;
 import com.mytelmed.common.event.image.ImageDeletedEvent;
 import com.mytelmed.common.utils.DateTimeUtil;
 import com.mytelmed.common.utils.PasswordGenerator;
@@ -11,7 +14,7 @@ import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.doctor.dto.CreateDoctorRequestDto;
 import com.mytelmed.core.doctor.dto.UpdateDoctorProfileRequestDto;
-import com.mytelmed.core.doctor.dto.UpdateDoctorSpecialtiesAndFacilityRequestDto;
+import com.mytelmed.core.doctor.dto.UpdateDoctorRequestDto;
 import com.mytelmed.core.doctor.entity.Doctor;
 import com.mytelmed.core.doctor.repository.DoctorRepository;
 import com.mytelmed.core.facility.entity.Facility;
@@ -43,7 +46,7 @@ public class DoctorService {
     public DoctorService(DoctorRepository doctorRepository,
                          FacilityService facilityService,
                          ImageService imageService, AccountService accountService,
-                         ApplicationEventPublisher eventPublisher) {
+                         ApplicationEventPublisher eventPublisher, ApplicationEventPublisher applicationEventPublisher) {
         this.doctorRepository = doctorRepository;
         this.facilityService = facilityService;
         this.imageService = imageService;
@@ -61,36 +64,6 @@ public class DoctorService {
         } catch (Exception e) {
             log.error("Failed to fetch all paginated doctors with page {} and page size {}", page, pageSize, e);
             throw new AppException("Failed to fetch all paginated doctors");
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public Page<Doctor> findAllByFacilityId(UUID facilityId, int page, int pageSize) {
-        log.debug("Finding all doctors by facilityId {} with page: {} and pageSize: {}", facilityId, page,
-                pageSize);
-
-        try {
-            Pageable pageable = PageRequest.of(page, pageSize);
-            return doctorRepository.findAllByFacilityId(facilityId, pageable);
-        } catch (Exception e) {
-            log.error("Failed to fetch all doctors by facility {} with page {} and page size {}", facilityId, page,
-                    pageSize, e);
-            throw new AppException("Failed to fetch all paginated doctors by facility");
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public Page<Doctor> findAllBySpeciality(String speciality, int page, int pageSize) {
-        log.debug("Finding all doctors by speciality {} with page: {} and pageSize: {}", speciality, page,
-                pageSize);
-
-        try {
-            Pageable pageable = PageRequest.of(page, pageSize);
-            return doctorRepository.findDistinctBySpecialityListContainingIgnoreCase(speciality, pageable);
-        } catch (Exception e) {
-            log.error("Failed to fetch all doctors by speciality {} with page {} and page size {}", speciality, page,
-                    pageSize, e);
-            throw new AppException("Failed to fetch all paginated doctors by speciality");
         }
     }
 
@@ -123,7 +96,7 @@ public class DoctorService {
     }
 
     @Transactional
-    public Doctor create(CreateDoctorRequestDto request) throws AppException {
+    public void create(CreateDoctorRequestDto request) throws AppException {
         log.debug("Creating doctor account: {}", request.email());
 
         // Find facility by ID
@@ -132,9 +105,10 @@ public class DoctorService {
         // Create a doctor account
         Account account = accountService.createDoctorAccount(request.email(), request.name());
 
-        try {
-            LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
+        // Validate date of birth
+        LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
 
+        try {
             // Create a doctor
             Doctor doctor = Doctor.builder()
                     .name(request.name())
@@ -153,9 +127,7 @@ public class DoctorService {
             // Save the doctor
             doctor = doctorRepository.save(doctor);
 
-            log.info("Created doctor account: {}", request.email());
-
-            return doctor;
+            log.info("Updated doctor with ID: {}", doctor.getId());
         } catch (Exception e) {
             log.error("Unexpected error while creating doctor account: {}", request.email(), e);
             throw new AppException("Failed to create doctor account");
@@ -169,9 +141,11 @@ public class DoctorService {
         // Find doctor by account
         Doctor doctor = findByAccount(account);
 
+        // Validate date of birth
+        LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
+
         try {
             // Update doctor profile
-            LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
             doctor.setName(request.name());
             doctor.setEmail(request.email());
             doctor.setPhone(request.phone());
@@ -187,6 +161,41 @@ public class DoctorService {
         } catch (Exception e) {
             log.error("Error updating doctor profile: {}", e.getMessage(), e);
             throw new AppException("Failed to update doctor profile");
+        }
+    }
+
+    @Transactional
+    public Doctor update(UUID doctorId, UpdateDoctorRequestDto request) throws AppException {
+        log.debug("Updating doctor with ID: {}", doctorId);
+
+        Doctor doctor = findById(doctorId);
+
+        // Find facility by ID
+        Facility facility = facilityService.findFacilityById(request.facilityId());
+
+        try {
+            LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
+
+            // Update doctor
+            doctor.setName(request.name());
+            doctor.setEmail(request.email());
+            doctor.setPhone(request.phone());
+            doctor.setDateOfBirth(dateOfBirth);
+            doctor.setGender(request.gender());
+            doctor.setFacility(facility);
+            doctor.setSpecialityList(request.specialityList());
+            doctor.setLanguageList(request.languageList());
+            doctor.setQualifications(request.qualifications());
+
+            // Save the doctor
+            doctor = doctorRepository.save(doctor);
+
+            log.info("Updated doctor account: {}", request.email());
+
+            return doctor;
+        } catch (Exception e) {
+            log.error("Unexpected error while updating doctor account: {}", request.email(), e);
+            throw new AppException("Failed to update doctor account");
         }
     }
 
@@ -235,32 +244,6 @@ public class DoctorService {
     }
 
     @Transactional
-    public void updateSpecialitiesAndFacilityById(UUID doctorId, UpdateDoctorSpecialtiesAndFacilityRequestDto request)
-            throws AppException {
-        log.debug("Updating doctor specialities and facility with ID: {}", doctorId);
-
-        // Find doctor by ID
-        Doctor doctor = findById(doctorId);
-
-        // Find facility by facility ID
-        Facility facility = facilityService.findFacilityById(request.facilityId());
-
-        try {
-            // Update doctor specialities and facility
-            doctor.setFacility(facility);
-            doctor.setSpecialityList(request.specialityList());
-
-            // Save doctor
-            doctorRepository.save(doctor);
-
-            log.info("Updated doctor specialities and facility with ID: {}", doctorId);
-        } catch (Exception e) {
-            log.error("Error updating doctor specialities and facility: {}", e.getMessage(), e);
-            throw new AppException("Failed to update doctor specialities and facility");
-        }
-    }
-
-    @Transactional
     public void deleteById(UUID id) throws AppException {
         log.debug("Deleting doctor with ID: {}", id);
 
@@ -301,6 +284,13 @@ public class DoctorService {
             // Save doctor
             doctorRepository.save(doctor);
 
+            AccountActivatedEvent event = AccountActivatedEvent.builder()
+                    .email(doctor.getEmail())
+                    .name(doctor.getName())
+                    .build();
+
+            eventPublisher.publishEvent(event);
+
             log.info("Activated doctor with ID: {}", id);
         } catch (Exception e) {
             log.error("Error activating doctor: {}", e.getMessage(), e);
@@ -322,6 +312,13 @@ public class DoctorService {
             // Save doctor
             doctorRepository.save(doctor);
 
+            AccountDeactivatedEvent event = AccountDeactivatedEvent.builder()
+                    .email(doctor.getEmail())
+                    .name(doctor.getName())
+                    .build();
+
+            eventPublisher.publishEvent(event);
+
             log.info("Deactivated doctor with ID: {}", id);
         } catch (Exception e) {
             log.error("Error deactivating doctor: {}", e.getMessage(), e);
@@ -330,11 +327,11 @@ public class DoctorService {
     }
 
     @Transactional
-    public void resetAccountPassword(UUID id) throws AppException {
-        log.debug("Resetting password for doctor with ID: {}", id);
+    public void resetAccountPasswordById(UUID doctorId) throws AppException {
+        log.debug("Resetting password for doctor with ID: {}", doctorId);
 
         // Find doctor by ID
-        Doctor doctor = findById(id);
+        Doctor doctor = findById(doctorId);
 
         try {
             // Generate a new random password
@@ -343,7 +340,17 @@ public class DoctorService {
             // Reset account password
             accountService.changePasswordById(doctor.getAccount().getId(), newPassword);
 
-            log.info("Reset password for doctor with ID: {}", id);
+            // Notify doctor about password reset
+            AccountPasswordResetEvent event = AccountPasswordResetEvent.builder()
+                    .email(doctor.getEmail())
+                    .name(doctor.getName())
+                    .password(newPassword)
+                    .username(doctor.getAccount().getUsername())
+                    .build();
+
+            eventPublisher.publishEvent(event);
+
+            log.info("Reset password for doctor with ID: {}", doctorId);
         } catch (Exception e) {
             log.error("Error resetting doctor password: {}", e.getMessage(), e);
             throw new AppException("Failed to reset doctor password");

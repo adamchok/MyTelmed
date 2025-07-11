@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID;
 
+
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/patient")
@@ -107,5 +108,32 @@ public class PatientController {
     public ResponseEntity<ApiResponse<Void>> deletePatient(@PathVariable UUID patientId) {
         patientService.deletePatientByPatientId(patientId);
         return ResponseEntity.ok(ApiResponse.success("Patient deleted successfully"));
+    }
+
+    @PostMapping("/activate/{patientId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> activatePharmacistById(@PathVariable UUID patientId) {
+        log.info("Received request to activate patient with ID: {}", patientId);
+
+        patientService.activatePatientById(patientId);
+        return ResponseEntity.ok(ApiResponse.success("Patient account activated successfully"));
+    }
+
+    @PostMapping("/deactivate/{patientId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deactivatePharmacistById(@PathVariable UUID patientId) {
+        log.info("Received request to deactivate patient with ID: {}", patientId);
+
+        patientService.deactivatePatientById(patientId);
+        return ResponseEntity.ok(ApiResponse.success("Patient account deactivated successfully"));
+    }
+
+    @PostMapping("/reset/password/{patientId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> resetPharmacistAccountPassword(@PathVariable UUID patientId) {
+        log.info("Received request to reset patient account password for patient with ID: {}", patientId);
+
+        patientService.resetPatientAccountPasswordById(patientId);
+        return ResponseEntity.ok(ApiResponse.success("Patient account password reset successfully"));
     }
 }

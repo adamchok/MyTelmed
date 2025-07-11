@@ -10,7 +10,7 @@ public record CreateArticleRequestDto(
         @NotBlank(message = "Content is required")
         String content,
 
-        @NotBlank(message = "Speciality is required")
-        String speciality
+        @NotBlank(message = "Subject is required")
+        String subject
 ) {
 }

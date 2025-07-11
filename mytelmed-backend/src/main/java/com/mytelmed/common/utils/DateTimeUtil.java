@@ -15,9 +15,7 @@ import java.util.Optional;
 public class DateTimeUtil {
     private static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
     private static final DateTimeFormatter ISO_DATE_FORMATTER = DateTimeFormatter.ISO_DATE;
-    private static final DateTimeFormatter US_DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
     private static final DateTimeFormatter EU_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final DateTimeFormatter YEAR_MONTH_DAY_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     /**
      * Private constructor to prevent instantiation
@@ -55,8 +53,6 @@ public class DateTimeUtil {
 
         DateTimeFormatter[] formatters = {
                 ISO_DATE_FORMATTER,
-                YEAR_MONTH_DAY_FORMATTER,
-                US_DATE_FORMATTER,
                 EU_DATE_FORMATTER
         };
 

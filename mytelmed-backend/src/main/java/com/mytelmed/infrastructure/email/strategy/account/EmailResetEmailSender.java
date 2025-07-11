@@ -35,12 +35,12 @@ public class EmailResetEmailSender extends BaseEmailSenderStrategy {
     protected String buildSubject(Map<String, Object> variables) {
         return "MyTelmed - Reset Your Email Address";
     }
-    
+
     @Override
     protected void validateRequiredVariables(Map<String, Object> variables) {
         String name = (String) variables.get("name");
         String username = (String) variables.get("username");
-        String resetUrl = (String) variables.get("resetUrl");
+        String resetUrl = (String) variables.get("resetToken");
         String expiration = (String) variables.get("expiration");
         String uiHost = (String) variables.get("uiHost");
 

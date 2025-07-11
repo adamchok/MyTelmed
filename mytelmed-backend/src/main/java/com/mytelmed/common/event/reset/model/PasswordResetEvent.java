@@ -15,8 +15,8 @@ public record PasswordResetEvent(
         @NotBlank(message = "Name is required")
         String name,
 
-        @NotBlank(message = "Reset URL is required")
-        String resetUrl,
+        @NotBlank(message = "Reset token is required")
+        String resetToken,
 
         @NotNull(message = "Expiration minutes is required")
         long expirationMinutes
