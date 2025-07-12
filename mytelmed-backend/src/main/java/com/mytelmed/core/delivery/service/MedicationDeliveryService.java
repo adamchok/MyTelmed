@@ -33,6 +33,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+
 /**
  * Service for managing medication delivery operations in Malaysian public
  * healthcare telemedicine.
@@ -47,24 +48,24 @@ public class MedicationDeliveryService {
     private final AddressService addressService;
     private final PharmacistService pharmacistService;
     private final ApplicationEventPublisher applicationEventPublisher;
-    private final FamilyMemberPermissionService familyPermissionService;
     private final Map<DeliveryMethod, DeliveryHandler> deliveryHandlers;
     private final PrescriptionService prescriptionService;
+    private final FamilyMemberPermissionService familyMemberPermissionService;
 
     public MedicationDeliveryService(MedicationDeliveryRepository deliveryRepository,
                                      AddressService addressService,
                                      PharmacistService pharmacistService,
                                      ApplicationEventPublisher applicationEventPublisher,
-                                     FamilyMemberPermissionService familyPermissionService,
-                                     List<DeliveryHandler> deliveryHandlers, PrescriptionService prescriptionService) {
+                                     List<DeliveryHandler> deliveryHandlers, PrescriptionService prescriptionService,
+                                     FamilyMemberPermissionService familyMemberPermissionService) {
         this.deliveryRepository = deliveryRepository;
         this.addressService = addressService;
         this.pharmacistService = pharmacistService;
         this.applicationEventPublisher = applicationEventPublisher;
-        this.familyPermissionService = familyPermissionService;
         this.deliveryHandlers = deliveryHandlers.stream()
                 .collect(Collectors.toMap(DeliveryHandler::getSupportedDeliveryMethod, Function.identity()));
         this.prescriptionService = prescriptionService;
+        this.familyMemberPermissionService = familyMemberPermissionService;
     }
 
     @Transactional(readOnly = true)
@@ -146,19 +147,19 @@ public class MedicationDeliveryService {
         MedicationDelivery delivery = findById(deliveryId);
         UUID patientId = delivery.getPrescription().getPatient().getId();
 
-        // Get the patient ID this account is authorized to access
-        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
-        if (authorizedPatientId == null) {
+        // Get all patient IDs this account is authorized to access
+        List<UUID> authorizedPatientIds = familyMemberPermissionService.getAuthorizedPatientIds(account);
+        if (authorizedPatientIds.isEmpty()) {
             throw new AppException("Account is not authorized to process payments for any patient");
         }
 
-        // Verify the delivery belongs to the authorized patient
-        if (!patientId.equals(authorizedPatientId)) {
+        // Verify the delivery belongs to one of the authorized patients
+        if (!authorizedPatientIds.contains(patientId)) {
             throw new AppException("Not authorized to process payment for this delivery");
         }
 
-        // Verify the account has BOOK_APPOINTMENT permission (required for payment)
-        if (!familyPermissionService.hasPermission(account, patientId, FamilyPermissionType.BOOK_APPOINTMENT)) {
+        // Verify the account has billing management permission (required for payment)
+        if (!familyMemberPermissionService.hasPermission(account, patientId, FamilyPermissionType.MANAGE_BILLING)) {
             throw new AppException("Insufficient permissions to process payments");
         }
 
@@ -229,19 +230,19 @@ public class MedicationDeliveryService {
         MedicationDelivery delivery = findById(deliveryId);
         UUID patientId = delivery.getPrescription().getPatient().getId();
 
-        // Get the patient ID this account is authorized to access
-        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
-        if (authorizedPatientId == null) {
+        // Get all patient IDs this account is authorized to access
+        List<UUID> authorizedPatientIds = familyMemberPermissionService.getAuthorizedPatientIds(account);
+        if (authorizedPatientIds.isEmpty()) {
             throw new AppException("Account is not authorized to complete deliveries for any patient");
         }
 
-        // Verify the delivery belongs to the authorized patient
-        if (!patientId.equals(authorizedPatientId)) {
+        // Verify the delivery belongs to one of the authorized patients
+        if (!authorizedPatientIds.contains(patientId)) {
             throw new AppException("Not authorized to complete this delivery");
         }
 
-        // Verify the account has VIEW_APPOINTMENT permission (minimum required)
-        if (!familyPermissionService.hasPermission(account, patientId, FamilyPermissionType.VIEW_APPOINTMENT)) {
+        // Verify the account has prescription management permission (minimum required)
+        if (!familyMemberPermissionService.hasPermission(account, patientId, FamilyPermissionType.MANAGE_PRESCRIPTIONS)) {
             throw new AppException("Insufficient permissions to complete deliveries");
         }
 

@@ -14,12 +14,20 @@ export interface Referral {
     issuedFor?: string;
 }
 
+// Patient selection option for dropdown
+export interface PatientOption {
+    id: string;
+    name: string;
+    relationship: string; // "You" for self, or actual relationship for family members
+    canViewReferrals: boolean;
+}
+
 // New interfaces for the actual API integration
 export interface ReferralsFilterOptions {
     status?: ReferralStatus[];
     dateRange?: [string, string]; // [startDate, endDate]
     doctorName?: string;
-    specialty?: string;
+    specialty?: string[];
     priority?: ReferralPriority[];
     referralType?: ReferralType[];
 }
@@ -49,10 +57,15 @@ export interface ReferralsComponentProps {
     // Search props
     searchQuery: string;
 
+    // Patient selection props
+    patientOptions: PatientOption[];
+    selectedPatientId: string;
+
     // Handler functions
     onSearchChange: (query: string) => void;
     onFilterChange: (newFilters: Partial<ReferralsFilterOptions>) => void;
     onPageChange: (page: number) => void;
+    onPatientChange: (patientId: string) => void;
     onRefresh: () => Promise<void>;
 
     // Loading state

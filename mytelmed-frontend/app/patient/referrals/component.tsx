@@ -16,6 +16,7 @@ import {
     Row,
     Col,
     Statistic,
+    Tooltip,
 } from "antd";
 import {
     SearchOutlined,
@@ -24,6 +25,7 @@ import {
     CalendarOutlined,
     CheckCircleOutlined,
     ExclamationCircleOutlined,
+    InfoCircleOutlined,
 } from "@ant-design/icons";
 import { ReferralsComponentProps } from "./props";
 import ReferralCard from "./components/ReferralCard";
@@ -47,9 +49,12 @@ const ReferralsComponent: React.FC<ReferralsComponentProps> = ({
     priorityOptions,
     referralTypeOptions,
     searchQuery,
+    patientOptions,
+    selectedPatientId,
     onSearchChange,
     onFilterChange,
     onPageChange,
+    onPatientChange,
     onRefresh,
     isLoading,
     error,
@@ -89,13 +94,18 @@ const ReferralsComponent: React.FC<ReferralsComponentProps> = ({
     };
 
     // Handle specialty change
-    const handleSpecialtyChange = (value: string) => {
-        onFilterChange({ specialty: value || undefined });
+    const handleSpecialtyChange = (values: string[]) => {
+        onFilterChange({ specialty: values.length > 0 ? values : undefined });
     };
 
     // Handle doctor name change
     const handleDoctorNameChange = (value: string) => {
         onFilterChange({ doctorName: value || undefined });
+    };
+
+    // Handle patient change
+    const handlePatientChange = (value: string) => {
+        onPatientChange(value);
     };
 
     // Clear all filters
@@ -152,6 +162,12 @@ const ReferralsComponent: React.FC<ReferralsComponentProps> = ({
 
     const stats = getStatistics();
 
+    // Get selected patient name for display
+    const getSelectedPatientName = () => {
+        const selectedPatient = patientOptions.find((p) => p.id === selectedPatientId);
+        return selectedPatient ? selectedPatient.name : "Unknown";
+    };
+
     if (isLoading) {
         return (
             <div className="container mx-auto px-4 py-6">
@@ -168,19 +184,16 @@ const ReferralsComponent: React.FC<ReferralsComponentProps> = ({
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-4">
                 <div>
                     <Title level={2} className="my-0 text-blue-900 text-xl sm:text-2xl lg:text-3xl">
-                        My Referrals
+                        Referrals
                     </Title>
-                    <Text className="text-gray-600 text-sm sm:text-base">Manage and track your medical referrals</Text>
+                    <Text className="text-gray-600 text-sm sm:text-base">
+                        {getSelectedPatientName() === "You"
+                            ? "Manage and track your medical referrals"
+                            : `Manage and track ${getSelectedPatientName()}'s medical referrals`}
+                    </Text>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2">
-                    <Button
-                        icon={<FilterOutlined />}
-                        onClick={toggleFilters}
-                        type={showFilters ? "primary" : "default"}
-                    >
-                        Filters
-                    </Button>
                     {hasActiveFilters() && (
                         <Button icon={<ClearOutlined />} onClick={handleClearFilters}>
                             Clear Filters
@@ -253,26 +266,105 @@ const ReferralsComponent: React.FC<ReferralsComponentProps> = ({
 
             {/* Search and Filters */}
             <Card className="shadow-sm border-0 bg-white mb-6">
-                {/* Search */}
-                <div className="mb-4">
-                    <Input
-                        placeholder="Search referrals by reason, doctor, or facility..."
-                        value={searchQuery}
-                        onChange={(e) => onSearchChange(e.target.value)}
-                        prefix={<SearchOutlined />}
-                        allowClear
-                        size="large"
-                        className="rounded-lg"
-                    />
-                </div>
+                {/* Search, Patient Selection, and Filter Row */}
+                <Row gutter={[16, 16]} className="mb-4">
+                    <Col xs={24} md={14}>
+                        <div>
+                            <Text strong className="block mb-2">
+                                Search Referrals
+                            </Text>
+                            <Input
+                                placeholder="Search referrals by reason, doctor, or facility..."
+                                value={searchQuery}
+                                onChange={(e) => onSearchChange(e.target.value)}
+                                prefix={<SearchOutlined />}
+                                allowClear
+                                size="large"
+                                className="rounded-lg"
+                            />
+                        </div>
+                    </Col>
+                    <Col xs={24} md={7}>
+                        <div>
+                            <div className="flex items-center mb-2">
+                                <Text strong className="mr-2">
+                                    View Referrals For
+                                </Text>
+                                <span className="text-red-500 mr-2">*</span>
+                                <Tooltip
+                                    title="You can only view referrals for family members who have granted you 'View Medical Records' permission."
+                                    placement="top"
+                                >
+                                    <InfoCircleOutlined className="text-blue-500 cursor-help" />
+                                </Tooltip>
+                            </div>
+                            <Select
+                                value={selectedPatientId}
+                                onChange={handlePatientChange}
+                                style={{ width: "100%" }}
+                                size="large"
+                                placeholder="Select patient"
+                                className="rounded-lg"
+                            >
+                                {patientOptions.map((option) => (
+                                    <Select.Option key={option.id} value={option.id}>
+                                        <div className="flex items-center justify-between">
+                                            <span>
+                                                {option.name}
+                                                {option.relationship !== "You" && (
+                                                    <span className="text-gray-500 ml-2">({option.relationship})</span>
+                                                )}
+                                            </span>
+                                            {option.canViewReferrals && (
+                                                <CheckCircleOutlined className="text-green-500 ml-2" />
+                                            )}
+                                        </div>
+                                    </Select.Option>
+                                ))}
+                            </Select>
+                        </div>
+                    </Col>
+                    <Col xs={24} md={3}>
+                        <div>
+                            <div className="flex items-center mb-2">
+                                <Text strong className="mr-2">
+                                    Filter
+                                </Text>
+                            </div>
+                            <Tooltip title="Show/Hide Filters" placement="top">
+                                <Button
+                                    icon={<FilterOutlined />}
+                                    onClick={toggleFilters}
+                                    type={showFilters ? "primary" : "default"}
+                                    size="large"
+                                    className="w-full rounded-lg"
+                                />
+                            </Tooltip>
+                        </div>
+                    </Col>
+                </Row>
 
                 {/* Filters */}
                 {showFilters && (
                     <div className="mb-4">
                         <Divider orientation="left" orientationMargin="0">
-                            <Text strong className="flex items-center">
-                                <FilterOutlined className="mr-2" /> Filter Options
-                            </Text>
+                            <div className="flex items-center justify-between">
+                                <Text strong className="flex items-center">
+                                    <FilterOutlined className="mr-2" /> Filter Options
+                                </Text>
+                                {hasActiveFilters() && (
+                                    <Button
+                                        icon={<ClearOutlined />}
+                                        onClick={handleClearFilters}
+                                        size="small"
+                                        type="text"
+                                        danger
+                                        className="ml-3"
+                                    >
+                                        Clear All Filters
+                                    </Button>
+                                )}
+                            </div>
                         </Divider>
 
                         <Row gutter={[16, 16]} className="mt-4">
@@ -336,9 +428,10 @@ const ReferralsComponent: React.FC<ReferralsComponentProps> = ({
                                         Specialty
                                     </Text>
                                     <Select
+                                        mode="multiple"
                                         placeholder="Filter by specialty"
                                         onChange={handleSpecialtyChange}
-                                        value={filters.specialty || undefined}
+                                        value={filters.specialty || []}
                                         style={{ width: "100%" }}
                                         options={specialtyOptions}
                                         allowClear
@@ -413,7 +506,13 @@ const ReferralsComponent: React.FC<ReferralsComponentProps> = ({
                     </div>
                 ) : (
                     <Empty
-                        description={hasActiveFilters() ? "No referrals match your filters" : "No referrals found"}
+                        description={
+                            selectedPatientId
+                                ? hasActiveFilters()
+                                    ? "No referrals match your filters"
+                                    : "No referrals found"
+                                : "Please select a patient to view referrals"
+                        }
                         image={Empty.PRESENTED_IMAGE_SIMPLE}
                     >
                         {hasActiveFilters() && <Button onClick={handleClearFilters}>Clear Filters</Button>}

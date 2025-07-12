@@ -1,14 +1,27 @@
 package com.mytelmed.core.family.dto;
 
-import com.mytelmed.common.constant.family.FamilyPermissionType;
 import jakarta.validation.constraints.NotNull;
-import java.util.Set;
 
 public record UpdateFamilyPermissionsRequestDto(
-        @NotNull(message = "Permissions are required")
-        Set<FamilyPermissionType> permissions,
+        @NotNull(message = "canViewMedicalRecords is required")
+        boolean canViewMedicalRecords,
         
-        String expiryDate,
-        String notes
+        @NotNull(message = "canViewAppointments is required")
+        boolean canViewAppointments,
+        
+        @NotNull(message = "canManageAppointments is required")
+        boolean canManageAppointments,
+        
+        @NotNull(message = "canViewPrescriptions is required")
+        boolean canViewPrescriptions,
+        
+        @NotNull(message = "canManagePrescriptions is required")
+        boolean canManagePrescriptions,
+        
+        @NotNull(message = "canViewBilling is required")
+        boolean canViewBilling,
+        
+        @NotNull(message = "canManageBilling is required")
+        boolean canManageBilling
 ) {
 }

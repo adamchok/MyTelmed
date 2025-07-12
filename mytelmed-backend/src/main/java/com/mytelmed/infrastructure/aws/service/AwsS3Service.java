@@ -22,6 +22,7 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.UUID;
 
+
 @Slf4j
 @Service
 public class AwsS3Service {
@@ -99,6 +100,13 @@ public class AwsS3Service {
                     .key(key)
                     .build();
 
+            if (storageOptions.fileType().equals(FileType.DOCUMENT) && originalFileName != null) {
+                if (!originalFileName.endsWith(".pdf")) {
+                    throw new InvalidInputException("File must be a PDF");
+                }
+                request.metadata().put("Content-Type", "application/pdf");
+            }
+            
             s3Client.putObject(request, RequestBody.fromBytes(file.getBytes()));
             log.info("Successfully uploaded file to S3 with key: {}", key);
 

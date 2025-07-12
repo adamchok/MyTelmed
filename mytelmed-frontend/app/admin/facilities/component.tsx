@@ -209,8 +209,8 @@ const FacilityManagementComponent: React.FC<FacilityManagementComponentProps> = 
             rules={[
                 { required: true, message: "Please enter phone number" },
                 {
-                    pattern: /^(03)\d{7,8}$/,
-                    message: "Please enter a valid Malaysian landline number",
+                    pattern: /^(03)\d{8}$/,
+                    message: "Please enter a valid Malaysian landline number (10 digits)",
                 },
             ]}
         >

@@ -4,29 +4,32 @@ package com.mytelmed.core.document.entity;
 import com.mytelmed.common.constant.file.DocumentType;
 import com.mytelmed.common.utils.conveter.EncryptionConverter;
 import com.mytelmed.core.patient.entity.Patient;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -40,22 +43,20 @@ public class Document {
     @Convert(converter = EncryptionConverter.class)
     @Column(name = "name", nullable = false)
     private String documentName;
-
-    @Convert(converter = EncryptionConverter.class)
+    
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private DocumentType documentType;
 
     @Convert(converter = EncryptionConverter.class)
-    @Column(name = "key", nullable = false, unique = true)
+    @Column(name = "key", unique = true)
     private String documentKey;
 
-    @Convert(converter = EncryptionConverter.class)
-    @Column(name = "size", nullable = false)
-    private String documentSize;
+    @Column(name = "size")
+    private Long documentSize;
 
-    @Builder.Default
-    @OneToMany(mappedBy = "document")
-    private List<DocumentAccess> documentAccessList = new ArrayList<>();
+    @OneToOne(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
+    private DocumentAccess documentAccess;
 
     @ManyToOne
     @JoinColumn(name = "patient_id", nullable = false)
@@ -68,6 +69,4 @@ public class Document {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
-
-    private String documentUrl;
 }

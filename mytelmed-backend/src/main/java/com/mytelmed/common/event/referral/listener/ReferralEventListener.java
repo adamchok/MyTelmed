@@ -4,6 +4,8 @@ import com.mytelmed.common.constant.family.FamilyPermissionType;
 import com.mytelmed.common.event.referral.model.ReferralCreatedEvent;
 import com.mytelmed.core.family.entity.FamilyMember;
 import com.mytelmed.core.family.repository.FamilyMemberRepository;
+import com.mytelmed.core.patient.entity.Patient;
+import com.mytelmed.core.patient.service.PatientService;
 import com.mytelmed.infrastructure.email.constant.EmailType;
 import com.mytelmed.infrastructure.email.factory.EmailSenderFactoryRegistry;
 import lombok.extern.slf4j.Slf4j;
@@ -29,13 +31,15 @@ public class ReferralEventListener {
     private final EmailSenderFactoryRegistry emailService;
     private final FamilyMemberRepository familyMemberRepository;
     private final String frontendUrl;
+    private final PatientService patientService;
 
     public ReferralEventListener(EmailSenderFactoryRegistry emailService,
                                  FamilyMemberRepository familyMemberRepository,
-                                 @Value("${application.frontend.url}") String frontendUrl) {
+                                 @Value("${application.frontend.url}") String frontendUrl, PatientService patientService) {
         this.emailService = emailService;
         this.familyMemberRepository = familyMemberRepository;
         this.frontendUrl = frontendUrl;
+        this.patientService = patientService;
     }
 
     /**
@@ -154,19 +158,28 @@ public class ReferralEventListener {
             int sentCount = 0;
             for (FamilyMember familyMember : familyMembers) {
                 // Skip pending family members
-                if (familyMember.isPending()) {
+                if (familyMember.isPending() || familyMember.getMemberAccount() == null) {
                     log.debug("Skipping pending family member: {}", familyMember.getId());
                     continue;
                 }
 
-                // Check if family member has VIEW_REFERRALS permission
-                boolean hasPermission = familyMember.getPermissions().stream()
-                        .anyMatch(permission -> permission.getPermissionType() == FamilyPermissionType.VIEW_REFERRALS &&
-                                permission.isActive());
+                // Get family member email
+                String familyMemberEmail;
+                try {
+                    Patient familyMemberPatient = patientService
+                            .findPatientByAccountId(familyMember.getMemberAccount().getId());
+                    familyMemberEmail = familyMemberPatient.getEmail();
+                } catch (Exception e) {
+                    log.warn("Failed to find patient for family member {}: {}", familyMember.getId(), e.getMessage());
+                    continue;
+                }
+
+                // Check if the family member has VIEW_REFERRALS permission
+                // Since we moved to individual permission fields, check canViewMedicalRecords for referral access
+                boolean hasPermission = familyMember.isCanViewMedicalRecords();
 
                 if (hasPermission) {
                     try {
-                        String familyMemberEmail = familyMember.getEmail();
                         sendEmailNotification(familyMemberEmail, EmailType.REFERRAL_CREATED, emailVariables);
                         sentCount++;
                         log.debug("Sent referral notification to authorized family member: {}", familyMemberEmail);
@@ -181,8 +194,7 @@ public class ReferralEventListener {
 
             log.info("Sent referral notifications to {} authorized family members", sentCount);
         } catch (Exception e) {
-            log.error("Error sending referral notifications to family members for patient {}: {}",
-                    patientId, e.getMessage());
+            log.error("Error sending referral notifications to family members for patient {}: {}", patientId, e.getMessage());
         }
     }
 

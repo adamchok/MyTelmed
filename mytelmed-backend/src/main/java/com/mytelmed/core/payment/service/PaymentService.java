@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +38,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -101,21 +104,22 @@ public class PaymentService {
                     "Payment is not required for " + appointment.getConsultationMode() + " consultations");
         }
 
-        // Get the patient ID this account is authorized to access
-        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
-        if (authorizedPatientId == null) {
+        // Get all patient IDs this account is authorized to access
+        List<UUID> authorizedPatientIds = familyPermissionService.getAuthorizedPatientIds(account);
+        if (authorizedPatientIds.isEmpty()) {
             throw new AppException("Account is not authorized to make payments for any patient");
         }
 
-        // Verify the account has BOOK_APPOINTMENT permission (required for payment)
-        if (!familyPermissionService.hasPermission(account, authorizedPatientId,
-                FamilyPermissionType.BOOK_APPOINTMENT)) {
-            throw new AppException("Insufficient permissions to make payment for appointments");
+        // Verify the appointment belongs to one of the authorized patients
+        UUID appointmentPatientId = appointment.getPatient().getId();
+        if (!authorizedPatientIds.contains(appointmentPatientId)) {
+            throw new AppException("Not authorized to pay for this appointment");
         }
 
-        // Verify the appointment belongs to the authorized patient
-        if (!appointment.getPatient().getId().equals(authorizedPatientId)) {
-            throw new AppException("Not authorized to pay for this appointment");
+        // Verify the account has BOOK_APPOINTMENT permission for this specific patient
+        if (!familyPermissionService.hasPermission(account, appointmentPatientId,
+                FamilyPermissionType.MANAGE_BILLING)) {
+            throw new AppException("Insufficient permissions to make payment for appointments");
         }
 
         // Check if bill already exists
@@ -124,7 +128,7 @@ public class PaymentService {
         }
 
         try {
-            Patient patient = patientService.findPatientById(authorizedPatientId);
+            Patient patient = appointment.getPatient();
 
             // Create bill
             Bill bill = createBill(patient, BillType.CONSULTATION, consultationFee,
@@ -155,21 +159,22 @@ public class PaymentService {
 
         Prescription prescription = prescriptionService.findById(prescriptionId);
 
-        // Get the patient ID this account is authorized to access
-        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
-        if (authorizedPatientId == null) {
+        // Get all patient IDs this account is authorized to access
+        List<UUID> authorizedPatientIds = familyPermissionService.getAuthorizedPatientIds(account);
+        if (authorizedPatientIds.isEmpty()) {
             throw new AppException("Account is not authorized to make payments for any patient");
         }
 
-        // Verify the account has BOOK_APPOINTMENT permission (required for payment)
-        if (!familyPermissionService.hasPermission(account, authorizedPatientId,
-                FamilyPermissionType.BOOK_APPOINTMENT)) {
-            throw new AppException("Insufficient permissions to make payment for prescriptions");
+        // Verify the prescription belongs to one of the authorized patients
+        UUID prescriptionPatientId = prescription.getPatient().getId();
+        if (!authorizedPatientIds.contains(prescriptionPatientId)) {
+            throw new AppException("Not authorized to pay for this prescription");
         }
 
-        // Verify the prescription belongs to the authorized patient
-        if (!prescription.getPatient().getId().equals(authorizedPatientId)) {
-            throw new AppException("Not authorized to pay for this prescription");
+        // Verify the account has BOOK_APPOINTMENT permission for this specific patient (required for payment)
+        if (!familyPermissionService.hasPermission(account, prescriptionPatientId,
+                FamilyPermissionType.MANAGE_BILLING)) {
+            throw new AppException("Insufficient permissions to make payment for prescriptions");
         }
 
         // Check if bill already exists
@@ -178,7 +183,7 @@ public class PaymentService {
         }
 
         try {
-            Patient patient = patientService.findPatientById(authorizedPatientId);
+            Patient patient = prescription.getPatient();
 
             // Create bill for standardized delivery fee (RM 10)
             Bill bill = createBill(patient, BillType.MEDICATION, deliveryFee,
@@ -212,14 +217,15 @@ public class PaymentService {
             PaymentTransaction transaction = paymentTransactionRepository.findByStripePaymentIntentId(paymentIntentId)
                     .orElseThrow(() -> new ResourceNotFoundException("Payment transaction not found"));
 
-            // Get the patient ID this account is authorized to access
-            UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
-            if (authorizedPatientId == null) {
+            // Get all patient IDs this account is authorized to access
+            List<UUID> authorizedPatientIds = familyPermissionService.getAuthorizedPatientIds(account);
+            if (authorizedPatientIds.isEmpty()) {
                 throw new AppException("Account is not authorized to confirm payments for any patient");
             }
 
-            // Verify the transaction belongs to the authorized patient
-            if (!transaction.getPatient().getId().equals(authorizedPatientId)) {
+            // Verify the transaction belongs to one of the authorized patients
+            UUID transactionPatientId = transaction.getPatient().getId();
+            if (!authorizedPatientIds.contains(transactionPatientId)) {
                 throw new AppException("Not authorized to confirm this payment");
             }
 
@@ -256,24 +262,55 @@ public class PaymentService {
 
     @Transactional(readOnly = true)
     public Page<Bill> getPatientBills(Account account, Pageable pageable) {
-        // Get the patient ID this account is authorized to access
-        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
-        if (authorizedPatientId == null) {
+        // Get all patient IDs this account is authorized to access
+        List<UUID> authorizedPatientIds = familyPermissionService.getAuthorizedPatientIds(account);
+        if (authorizedPatientIds.isEmpty()) {
             throw new AppException("Account is not authorized to view bills for any patient");
         }
 
-        return billRepository.findByPatientId(authorizedPatientId, pageable);
+        // Get bills for all authorized patients
+        List<Bill> allBills = new ArrayList<>();
+        for (UUID patientId : authorizedPatientIds) {
+            Page<Bill> patientBills = billRepository.findByPatientId(patientId, Pageable.unpaged());
+            allBills.addAll(patientBills.getContent());
+        }
+
+        // Sort bills by creation date (most recent first)
+        allBills.sort((b1, b2) -> b2.getBilledAt().compareTo(b1.getBilledAt()));
+
+        // Apply pagination manually
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), allBills.size());
+        List<Bill> paginatedBills = start < allBills.size() ? allBills.subList(start, end) : new ArrayList<>();
+
+        return new PageImpl<>(paginatedBills, pageable, allBills.size());
     }
 
     @Transactional(readOnly = true)
     public Page<PaymentTransaction> getPatientTransactions(Account account, Pageable pageable) {
-        // Get the patient ID this account is authorized to access
-        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
-        if (authorizedPatientId == null) {
+        // Get all patient IDs this account is authorized to access
+        List<UUID> authorizedPatientIds = familyPermissionService.getAuthorizedPatientIds(account);
+        if (authorizedPatientIds.isEmpty()) {
             throw new AppException("Account is not authorized to view transactions for any patient");
         }
 
-        return paymentTransactionRepository.findByPatientId(authorizedPatientId, pageable);
+        // Get transactions for all authorized patients
+        List<PaymentTransaction> allTransactions = new ArrayList<>();
+        for (UUID patientId : authorizedPatientIds) {
+            Page<PaymentTransaction> patientTransactions = paymentTransactionRepository.findByPatientId(patientId, Pageable.unpaged());
+            allTransactions.addAll(patientTransactions.getContent());
+        }
+
+        // Sort transactions by creation date (most recent first)
+        allTransactions.sort((t1, t2) -> t2.getCreatedAt().compareTo(t1.getCreatedAt()));
+
+        // Apply pagination manually
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), allTransactions.size());
+        List<PaymentTransaction> paginatedTransactions = start < allTransactions.size() ?
+                allTransactions.subList(start, end) : new ArrayList<>();
+
+        return new PageImpl<>(paginatedTransactions, pageable, allTransactions.size());
     }
 
     private Bill createBill(Patient patient, BillType billType, BigDecimal amount,

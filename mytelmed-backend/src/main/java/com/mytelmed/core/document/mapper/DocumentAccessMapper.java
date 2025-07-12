@@ -5,25 +5,15 @@ import com.mytelmed.core.document.entity.DocumentAccess;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import java.util.UUID;
 
 
 @Mapper(componentModel = "spring")
 public interface DocumentAccessMapper {
-    @Mapping(target = "id", source = "id", qualifiedByName = "mapUUID")
-    @Mapping(target = "documentId", source = "document.id", qualifiedByName = "mapUUID")
-    @Mapping(target = "documentName", source = "document.documentName")
-    @Mapping(target = "accountId", source = "permittedAccount.id", qualifiedByName = "mapUUID")
+    @Mapping(target = "id", expression = "java(documentAccess.getId() != null ? documentAccess.getId().toString() : null)")
     @Mapping(target = "canView", source = "canView")
-    @Mapping(target = "canDownload", source = "canDownload")
     @Mapping(target = "canAttach", source = "canAttach")
     @Mapping(target = "expiryDate", source = "expiryDate", qualifiedByName = "mapLocalDate")
     DocumentAccessDto toDto(DocumentAccess documentAccess);
-
-    @Named("mapUUID")
-    default String mapUUID(UUID id) {
-        return id != null ? id.toString() : null;
-    }
 
     @Named("mapLocalDate")
     default String mapLocalDate(java.time.LocalDate date) {

@@ -49,9 +49,9 @@ const navItems = [
         label: <Link href="/patient/referrals">Referrals</Link>,
     },
     {
-        key: "/patient/family-access",
+        key: "/patient/family",
         icon: <Users className="w-5 h-5" />,
-        label: <Link href="/patient/family-access">Family Access</Link>,
+        label: <Link href="/patient/family">Family Access</Link>,
     },
     {
         key: "/patient/booking",

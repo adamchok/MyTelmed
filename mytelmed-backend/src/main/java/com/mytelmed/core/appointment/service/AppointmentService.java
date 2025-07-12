@@ -32,11 +32,13 @@ import com.mytelmed.core.videocall.repository.VideoCallRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -57,11 +59,11 @@ public class AppointmentService {
     private final DocumentService documentService;
     private final ChatService chatService;
     private final ApplicationEventPublisher eventPublisher;
-    private final FamilyMemberPermissionService familyPermissionService;
     private final VideoCallRepository videoCallRepository;
     private final BillRepository billRepository;
     private final AppointmentStateMachine appointmentStateMachine;
     private final PaymentRefundService paymentRefundService;
+    private final FamilyMemberPermissionService familyMemberPermissionService;
 
     public AppointmentService(AppointmentRepository appointmentRepository,
                               AppointmentDocumentRepository appointmentDocumentRepository,
@@ -71,11 +73,11 @@ public class AppointmentService {
                               DocumentService documentService,
                               ChatService chatService,
                               ApplicationEventPublisher eventPublisher,
-                              FamilyMemberPermissionService familyPermissionService,
                               VideoCallRepository videoCallRepository,
                               BillRepository billRepository,
                               AppointmentStateMachine appointmentStateMachine,
-                              PaymentRefundService paymentRefundService) {
+                              PaymentRefundService paymentRefundService,
+                              FamilyMemberPermissionService familyMemberPermissionService) {
         this.appointmentRepository = appointmentRepository;
         this.appointmentDocumentRepository = appointmentDocumentRepository;
         this.timeSlotService = timeSlotService;
@@ -84,11 +86,11 @@ public class AppointmentService {
         this.documentService = documentService;
         this.chatService = chatService;
         this.eventPublisher = eventPublisher;
-        this.familyPermissionService = familyPermissionService;
         this.videoCallRepository = videoCallRepository;
         this.billRepository = billRepository;
         this.appointmentStateMachine = appointmentStateMachine;
         this.paymentRefundService = paymentRefundService;
+        this.familyMemberPermissionService = familyMemberPermissionService;
     }
 
     @Transactional(readOnly = true)
@@ -111,19 +113,32 @@ public class AppointmentService {
 
         switch (account.getPermission().getType()) {
             case PATIENT -> {
-                // Get the patient ID this account is authorized to access
-                UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
-                if (authorizedPatientId == null) {
+                // Get all patient IDs this account is authorized to access
+                List<UUID> authorizedPatientIds = familyMemberPermissionService.getAuthorizedPatientIds(account);
+                if (authorizedPatientIds.isEmpty()) {
                     throw new AppException("Account is not authorized to view any patient appointments");
                 }
 
-                // Verify the account has VIEW_APPOINTMENT permission
-                if (!familyPermissionService.hasPermission(account, authorizedPatientId,
-                        FamilyPermissionType.VIEW_APPOINTMENT)) {
-                    throw new AppException("Insufficient permissions to view appointments");
+                // Get appointments for all authorized patients
+                List<Appointment> allAppointments = new ArrayList<>();
+                for (UUID patientId : authorizedPatientIds) {
+                    // Verify the account has VIEW_APPOINTMENT permission for each patient
+                    if (familyMemberPermissionService.hasPermission(account, patientId, FamilyPermissionType.VIEW_APPOINTMENTS)) {
+                        Page<Appointment> patientAppointments = appointmentRepository.findByPatientIdOrderByTimeSlotStartTimeDesc(patientId, Pageable.unpaged());
+                        allAppointments.addAll(patientAppointments.getContent());
+                    }
                 }
 
-                return appointmentRepository.findByPatientIdOrderByTimeSlotStartTimeDesc(authorizedPatientId, pageable);
+                // Sort appointments by time slot start time (most recent first)
+                allAppointments.sort((a1, a2) -> a2.getTimeSlot().getStartTime().compareTo(a1.getTimeSlot().getStartTime()));
+
+                // Apply pagination manually
+                int start = (int) pageable.getOffset();
+                int end = Math.min(start + pageable.getPageSize(), allAppointments.size());
+                List<Appointment> paginatedAppointments = start < allAppointments.size() ?
+                        allAppointments.subList(start, end) : new ArrayList<>();
+
+                return new PageImpl<>(paginatedAppointments, pageable, allAppointments.size());
             }
             case DOCTOR -> {
                 Doctor doctor = doctorService.findByAccount(account);
@@ -140,19 +155,26 @@ public class AppointmentService {
     public List<Appointment> findByAllAccount(Account account) throws AppException {
         switch (account.getPermission().getType()) {
             case PATIENT -> {
-                // Get the patient ID this account is authorized to access
-                UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
-                if (authorizedPatientId == null) {
+                // Get all patient IDs this account is authorized to access
+                List<UUID> authorizedPatientIds = familyMemberPermissionService.getAuthorizedPatientIds(account);
+                if (authorizedPatientIds.isEmpty()) {
                     throw new AppException("Account is not authorized to view any patient appointments");
                 }
 
-                // Verify the account has VIEW_APPOINTMENT permission
-                if (!familyPermissionService.hasPermission(account, authorizedPatientId,
-                        FamilyPermissionType.VIEW_APPOINTMENT)) {
-                    throw new AppException("Insufficient permissions to view appointments");
+                // Get appointments for all authorized patients
+                List<Appointment> allAppointments = new ArrayList<>();
+                for (UUID patientId : authorizedPatientIds) {
+                    // Verify the account has VIEW_APPOINTMENT permission for each patient
+                    if (familyMemberPermissionService.hasPermission(account, patientId, FamilyPermissionType.VIEW_APPOINTMENTS)) {
+                        List<Appointment> patientAppointments = appointmentRepository.findByPatientIdOrderByTimeSlotStartTimeDesc(patientId);
+                        allAppointments.addAll(patientAppointments);
+                    }
                 }
 
-                return appointmentRepository.findByPatientIdOrderByTimeSlotStartTimeDesc(authorizedPatientId);
+                // Sort appointments by time slot start time (most recent first)
+                allAppointments.sort((a1, a2) -> a2.getTimeSlot().getStartTime().compareTo(a1.getTimeSlot().getStartTime()));
+
+                return allAppointments;
             }
             case DOCTOR -> {
                 Doctor doctor = doctorService.findByAccount(account);
@@ -170,20 +192,33 @@ public class AppointmentService {
         log.debug("Booking {} appointment for account {} with request {}",
                 request.consultationMode(), account.getId(), request);
 
-        // Get the patient ID this account is authorized to access
-        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
-        if (authorizedPatientId == null) {
+        // Get all patient IDs this account is authorized to access
+        List<UUID> authorizedPatientIds = familyMemberPermissionService.getAuthorizedPatientIds(account);
+        if (authorizedPatientIds.isEmpty()) {
             throw new AppException("Account is not authorized to book appointments for any patient");
         }
 
-        // Verify the account has BOOK_APPOINTMENT permission
-        if (!familyPermissionService.hasPermission(account, authorizedPatientId,
-                FamilyPermissionType.BOOK_APPOINTMENT)) {
+        UUID targetPatientId;
+        if (authorizedPatientIds.size() == 1) {
+            targetPatientId = authorizedPatientIds.getFirst();
+        } else {
+            // Multiple patients accessible - need to determine which one to book for
+            // For now, we'll use the first patient, but this should be specified in the request
+            // TODO: Update BookAppointmentRequestDto to include patientId field for family members
+            targetPatientId = authorizedPatientIds.getFirst();
+            log.warn("Account {} has access to {} patients, booking for first patient {}. " +
+                            "Consider updating the frontend to specify target patient.",
+                    account.getId(), authorizedPatientIds.size(), targetPatientId);
+        }
+
+        // Verify the account has BOOK_APPOINTMENT permission for the target patient
+        if (!familyMemberPermissionService.hasPermission(account, targetPatientId,
+                FamilyPermissionType.MANAGE_APPOINTMENTS)) {
             throw new AppException("Insufficient permissions to book appointments");
         }
 
         try {
-            Patient patient = patientService.findPatientById(authorizedPatientId);
+            Patient patient = patientService.findPatientById(targetPatientId);
             Doctor doctor = doctorService.findById(request.doctorId());
 
             // Validate business rules first
@@ -419,8 +454,8 @@ public class AppointmentService {
         switch (account.getPermission().getType()) {
             case PATIENT -> {
                 // Check if account is authorized for this patient and has cancel permission
-                isAuthorized = familyPermissionService.isAuthorizedForPatient(
-                        account, appointment.getPatient().getId(), FamilyPermissionType.CANCEL_APPOINTMENT);
+                isAuthorized = familyMemberPermissionService.isAuthorizedForPatient(
+                        account, appointment.getPatient().getId(), FamilyPermissionType.MANAGE_APPOINTMENTS);
             }
             case DOCTOR -> {
                 isAuthorized = appointment.getDoctor().getAccount().getId().equals(account.getId());
@@ -509,8 +544,8 @@ public class AppointmentService {
         boolean isAuthorized = false;
         switch (account.getPermission().getType()) {
             case PATIENT -> {
-                isAuthorized = familyPermissionService.isAuthorizedForPatient(
-                        account, appointment.getPatient().getId(), FamilyPermissionType.VIEW_APPOINTMENT);
+                isAuthorized = familyMemberPermissionService.isAuthorizedForPatient(
+                        account, appointment.getPatient().getId(), FamilyPermissionType.MANAGE_APPOINTMENTS);
             }
             case DOCTOR -> {
                 isAuthorized = appointment.getDoctor().getAccount().getId().equals(account.getId());
@@ -586,8 +621,8 @@ public class AppointmentService {
         Appointment appointment = findById(appointmentId);
 
         // Verify authorization - account must be authorized for this patient
-        if (!familyPermissionService.isAuthorizedForPatient(account, appointment.getPatient().getId(),
-                FamilyPermissionType.VIEW_APPOINTMENT)) {
+        if (!familyMemberPermissionService.isAuthorizedForPatient(account, appointment.getPatient().getId(),
+                FamilyPermissionType.VIEW_APPOINTMENTS)) {
             throw new AppException("Unauthorized to modify this appointment");
         }
 
@@ -692,8 +727,8 @@ public class AppointmentService {
                 }
 
                 // Validate the requesting account has attach permission for this document
-                if (!familyPermissionService.hasPermission(requestingAccount, appointment.getPatient().getId(),
-                        FamilyPermissionType.ATTACH_DOCUMENTS)) {
+                if (!familyMemberPermissionService.hasPermission(requestingAccount, appointment.getPatient().getId(),
+                        FamilyPermissionType.VIEW_MEDICAL_RECORDS)) {
                     log.warn("Account {} does not have attach permission for patient {} documents",
                             requestingAccount.getId(), appointment.getPatient().getId());
                     return;
@@ -739,8 +774,8 @@ public class AppointmentService {
                     }
 
                     // Validate the requesting account has attach permission for this document
-                    if (!familyPermissionService.hasPermission(requestingAccount, appointment.getPatient().getId(),
-                            FamilyPermissionType.ATTACH_DOCUMENTS)) {
+                    if (!familyMemberPermissionService.hasPermission(requestingAccount, appointment.getPatient().getId(),
+                            FamilyPermissionType.VIEW_MEDICAL_RECORDS)) {
                         log.warn("Account {} does not have attach permission for patient {} documents",
                                 requestingAccount.getId(), appointment.getPatient().getId());
                         return;

@@ -126,6 +126,7 @@ const ReferralCard: React.FC<ReferralCardProps> = ({ referral, onViewDetails }) 
         if (
             status === ReferralStatus.EXPIRED ||
             status === ReferralStatus.CANCELLED ||
+            status === ReferralStatus.REJECTED ||
             status === ReferralStatus.COMPLETED
         ) {
             return null;
@@ -241,8 +242,9 @@ const ReferralCard: React.FC<ReferralCardProps> = ({ referral, onViewDetails }) 
                         <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-600 gap-2 ml-6">
                             <div className="flex items-center">
                                 <Avatar
-                                    size={20}
-                                    icon={<User className="w-3 h-3" />}
+                                    size={32}
+                                    src={referringDoctor.profileImageUrl}
+                                    icon={<User className="w-4 h-4" />}
                                     className="mr-2 bg-blue-100 text-blue-600"
                                 />
                                 <Text className="text-sm">Dr. {referringDoctorInfo.name}</Text>
@@ -270,8 +272,9 @@ const ReferralCard: React.FC<ReferralCardProps> = ({ referral, onViewDetails }) 
                             <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-600 gap-2 ml-6">
                                 <div className="flex items-center">
                                     <Avatar
-                                        size={20}
-                                        icon={<User className="w-3 h-3" />}
+                                        size={32}
+                                        src={referredDoctor?.profileImageUrl}
+                                        icon={<User className="w-4 h-4" />}
                                         className="mr-2 bg-green-100 text-green-600"
                                     />
                                     <Text className="text-sm">Dr. {referredDoctorInfo.name}</Text>
@@ -300,8 +303,8 @@ const ReferralCard: React.FC<ReferralCardProps> = ({ referral, onViewDetails }) 
                             <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-600 gap-2 ml-6">
                                 <div className="flex items-center">
                                     <Avatar
-                                        size={20}
-                                        icon={<User className="w-3 h-3" />}
+                                        size={32}
+                                        icon={<User className="w-4 h-4" />}
                                         className="mr-2 bg-purple-100 text-purple-600"
                                     />
                                     <Text className="text-sm">Dr. {externalDoctorInfo.name}</Text>

@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -58,23 +59,23 @@ public class AppointmentPaymentValidationStrategy implements PaymentValidationSt
         Appointment appointment = appointmentService.findById(appointmentId);
         UUID patientId = appointment.getPatient().getId();
 
-        // Get the patient ID this account is authorized to access
-        UUID authorizedPatientId = familyPermissionService.getAuthorizedPatientId(account);
-        if (authorizedPatientId == null) {
+        // Get all patient IDs this account is authorized to access
+        List<UUID> authorizedPatientIds = familyPermissionService.getAuthorizedPatientIds(account);
+        if (authorizedPatientIds.isEmpty()) {
             log.debug("Account {} not authorized for any patient", account.getId());
             return false;
         }
 
-        // Check if the appointment belongs to the authorized patient
-        if (!patientId.equals(authorizedPatientId)) {
-            log.debug("Account {} not authorized for patient {} (appointment belongs to {})",
-                    account.getId(), authorizedPatientId, patientId);
+        // Check if the appointment belongs to one of the authorized patients
+        if (!authorizedPatientIds.contains(patientId)) {
+            log.debug("Account {} not authorized for patient {} (appointment belongs to patient not in authorized list)",
+                    account.getId(), patientId);
             return false;
         }
 
-        // Check if account has BOOK_APPOINTMENT permission (required for payment)
+        // Check if the account has billing management permission (required for payment)
         boolean hasPermission = familyPermissionService.hasPermission(
-                account, patientId, FamilyPermissionType.BOOK_APPOINTMENT);
+                account, patientId, FamilyPermissionType.MANAGE_BILLING);
 
         log.debug("Account {} has BOOK_APPOINTMENT permission for patient {}: {}",
                 account.getId(), patientId, hasPermission);

@@ -1,133 +1,129 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>MyTelmed - Family Member Access Confirmed</title>
-        <style>
-            body {
-                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-                line-height: 1.6;
-                color: #333333;
-                padding: 20px;
-                background-color: #f8f9fa;
-            }
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>MyTelmed - Family Member Access Confirmed</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
 
-            .container {
-                background-color: #ffffff;
-                border-radius: 10px;
-                padding: 30px;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
 
-            .header {
-                text-align: center;
-                justify-content: center;
-                border-bottom: 3px solid #17a2b8;
-                padding-bottom: 20px;
-                margin-bottom: 30px;
-            }
+        .header {
+            text-align: center;
+            justify-content: center;
+            border-bottom: 3px solid #17a2b8;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
 
-            .logo {
-                width: 192px;
-                height: auto;
-                max-width: 100%;
-                display: block;
-                margin: 0 auto;
-            }
+        .info-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
 
-            .info-box {
-                background-color: #f8f9fa;
-                border-left: 4px solid #17a2b8;
-                padding: 20px;
-                margin: 20px 0;
-                border-radius: 5px;
-            }
+        .action-buttons {
+            text-align: center;
+            margin: 30px 0;
+        }
 
-            .action-buttons {
-                text-align: center;
-                margin: 30px 0;
-            }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 0 10px;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
 
-            .btn {
-                display: inline-block;
-                padding: 12px 24px;
-                margin: 0 10px;
-                background-color: #007bff;
-                color: #ffffff;
-                text-decoration: none;
-                border-radius: 5px;
-                font-weight: bold;
-            }
+        .btn:hover {
+            background-color: #0056b3;
+        }
 
-            .btn:hover {
-                background-color: #0056b3;
-            }
+        li {
+            margin-bottom: 8px;
+        }
 
-            li {
-                margin-bottom: 8px;
-            }
+        .footer {
+            border-top: 1px solid #dee2e6;
+            padding-top: 20px;
+            margin-top: 30px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
 
-            .footer {
-                border-top: 1px solid #dee2e6;
-                padding-top: 20px;
-                margin-top: 30px;
-                text-align: center;
-                color: #6c757d;
-                font-size: 14px;
-            }
+        .action-buttons a {
+            color: #ffffff;
+        }
 
-            a {
-                color: #007bff;
-            }
+        a {
+            color: #007bff;
+        }
 
-            a:hover {
-                text-decoration: underline;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h2 style="color: #495057; margin: 0">Family Member Access Confirmed</h2>
-            </div>
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2 style="color: #495057; margin: 0">Family Member Access Confirmed</h2>
+    </div>
 
-            <p>Dear <strong th:text="${memberName}">User</strong>,</p>
+    <p>Dear <strong th:text="${memberName}">User</strong>,</p>
 
-            <p>
-                Your access as a family member for <strong th:text="${patientName}">Patient</strong> has been successfully
-                confirmed.
-            </p>
+    <p>
+        Your access as a family member for <strong th:text="${patientName}">Patient</strong> has been successfully
+        confirmed.
+    </p>
 
-            <div class="info-box">
-                <h3 style="margin-top: 0">As a family member, you can now:</h3>
-                <ul>
-                    <li>View patient health information</li>
-                    <li>Receive important updates and alerts</li>
-                    <li>Help manage appointments and medication schedules</li>
-                    <li>Communicate with healthcare providers</li>
-                </ul>
-            </div>
+    <div class="info-box">
+        <h3 style="margin-top: 0">As a family member, you can now:</h3>
+        <ul>
+            <li>View patient health information</li>
+            <li>Receive important updates and alerts</li>
+            <li>Help manage appointments and billing</li>
+            <li>Join Online Appointments</li>
+        </ul>
+    </div>
 
-            <p>To start supporting your family member's healthcare journey, click the button below:</p>
+    <p>To start supporting your family member's healthcare journey, click the button below:</p>
 
-            <div class="action-buttons">
-                <a th:href="${uiHost + '/patient/dashboard'}" class="btn">Go to Dashboard</a>
-            </div>
+    <div class="action-buttons">
+        <a th:href="${uiHost + '/patient/dashboard'}" class="btn">Go to Dashboard</a>
+    </div>
 
-            <p>
-                If you have any questions about your access or how to use the platform, please contact our support team at
-                <a href="mailto:support@mytelmed.com">support@mytelmed.com</a>.
-            </p>
+    <p>
+        If you have any questions about your access or how to use the platform, please contact our support team at
+        <a href="mailto:support@mytelmed.com">support@mytelmed.com</a>.
+    </p>
 
-            <div class="footer">
-                <p>This is an automated message, please do not reply to this email.</p>
-                <p>&copy; 2025 MyTelmed. All rights reserved.</p>
-                <p>
-                    <a th:href="${uiHost}/privacy">Privacy Policy</a> |
-                    <a th:href="${uiHost}/terms">Terms of Service</a>
-                </p>
-            </div>
-        </div>
-    </body>
+    <div class="footer">
+        <p>This is an automated message, please do not reply to this email.</p>
+        <p>&copy; 2025 MyTelmed. All rights reserved.</p>
+        <p>
+            <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
+            <a th:href="${uiHost + '/terms'}">Terms of Service</a>
+        </p>
+    </div>
+</div>
+</body>
 </html>

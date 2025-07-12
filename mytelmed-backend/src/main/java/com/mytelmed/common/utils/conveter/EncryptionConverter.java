@@ -21,6 +21,7 @@ public class EncryptionConverter implements AttributeConverter<String, String> {
     @Override
     public String convertToDatabaseColumn(String attribute) {
         try {
+            if (attribute == null) return null;
             return aesEncryptionUtil.encrypt(attribute);
         } catch (Exception e) {
             throw new EncryptionFailedException("Encryption failed for attribute [" + attribute + "]: " + e.getMessage());
@@ -30,6 +31,7 @@ public class EncryptionConverter implements AttributeConverter<String, String> {
     @Override
     public String convertToEntityAttribute(String dbData) {
         try {
+            if (dbData == null) return null;
             return aesEncryptionUtil.decrypt(dbData);
         } catch (Exception e) {
             throw new EncryptionFailedException("Decryption failed for data [" + dbData + "]: " + e.getMessage());

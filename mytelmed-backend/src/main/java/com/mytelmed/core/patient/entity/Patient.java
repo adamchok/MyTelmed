@@ -101,7 +101,7 @@ public class Patient {
     private List<Document> documentList = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "patient")
+    @OneToMany(mappedBy = "patient", fetch = jakarta.persistence.FetchType.LAZY)
     private List<FamilyMember> familyMemberList = new ArrayList<>();
 
     @CreationTimestamp

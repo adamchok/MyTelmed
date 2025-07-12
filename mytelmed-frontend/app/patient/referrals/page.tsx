@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-// import ReferralApi from "@/app/api/referral";
-// import PatientApi from "@/app/api/patient";
+import ReferralApi from "@/app/api/referral";
+import PatientApi from "@/app/api/patient";
+import { FamilyMemberApi } from "@/app/api/family";
 import { ReferralDto, ReferralStatus, ReferralPriority, ReferralType } from "@/app/api/referral/props";
-import { ReferralsFilterOptions } from "./props";
+import { FamilyMember } from "@/app/api/family/props";
+import { ReferralsFilterOptions, PatientOption } from "./props";
 import ReferralsComponent from "./component";
-import { mockReferrals } from "./mockData";
+// import { mockReferrals } from "./mockData";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -19,48 +21,119 @@ const ReferralsPage = () => {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [filters, setFilters] = useState<ReferralsFilterOptions>({});
 
-    // Fetch patient profile and referrals
-    const fetchData = useCallback(async () => {
+    // Patient selection state
+    const [patientOptions, setPatientOptions] = useState<PatientOption[]>([]);
+    const [selectedPatientId, setSelectedPatientId] = useState<string>("");
+    const [currentPatientId, setCurrentPatientId] = useState<string>("");
+
+    // Fetch patient options (self + family members with referral viewing permission)
+    const fetchPatientOptions = useCallback(async () => {
+        try {
+            setError(null);
+
+            // Get current patient profile
+            const profileResponse = await PatientApi.getPatientProfile();
+            if (!profileResponse.data?.isSuccess || !profileResponse.data.data) {
+                throw new Error("Failed to load patient profile");
+            }
+
+            const currentPatient = profileResponse.data.data;
+            setCurrentPatientId(currentPatient.id);
+
+            // Initialize options with current patient
+            const options: PatientOption[] = [
+                {
+                    id: currentPatient.id,
+                    name: "You",
+                    relationship: "You",
+                    canViewReferrals: true,
+                },
+            ];
+
+            // Get family members
+            try {
+                const familyResponse = await FamilyMemberApi.getPatientsByMemberAccount();
+                if (familyResponse.data?.isSuccess && familyResponse.data.data) {
+                    const familyMembers = familyResponse.data.data;
+
+                    // Add family members with referral viewing permission
+                    familyMembers.forEach((member: FamilyMember) => {
+                        if (!member.pending && member.canViewMedicalRecords && member.patient) {
+                            options.push({
+                                id: member.patient.id,
+                                name: member.name,
+                                relationship: member.relationship,
+                                canViewReferrals: true,
+                            });
+                        }
+                    });
+                }
+            } catch (familyError) {
+                console.warn("Failed to fetch family members:", familyError);
+                // Continue without family members
+            }
+
+            setPatientOptions(options);
+
+            // Set default selection to current patient if not already set
+            if (!selectedPatientId && options.length > 0) {
+                setSelectedPatientId(currentPatient.id);
+            }
+        } catch (err: any) {
+            console.error("Failed to fetch patient options:", err);
+            setError(err.response?.data?.message || "Failed to load patient options. Please try again.");
+        }
+    }, [selectedPatientId]);
+
+    // Fetch referrals for selected patient
+    const fetchReferrals = useCallback(async () => {
+        if (!selectedPatientId) return;
+
         try {
             setIsLoading(true);
             setError(null);
 
-            // Fetch patient profile first
-            // const profileResponse = await PatientApi.getPatientProfile();
-            // if (profileResponse.data?.isSuccess && profileResponse.data.data) {
-            //     const patientData = profileResponse.data.data;
+            // Fetch referrals using selected patient ID
+            const referralsResponse = await ReferralApi.getReferralsByPatient(selectedPatientId, {
+                page: currentPage - 1, // API uses 0-based pagination
+                size: ITEMS_PER_PAGE,
+            });
 
-            //     // Fetch referrals using patient ID
-            //     const referralsResponse = await ReferralApi.getReferralsByPatient(patientData.id, {
-            //         page: currentPage - 1, // API uses 0-based pagination
-            //         size: ITEMS_PER_PAGE,
-            //     });
+            if (referralsResponse.data?.isSuccess && referralsResponse.data.data) {
+                const paginatedData = referralsResponse.data.data;
 
-            //     if (referralsResponse.data?.isSuccess && referralsResponse.data.data) {
-            //         const paginatedData = referralsResponse.data.data;
-            //         setReferrals(paginatedData.content || []);
-            //         setTotalItems(paginatedData.totalElements || 0);
-            //     } else {
-            //         setError("Failed to load referrals");
-            //     }
-            // } else {
-            //     setError("Failed to load patient profile");
-            // }
+                // Only combine with mock data if viewing current patient's referrals
+                // let combinedReferrals: ReferralDto[];
+                // if (selectedPatientId === currentPatientId) {
+                //     combinedReferrals = [...paginatedData.content, ...mockReferrals];
+                // } else {
+                //     combinedReferrals = paginatedData.content;
+                // }
 
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            setReferrals(mockReferrals);
-            setTotalItems(mockReferrals.length);
+                setReferrals(paginatedData.content);
+                setTotalItems(paginatedData.totalElements);
+            } else {
+                setError("Failed to load referrals");
+            }
         } catch (err: any) {
             console.error("Failed to fetch referrals:", err);
             setError(err.response?.data?.message || "Failed to load referrals. Please try again.");
         } finally {
             setIsLoading(false);
         }
-    }, [currentPage]);
+    }, [selectedPatientId, currentPage, currentPatientId]);
 
+    // Initial load
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        fetchPatientOptions();
+    }, [fetchPatientOptions]);
+
+    // Fetch referrals when patient selection or pagination changes
+    useEffect(() => {
+        if (selectedPatientId) {
+            fetchReferrals();
+        }
+    }, [fetchReferrals, selectedPatientId]);
 
     // Define status options
     const statusOptions = [
@@ -145,13 +218,18 @@ const ReferralsPage = () => {
                       referral.externalDoctorName?.toLowerCase().includes(filters.doctorName.toLowerCase()))
                 : true;
 
-            const matchesSpecialty = filters.specialty
+            const matchesSpecialty = filters.specialty?.length
                 ? (referral.referralType === ReferralType.INTERNAL &&
-                      referral.referringDoctor.specialityList?.some(
-                          (s) => s.toLowerCase() === filters.specialty?.toLowerCase()
+                      referral.referringDoctor.specialityList?.some((s) =>
+                          filters.specialty?.some(
+                              (filterSpecialty) => s.toLowerCase() === filterSpecialty.toLowerCase()
+                          )
                       )) ||
                   (referral.referralType === ReferralType.EXTERNAL &&
-                      referral.externalDoctorSpeciality?.toLowerCase() === filters.specialty.toLowerCase())
+                      filters.specialty?.some(
+                          (filterSpecialty) =>
+                              referral.externalDoctorSpeciality?.toLowerCase() === filterSpecialty.toLowerCase()
+                      ))
                 : true;
 
             return (
@@ -188,6 +266,14 @@ const ReferralsPage = () => {
         setCurrentPage(page);
     }, []);
 
+    // Handle patient change
+    const handlePatientChange = useCallback((patientId: string) => {
+        setSelectedPatientId(patientId);
+        setCurrentPage(1); // Reset to first page when patient changes
+        setSearchQuery(""); // Clear search when patient changes
+        setFilters({}); // Clear filters when patient changes
+    }, []);
+
     // Calculate pagination for mock data
     const paginatedReferrals = useMemo(() => {
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -197,8 +283,8 @@ const ReferralsPage = () => {
 
     // Handle refresh
     const handleRefresh = useCallback(async () => {
-        await fetchData();
-    }, [fetchData]);
+        await Promise.all([fetchPatientOptions(), fetchReferrals()]);
+    }, [fetchPatientOptions, fetchReferrals]);
 
     // Calculate total pages
     const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
@@ -217,9 +303,12 @@ const ReferralsPage = () => {
             priorityOptions={priorityOptions}
             referralTypeOptions={referralTypeOptions}
             searchQuery={searchQuery}
+            patientOptions={patientOptions}
+            selectedPatientId={selectedPatientId}
             onSearchChange={handleSearchChange}
             onFilterChange={handleFilterChange}
             onPageChange={handlePageChange}
+            onPatientChange={handlePatientChange}
             onRefresh={handleRefresh}
             isLoading={isLoading}
             error={error}

@@ -330,7 +330,7 @@ const Component = () => {
                                     </div>
                                 </Card>
                             </Link>
-                            <Link href="/patient/family-access" className="no-underline">
+                            <Link href="/patient/family" className="no-underline">
                                 <Card
                                     hoverable
                                     className="text-center py-6 h-full flex flex-col justify-center border-2 border-purple-200 hover:border-purple-500 transition-all duration-200"

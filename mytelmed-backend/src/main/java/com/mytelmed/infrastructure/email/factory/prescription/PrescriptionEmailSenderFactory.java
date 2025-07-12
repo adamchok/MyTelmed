@@ -29,7 +29,7 @@ public class PrescriptionEmailSenderFactory implements AbstractEmailSenderFactor
 
     @Override
     public boolean supports(EmailFamily family) {
-        return family == EmailFamily.FAMILY;
+        return family == EmailFamily.PRESCRIPTION;
     }
 
     @Override

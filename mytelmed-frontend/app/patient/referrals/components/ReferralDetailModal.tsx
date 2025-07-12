@@ -107,7 +107,8 @@ const ReferralDetailModal: React.FC<ReferralDetailModalProps> = ({ referral, isV
         if (
             referral.status === ReferralStatus.EXPIRED ||
             referral.status === ReferralStatus.CANCELLED ||
-            referral.status === ReferralStatus.COMPLETED
+            referral.status === ReferralStatus.COMPLETED ||
+            referral.status === ReferralStatus.REJECTED
         ) {
             return null;
         }
@@ -130,6 +131,7 @@ const ReferralDetailModal: React.FC<ReferralDetailModalProps> = ({ referral, isV
             contact: referral.referringDoctor.phone,
             email: referral.referringDoctor.email,
             address: referral.referringDoctor.facility?.address,
+            profileImageUrl: referral.referringDoctor.profileImageUrl,
         };
     };
 
@@ -144,6 +146,7 @@ const ReferralDetailModal: React.FC<ReferralDetailModalProps> = ({ referral, isV
             contact: referral.referredDoctor.phone,
             email: referral.referredDoctor.email,
             address: referral.referredDoctor.facility?.address,
+            profileImageUrl: referral.referredDoctor.profileImageUrl,
         };
     };
 
@@ -272,8 +275,9 @@ const ReferralDetailModal: React.FC<ReferralDetailModalProps> = ({ referral, isV
                     <Descriptions.Item label="Referring Doctor" span={2}>
                         <div className="flex items-center gap-2">
                             <Avatar
-                                size={32}
-                                icon={<User className="w-4 h-4" />}
+                                src={referral.referringDoctor.profileImageUrl}
+                                size={48}
+                                icon={<User className="w-5 h-5" />}
                                 className="bg-blue-100 text-blue-600"
                             />
                             <div>
@@ -337,8 +341,9 @@ const ReferralDetailModal: React.FC<ReferralDetailModalProps> = ({ referral, isV
                             <Descriptions.Item label="Doctor" span={2}>
                                 <div className="flex items-center gap-2">
                                     <Avatar
-                                        size={32}
-                                        icon={<User className="w-4 h-4" />}
+                                        size={48}
+                                        src={referredDoctorInfo?.profileImageUrl}
+                                        icon={<User className="w-5 h-5" />}
                                         className="bg-green-100 text-green-600"
                                     />
                                     <div>
@@ -400,8 +405,8 @@ const ReferralDetailModal: React.FC<ReferralDetailModalProps> = ({ referral, isV
                             <Descriptions.Item label="Doctor" span={2}>
                                 <div className="flex items-center gap-2">
                                     <Avatar
-                                        size={32}
-                                        icon={<User className="w-4 h-4" />}
+                                        size={48}
+                                        icon={<User className="w-5 h-5" />}
                                         className="bg-purple-100 text-purple-600"
                                     />
                                     <div>
