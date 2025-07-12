@@ -1,250 +1,230 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Referral, ReferralsFilterOptions } from './props';
-import ReferralsComponent from './component';
+import { useState, useEffect, useMemo, useCallback } from "react";
+// import ReferralApi from "@/app/api/referral";
+// import PatientApi from "@/app/api/patient";
+import { ReferralDto, ReferralStatus, ReferralPriority, ReferralType } from "@/app/api/referral/props";
+import { ReferralsFilterOptions } from "./props";
+import ReferralsComponent from "./component";
+import { mockReferrals } from "./mockData";
 
-// Mock data for referrals
-const dummyReferrals: Referral[] = [
-  {
-    id: '1',
-    type: 'Cardiology Consultation',
-    referringDoctor: 'Michael Chang',
-    referringClinic: 'Central Medical Center',
-    referralDate: '2023-06-01',
-    expiryDate: '2023-12-01',
-    status: 'active',
-    description: 'Patient requires cardiology evaluation due to abnormal ECG findings.',
-    specialty: 'Cardiology'
-  },
-  {
-    id: '2',
-    type: 'Dermatology Follow-up',
-    referringDoctor: 'Lisa Wong',
-    referringClinic: 'Harbor Skin Clinic',
-    referralDate: '2023-05-15',
-    expiryDate: '2023-08-15',
-    status: 'expired',
-    description: 'Follow-up evaluation of previously treated skin condition.',
-    specialty: 'Dermatology'
-  },
-  {
-    id: '3',
-    type: 'Orthopedic Assessment',
-    referringDoctor: 'David Martinez',
-    referringClinic: 'City General Hospital',
-    referralDate: '2023-07-20',
-    expiryDate: '2024-01-20',
-    status: 'active',
-    description: 'Assessment of knee injury sustained during sports activity.',
-    specialty: 'Orthopedics'
-  },
-  {
-    id: '4',
-    type: 'Ophthalmology Consultation',
-    referringDoctor: 'Sarah Johnson',
-    referringClinic: 'Vision Care Center',
-    referralDate: '2023-04-10',
-    expiryDate: '2023-07-10',
-    status: 'used',
-    description: 'Evaluation for vision changes and potential cataracts.',
-    specialty: 'Ophthalmology'
-  },
-  {
-    id: '5',
-    type: 'Gastroenterology Consultation',
-    referringDoctor: 'Robert Chen',
-    referringClinic: 'Digestive Health Institute',
-    referralDate: '2023-08-05',
-    expiryDate: '2024-02-05',
-    status: 'active',
-    description: 'Evaluation for persistent abdominal pain and reflux symptoms.',
-    specialty: 'Gastroenterology'
-  },
-  {
-    id: '6',
-    type: 'Neurology Follow-up',
-    referringDoctor: 'Emily Cruz',
-    referringClinic: 'Neurological Center',
-    referralDate: '2023-03-22',
-    expiryDate: '2023-09-22',
-    status: 'expired',
-    description: 'Follow-up for management of migraine headaches.',
-    specialty: 'Neurology'
-  },
-  {
-    id: '7',
-    type: 'Endocrinology Consultation',
-    referringDoctor: 'James Wilson',
-    referringClinic: 'Metabolic Health Center',
-    referralDate: '2023-07-15',
-    expiryDate: '2024-01-15',
-    status: 'active',
-    description: 'Evaluation for suspected thyroid disorder.',
-    specialty: 'Endocrinology'
-  },
-  {
-    id: '8',
-    type: 'Pulmonology Assessment',
-    referringDoctor: 'Michelle Lee',
-    referringClinic: 'Respiratory Health Partners',
-    referralDate: '2023-05-30',
-    expiryDate: '2023-11-30',
-    status: 'active',
-    description: 'Assessment for chronic cough and shortness of breath.',
-    specialty: 'Pulmonology'
-  },
-  {
-    id: '9',
-    type: 'Rheumatology Consultation',
-    referringDoctor: 'Thomas Jackson',
-    referringClinic: 'Joint & Arthritis Center',
-    referralDate: '2023-02-15',
-    expiryDate: '2023-08-15',
-    status: 'used',
-    description: 'Evaluation for joint pain and suspected autoimmune condition.',
-    specialty: 'Rheumatology'
-  },
-  {
-    id: '10',
-    type: 'ENT Consultation',
-    referringDoctor: 'Patricia Nguyen',
-    referringClinic: 'Ear, Nose & Throat Specialists',
-    referralDate: '2023-06-20',
-    expiryDate: '2023-12-20',
-    status: 'active',
-    description: 'Evaluation for chronic sinusitis and recurring ear infections.',
-    specialty: 'Otolaryngology'
-  }
-];
-
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 
 const ReferralsPage = () => {
-  const [referrals, setReferrals] = useState<Referral[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [filters, setFilters] = useState<ReferralsFilterOptions>({});
+    const [referrals, setReferrals] = useState<ReferralDto[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [totalItems, setTotalItems] = useState<number>(0);
+    const [searchQuery, setSearchQuery] = useState<string>("");
+    const [filters, setFilters] = useState<ReferralsFilterOptions>({});
 
-  // Fetch referrals (simulated)
-  useEffect(() => {
-    const fetchReferrals = async () => {
-      setIsLoading(true);
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setReferrals(dummyReferrals);
-      setIsLoading(false);
-    };
+    // Fetch patient profile and referrals
+    const fetchData = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
 
-    fetchReferrals();
-  }, []);
+            // Fetch patient profile first
+            // const profileResponse = await PatientApi.getPatientProfile();
+            // if (profileResponse.data?.isSuccess && profileResponse.data.data) {
+            //     const patientData = profileResponse.data.data;
 
-  // Define status options
-  const statusOptions = [
-    { label: 'Active', value: 'active' },
-    { label: 'Expired', value: 'expired' },
-    { label: 'Used', value: 'used' }
-  ];
+            //     // Fetch referrals using patient ID
+            //     const referralsResponse = await ReferralApi.getReferralsByPatient(patientData.id, {
+            //         page: currentPage - 1, // API uses 0-based pagination
+            //         size: ITEMS_PER_PAGE,
+            //     });
 
-  // Get unique specialties from referrals
-  const specialtyOptions = useMemo(() => {
-    const specialties = Array.from(new Set(
-      referrals
-        .filter(ref => ref.specialty)
-        .map(ref => ref.specialty as string)
-    ));
+            //     if (referralsResponse.data?.isSuccess && referralsResponse.data.data) {
+            //         const paginatedData = referralsResponse.data.data;
+            //         setReferrals(paginatedData.content || []);
+            //         setTotalItems(paginatedData.totalElements || 0);
+            //     } else {
+            //         setError("Failed to load referrals");
+            //     }
+            // } else {
+            //     setError("Failed to load patient profile");
+            // }
 
-    return specialties.map(specialty => ({
-      label: specialty,
-      value: specialty
-    }));
-  }, [referrals]);
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            setReferrals(mockReferrals);
+            setTotalItems(mockReferrals.length);
+        } catch (err: any) {
+            console.error("Failed to fetch referrals:", err);
+            setError(err.response?.data?.message || "Failed to load referrals. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentPage]);
 
-  // Filter the referrals based on search query and filters
-  const filteredReferrals = useMemo(() => {
-    return referrals.filter(referral => {
-      // Filter by search query
-      const matchesSearch = searchQuery
-        ? (
-          referral.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          referral.referringDoctor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          referral.referringClinic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (referral.description && referral.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (referral.specialty && referral.specialty.toLowerCase().includes(searchQuery.toLowerCase()))
-        )
-        : true;
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
-      // Filter by status
-      const matchesStatus = filters.status && filters.status.length
-        ? filters.status.includes(referral.status)
-        : true;
+    // Define status options
+    const statusOptions = [
+        { label: "Pending", value: ReferralStatus.PENDING },
+        { label: "Accepted", value: ReferralStatus.ACCEPTED },
+        { label: "Rejected", value: ReferralStatus.REJECTED },
+        { label: "Scheduled", value: ReferralStatus.SCHEDULED },
+        { label: "Completed", value: ReferralStatus.COMPLETED },
+        { label: "Expired", value: ReferralStatus.EXPIRED },
+        { label: "Cancelled", value: ReferralStatus.CANCELLED },
+    ];
 
-      // Filter by date range
-      const matchesDateRange = filters.dateRange && filters.dateRange[0] && filters.dateRange[1]
-        ? (
-          new Date(referral.referralDate) >= new Date(filters.dateRange[0]) &&
-          new Date(referral.referralDate) <= new Date(filters.dateRange[1])
-        )
-        : true;
+    // Define priority options
+    const priorityOptions = [
+        { label: "Routine", value: ReferralPriority.ROUTINE },
+        { label: "Urgent", value: ReferralPriority.URGENT },
+        { label: "Emergency", value: ReferralPriority.EMERGENCY },
+    ];
 
-      // Filter by doctor name
-      const matchesDoctorName = filters.doctorName
-        ? referral.referringDoctor.toLowerCase().includes(filters.doctorName.toLowerCase())
-        : true;
+    // Define referral type options
+    const referralTypeOptions = [
+        { label: "Internal", value: ReferralType.INTERNAL },
+        { label: "External", value: ReferralType.EXTERNAL },
+    ];
 
-      // Filter by specialty
-      const matchesSpecialty = filters.specialty
-        ? referral.specialty?.toLowerCase() === filters.specialty.toLowerCase()
-        : true;
+    // Get unique specialties from referrals
+    const specialtyOptions = useMemo(() => {
+        const specialties = new Set<string>();
 
-      return matchesSearch && matchesStatus && matchesDateRange && matchesDoctorName && matchesSpecialty;
-    });
-  }, [referrals, searchQuery, filters]);
+        referrals.forEach((referral) => {
+            if (referral.referralType === ReferralType.INTERNAL && referral.referringDoctor.specialityList) {
+                referral.referringDoctor.specialityList.forEach((specialty) => {
+                    specialties.add(specialty);
+                });
+            } else if (referral.referralType === ReferralType.EXTERNAL && referral.externalDoctorSpeciality) {
+                specialties.add(referral.externalDoctorSpeciality);
+            }
+        });
 
-  // Paginate the filtered referrals
-  const paginatedReferrals = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredReferrals.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredReferrals, currentPage]);
+        return Array.from(specialties).map((specialty) => ({
+            label: specialty,
+            value: specialty,
+        }));
+    }, [referrals]);
 
-  // Calculate total pages
-  const totalPages = Math.ceil(filteredReferrals.length / ITEMS_PER_PAGE) || 1;
+    // Helper functions for filtering
+    const matchesSearchQuery = useCallback(
+        (referral: ReferralDto) => {
+            if (!searchQuery) return true;
+            const query = searchQuery.toLowerCase();
+            return (
+                referral.reasonForReferral.toLowerCase().includes(query) ||
+                referral.referringDoctor.name.toLowerCase().includes(query) ||
+                referral.referringDoctor.facility?.name?.toLowerCase().includes(query) ||
+                referral.clinicalSummary?.toLowerCase().includes(query) ||
+                (referral.referralType === ReferralType.EXTERNAL &&
+                    referral.externalDoctorName?.toLowerCase().includes(query)) ||
+                (referral.referralType === ReferralType.EXTERNAL &&
+                    referral.externalFacilityName?.toLowerCase().includes(query))
+            );
+        },
+        [searchQuery]
+    );
 
-  // Handle search change
-  const handleSearchChange = useCallback((query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(1); // Reset to first page when search changes
-  }, []);
+    const matchesFilters = useCallback(
+        (referral: ReferralDto) => {
+            const matchesStatus = filters.status?.length ? filters.status.includes(referral.status) : true;
+            const matchesPriority = filters.priority?.length ? filters.priority.includes(referral.priority) : true;
+            const matchesReferralType = filters.referralType?.length
+                ? filters.referralType.includes(referral.referralType)
+                : true;
 
-  // Handle filter change
-  const handleFilterChange = useCallback((newFilters: Partial<ReferralsFilterOptions>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-    setCurrentPage(1); // Reset to first page when filters change
-  }, []);
+            const matchesDateRange =
+                filters.dateRange?.[0] && filters.dateRange?.[1]
+                    ? new Date(referral.createdAt) >= new Date(filters.dateRange[0]) &&
+                      new Date(referral.createdAt) <= new Date(filters.dateRange[1])
+                    : true;
 
-  // Handle page change
-  const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page);
-  }, []);
+            const matchesDoctorName = filters.doctorName
+                ? referral.referringDoctor.name.toLowerCase().includes(filters.doctorName.toLowerCase()) ||
+                  (referral.referralType === ReferralType.EXTERNAL &&
+                      referral.externalDoctorName?.toLowerCase().includes(filters.doctorName.toLowerCase()))
+                : true;
 
-  return (
-    <ReferralsComponent
-      referrals={referrals}
-      filteredReferrals={paginatedReferrals}
-      currentPage={currentPage}
-      totalPages={totalPages}
-      itemsPerPage={ITEMS_PER_PAGE}
-      filters={filters}
-      statusOptions={statusOptions}
-      specialtyOptions={specialtyOptions}
-      searchQuery={searchQuery}
-      onSearchChange={handleSearchChange}
-      onFilterChange={handleFilterChange}
-      onPageChange={handlePageChange}
-      isLoading={isLoading}
-    />
-  );
+            const matchesSpecialty = filters.specialty
+                ? (referral.referralType === ReferralType.INTERNAL &&
+                      referral.referringDoctor.specialityList?.some(
+                          (s) => s.toLowerCase() === filters.specialty?.toLowerCase()
+                      )) ||
+                  (referral.referralType === ReferralType.EXTERNAL &&
+                      referral.externalDoctorSpeciality?.toLowerCase() === filters.specialty.toLowerCase())
+                : true;
+
+            return (
+                matchesStatus &&
+                matchesPriority &&
+                matchesReferralType &&
+                matchesDateRange &&
+                matchesDoctorName &&
+                matchesSpecialty
+            );
+        },
+        [filters]
+    );
+
+    // Filter the referrals based on search query and filters
+    const filteredReferrals = useMemo(() => {
+        return referrals.filter((referral) => matchesSearchQuery(referral) && matchesFilters(referral));
+    }, [referrals, matchesSearchQuery, matchesFilters]);
+
+    // Handle search change
+    const handleSearchChange = useCallback((query: string) => {
+        setSearchQuery(query);
+        setCurrentPage(1); // Reset to first page when search changes
+    }, []);
+
+    // Handle filter change
+    const handleFilterChange = useCallback((newFilters: Partial<ReferralsFilterOptions>) => {
+        setFilters((prev) => ({ ...prev, ...newFilters }));
+        setCurrentPage(1); // Reset to first page when filters change
+    }, []);
+
+    // Handle page change
+    const handlePageChange = useCallback((page: number) => {
+        setCurrentPage(page);
+    }, []);
+
+    // Calculate pagination for mock data
+    const paginatedReferrals = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        return filteredReferrals.slice(startIndex, endIndex);
+    }, [filteredReferrals, currentPage]);
+
+    // Handle refresh
+    const handleRefresh = useCallback(async () => {
+        await fetchData();
+    }, [fetchData]);
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+
+    return (
+        <ReferralsComponent
+            referrals={referrals}
+            filteredReferrals={paginatedReferrals}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            itemsPerPage={ITEMS_PER_PAGE}
+            totalItems={filteredReferrals.length}
+            filters={filters}
+            statusOptions={statusOptions}
+            specialtyOptions={specialtyOptions}
+            priorityOptions={priorityOptions}
+            referralTypeOptions={referralTypeOptions}
+            searchQuery={searchQuery}
+            onSearchChange={handleSearchChange}
+            onFilterChange={handleFilterChange}
+            onPageChange={handlePageChange}
+            onRefresh={handleRefresh}
+            isLoading={isLoading}
+            error={error}
+        />
+    );
 };
 
-export default ReferralsPage; 
+export default ReferralsPage;

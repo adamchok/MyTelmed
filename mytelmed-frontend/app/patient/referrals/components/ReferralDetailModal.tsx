@@ -1,158 +1,562 @@
-'use client';
+"use client";
 
-import { Modal, Typography, Descriptions, Tag, Button, Divider } from 'antd';
-import { ReferralDetailModalProps } from '../props';
+import { Modal, Typography, Descriptions, Tag, Button, Divider, Avatar, Badge, Alert } from "antd";
+import {
+    Calendar,
+    Clock,
+    User,
+    Building2,
+    FileText,
+    AlertCircle,
+    CheckCircle,
+    XCircle,
+    Star,
+    ExternalLink,
+    ArrowRight,
+    Phone,
+    Mail,
+    MapPin,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ReferralDetailModalProps } from "../props";
+import { ReferralStatus, ReferralPriority, ReferralType } from "@/app/api/referral/props";
+import dayjs from "dayjs";
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
-const ReferralDetailModal: React.FC<ReferralDetailModalProps> = ({
-  referral,
-  isVisible,
-  onClose
-}) => {
-  if (!referral) return null;
+const ReferralDetailModal: React.FC<ReferralDetailModalProps> = ({ referral, isVisible, onClose }) => {
+    const router = useRouter();
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'green';
-      case 'expired':
-        return 'red';
-      case 'used':
-        return 'gray';
-      default:
-        return 'blue';
-    }
-  };
+    if (!referral) return null;
 
-  // Format dates for better display
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('en-US', options);
-  };
+    const getStatusColor = (status: ReferralStatus) => {
+        switch (status) {
+            case ReferralStatus.ACCEPTED:
+                return "green";
+            case ReferralStatus.PENDING:
+                return "orange";
+            case ReferralStatus.REJECTED:
+                return "red";
+            case ReferralStatus.SCHEDULED:
+                return "blue";
+            case ReferralStatus.COMPLETED:
+                return "purple";
+            case ReferralStatus.EXPIRED:
+                return "default";
+            case ReferralStatus.CANCELLED:
+                return "default";
+            default:
+                return "blue";
+        }
+    };
 
-  // Calculate days remaining for active referrals
-  const calculateDaysRemaining = () => {
-    if (referral.status !== 'active') return null;
+    const getStatusIcon = (status: ReferralStatus) => {
+        switch (status) {
+            case ReferralStatus.ACCEPTED:
+                return <CheckCircle className="w-3 h-3" />;
+            case ReferralStatus.PENDING:
+                return <Clock className="w-3 h-3" />;
+            case ReferralStatus.REJECTED:
+                return <XCircle className="w-3 h-3" />;
+            case ReferralStatus.SCHEDULED:
+                return <Calendar className="w-3 h-3" />;
+            case ReferralStatus.COMPLETED:
+                return <CheckCircle className="w-3 h-3" />;
+            case ReferralStatus.EXPIRED:
+                return <AlertCircle className="w-3 h-3" />;
+            case ReferralStatus.CANCELLED:
+                return <XCircle className="w-3 h-3" />;
+            default:
+                return <FileText className="w-3 h-3" />;
+        }
+    };
 
-    const today = new Date();
-    const expiry = new Date(referral.expiryDate);
-    const diffTime = expiry.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const getPriorityColor = (priority: ReferralPriority) => {
+        switch (priority) {
+            case ReferralPriority.EMERGENCY:
+                return "red";
+            case ReferralPriority.URGENT:
+                return "orange";
+            case ReferralPriority.ROUTINE:
+                return "blue";
+            default:
+                return "default";
+        }
+    };
 
-    return diffDays > 0 ? diffDays : 0;
-  };
+    const getPriorityIcon = (priority: ReferralPriority) => {
+        switch (priority) {
+            case ReferralPriority.EMERGENCY:
+                return <AlertCircle className="w-3 h-3" />;
+            case ReferralPriority.URGENT:
+                return <Clock className="w-3 h-3" />;
+            case ReferralPriority.ROUTINE:
+                return <Star className="w-3 h-3" />;
+            default:
+                return <Star className="w-3 h-3" />;
+        }
+    };
 
-  const daysRemaining = calculateDaysRemaining();
+    // Format dates for better display
+    const formatDate = (dateString: string) => {
+        return dayjs(dateString).format("MMMM DD, YYYY");
+    };
 
-  return (
-    <Modal
-      open={isVisible}
-      title={<Title level={4} className="m-0">Referral Details</Title>}
-      onCancel={onClose}
-      width={700}
-      footer={[
-        <Button key="close" onClick={onClose}>
-          Close
-        </Button>,
-        referral.status === 'active' && (
-          <Button
-            key="book"
-            type="primary"
-            onClick={() => window.location.href = `/browse/doctors?referral=${referral.id}`}
-          >
-            Book Appointment
-          </Button>
-        )
-      ]}
-    >
-      <div className="py-2">
-        <div className="flex justify-between items-center mb-4">
-          <Title level={5} className="m-0">{referral.type}</Title>
-          <Tag color={getStatusColor(referral.status)} className="text-base px-3 py-1">
-            {referral.status.charAt(0).toUpperCase() + referral.status.slice(1)}
-          </Tag>
-        </div>
+    // Calculate days remaining for active referrals
+    const calculateDaysRemaining = () => {
+        if (
+            referral.status === ReferralStatus.EXPIRED ||
+            referral.status === ReferralStatus.CANCELLED ||
+            referral.status === ReferralStatus.COMPLETED
+        ) {
+            return null;
+        }
 
-        {referral.status === 'active' && daysRemaining !== null && (
-          <div className="mb-4 bg-blue-50 p-3 rounded">
-            <Text
-              type={daysRemaining < 7 ? "danger" : "success"}
-              strong
-            >
-              {daysRemaining} days remaining until expiry
-            </Text>
-          </div>
-        )}
+        const today = dayjs();
+        const expiry = dayjs(referral.expiryDate);
+        const diffDays = expiry.diff(today, "day");
 
-        <Divider className="my-4" />
+        return diffDays > 0 ? diffDays : 0;
+    };
 
-        <Descriptions
-          bordered
-          column={{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }}
+    const daysRemaining = calculateDaysRemaining();
+
+    // Get referring doctor info
+    const getReferringDoctorInfo = () => {
+        return {
+            name: referral.referringDoctor.name,
+            facility: referral.referringDoctor.facility?.name || "Medical Center",
+            specialty: referral.referringDoctor.specialityList?.join(", ") || "General Practice",
+            contact: referral.referringDoctor.phone,
+            email: referral.referringDoctor.email,
+            address: referral.referringDoctor.facility?.address,
+        };
+    };
+
+    // Get referred doctor info
+    const getReferredDoctorInfo = () => {
+        if (!referral.referredDoctor) return null;
+
+        return {
+            name: referral.referredDoctor.name,
+            facility: referral.referredDoctor.facility?.name || "Medical Center",
+            specialty: referral.referredDoctor.specialityList?.join(", ") || "General Practice",
+            contact: referral.referredDoctor.phone,
+            email: referral.referredDoctor.email,
+            address: referral.referredDoctor.facility?.address,
+        };
+    };
+
+    // Get external doctor info
+    const getExternalDoctorInfo = () => {
+        if (referral.referralType !== ReferralType.EXTERNAL) return null;
+
+        return {
+            name: referral.externalDoctorName || "External Doctor",
+            facility: referral.externalFacilityName || "External Facility",
+            specialty: referral.externalDoctorSpeciality || "Specialty",
+            contact: referral.externalContactNumber,
+            email: referral.externalEmail,
+            address: referral.externalFacilityAddress,
+        };
+    };
+
+    const referringDoctorInfo = getReferringDoctorInfo();
+    const referredDoctorInfo = getReferredDoctorInfo();
+    const externalDoctorInfo = getExternalDoctorInfo();
+
+    // Handle navigation
+    const handleViewAppointment = () => {
+        if (referral.scheduledAppointment) {
+            router.push(`/patient/appointments/${referral.scheduledAppointment.id}`);
+        }
+    };
+
+    const handleBookAppointment = () => {
+        router.push(`/patient/booking?referral=${referral.id}`);
+    };
+
+    return (
+        <Modal
+            open={isVisible}
+            title={
+                <div className="flex items-center gap-3">
+                    <FileText className="text-blue-500 text-xl" />
+                    <Title level={4} className="m-0">
+                        Referral Details
+                    </Title>
+                </div>
+            }
+            onCancel={onClose}
+            width={800}
+            footer={[
+                <Button key="close" onClick={onClose}>
+                    Close
+                </Button>,
+                referral.status === ReferralStatus.ACCEPTED && !referral.scheduledAppointment && (
+                    <Button
+                        key="book"
+                        type="primary"
+                        icon={<Calendar className="w-3 h-3" />}
+                        onClick={handleBookAppointment}
+                    >
+                        Book Appointment
+                    </Button>
+                ),
+                referral.status === ReferralStatus.SCHEDULED && referral.scheduledAppointment && (
+                    <Button
+                        key="appointment"
+                        type="primary"
+                        icon={<ExternalLink className="w-3 h-3" />}
+                        onClick={handleViewAppointment}
+                    >
+                        View Appointment
+                    </Button>
+                ),
+            ]}
         >
-          <Descriptions.Item label="Referring Doctor" span={2}>
-            Dr. {referral.referringDoctor}
-          </Descriptions.Item>
-          <Descriptions.Item label="Referring Clinic" span={2}>
-            {referral.referringClinic}
-          </Descriptions.Item>
-          {referral.specialty && (
-            <Descriptions.Item label="Specialty" span={2}>
-              {referral.specialty}
-            </Descriptions.Item>
-          )}
-          {referral.issuedFor && (
-            <Descriptions.Item label="Issued For" span={2}>
-              {referral.issuedFor}
-            </Descriptions.Item>
-          )}
-          <Descriptions.Item label="Issued Date">
-            {formatDate(referral.referralDate)}
-          </Descriptions.Item>
-          <Descriptions.Item label="Expiry Date">
-            {formatDate(referral.expiryDate)}
-          </Descriptions.Item>
-        </Descriptions>
+            <div className="py-2">
+                {/* Header with Status and Priority */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-6 gap-3">
+                    <div className="flex items-center gap-2">
+                        <Title level={5} className="m-0 text-blue-800">
+                            {referral.reasonForReferral}
+                        </Title>
+                        <Badge
+                            count={referral.referralType === ReferralType.EXTERNAL ? "EXT" : "INT"}
+                            style={{
+                                backgroundColor:
+                                    referral.referralType === ReferralType.EXTERNAL ? "#722ed1" : "#1890ff",
+                                fontSize: "12px",
+                            }}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Tag
+                            color={getStatusColor(referral.status)}
+                            icon={getStatusIcon(referral.status)}
+                            className="text-sm font-medium px-3 py-1"
+                        >
+                            {referral.status.charAt(0).toUpperCase() + referral.status.slice(1).toLowerCase()}
+                        </Tag>
+                        <Tag
+                            color={getPriorityColor(referral.priority)}
+                            icon={getPriorityIcon(referral.priority)}
+                            className="text-sm font-medium px-3 py-1"
+                        >
+                            {referral.priority.charAt(0).toUpperCase() + referral.priority.slice(1).toLowerCase()}
+                        </Tag>
+                    </div>
+                </div>
 
-        {referral.description && (
-          <>
-            <Divider className="my-4" />
-            <div>
-              <Text strong>Description:</Text>
-              <div className="bg-gray-50 p-3 rounded mt-2">
-                <Text>{referral.description}</Text>
-              </div>
-            </div>
-          </>
-        )}
+                {/* Days Remaining Alert */}
+                {daysRemaining !== null && (
+                    <Alert
+                        message={`${daysRemaining} days remaining until expiry`}
+                        type={daysRemaining < 7 ? "warning" : "info"}
+                        showIcon
+                        className="mb-4"
+                    />
+                )}
 
-        {referral.status === 'used' && (
-          <>
-            <Divider className="my-4" />
-            <div className="bg-gray-100 p-3 rounded">
-              <Text strong className="block mb-1">Usage Information:</Text>
-              <Text type="secondary">
-                This referral has been used for an appointment. It cannot be used again.
-              </Text>
-            </div>
-          </>
-        )}
+                <Divider className="my-4" />
 
-        {referral.status === 'expired' && (
-          <>
-            <Divider className="my-4" />
-            <div className="bg-red-50 p-3 rounded">
-              <Text type="danger" strong className="block mb-1">Expired Referral:</Text>
-              <Text type="secondary">
-                This referral has expired and can no longer be used. Please contact your doctor for a new referral if needed.
-              </Text>
+                {/* Basic Information */}
+                <Descriptions bordered column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }} size="small">
+                    <Descriptions.Item label="Referral Number" span={2}>
+                        <Text strong className="text-blue-600">
+                            {referral.referralNumber}
+                        </Text>
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Referring Doctor" span={2}>
+                        <div className="flex items-center gap-2">
+                            <Avatar
+                                size={32}
+                                icon={<User className="w-4 h-4" />}
+                                className="bg-blue-100 text-blue-600"
+                            />
+                            <div>
+                                <Text strong>Dr. {referringDoctorInfo.name}</Text>
+                                <br />
+                                <Text type="secondary" className="text-sm">
+                                    {referringDoctorInfo.specialty}
+                                </Text>
+                            </div>
+                        </div>
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Facility" span={2}>
+                        <div className="flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-gray-500" />
+                            <Text>{referringDoctorInfo.facility}</Text>
+                        </div>
+                    </Descriptions.Item>
+
+                    {referringDoctorInfo.contact && (
+                        <Descriptions.Item label="Contact">
+                            <div className="flex items-center gap-2">
+                                <Phone className="w-4 h-4 text-gray-500" />
+                                <Text>{referringDoctorInfo.contact}</Text>
+                            </div>
+                        </Descriptions.Item>
+                    )}
+
+                    {referringDoctorInfo.email && (
+                        <Descriptions.Item label="Email">
+                            <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4 text-gray-500" />
+                                <Text>{referringDoctorInfo.email}</Text>
+                            </div>
+                        </Descriptions.Item>
+                    )}
+
+                    {referringDoctorInfo.address && (
+                        <Descriptions.Item label="Address" span={2}>
+                            <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-gray-500" />
+                                <Text>{referringDoctorInfo.address}</Text>
+                            </div>
+                        </Descriptions.Item>
+                    )}
+
+                    <Descriptions.Item label="Issued Date">{formatDate(referral.createdAt)}</Descriptions.Item>
+
+                    <Descriptions.Item label="Expiry Date">{formatDate(referral.expiryDate)}</Descriptions.Item>
+                </Descriptions>
+
+                {/* Referred Doctor Information (if available) */}
+                {referredDoctorInfo && (
+                    <>
+                        <Divider className="my-4" />
+                        <Title level={5} className="mb-3 flex items-center gap-2">
+                            <ArrowRight className="w-5 h-5 text-green-500" />
+                            Referred To Doctor
+                        </Title>
+                        <Descriptions bordered column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }} size="small">
+                            <Descriptions.Item label="Doctor" span={2}>
+                                <div className="flex items-center gap-2">
+                                    <Avatar
+                                        size={32}
+                                        icon={<User className="w-4 h-4" />}
+                                        className="bg-green-100 text-green-600"
+                                    />
+                                    <div>
+                                        <Text strong>Dr. {referredDoctorInfo.name}</Text>
+                                        <br />
+                                        <Text type="secondary" className="text-sm">
+                                            {referredDoctorInfo.specialty}
+                                        </Text>
+                                    </div>
+                                </div>
+                            </Descriptions.Item>
+
+                            <Descriptions.Item label="Facility" span={2}>
+                                <div className="flex items-center gap-2">
+                                    <Building2 className="w-4 h-4 text-gray-500" />
+                                    <Text>{referredDoctorInfo.facility}</Text>
+                                </div>
+                            </Descriptions.Item>
+
+                            {referredDoctorInfo.contact && (
+                                <Descriptions.Item label="Contact">
+                                    <div className="flex items-center gap-2">
+                                        <Phone className="w-4 h-4 text-gray-500" />
+                                        <Text>{referredDoctorInfo.contact}</Text>
+                                    </div>
+                                </Descriptions.Item>
+                            )}
+
+                            {referredDoctorInfo.email && (
+                                <Descriptions.Item label="Email">
+                                    <div className="flex items-center gap-2">
+                                        <Mail className="w-4 h-4 text-gray-500" />
+                                        <Text>{referredDoctorInfo.email}</Text>
+                                    </div>
+                                </Descriptions.Item>
+                            )}
+
+                            {referredDoctorInfo.address && (
+                                <Descriptions.Item label="Address" span={2}>
+                                    <div className="flex items-center gap-2">
+                                        <MapPin className="w-4 h-4 text-gray-500" />
+                                        <Text>{referredDoctorInfo.address}</Text>
+                                    </div>
+                                </Descriptions.Item>
+                            )}
+                        </Descriptions>
+                    </>
+                )}
+
+                {/* External Doctor Information (if external referral) */}
+                {externalDoctorInfo && (
+                    <>
+                        <Divider className="my-4" />
+                        <Title level={5} className="mb-3 flex items-center gap-2">
+                            <ExternalLink className="w-5 h-5 text-purple-500" />
+                            External Doctor
+                        </Title>
+                        <Descriptions bordered column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }} size="small">
+                            <Descriptions.Item label="Doctor" span={2}>
+                                <div className="flex items-center gap-2">
+                                    <Avatar
+                                        size={32}
+                                        icon={<User className="w-4 h-4" />}
+                                        className="bg-purple-100 text-purple-600"
+                                    />
+                                    <div>
+                                        <Text strong>Dr. {externalDoctorInfo.name}</Text>
+                                        <br />
+                                        <Text type="secondary" className="text-sm">
+                                            {externalDoctorInfo.specialty}
+                                        </Text>
+                                    </div>
+                                </div>
+                            </Descriptions.Item>
+
+                            <Descriptions.Item label="Facility" span={2}>
+                                <div className="flex items-center gap-2">
+                                    <Building2 className="w-4 h-4 text-gray-500" />
+                                    <Text>{externalDoctorInfo.facility}</Text>
+                                </div>
+                            </Descriptions.Item>
+
+                            {externalDoctorInfo.contact && (
+                                <Descriptions.Item label="Contact">
+                                    <div className="flex items-center gap-2">
+                                        <Phone className="w-4 h-4 text-gray-500" />
+                                        <Text>{externalDoctorInfo.contact}</Text>
+                                    </div>
+                                </Descriptions.Item>
+                            )}
+
+                            {externalDoctorInfo.email && (
+                                <Descriptions.Item label="Email">
+                                    <div className="flex items-center gap-2">
+                                        <Mail className="w-4 h-4 text-gray-500" />
+                                        <Text>{externalDoctorInfo.email}</Text>
+                                    </div>
+                                </Descriptions.Item>
+                            )}
+
+                            {externalDoctorInfo.address && (
+                                <Descriptions.Item label="Address" span={2}>
+                                    <div className="flex items-center gap-2">
+                                        <MapPin className="w-4 h-4 text-gray-500" />
+                                        <Text>{externalDoctorInfo.address}</Text>
+                                    </div>
+                                </Descriptions.Item>
+                            )}
+                        </Descriptions>
+                    </>
+                )}
+
+                {/* Clinical Information */}
+                <Divider className="my-4" />
+                <Title level={5} className="mb-3">
+                    Clinical Information
+                </Title>
+
+                <Descriptions bordered column={1} size="small">
+                    <Descriptions.Item label="Reason for Referral">
+                        <Paragraph className="mb-0">{referral.reasonForReferral}</Paragraph>
+                    </Descriptions.Item>
+
+                    {referral.clinicalSummary && (
+                        <Descriptions.Item label="Clinical Summary">
+                            <Paragraph className="mb-0">{referral.clinicalSummary}</Paragraph>
+                        </Descriptions.Item>
+                    )}
+
+                    {referral.investigationsDone && (
+                        <Descriptions.Item label="Investigations Done">
+                            <Paragraph className="mb-0">{referral.investigationsDone}</Paragraph>
+                        </Descriptions.Item>
+                    )}
+
+                    {referral.currentMedications && (
+                        <Descriptions.Item label="Current Medications">
+                            <Paragraph className="mb-0">{referral.currentMedications}</Paragraph>
+                        </Descriptions.Item>
+                    )}
+
+                    {referral.allergies && (
+                        <Descriptions.Item label="Allergies">
+                            <Paragraph className="mb-0">{referral.allergies}</Paragraph>
+                        </Descriptions.Item>
+                    )}
+
+                    {referral.vitalSigns && (
+                        <Descriptions.Item label="Vital Signs">
+                            <Paragraph className="mb-0">{referral.vitalSigns}</Paragraph>
+                        </Descriptions.Item>
+                    )}
+                </Descriptions>
+
+                {/* Status Information */}
+                {referral.status === ReferralStatus.REJECTED && referral.rejectionReason && (
+                    <>
+                        <Divider className="my-4" />
+                        <Alert
+                            message="Rejection Information"
+                            description={referral.rejectionReason}
+                            type="error"
+                            showIcon
+                        />
+                    </>
+                )}
+
+                {referral.status === ReferralStatus.COMPLETED && (
+                    <>
+                        <Divider className="my-4" />
+                        <Alert
+                            message="Referral Completed"
+                            description="This referral has been completed and can no longer be used."
+                            type="success"
+                            showIcon
+                        />
+                    </>
+                )}
+
+                {referral.status === ReferralStatus.EXPIRED && (
+                    <>
+                        <Divider className="my-4" />
+                        <Alert
+                            message="Referral Expired"
+                            description="This referral has expired and can no longer be used. Please contact your doctor for a new referral if needed."
+                            type="warning"
+                            showIcon
+                        />
+                    </>
+                )}
+
+                {referral.status === ReferralStatus.CANCELLED && (
+                    <>
+                        <Divider className="my-4" />
+                        <Alert
+                            message="Referral Cancelled"
+                            description="This referral has been cancelled and can no longer be used."
+                            type="info"
+                            showIcon
+                        />
+                    </>
+                )}
+
+                {/* Notes */}
+                {referral.notes && (
+                    <>
+                        <Divider className="my-4" />
+                        <div>
+                            <Text strong>Additional Notes:</Text>
+                            <div className="bg-gray-50 p-3 rounded mt-2">
+                                <Text>{referral.notes}</Text>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
-          </>
-        )}
-      </div>
-    </Modal>
-  );
+        </Modal>
+    );
 };
 
-export default ReferralDetailModal; 
+export default ReferralDetailModal;

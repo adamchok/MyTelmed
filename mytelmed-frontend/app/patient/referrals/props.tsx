@@ -1,61 +1,72 @@
+import { ReferralDto, ReferralStatus, ReferralType, ReferralPriority } from "@/app/api/referral/props";
+
+// Legacy interface for backward compatibility (keeping the old mock data structure)
 export interface Referral {
-  id: string;
-  type: string;
-  referringDoctor: string;
-  referringClinic: string;
-  referralDate: string;
-  expiryDate: string;
-  status: 'active' | 'expired' | 'used';
-  description: string;
-  specialty?: string;
-  issuedFor?: string;
+    id: string;
+    type: string;
+    referringDoctor: string;
+    referringClinic: string;
+    referralDate: string;
+    expiryDate: string;
+    status: "active" | "expired" | "used";
+    description: string;
+    specialty?: string;
+    issuedFor?: string;
 }
 
+// New interfaces for the actual API integration
 export interface ReferralsFilterOptions {
-  status?: ('active' | 'expired' | 'used')[];
-  dateRange?: [string, string]; // [startDate, endDate]
-  doctorName?: string;
-  specialty?: string;
+    status?: ReferralStatus[];
+    dateRange?: [string, string]; // [startDate, endDate]
+    doctorName?: string;
+    specialty?: string;
+    priority?: ReferralPriority[];
+    referralType?: ReferralType[];
 }
 
 export interface ReferralsPageProps {
-  referrals: Referral[];
+    referrals: ReferralDto[];
 }
 
 export interface ReferralsComponentProps {
-  // Data props
-  referrals: Referral[];
-  filteredReferrals: Referral[];
+    // Data props
+    referrals: ReferralDto[];
+    filteredReferrals: ReferralDto[];
 
-  // Pagination props
-  currentPage: number;
-  totalPages: number;
-  itemsPerPage: number;
+    // Pagination props
+    currentPage: number;
+    totalPages: number;
+    itemsPerPage: number;
+    totalItems: number;
 
-  // Filter props
-  filters: ReferralsFilterOptions;
-  statusOptions: { label: string; value: 'active' | 'expired' | 'used' }[];
-  specialtyOptions: { label: string; value: string }[];
+    // Filter props
+    filters: ReferralsFilterOptions;
+    statusOptions: { label: string; value: ReferralStatus }[];
+    specialtyOptions: { label: string; value: string }[];
+    priorityOptions: { label: string; value: ReferralPriority }[];
+    referralTypeOptions: { label: string; value: ReferralType }[];
 
-  // Search props
-  searchQuery: string;
+    // Search props
+    searchQuery: string;
 
-  // Handler functions
-  onSearchChange: (query: string) => void;
-  onFilterChange: (newFilters: Partial<ReferralsFilterOptions>) => void;
-  onPageChange: (page: number) => void;
+    // Handler functions
+    onSearchChange: (query: string) => void;
+    onFilterChange: (newFilters: Partial<ReferralsFilterOptions>) => void;
+    onPageChange: (page: number) => void;
+    onRefresh: () => Promise<void>;
 
-  // Loading state
-  isLoading: boolean;
+    // Loading state
+    isLoading: boolean;
+    error: string | null;
 }
 
 export interface ReferralCardProps {
-  referral: Referral;
-  onViewDetails: (referral: Referral) => void;
+    referral: ReferralDto;
+    onViewDetails: (referral: ReferralDto) => void;
 }
 
 export interface ReferralDetailModalProps {
-  referral: Referral | null;
-  isVisible: boolean;
-  onClose: () => void;
-} 
+    referral: ReferralDto | null;
+    isVisible: boolean;
+    onClose: () => void;
+}
