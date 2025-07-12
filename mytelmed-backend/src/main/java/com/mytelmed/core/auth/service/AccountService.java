@@ -78,7 +78,7 @@ public class AccountService {
         validatePassword(request.currentPassword(), account.getPassword());
 
         try {
-            accountRepository.updatePasswordById(account.getId(), request.newPassword());
+            accountRepository.updatePasswordById(account.getId(), passwordEncoder.encode(request.newPassword()));
             log.info("Password update successful for account with ID: {}", account.getId());
         } catch (Exception e) {
             log.error("Unexpected error while updating password for account with ID: {}", account.getId(), e);

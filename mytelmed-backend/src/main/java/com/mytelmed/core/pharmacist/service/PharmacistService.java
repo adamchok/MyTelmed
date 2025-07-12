@@ -11,6 +11,7 @@ import com.mytelmed.common.event.account.model.AccountPasswordResetEvent;
 import com.mytelmed.common.event.image.ImageDeletedEvent;
 import com.mytelmed.common.utils.DateTimeUtil;
 import com.mytelmed.common.utils.PasswordGenerator;
+import com.mytelmed.common.utils.HashUtil;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.facility.entity.Facility;
@@ -95,6 +96,66 @@ public class PharmacistService {
 
         log.info("Found pharmacist with account ID: {}", account.getId());
         return pharmacist;
+    }
+
+    @Transactional(readOnly = true)
+    public Pharmacist findByNric(String nric) throws ResourceNotFoundException {
+        log.debug("Finding pharmacist with NRIC: {}", nric);
+
+        Pharmacist pharmacist = pharmacistRepository.findByHashedNric(HashUtil.sha256(nric))
+                .orElseThrow(() -> {
+                    log.warn("Pharmacist not found with NRIC: {}", nric);
+                    return new ResourceNotFoundException("Pharmacist not found");
+                });
+
+        log.info("Found pharmacist with NRIC: {}", nric);
+        return pharmacist;
+    }
+
+    @Transactional(readOnly = true)
+    public Pharmacist findByEmail(String email) throws ResourceNotFoundException {
+        log.debug("Finding pharmacist with email: {}", email);
+
+        Pharmacist pharmacist = pharmacistRepository.findByHashedEmail(HashUtil.sha256(email))
+                .orElseThrow(() -> {
+                    log.warn("Pharmacist not found with email: {}", email);
+                    return new ResourceNotFoundException("Pharmacist not found");
+                });
+
+        log.info("Found pharmacist with email: {}", email);
+        return pharmacist;
+    }
+
+    @Transactional(readOnly = true)
+    public Pharmacist findByAccountId(UUID accountId) throws ResourceNotFoundException {
+        log.debug("Finding pharmacist with account ID: {}", accountId);
+
+        Pharmacist pharmacist = pharmacistRepository.findByAccountId(accountId)
+                .orElseThrow(() -> {
+                    log.warn("Pharmacist not found with account ID: {}", accountId);
+                    return new ResourceNotFoundException("Pharmacist not found");
+                });
+
+        log.info("Found pharmacist with account ID: {}", accountId);
+        return pharmacist;
+    }
+
+    @Transactional
+    public void resetEmailByAccountId(UUID accountId, String newEmail) {
+        log.debug("Resetting pharmacist email for account ID: {}", accountId);
+
+        try {
+            Pharmacist pharmacist = findByAccount(accountService.getAccountById(accountId));
+            pharmacist.setEmail(newEmail);
+            pharmacistRepository.save(pharmacist);
+
+            log.info("Reset pharmacist email for account ID: {}", accountId);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while resetting pharmacist email: {}", accountId, e);
+            throw e;
+        }
     }
 
     @Transactional

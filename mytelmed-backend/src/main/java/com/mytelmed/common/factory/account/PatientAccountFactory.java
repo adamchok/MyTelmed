@@ -1,7 +1,6 @@
 package com.mytelmed.common.factory.account;
 
 import com.mytelmed.common.constant.AccountType;
-import com.mytelmed.common.event.account.model.AccountCreatedEvent;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.entity.Permission;
 import org.springframework.context.ApplicationEventPublisher;
@@ -43,9 +42,7 @@ public class PatientAccountFactory implements AccountAbstractFactory {
         Permission permission = Permission.builder()
                 .type(AccountType.PATIENT)
                 .build();
-
-        applicationEventPublisher.publishEvent(new AccountCreatedEvent(username, name, username, password));
-
+        
         return Account.builder()
                 .username(username)
                 .password(encodedPassword)

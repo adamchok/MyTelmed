@@ -3,6 +3,7 @@ package com.mytelmed.core.reset.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import com.mytelmed.common.constant.AccountType;
 
 
 public record InitiateEmailResetRequestDto(
@@ -14,14 +15,16 @@ public record InitiateEmailResetRequestDto(
         @NotBlank(message = "Phone number is required")
         String phone,
 
-        @NotBlank(message = "Serial Number is required")
-        String serialNumber,
+        String serialNumber, // Optional for non-patient users
 
         @NotBlank(message = "Name is required")
         String name,
 
         @Email(message = "Email is invalid")
         @NotBlank(message = "Email is required")
-        String email
+        String email,
+
+        @NotBlank(message = "User type is required")
+        AccountType userType
 ) {
 }

@@ -15,8 +15,11 @@ public record EmailResetEvent(
         @NotBlank(message = "Name is required")
         String name,
 
-        @NotBlank(message = "Reset URL is required")
-        String resetUrl,
+        @NotBlank(message = "Username is required")
+        String username,
+
+        @NotBlank(message = "Reset token is required")
+        String resetToken,
 
         @NotNull(message = "Expiration minutes is required")
         long expirationMinutes

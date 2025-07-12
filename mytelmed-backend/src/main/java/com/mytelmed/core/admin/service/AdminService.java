@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import java.util.UUID;
+import com.mytelmed.common.utils.HashUtil;
 
 
 @Slf4j
@@ -89,6 +90,66 @@ public class AdminService {
 
         log.info("Found admin with account ID: {}", account.getId());
         return admin;
+    }
+
+    @Transactional(readOnly = true)
+    public Admin findByNric(String nric) throws ResourceNotFoundException {
+        log.debug("Finding admin with NRIC: {}", nric);
+
+        Admin admin = adminRepository.findByHashedNric(HashUtil.sha256(nric))
+                .orElseThrow(() -> {
+                    log.warn("Admin not found with NRIC: {}", nric);
+                    return new ResourceNotFoundException("Admin not found");
+                });
+
+        log.info("Found admin with NRIC: {}", nric);
+        return admin;
+    }
+
+    @Transactional(readOnly = true)
+    public Admin findByEmail(String email) throws ResourceNotFoundException {
+        log.debug("Finding admin with email: {}", email);
+
+        Admin admin = adminRepository.findByHashedEmail(HashUtil.sha256(email))
+                .orElseThrow(() -> {
+                    log.warn("Admin not found with email: {}", email);
+                    return new ResourceNotFoundException("Admin not found");
+                });
+
+        log.info("Found admin with email: {}", email);
+        return admin;
+    }
+
+    @Transactional(readOnly = true)
+    public Admin findByAccountId(UUID accountId) throws ResourceNotFoundException {
+        log.debug("Finding admin with account ID: {}", accountId);
+
+        Admin admin = adminRepository.findByAccountId(accountId)
+                .orElseThrow(() -> {
+                    log.warn("Admin not found with account ID: {}", accountId);
+                    return new ResourceNotFoundException("Admin not found");
+                });
+
+        log.info("Found admin with account ID: {}", accountId);
+        return admin;
+    }
+
+    @Transactional
+    public void resetEmailByAccountId(UUID accountId, String newEmail) {
+        log.debug("Resetting admin email for account ID: {}", accountId);
+
+        try {
+            Admin admin = findByAccount(accountService.getAccountById(accountId));
+            admin.setEmail(newEmail);
+            adminRepository.save(admin);
+
+            log.info("Reset admin email for account ID: {}", accountId);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while resetting admin email: {}", accountId, e);
+            throw e;
+        }
     }
 
     @Transactional

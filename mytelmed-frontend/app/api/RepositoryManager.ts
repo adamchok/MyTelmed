@@ -1,5 +1,5 @@
 import axios from "axios";
-import auth from "./auth";
+import AuthApi from "./auth";
 
 /**
  * Repository is a custom axios instance that is used to make requests to the API.
@@ -102,7 +102,9 @@ repository.interceptors.response.use(
                 });
         }
 
-        return Promise.reject(new Error(error.message || "Request failed"));
+        console.error(error);
+
+        return response;
     }
 );
 
@@ -114,7 +116,7 @@ async function refreshSession(): Promise<void> {
             throw new Error("No refresh token available");
         }
 
-        const response = await auth.refreshToken(refreshToken);
+        const response = await AuthApi.refreshToken(refreshToken);
         const responseData = response.data;
 
         if (responseData.isSuccess && responseData.data) {

@@ -1,30 +1,63 @@
 "use client";
 
-import { Button, Form, Input, Typography, Select } from "antd";
-import { ForgotPasswordPageComponentProps } from "./props";
-import { Mail, User, CreditCard, ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { Form, Input, Button, Typography, message } from "antd";
+import { CreateEmailFormProps } from "../../props";
+import { ResetEmailRequestDto } from "@/app/api/reset/props";
+import ResetApi from "@/app/api/reset";
+import { Mail, ArrowLeft } from "lucide-react";
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
-const ForgotPasswordPageComponent = ({
-    form,
-    onFinish,
-    isSubmitting,
-    onUserTypeChange,
-}: ForgotPasswordPageComponentProps) => {
+export default function CreateEmailPage() {
+    const [form] = Form.useForm();
     const router = useRouter();
+    const params = useParams();
+    const { id } = params;
+    const [loading, setLoading] = useState(false);
+
+    const onFinish = async (values: CreateEmailFormProps) => {
+        if (!id) {
+            message.error("Invalid email reset link.");
+            return;
+        }
+
+        await form.validateFields();
+
+        const resetEmailRequest: ResetEmailRequestDto = {
+            email: values.email,
+        };
+
+        try {
+            setLoading(true);
+            const response = await ResetApi.resetEmail(id as string, resetEmailRequest);
+
+            const responseData = response.data;
+
+            if (responseData.isSuccess) {
+                message.success(responseData.message || "Email reset successfully.");
+                router.push("/");
+            } else {
+                message.error(responseData.message || "Failed to reset email.");
+            }
+        } catch (err: any) {
+            console.log("err", err);
+            message.error(err?.response?.data?.message ?? "Failed to reset email. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Handle back button click
     const handleBackClick = (e: React.MouseEvent) => {
         e.preventDefault();
-        router.push("/");
+        router.push("/forgot/email");
     };
 
     return (
         <div className="min-h-screen flex flex-col justify-center items-center bg-blue-700 py-10 sm:py-12 md:py-16 px-3 sm:px-8">
-            {/* Password Reset Card */}
+            {/* Email Reset Card */}
             <div className="relative z-10 w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl">
                 <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-blue-900/20 p-3 sm:p-4 md:p-6 lg:p-8">
                     <div className="text-center mb-4 sm:mb-6">
@@ -33,11 +66,9 @@ const ForgotPasswordPageComponent = ({
                             className="mb-2 text-blue-700 text-lg sm:text-xl md:text-2xl lg:text-3xl flex items-center justify-center"
                         >
                             <Mail className="text-blue-600 w-8 h-8 mr-3" strokeWidth={2} />
-                            Reset Your Password
+                            Create New Email
                         </Title>
-                        <Text className="text-gray-500 text-xs sm:text-sm">
-                            Enter your details to receive a link to reset your password.
-                        </Text>
+                        <Text className="text-gray-500 text-xs sm:text-sm">Please enter your new email below.</Text>
                     </div>
                     <Form
                         form={form}
@@ -50,49 +81,19 @@ const ForgotPasswordPageComponent = ({
                         <Form.Item
                             label={
                                 <span className="text-xs sm:text-sm font-medium text-gray-700 flex items-center">
-                                    <User className="mr-2 text-blue-500 w-3 h-3 sm:w-4 sm:h-4" strokeWidth={2} />
-                                    User Type
+                                    <Mail className="mr-2 text-blue-500 w-3 h-3 sm:w-4 sm:h-4" strokeWidth={2} />
+                                    New Email
                                 </span>
                             }
-                            name="userType"
-                            rules={[{ required: true, message: "Please select your user type" }]}
-                        >
-                            <Select
-                                placeholder="Select your user type"
-                                className="h-10 sm:h-12 text-sm sm:text-base"
-                                style={{ borderRadius: "8px" }}
-                                onChange={onUserTypeChange}
-                            >
-                                <Option value="PATIENT">Patient</Option>
-                                <Option value="DOCTOR">Doctor</Option>
-                                <Option value="PHARMACIST">Pharmacist</Option>
-                                <Option value="ADMIN">Admin</Option>
-                            </Select>
-                        </Form.Item>
-
-                        <Form.Item
-                            label={
-                                <span className="text-xs sm:text-sm font-medium text-gray-700 flex items-center">
-                                    <CreditCard className="mr-2 text-blue-500 w-3 h-3 sm:w-4 sm:h-4" strokeWidth={2} />
-                                    <span className="hidden sm:inline">NRIC (without hyphens)</span>
-                                    <span className="sm:hidden">NRIC</span>
-                                </span>
-                            }
-                            name="nric"
+                            name="email"
                             rules={[
-                                { required: true, message: "Please enter your NRIC" },
-                                {
-                                    pattern: /^\d{12}$/,
-                                    message: "NRIC must be exactly 12 digits without hyphens",
-                                },
+                                { required: true, message: "Please input your new email!" },
+                                { type: "email", message: "Please enter a valid email address!" },
                             ]}
-                            normalize={(value) => {
-                                // Remove any non-digit characters
-                                return value ? value.replace(/\D/g, "") : value;
-                            }}
+                            hasFeedback
                         >
                             <Input
-                                placeholder="Enter your NRIC"
+                                placeholder="Enter new email"
                                 className="h-10 sm:h-12 rounded-lg sm:rounded-xl border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors text-sm sm:text-base"
                             />
                         </Form.Item>
@@ -101,17 +102,27 @@ const ForgotPasswordPageComponent = ({
                             label={
                                 <span className="text-xs sm:text-sm font-medium text-gray-700 flex items-center">
                                     <Mail className="mr-2 text-blue-500 w-3 h-3 sm:w-4 sm:h-4" strokeWidth={2} />
-                                    Email Address
+                                    Confirm Email
                                 </span>
                             }
-                            name="email"
+                            name="confirmEmail"
+                            dependencies={["email"]}
+                            hasFeedback
                             rules={[
-                                { required: true, message: "Please enter your email address" },
-                                { type: "email", message: "Please enter a valid email address" },
+                                { required: true, message: "Please confirm your email!" },
+                                { type: "email", message: "Please enter a valid email address!" },
+                                ({ getFieldValue }) => ({
+                                    validator(_, value) {
+                                        if (!value || getFieldValue("email") === value) {
+                                            return Promise.resolve();
+                                        }
+                                        return Promise.reject(new Error("Emails do not match!"));
+                                    },
+                                }),
                             ]}
                         >
                             <Input
-                                placeholder="Enter your email address"
+                                placeholder="Confirm new email"
                                 className="h-10 sm:h-12 rounded-lg sm:rounded-xl border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors text-sm sm:text-base"
                             />
                         </Form.Item>
@@ -128,22 +139,11 @@ const ForgotPasswordPageComponent = ({
                             <Button
                                 type="primary"
                                 htmlType="submit"
-                                loading={isSubmitting}
-                                disabled={isSubmitting}
+                                loading={loading}
+                                disabled={loading}
                                 className="h-10 sm:h-12 px-8 sm:px-12 rounded-lg sm:rounded-xl bg-blue-700 border-0 hover:bg-blue-900 font-medium shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
                             >
-                                {isSubmitting ? "Submitting..." : "Submit Request"}
-                            </Button>
-                        </div>
-
-                        {/* Email Reset Link */}
-                        <div className="flex justify-end pt-2">
-                            <Button
-                                type="link"
-                                onClick={() => router.push("/forgot/email")}
-                                className="text-red-500 hover:text-red-600 p-0 h-auto font-medium text-sm underline"
-                            >
-                                Forgot Email?
+                                {loading ? "Resetting..." : "Reset Email"}
                             </Button>
                         </div>
                     </Form>
@@ -159,6 +159,4 @@ const ForgotPasswordPageComponent = ({
             </div>
         </div>
     );
-};
-
-export default ForgotPasswordPageComponent;
+}

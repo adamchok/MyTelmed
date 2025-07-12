@@ -1,26 +1,29 @@
 "use client";
 
-import { message } from "antd";
+import { message, Form } from "antd";
 import { useRouter } from "next/navigation";
 import { InitiatePasswordResetRequestDto } from "@/app/api/reset/props";
 import ForgotPasswordPageComponent from "./component";
 import ResetApi from "@/app/api/reset";
+import { PasswordResetFormValues } from "./props";
+import { useState } from "react";
 
 const ForgotPassword = () => {
     const router = useRouter();
+    const [form] = Form.useForm();
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const onFinish = async (values: any) => {
-        if (!values.email) {
-            message.error("Please enter your email first.");
-            return;
-        } else if (!values.nric) {
-            message.error("Please enter your IC number first.");
-            return;
-        }
+    const onFinish = async (values: PasswordResetFormValues) => {
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
+
         const passwordResetRequest: InitiatePasswordResetRequestDto = {
             nric: values.nric,
             email: values.email,
+            userType: values.userType,
         };
+
         try {
             const response = await ResetApi.initiatePasswordReset(passwordResetRequest);
             const responseData = response.data;
@@ -33,13 +36,23 @@ const ForgotPassword = () => {
             }
         } catch (err: any) {
             message.error(err?.response?.data?.message ?? "Failed to send password reset link. Please try again.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
+    const handleUserTypeChange = (value: string) => {
+        // This function can be used for any user type specific logic if needed
+        console.log("User type changed to:", value);
+    };
+
     return (
-        <div>
-            <ForgotPasswordPageComponent onFinish={onFinish} />
-        </div>
+        <ForgotPasswordPageComponent
+            form={form}
+            onFinish={onFinish}
+            isSubmitting={isSubmitting}
+            onUserTypeChange={handleUserTypeChange}
+        />
     );
 };
 

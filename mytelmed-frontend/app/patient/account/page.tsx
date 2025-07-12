@@ -12,6 +12,55 @@ const Account = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Password strength states
+    const [passwordStrength, setPasswordStrength] = useState(0);
+    const [passwordStrengthText, setPasswordStrengthText] = useState("");
+    const [passwordStrengthColor, setPasswordStrengthColor] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+
+    // Calculate password strength
+    const calculatePasswordStrength = (password: string) => {
+        setNewPassword(password);
+        let score = 0;
+        let text = "";
+        let color = "";
+
+        if (password.length >= 8) score += 20;
+        if (/[a-z]/.test(password)) score += 20;
+        if (/[A-Z]/.test(password)) score += 20;
+        if (/\d/.test(password)) score += 20;
+        if (/[@$!%*?&]/.test(password)) score += 20;
+
+        if (score <= 20) {
+            text = "Very Weak";
+            color = "#ff4d4f";
+        } else if (score <= 40) {
+            text = "Weak";
+            color = "#fa8c16";
+        } else if (score <= 60) {
+            text = "Fair";
+            color = "#faad14";
+        } else if (score <= 80) {
+            text = "Good";
+            color = "#52c41a";
+        } else {
+            text = "Strong";
+            color = "#1890ff";
+        }
+
+        setPasswordStrength(score);
+        setPasswordStrengthText(text);
+        setPasswordStrengthColor(color);
+    };
+
+    // Reset password strength states
+    const resetPasswordStates = () => {
+        setPasswordStrength(0);
+        setPasswordStrengthText("");
+        setPasswordStrengthColor("");
+        setNewPassword("");
+    };
+
     // Handle password update
     const handleUpdatePassword = async (values: any) => {
         try {
@@ -28,6 +77,7 @@ const Account = () => {
             if (response.data?.isSuccess) {
                 message.success("Password updated successfully");
                 form.resetFields();
+                resetPasswordStates(); // Reset password strength states
             } else {
                 setError(response.data?.message || "Failed to update password");
             }
@@ -51,6 +101,11 @@ const Account = () => {
         error,
         onUpdatePassword: handleUpdatePassword,
         onClearError: handleClearError,
+        passwordStrength,
+        passwordStrengthText,
+        passwordStrengthColor,
+        newPassword,
+        onCalculatePasswordStrength: calculatePasswordStrength,
     };
 
     return <AccountComponent {...componentProps} />;

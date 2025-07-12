@@ -17,4 +17,8 @@ public interface DoctorRepository extends JpaRepository<Doctor, UUID> {
     Optional<Doctor> findByAccountId(UUID accountId);
 
     Optional<Doctor> findByAccount(com.mytelmed.core.auth.entity.Account account);
+    
+    Optional<Doctor> findByHashedNric(String hashedNric);
+    
+    Optional<Doctor> findByHashedEmail(String hashedEmail);
 }

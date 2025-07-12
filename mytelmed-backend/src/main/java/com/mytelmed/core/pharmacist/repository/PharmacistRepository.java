@@ -15,5 +15,11 @@ public interface PharmacistRepository extends JpaRepository<Pharmacist, UUID> {
 
     Optional<Pharmacist> findByAccount(Account account);
 
+    Optional<Pharmacist> findByAccountId(UUID accountId);
+
     boolean existsPharmacistByAccountUsername(String accountUsername);
+    
+    Optional<Pharmacist> findByHashedNric(String hashedNric);
+    
+    Optional<Pharmacist> findByHashedEmail(String hashedEmail);
 }

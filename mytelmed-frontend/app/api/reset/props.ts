@@ -2,6 +2,7 @@
 export interface InitiatePasswordResetRequestDto {
     email: string; // Must be valid email format
     nric: string; // Must be 12 digits
+    userType: string; // Must be one of the following: PATIENT, DOCTOR, PHARMACIST, ADMIN
 }
 
 export interface ResetPasswordRequestDto {
@@ -15,6 +16,7 @@ export interface InitiateEmailResetRequestDto {
     serialNumber: string;
     name: string;
     email: string; // New email, must be valid email format
+    userType: string; // Must be one of the following: PATIENT, DOCTOR, PHARMACIST, ADMIN
 }
 
 export interface ResetEmailRequestDto {

@@ -1,12 +1,11 @@
 package com.mytelmed.core.reset.service;
 
 import com.mytelmed.common.advice.AppException;
-import com.mytelmed.common.advice.exception.InvalidCredentialsException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
+import com.mytelmed.common.constant.AccountType;
 import com.mytelmed.common.event.reset.model.EmailResetEvent;
 import com.mytelmed.core.auth.entity.Account;
-import com.mytelmed.core.patient.entity.Patient;
-import com.mytelmed.core.patient.service.PatientService;
+import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.reset.dto.InitiateEmailResetRequestDto;
 import com.mytelmed.core.reset.dto.ResetEmailRequestDto;
 import com.mytelmed.core.reset.entity.ResetToken;
@@ -19,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.UUID;
 
 
 @Service
@@ -27,16 +27,20 @@ public class EmailResetService {
     private final String frontendUrl;
     private final long tokenExpirationMinutes;
     private final ResetTokenRepository resetTokenRepository;
-    private final PatientService patientService;
+    private final UserEmailResetService userEmailResetService;
+    private final AccountService accountService;
     private final ApplicationEventPublisher applicationEventPublisher;
 
     public EmailResetService(
-            PatientService patientService,
+            UserEmailResetService userEmailResetService,
             ResetTokenRepository resetTokenRepository,
+            AccountService accountService,
             @Value("${application.frontend.url}") String frontendUrl,
-            @Value("${security.email.reset.expiration}") long tokenExpirationMinutes, ApplicationEventPublisher applicationEventPublisher) {
-        this.patientService = patientService;
+            @Value("${security.email.reset.expiration}") long tokenExpirationMinutes,
+            ApplicationEventPublisher applicationEventPublisher) {
+        this.userEmailResetService = userEmailResetService;
         this.resetTokenRepository = resetTokenRepository;
+        this.accountService = accountService;
         this.frontendUrl = frontendUrl;
         this.tokenExpirationMinutes = tokenExpirationMinutes;
         this.applicationEventPublisher = applicationEventPublisher;
@@ -44,12 +48,40 @@ public class EmailResetService {
 
     @Transactional
     protected ResetToken createEmailResetToken(Account account) {
-        resetTokenRepository.deleteByAccount(account);
-        ResetToken token = ResetToken.builder()
-                .account(account)
-                .expiredAt(Instant.now().plus(tokenExpirationMinutes, ChronoUnit.MINUTES))
-                .build();
-        return resetTokenRepository.save(token);
+        log.debug("Creating email reset token for account: {}", account.getId());
+
+        // Find existing token by account
+        Optional<ResetToken> existingToken = resetTokenRepository.findByAccount(account);
+
+        if (existingToken.isPresent()) {
+            log.debug("Found existing email reset token for account: {}", account.getId());
+
+            // Renew password reset token if existing token is found
+            log.debug("Renewing email reset token for account: {}", account.getId());
+            String newToken = UUID.randomUUID().toString();
+            ResetToken token = existingToken.get();
+            token.setToken(newToken);
+            token.setExpiredAt(Instant.now().plus(tokenExpirationMinutes, ChronoUnit.MINUTES));
+
+            token = resetTokenRepository.save(token);
+
+            log.debug("Renewed email reset token for account: {}, token: {}", account.getId(), token.getToken());
+            return token;
+        } else {
+            log.debug("No existing email reset token found for account: {}, creating a new reset token",
+                    account.getId());
+
+            // Create a new email reset token for new requests
+            ResetToken token = ResetToken.builder()
+                    .account(account)
+                    .expiredAt(Instant.now().plus(tokenExpirationMinutes, ChronoUnit.MINUTES))
+                    .build();
+
+            token = resetTokenRepository.save(token);
+
+            log.debug("Created new email reset token for account: {}, token: {}", account.getId(), token.getToken());
+            return token;
+        }
     }
 
     @Transactional(readOnly = true)
@@ -61,28 +93,30 @@ public class EmailResetService {
 
     @Transactional
     public void initiateEmailReset(InitiateEmailResetRequestDto request) throws AppException {
-        log.debug("Initiating email reset for token: {}", request.email());
+        log.debug("Initiating email reset for user type: {}", request.userType());
 
         try {
-            Patient patient = patientService.findPatientByNric(request.nric());
+            // Validate user credentials and get account
+            Account account = userEmailResetService.validateUserForEmailReset(
+                    request.nric(),
+                    request.phone(),
+                    request.serialNumber(),
+                    request.name(),
+                    request.userType()
+            );
 
-            if (!patient.getName().equals(request.name())) {
-                throw new InvalidCredentialsException("Full name does not match system records: " + request.name());
-            } else if (!patient.getPhone().equals(request.phone())) {
-                throw new InvalidCredentialsException("Phone does not match system records: " + request.phone());
-            } else if (!patient.getSerialNumber().equals(request.serialNumber())) {
-                throw new InvalidCredentialsException("Serial number does not match system records: " + request.serialNumber());
-            }
-
-            Account account = patient.getAccount();
+            // Create reset token
             ResetToken token = createEmailResetToken(account);
-            String resetUrl = frontendUrl + "/forgot/email/" + token.getToken();
+
+            // Get user name for email
+            String userName = request.name();
 
             EmailResetEvent event = EmailResetEvent.builder()
-                    .email(patient.getEmail())
-                    .name(patient.getName())
+                    .email(request.email())
+                    .username(account.getUsername())
+                    .name(userName)
                     .expirationMinutes(tokenExpirationMinutes)
-                    .resetUrl(resetUrl)
+                    .resetToken(token.getToken())
                     .build();
 
             log.debug("Sending email reset for user: {}, reset token: {}", account.getId(), token.getToken());
@@ -103,9 +137,18 @@ public class EmailResetService {
 
         try {
             Account account = validateEmailResetToken(token)
-                    .orElseThrow(() -> new ResourceNotFoundException("Token not found"));
+                    .orElseThrow(() -> {
+                        log.error("Invalid or expired email reset link");
+                        return new ResourceNotFoundException("Token not found");
+                    });
 
-            patientService.resetEmailByAccountId(account.getId(), request.email());
+            // Determine user type from account permissions
+            String userType = account.getPermission().getAccess();
+
+            // Reset email using the appropriate service
+            userEmailResetService.resetEmailByAccountId(account.getId(), request.email(), AccountType.valueOf(userType));
+
+            // Delete token
             resetTokenRepository.deleteByAccount(account);
 
             log.info("Successful email reset for account: {}", account.getId());

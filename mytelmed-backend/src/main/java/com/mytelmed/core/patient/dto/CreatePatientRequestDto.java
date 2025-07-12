@@ -29,7 +29,7 @@ public record CreatePatientRequestDto(
         @NotBlank(message = "Phone is required")
         String phone,
 
-        @Pattern(regexp = "^\\d{2}/\\d{2}/\\d{4}$", message = "Date of birth must be in the format MM-DD-YYYY")
+        @Pattern(regexp = "^\\d{2}/\\d{2}/\\d{4}$", message = "Date of birth must be in the format DD-MM-YYYY")
         @NotBlank(message = "Date of birth is required")
         String dateOfBirth,
 

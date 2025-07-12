@@ -1,7 +1,9 @@
 package com.mytelmed.core.reset.dto;
 
+import com.mytelmed.common.constant.AccountType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 
@@ -12,6 +14,9 @@ public record InitiatePasswordResetRequestDto(
 
         @Pattern(regexp = "\\d{12}", message = "NRIC must be 12 digits")
         @NotBlank(message = "NRIC is required")
-        String nric
+        String nric,
+
+        @NotNull(message = "User type is required")
+        AccountType userType
 ) {
 }

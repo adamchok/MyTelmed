@@ -189,8 +189,8 @@ const UserInfoPageComponent = ({ form, onFinish, userInfo, handleCancel }: UserI
                                     className="h-10 sm:h-12 text-sm sm:text-base"
                                     style={{ borderRadius: "8px" }}
                                 >
-                                    <Option value="male">Male</Option>
-                                    <Option value="female">Female</Option>
+                                    <Option value="MALE">Male</Option>
+                                    <Option value="FEMALE">Female</Option>
                                 </Select>
                             </Form.Item>
 
@@ -250,7 +250,7 @@ const UserInfoPageComponent = ({ form, onFinish, userInfo, handleCancel }: UserI
                         <span className="text-gray-200 text-xs sm:text-sm">Already have an account?</span>
                         <Button
                             type="link"
-                            className="text-blue-200 hover:text-white font-medium p-0 h-auto text-xs sm:text-sm"
+                            className="text-blue-200 hover:text-white font-medium p-0 h-auto text-xs sm:text-sm underline"
                             onClick={() => (window.location.href = "/login/patient")}
                         >
                             Sign in here

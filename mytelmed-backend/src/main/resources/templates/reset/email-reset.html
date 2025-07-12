@@ -90,25 +90,19 @@
             margin: 30px 0;
         }
 
-        .reset-button {
+        .btn {
             display: inline-block;
-            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
-            color: white;
+            padding: 12px 24px;
+            margin: 0 10px;
+            background-color: #007bff;
+            color: #ffffff;
             text-decoration: none;
-            padding: 15px 40px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            box-shadow: 0 4px 6px rgba(0, 102, 204, 0.3);
-            transition: all 0.3s ease;
+            border-radius: 5px;
+            font-weight: bold;
         }
 
-        .reset-button:hover {
-            background: linear-gradient(135deg, #004499 0%, #0066cc 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 102, 204, 0.4);
-            text-decoration: none;
-            color: white;
+        .btn:hover {
+            background-color: #0056b3;
         }
 
         .security-note {
@@ -159,8 +153,6 @@
     </div>
 
     <div class="content">
-        <h1>🔄 Reset Your Email</h1>
-
         <p>Dear <strong th:text="${name}">User</strong>,</p>
 
         <p>
@@ -186,7 +178,7 @@
         </div>
 
         <div class="button-container">
-            <a th:href="${resetUrl}" class="reset-button">Reset Email Address</a>
+            <a th:href="${uiHost + '/forgot/email/reset/' + resetToken }" class="btn">Reset Email Address</a>
         </div>
 
         <div class="security-note">
@@ -215,8 +207,8 @@
         <p>This is an automated message, please do not reply to this email.</p>
         <p>&copy; 2025 MyTelmed. All rights reserved.</p>
         <p>
-            <a th:href="${uiHost}/privacy">Privacy Policy</a> |
-            <a th:href="${uiHost}/terms">Terms of Service</a>
+            <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
+            <a th:href="${uiHost + '/terms'}">Terms of Service</a>
         </p>
     </div>
 </div>

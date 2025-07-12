@@ -4,51 +4,21 @@ import { Form, Input, Button, Card, Typography, Alert, Row, Col, Progress } from
 import { Lock, Shield, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { AccountComponentProps } from "./props";
-import { useState } from "react";
 
 const { Title, Text } = Typography;
 
-const AccountComponent = ({ form, loading, error, onUpdatePassword, onClearError }: AccountComponentProps) => {
-    const [passwordStrength, setPasswordStrength] = useState(0);
-    const [passwordStrengthText, setPasswordStrengthText] = useState("");
-    const [passwordStrengthColor, setPasswordStrengthColor] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-
-    // Calculate password strength
-    const calculatePasswordStrength = (password: string) => {
-        setNewPassword(password);
-        let score = 0;
-        let text = "";
-        let color = "";
-
-        if (password.length >= 8) score += 20;
-        if (/[a-z]/.test(password)) score += 20;
-        if (/[A-Z]/.test(password)) score += 20;
-        if (/\d/.test(password)) score += 20;
-        if (/[@$!%*?&]/.test(password)) score += 20;
-
-        if (score <= 20) {
-            text = "Very Weak";
-            color = "#ff4d4f";
-        } else if (score <= 40) {
-            text = "Weak";
-            color = "#fa8c16";
-        } else if (score <= 60) {
-            text = "Fair";
-            color = "#faad14";
-        } else if (score <= 80) {
-            text = "Good";
-            color = "#52c41a";
-        } else {
-            text = "Strong";
-            color = "#1890ff";
-        }
-
-        setPasswordStrength(score);
-        setPasswordStrengthText(text);
-        setPasswordStrengthColor(color);
-    };
-
+const AccountComponent = ({
+    form,
+    loading,
+    error,
+    onUpdatePassword,
+    onClearError,
+    passwordStrength,
+    passwordStrengthText,
+    passwordStrengthColor,
+    newPassword,
+    onCalculatePasswordStrength,
+}: AccountComponentProps) => {
     // Password validation rules
     const passwordRules = [
         { required: true, message: "Password is required" },
@@ -158,7 +128,7 @@ const AccountComponent = ({ form, loading, error, onUpdatePassword, onClearError
                                     placeholder="Enter your new password"
                                     className="h-12 rounded-xl border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors"
                                     size="large"
-                                    onChange={(e) => calculatePasswordStrength(e.target.value)}
+                                    onChange={(e) => onCalculatePasswordStrength(e.target.value)}
                                 />
                             </Form.Item>
 
@@ -232,6 +202,7 @@ const AccountComponent = ({ form, loading, error, onUpdatePassword, onClearError
                                     placeholder="Confirm your new password"
                                     className="h-12 rounded-xl border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors"
                                     size="large"
+                                    onPaste={(e) => e.preventDefault()}
                                 />
                             </Form.Item>
 

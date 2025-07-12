@@ -10,6 +10,7 @@ import com.mytelmed.common.event.account.model.AccountPasswordResetEvent;
 import com.mytelmed.common.event.image.ImageDeletedEvent;
 import com.mytelmed.common.utils.DateTimeUtil;
 import com.mytelmed.common.utils.PasswordGenerator;
+import com.mytelmed.common.utils.HashUtil;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.doctor.dto.CreateDoctorRequestDto;
@@ -93,6 +94,66 @@ public class DoctorService {
 
         log.info("Found doctor with account ID: {}", account.getId());
         return doctor;
+    }
+
+    @Transactional(readOnly = true)
+    public Doctor findByNric(String nric) throws ResourceNotFoundException {
+        log.debug("Finding doctor with NRIC: {}", nric);
+
+        Doctor doctor = doctorRepository.findByHashedNric(HashUtil.sha256(nric))
+                .orElseThrow(() -> {
+                    log.warn("Doctor not found with NRIC: {}", nric);
+                    return new ResourceNotFoundException("Doctor not found");
+                });
+
+        log.info("Found doctor with NRIC: {}", nric);
+        return doctor;
+    }
+
+    @Transactional(readOnly = true)
+    public Doctor findByEmail(String email) throws ResourceNotFoundException {
+        log.debug("Finding doctor with email: {}", email);
+
+        Doctor doctor = doctorRepository.findByHashedEmail(HashUtil.sha256(email))
+                .orElseThrow(() -> {
+                    log.warn("Doctor not found with email: {}", email);
+                    return new ResourceNotFoundException("Doctor not found");
+                });
+
+        log.info("Found doctor with email: {}", email);
+        return doctor;
+    }
+
+    @Transactional(readOnly = true)
+    public Doctor findByAccountId(UUID accountId) throws ResourceNotFoundException {
+        log.debug("Finding doctor with account ID: {}", accountId);
+
+        Doctor doctor = doctorRepository.findByAccountId(accountId)
+                .orElseThrow(() -> {
+                    log.warn("Doctor not found with account ID: {}", accountId);
+                    return new ResourceNotFoundException("Doctor not found");
+                });
+
+        log.info("Found doctor with account ID: {}", accountId);
+        return doctor;
+    }
+
+    @Transactional
+    public void resetEmailByAccountId(UUID accountId, String newEmail) {
+        log.debug("Resetting doctor email for account ID: {}", accountId);
+
+        try {
+            Doctor doctor = findByAccount(accountService.getAccountById(accountId));
+            doctor.setEmail(newEmail);
+            doctorRepository.save(doctor);
+
+            log.info("Reset doctor email for account ID: {}", accountId);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while resetting doctor email: {}", accountId, e);
+            throw e;
+        }
     }
 
     @Transactional

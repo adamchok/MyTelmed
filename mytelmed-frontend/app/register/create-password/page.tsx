@@ -1,21 +1,23 @@
 "use client";
 
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Form, message } from "antd";
 
 import type { RootState } from "@/lib/reducers";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Dispatch } from "react";
 import CreatePasswordPageComponent from "./component";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useRouter } from "next/navigation";
 import { CreatePatientRequest } from "@/app/api/patient/props";
 import PatientApi from "@/app/api/patient";
+import { resetRegistration } from "@/lib/reducers/registration-reducer";
 
 export default function CreatePasswordPage() {
     const router: AppRouterInstance = useRouter();
     const { userInfo, email } = useSelector((state: RootState) => state.rootReducer.registration);
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
+    const dispatch: Dispatch<any> = useDispatch();
 
     // Debug: Log Redux state on component mount
     useEffect(() => {
@@ -49,7 +51,7 @@ export default function CreatePasswordPage() {
         }
 
         const dateParts = userInfo.dob.split("-");
-        const formattedDateOfBirth = `${dateParts[1]}/${dateParts[2]}/${dateParts[0]}`;
+        const formattedDateOfBirth = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
 
         // Convert gender to uppercase to match backend enum
         const formattedGender = userInfo.gender.toUpperCase();
@@ -72,6 +74,7 @@ export default function CreatePasswordPage() {
 
             if (responseData.isSuccess) {
                 message.success(responseData.message);
+                dispatch(resetRegistration());
                 router.push("/login/patient");
             } else {
                 message.error(responseData.message);

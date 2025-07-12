@@ -28,32 +28,51 @@
                 margin-bottom: 30px;
             }
 
-            .logo {
-                width: 192px;
-                height: auto;
-                max-width: 100%;
-                display: block;
-                margin: 0 auto;
-            }
-
-            .action-buttons {
-                text-align: center;
+            .token-display {
+                border-radius: 15px;
+                padding: 25px;
                 margin: 30px 0;
+                text-align: center;
+                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+                position: relative;
+                overflow: hidden;
             }
 
-            .btn {
-                display: inline-block;
-                padding: 12px 24px;
-                margin: 0 10px;
-                background-color: #007bff;
-                color: #ffffff;
-                text-decoration: none;
-                border-radius: 5px;
+            .token-display::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+                pointer-events: none;
+            }
+
+            .token-label {
+                color: #000000;
+                font-size: 18px;
+                font-weight: 600;
+                margin-bottom: 15px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                opacity: 0.9;
+            }
+
+            .verification-code {
+                background: #007bff;
+                border-radius: 10px;
+                padding: 16px;
+                font-family: "Courier New", "Monaco", "Menlo", monospace;
+                font-size: 24px;
                 font-weight: bold;
-            }
-
-            .btn:hover {
-                background-color: #0056b3;
+                color: #ffffff;
+                letter-spacing: 3px;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+                box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                display: inline-block;
+                min-width: 200px;
             }
 
             .footer {
@@ -82,24 +101,15 @@
 
             <p>
                 Thank you for signing up with MyTelmed! To complete your registration and activate your account, please
-                verify your email address by clicking the button below.
+                use the verification code below:
             </p>
 
-            <div class="action-buttons">
-                <a th:href="${uiHost + '/verify?token=' + verificationToken}" class="btn"> Verify Email Address </a>
+            <div class="token-display">
+                <div class="token-label">Verification Code</div>
+                <div class="verification-code" th:text="${verificationToken}">ABC123</div>
             </div>
 
-            <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #007bff">
-                <a
-                    th:href="${uiHost + '/verify?token=' + verificationToken}"
-                    th:text="${uiHost + '/verify?token=' + verificationToken}"
-                >
-                    Verification Link
-                </a>
-            </p>
-
-            <p>Once verified, you'll have full access to all MyTelmed features and services.</p>
+            <p>Once verified, you'll be able to continue with your registration process.</p>
 
             <p>If you have any questions or need assistance, please contact our support team.</p>
 

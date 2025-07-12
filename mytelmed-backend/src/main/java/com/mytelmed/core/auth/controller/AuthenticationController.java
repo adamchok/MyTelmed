@@ -42,25 +42,25 @@ public class AuthenticationController {
     // Open endpoint
     @PostMapping("/login/patient")
     public ResponseEntity<ApiResponse<JwtDto>> loginPatient(@Valid @RequestBody LoginRequestDto loginRequest) {
-        return authenticateUserByType(loginRequest, AccountType.PATIENT, "patient");
+        return authenticateUserByType(loginRequest, AccountType.PATIENT);
     }
 
     // Open endpoint
     @PostMapping("/login/doctor")
     public ResponseEntity<ApiResponse<JwtDto>> loginDoctor(@Valid @RequestBody LoginRequestDto loginRequest) {
-        return authenticateUserByType(loginRequest, AccountType.DOCTOR, "doctor");
+        return authenticateUserByType(loginRequest, AccountType.DOCTOR);
     }
 
     // Open endpoint
     @PostMapping("/login/pharmacist")
     public ResponseEntity<ApiResponse<JwtDto>> loginPharmacist(@Valid @RequestBody LoginRequestDto loginRequest) {
-        return authenticateUserByType(loginRequest, AccountType.PHARMACIST, "pharmacist");
+        return authenticateUserByType(loginRequest, AccountType.PHARMACIST);
     }
 
     // Open endpoint
     @PostMapping("/login/admin")
     public ResponseEntity<ApiResponse<JwtDto>> loginAdmin(@Valid @RequestBody LoginRequestDto loginRequest) {
-        return authenticateUserByType(loginRequest, AccountType.ADMIN, "admin");
+        return authenticateUserByType(loginRequest, AccountType.ADMIN);
     }
 
     // Open endpoint
@@ -94,8 +94,8 @@ public class AuthenticationController {
         return ResponseEntity.ok(ApiResponse.success("Logout successful"));
     }
 
-    private ResponseEntity<ApiResponse<JwtDto>> authenticateUserByType(LoginRequestDto loginRequest, AccountType expectedType, String userTypeStr) {
-        log.debug("Received {} login request for user: {}", userTypeStr, loginRequest.username());
+    private ResponseEntity<ApiResponse<JwtDto>> authenticateUserByType(LoginRequestDto loginRequest, AccountType expectedType) {
+        log.debug("Received {} login request for user: {}", expectedType.name(), loginRequest.username());
 
         try {
             // Authenticate user credentials
@@ -114,7 +114,7 @@ public class AuthenticationController {
                         .body(ApiResponse.failure(null, "Access denied. Please try again"));
             }
 
-            log.debug("Authentication successful for {} user: {}", userTypeStr, loginRequest.username());
+            log.debug("Authentication successful for {} user: {}", expectedType.name(), loginRequest.username());
 
             // Generate tokens
             String accessToken = jwtService.generateAccessToken(loginRequest.username());
@@ -125,10 +125,10 @@ public class AuthenticationController {
                     .refreshToken(refreshToken)
                     .build();
 
-            log.info("{} login successful for user: {}", userTypeStr, loginRequest.username());
+            log.info("{} login successful for user: {}", expectedType.name(), loginRequest.username());
             return ResponseEntity.ok(ApiResponse.success(jwtDto));
         } catch (Exception e) {
-            log.error("{} login failed for user: {}", userTypeStr, loginRequest.username(), e);
+            log.error("{} login failed for user: {}", expectedType.name(), loginRequest.username(), e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.failure(null, "Invalid credentials or authentication failed"));
         }
