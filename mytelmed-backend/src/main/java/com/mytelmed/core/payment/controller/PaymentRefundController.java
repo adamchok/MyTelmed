@@ -89,6 +89,68 @@ public class PaymentRefundController {
     }
   }
 
+  /**
+   * Get refund status for a specific prescription
+   */
+  @GetMapping("/prescription/{prescriptionId}/status")
+  public ResponseEntity<ApiResponse<PaymentRefundService.RefundStatus>> getPrescriptionRefundStatus(
+      @PathVariable UUID prescriptionId,
+      @AuthenticationPrincipal Account account) {
+
+    log.debug("Getting refund status for prescription: {} by account: {}", prescriptionId, account.getId());
+
+    try {
+      PaymentRefundService.RefundStatus refundStatus = paymentRefundService
+          .getPrescriptionRefundStatus(prescriptionId);
+
+      return ResponseEntity.ok(ApiResponse.success(refundStatus, "Prescription refund status retrieved successfully"));
+    } catch (Exception e) {
+      log.error("Error getting refund status for prescription: {}", prescriptionId, e);
+      return ResponseEntity.internalServerError()
+          .body(ApiResponse.failure(null, "Failed to retrieve prescription refund status"));
+    }
+  }
+
+  /**
+   * Process manual refund for a cancelled prescription delivery (Admin/Pharmacist use)
+   */
+  @PostMapping("/prescription/{prescriptionId}/process")
+  public ResponseEntity<ApiResponse<RefundResponseDto>> processPrescriptionRefund(
+      @PathVariable UUID prescriptionId,
+      @RequestBody RefundRequestDto request,
+      @AuthenticationPrincipal Account account) {
+
+    log.info("Processing manual refund for prescription: {} by account: {}", prescriptionId, account.getId());
+
+    try {
+      PaymentRefundService.RefundResult refundResult = paymentRefundService
+          .processPrescriptionRefund(prescriptionId, request.reason());
+
+      RefundResponseDto response = RefundResponseDto.builder()
+          .successful(refundResult.isSuccessful())
+          .message(refundResult.getMessage())
+          .stripeRefundId(refundResult.getRefund() != null ? refundResult.getRefund().getId() : null)
+          .refundAmount(refundResult.getRefund() != null
+              ? java.math.BigDecimal.valueOf(refundResult.getRefund().getAmount() / 100.0)
+              : null)
+          .build();
+
+      if (refundResult.isSuccessful()) {
+        return ResponseEntity.ok(ApiResponse.success(response, "Prescription refund processed successfully"));
+      } else {
+        return ResponseEntity.badRequest()
+            .body(ApiResponse.failure(null, "Prescription refund processing failed: " + refundResult.getErrorMessage()));
+      }
+    } catch (AppException e) {
+      log.error("App exception processing refund for prescription: {} - {}", prescriptionId, e.getMessage());
+      return ResponseEntity.badRequest().body(ApiResponse.failure(null, e.getMessage()));
+    } catch (Exception e) {
+      log.error("Unexpected error processing refund for prescription: {}", prescriptionId, e);
+      return ResponseEntity.internalServerError()
+          .body(ApiResponse.failure(null, "Failed to process prescription refund"));
+    }
+  }
+
   // DTOs for request/response
 
   public record RefundRequestDto(

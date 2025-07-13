@@ -14,14 +14,17 @@ import com.mytelmed.core.payment.entity.PaymentTransaction;
 import com.mytelmed.core.payment.repository.BillRepository;
 import com.mytelmed.core.payment.repository.PaymentTransactionRepository;
 import com.mytelmed.common.event.payment.model.PaymentCompletedEvent;
+import com.mytelmed.common.event.payment.model.RefundCompletedEvent;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
 import com.stripe.model.StripeObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -65,6 +68,7 @@ public class PaymentWebhookService {
       case "payment_intent.payment_failed" -> handlePaymentFailed(event);
       case "payment_intent.canceled" -> handlePaymentCanceled(event);
       case "payment_intent.requires_action" -> handlePaymentRequiresAction(event);
+      case "charge.refunded" -> handleRefundSucceeded(event);
       default -> log.info("Unhandled webhook event type: {}", event.getType());
     }
   }
@@ -181,6 +185,37 @@ public class PaymentWebhookService {
   }
 
   /**
+   * Handles successful refund events from Stripe
+   */
+  private void handleRefundSucceeded(Event event) throws AppException {
+    Refund refund = extractRefund(event);
+    log.info("Processing successful refund for Refund: {}", refund.getId());
+
+    // Find the transaction by charge ID
+    Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository
+        .findByStripeChargeId(refund.getCharge());
+
+    if (transactionOpt.isEmpty()) {
+      log.warn("Payment transaction not found for charge: {}", refund.getCharge());
+      return;
+    }
+
+    PaymentTransaction transaction = transactionOpt.get();
+
+    // Update transaction status
+    updateTransactionForRefund(transaction, refund);
+
+    // Update bill status
+    updateBillForRefund(transaction.getBill(), refund);
+
+    // Publish refund completed event for notifications
+    publishRefundCompletedEvent(transaction.getBill(), transaction, refund);
+
+    log.info("Successfully processed refund for transaction: {} with refund ID: {}", 
+        transaction.getTransactionNumber(), refund.getId());
+  }
+
+  /**
    * Extracts PaymentIntent from webhook event
    */
   private PaymentIntent extractPaymentIntent(Event event) throws AppException {
@@ -191,6 +226,19 @@ public class PaymentWebhookService {
     }
 
     return (PaymentIntent) stripeObject;
+  }
+
+  /**
+   * Extracts Refund from webhook event
+   */
+  private Refund extractRefund(Event event) throws AppException {
+    StripeObject stripeObject = event.getDataObjectDeserializer().getObject().orElse(null);
+
+    if (!(stripeObject instanceof Refund)) {
+      throw new AppException("Invalid webhook event data - expected Refund");
+    }
+
+    return (Refund) stripeObject;
   }
 
   /**
@@ -278,6 +326,50 @@ public class PaymentWebhookService {
 
         log.info("Updated delivery {} status to PAID after payment confirmation", delivery.getId());
       }
+    }
+  }
+
+  /**
+   * Updates transaction status for refund
+   */
+  private void updateTransactionForRefund(PaymentTransaction transaction, Refund refund) {
+    transaction.setStatus(PaymentTransaction.TransactionStatus.REFUNDED);
+    transaction.setRefundAmount(BigDecimal.valueOf(refund.getAmount() / 100.0));
+    transaction.setStripeRefundId(refund.getId());
+    transaction.setRefundedAt(Instant.now());
+    transaction.setRefundReason(refund.getReason());
+    paymentTransactionRepository.save(transaction);
+  }
+
+  /**
+   * Updates bill status for refund
+   */
+  private void updateBillForRefund(Bill bill, Refund refund) {
+    bill.setRefundStatus(Bill.RefundStatus.REFUNDED);
+    bill.setRefundAmount(BigDecimal.valueOf(refund.getAmount() / 100.0));
+    bill.setStripeRefundId(refund.getId());
+    bill.setRefundedAt(Instant.now());
+    bill.setRefundReason(refund.getReason());
+    billRepository.save(bill);
+  }
+
+  /**
+   * Publishes refund completed event for notifications
+   */
+  private void publishRefundCompletedEvent(Bill bill, PaymentTransaction transaction, Refund refund) {
+    try {
+      RefundCompletedEvent event = RefundCompletedEvent.builder()
+          .bill(bill)
+          .transaction(transaction)
+          .stripeRefundId(refund.getId())
+          .refundAmount(BigDecimal.valueOf(refund.getAmount() / 100.0))
+          .refundReason(refund.getReason())
+          .build();
+
+      eventPublisher.publishEvent(event);
+      log.info("Published RefundCompletedEvent for bill: {} via webhook", bill.getId());
+    } catch (Exception e) {
+      log.error("Failed to publish RefundCompletedEvent for bill: {} via webhook", bill.getId(), e);
     }
   }
 }

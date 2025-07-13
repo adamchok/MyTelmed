@@ -2,6 +2,7 @@ package com.mytelmed.core.appointment.repository;
 
 import com.mytelmed.core.appointment.entity.AppointmentDocument;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -18,6 +19,7 @@ public interface AppointmentDocumentRepository extends JpaRepository<Appointment
   boolean existsByAppointmentIdAndDocumentId(@Param("appointmentId") UUID appointmentId,
       @Param("documentId") UUID documentId);
 
+  @Modifying
   @Query("DELETE FROM AppointmentDocument ad WHERE ad.appointment.id = :appointmentId")
   void deleteByAppointmentId(@Param("appointmentId") UUID appointmentId);
 

@@ -18,12 +18,17 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
 
     Optional<PaymentTransaction> findByStripePaymentIntentId(String stripePaymentIntentId);
 
+    Optional<PaymentTransaction> findByStripeChargeId(String stripeChargeId);
+
     Page<PaymentTransaction> findByPatientId(UUID patientId, Pageable pageable);
 
     Page<PaymentTransaction> findByBillId(UUID billId, Pageable pageable);
 
-    // Add method for finding single transaction by bill ID for scheduler
+    // Add method for finding single transaction by bill ID for scheduler (deprecated - use status-specific methods)
     Optional<PaymentTransaction> findByBillId(UUID billId);
+
+    // Find the successful/completed transaction for a bill (for refunds)
+    Optional<PaymentTransaction> findByBillIdAndStatus(UUID billId, PaymentTransaction.TransactionStatus status);
 
     List<PaymentTransaction> findByStatus(PaymentTransaction.TransactionStatus status);
 

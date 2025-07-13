@@ -135,8 +135,8 @@
             <p>Dear <strong th:text="${providerName}">Provider Name</strong>,</p>
 
             <p>
-                The appointment with patient <strong th:text="${patientName}">Patient Name</strong> has been cancelled. Below
-                are the details:
+                The appointment with patient <strong th:text="${patientName}">Patient Name</strong> has been cancelled.
+                Below are the details:
             </p>
 
             <div class="datetime-highlight">
@@ -153,7 +153,7 @@
                     <span class="detail-label">Appointment ID:</span>
                     <span
                         class="detail-value"
-                        th:text="${appointmentId.length() > 6 ? appointmentId.substring(appointmentId.length() - 6) : appointmentId}"
+                        th:text="${appointmentId.toString().length() > 6 ? appointmentId.toString().substring(appointmentId.toString().length() - 6) : appointmentId.toString()}"
                         >-</span
                     >
                 </div>

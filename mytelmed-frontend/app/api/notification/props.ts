@@ -6,6 +6,13 @@
 // Permission states
 export type PushNotificationPermission = "granted" | "denied" | "default" | "unsupported";
 
+export interface NotificationPermissionState {
+    permission: NotificationPermission;
+    subscription: PushSubscription | null;
+    isSupported: boolean;
+    isSubscribed: boolean;
+}
+
 // Notification types from backend
 export enum NotificationType {
     // Appointment notifications

@@ -146,7 +146,7 @@
                     <span class="detail-label">Appointment ID:</span>
                     <span
                         class="detail-value"
-                        th:text="${appointmentId.length() > 6 ? appointmentId.substring(appointmentId.length() - 6) : appointmentId}"
+                        th:text="${appointmentId.toString().length() > 6 ? appointmentId.toString().substring(appointmentId.toString().length() - 6) : appointmentId.toString()}"
                         >-</span
                     >
                 </div>

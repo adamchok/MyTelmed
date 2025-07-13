@@ -5,6 +5,7 @@ import { Typography, Row, Col, Card, Statistic, Button, List, Tag, Empty, Alert,
 import { Calendar, Clock, FileText, User, Pill, Plus, ChevronRight, AlertCircle, Shield } from "lucide-react";
 import Link from "next/link";
 import dayjs from "dayjs";
+import { parseLocalDateTime } from "@/app/utils/DateUtils";
 import AppointmentApi from "@/app/api/appointment";
 import ReferralApi from "@/app/api/referral";
 import PrescriptionApi from "@/app/api/prescription";
@@ -64,7 +65,7 @@ const Component = () => {
 
             // Filter upcoming appointments (status not cancelled/completed and date in future)
             const upcomingAppointments = appointments.filter((appointment) => {
-                const appointmentDate = dayjs(appointment.appointmentDateTime);
+                const appointmentDate = parseLocalDateTime(appointment.appointmentDateTime);
                 const isUpcoming =
                     appointmentDate.isAfter(dayjs()) &&
                     appointment.status !== "CANCELLED" &&
@@ -282,7 +283,7 @@ const Component = () => {
                         styles={{ body: { padding: "24px" } }}
                     >
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <Link href="/patient/booking" className="no-underline">
+                            <Link href="/patient/appointment/book" className="no-underline">
                                 <Card
                                     hoverable
                                     className="text-center py-6 h-full justify-center border-2 border-blue-200 hover:border-blue-500 transition-all duration-200"
@@ -366,7 +367,7 @@ const Component = () => {
                             </div>
                         }
                         extra={
-                            <Link href="/patient/appointments" className="text-blue-500 hover:text-blue-700">
+                            <Link href="/patient/appointment" className="text-blue-500 hover:text-blue-700">
                                 View All <ChevronRight className="w-4 h-4 inline" />
                             </Link>
                         }
@@ -380,7 +381,7 @@ const Component = () => {
                                 renderItem={(appointment) => (
                                     <List.Item
                                         actions={[
-                                            <Link key="view" href={`/patient/appointments/${appointment.id}`}>
+                                            <Link key="view" href={`/patient/appointment/${appointment.id}`}>
                                                 <Button type="link" className="text-blue-500">
                                                     View Details
                                                 </Button>
@@ -437,7 +438,7 @@ const Component = () => {
                             <div className="text-center py-8">
                                 <Calendar className="w-12 h-12 text-gray-300 mb-4 mx-auto" />
                                 <Text className="text-gray-500 block mb-4">No upcoming appointments</Text>
-                                <Link href="/patient/booking">
+                                <Link href="/patient/appointment/book">
                                     <Button type="primary" icon={<Plus className="w-5 h-5" />} size="large">
                                         Book an Appointment
                                     </Button>
@@ -502,13 +503,6 @@ const Component = () => {
                                                             {daysRemaining} days remaining
                                                         </Text>
                                                     </div>
-                                                </div>
-                                                <div className="mt-3">
-                                                    <Link href={`/patient/booking?referral=${referral.id}`}>
-                                                        <Button type="primary" size="small" className="w-full">
-                                                            Use Referral <ChevronRight className="w-4 h-4 inline" />
-                                                        </Button>
-                                                    </Link>
                                                 </div>
                                             </div>
                                         </List.Item>

@@ -32,7 +32,7 @@ public class AwsS3Service {
     private final S3Presigner s3Presigner;
 
     // Presigned URL expiry durations
-    private static final Duration IMAGE_EXPIRY = Duration.ofSeconds(5);
+    private static final Duration IMAGE_EXPIRY = Duration.ofMinutes(5);
     private static final Duration DOCUMENT_EXPIRY = Duration.ofMinutes(10);
 
     public AwsS3Service(

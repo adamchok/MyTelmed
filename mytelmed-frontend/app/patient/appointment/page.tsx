@@ -48,15 +48,13 @@ import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
 
 // Import API services
-// import AppointmentApi from "../../api/appointment";
-import { AppointmentDto, AppointmentStatus } from "../../api/appointment/props";
-// import { CancelAppointmentRequestDto } from "../../api/appointment/props";
-// import { FamilyMember } from "../../api/family/props";
-// import { FamilyMemberApi } from "@/app/api/family";
-// import PatientApi from "@/app/api/patient";
+import AppointmentApi from "../../api/appointment";
+import { AppointmentDto, AppointmentStatus, CancelAppointmentRequestDto } from "../../api/appointment/props";
+import { FamilyMember } from "../../api/family/props";
+import { FamilyMemberApi } from "@/app/api/family";
+import PatientApi from "@/app/api/patient";
+import { parseLocalDateTime } from "../../utils/DateUtils";
 
-// Import mock data
-import { mockAppointments } from "./mockData";
 import { AppointmentCard } from "./components/AppointmentCard";
 
 // Patient selection option for dropdown
@@ -129,29 +127,11 @@ export default function PatientAppointments() {
         try {
             setFamilyLoading(true);
 
-            // Use mock data instead of API calls
-            // const profileResponse = await PatientApi.getPatientProfile();
-            // if (!profileResponse.data?.isSuccess || !profileResponse.data.data) {
-            //     throw new Error("Failed to load patient profile");
-            // }
-            // const currentPatient = profileResponse.data.data;
-
-            // Mock current patient data
-            const currentPatient = {
-                id: "patient-001",
-                name: "John Smith",
-                email: "john.smith@email.com",
-                phone: "+65 8123 4567",
-                gender: "MALE",
-                dateOfBirth: "1990-01-15",
-                profileImageUrl:
-                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-                serialNumber: "1234567890",
-                nric: "S1234567A",
-                enabled: true,
-                createdAt: "2024-03-15T09:00:00Z",
-                updatedAt: "2024-03-15T09:00:00Z",
-            };
+            const profileResponse = await PatientApi.getPatientProfile();
+            if (!profileResponse.data?.isSuccess || !profileResponse.data.data) {
+                throw new Error("Failed to load patient profile");
+            }
+            const currentPatient = profileResponse.data.data;
 
             // Initialize options with current patient
             const options: PatientOption[] = [
@@ -164,50 +144,31 @@ export default function PatientAppointments() {
                 },
             ];
 
-            // Mock family members data
-            // try {
-            //     const response = await FamilyMemberApi.getPatientsByMemberAccount();
-            //     if (response.data.isSuccess && response.data.data) {
-            //         const familyMembers = response.data.data;
-            //         console.log("family members", familyMembers);
-            //         familyMembers.forEach((member: FamilyMember) => {
-            //             if (
-            //                 !member.pending &&
-            //                 member.canViewAppointments &&
-            //                 member.canManageAppointments &&
-            //                 member.patient
-            //             ) {
-            //                 options.push({
-            //                     id: member.patient.id,
-            //                     name: member.patient.name,
-            //                     relationship: member.relationship,
-            //                     canViewAppointments: member.canViewAppointments,
-            //                     canManageAppointments: member.canManageAppointments,
-            //                 });
-            //             }
-            //         });
-            //     }
-            // } catch (familyError) {
-            //     console.warn("Failed to fetch family members:", familyError);
-            // }
-
-            // Add mock family members
-            options.push(
-                {
-                    id: "patient-002",
-                    name: "Emma Wilson",
-                    relationship: "Spouse",
-                    canViewAppointments: true,
-                    canManageAppointments: true,
-                },
-                {
-                    id: "patient-003",
-                    name: "Alex Johnson",
-                    relationship: "Child",
-                    canViewAppointments: true,
-                    canManageAppointments: false,
+            try {
+                const response = await FamilyMemberApi.getPatientsByMemberAccount();
+                if (response.data.isSuccess && response.data.data) {
+                    const familyMembers = response.data.data;
+                    console.log("family members", familyMembers);
+                    familyMembers.forEach((member: FamilyMember) => {
+                        if (
+                            !member.pending &&
+                            member.canViewAppointments &&
+                            member.canManageAppointments &&
+                            member.patient
+                        ) {
+                            options.push({
+                                id: member.patient.id,
+                                name: member.patient.name,
+                                relationship: member.relationship,
+                                canViewAppointments: member.canViewAppointments,
+                                canManageAppointments: member.canManageAppointments,
+                            });
+                        }
+                    });
                 }
-            );
+            } catch (familyError) {
+                console.warn("Failed to fetch family members:", familyError);
+            }
 
             setPatientOptions(options);
 
@@ -227,22 +188,14 @@ export default function PatientAppointments() {
         try {
             setLoading(true);
 
-            // Use mock data instead of API call
-            // const response = await AppointmentApi.getAllAppointmentsByAccount();
-            // if (response.data.isSuccess && response.data.data) {
-            //     const appointmentsWithAttachments = response.data.data.map((appointment) => ({
-            //         ...appointment,
-            //         hasAttachedDocuments: appointment.attachedDocuments && appointment.attachedDocuments.length > 0,
-            //     }));
-            //     setAllAppointments(appointmentsWithAttachments);
-            // }
-
-            // Use mock data
-            const appointmentsWithAttachments = mockAppointments.map((appointment) => ({
-                ...appointment,
-                hasAttachedDocuments: appointment.attachedDocuments && appointment.attachedDocuments.length > 0,
-            }));
-            setAllAppointments(appointmentsWithAttachments);
+            const response = await AppointmentApi.getAllAppointmentsByAccount();
+            if (response.data.isSuccess && response.data.data) {
+                const appointmentsWithAttachments = response.data.data.map((appointment) => ({
+                    ...appointment,
+                    hasAttachedDocuments: appointment.attachedDocuments && appointment.attachedDocuments.length > 0,
+                }));
+                setAllAppointments(appointmentsWithAttachments);
+            }
         } catch {
             message.error("Failed to load appointments");
         } finally {
@@ -265,7 +218,9 @@ export default function PatientAppointments() {
     const getAppointmentsForDate = (date: Dayjs) => {
         // For calendar view, use all appointments; for table view, use filtered appointments
         const appointmentsToFilter = viewMode === "calendar" ? allAppointments : filteredAppointments;
-        return appointmentsToFilter.filter((appointment) => dayjs(appointment.appointmentDateTime).isSame(date, "day"));
+        return appointmentsToFilter.filter((appointment) =>
+            parseLocalDateTime(appointment.appointmentDateTime).isSame(date, "day")
+        );
     };
 
     // Handle calendar date select
@@ -296,39 +251,29 @@ export default function PatientAppointments() {
         const matchesDateRange =
             !dateRange?.[0] ||
             !dateRange?.[1] ||
-            (dayjs(appointment.appointmentDateTime).isAfter(dateRange[0]) &&
-                dayjs(appointment.appointmentDateTime).isBefore(dateRange[1].add(1, "day")));
+            (parseLocalDateTime(appointment.appointmentDateTime).isAfter(dateRange[0]) &&
+                parseLocalDateTime(appointment.appointmentDateTime).isBefore(dateRange[1].add(1, "day")));
 
         // Tab filter
         let matchesTab = true;
-        // For demo purposes, show all appointments regardless of date
-        // const appointmentDate = dayjs(appointment.appointmentDateTime);
-        // const now = dayjs();
+        const appointmentDate = parseLocalDateTime(appointment.appointmentDateTime);
+        const now = dayjs();
 
         switch (activeTab) {
             case "today":
-                // COMMENTED OUT FOR LIVE DEMO - REMOVE COMMENTS TO RE-ENABLE VALIDATION
-                // const appointmentDate = dayjs(appointment.appointmentDateTime);
-                // const now = dayjs();
-                // matchesTab = appointmentDate.isSame(now, "day");
-                matchesTab = true; // Show all appointments for demo
+                matchesTab = appointmentDate.isSame(now, "day");
                 break;
             case "upcoming":
-                // COMMENTED OUT FOR LIVE DEMO - REMOVE COMMENTS TO RE-ENABLE VALIDATION
-                // const appointmentDate = dayjs(appointment.appointmentDateTime);
-                // const now = dayjs();
-                // matchesTab = appointmentDate.isAfter(now);
-                matchesTab = true; // Show all appointments for demo
+                matchesTab = appointmentDate.isAfter(now);
                 break;
             case "past":
-                // COMMENTED OUT FOR LIVE DEMO - REMOVE COMMENTS TO RE-ENABLE VALIDATION
-                // const appointmentDate = dayjs(appointment.appointmentDateTime);
-                // const now = dayjs();
-                // matchesTab = appointmentDate.isBefore(now, "day");
-                matchesTab = true; // Show all appointments for demo
+                matchesTab = appointmentDate.isBefore(now, "day");
                 break;
             case "pending":
                 matchesTab = appointment.status === "PENDING";
+                break;
+            case "pending_payment":
+                matchesTab = appointment.status === "PENDING_PAYMENT";
                 break;
             case "confirmed":
                 matchesTab = appointment.status === "CONFIRMED";
@@ -364,6 +309,8 @@ export default function PatientAppointments() {
         switch (status) {
             case "PENDING":
                 return "warning";
+            case "PENDING_PAYMENT":
+                return "orange";
             case "CONFIRMED":
                 return "processing";
             case "READY_FOR_CALL":
@@ -386,6 +333,8 @@ export default function PatientAppointments() {
         switch (status) {
             case "PENDING":
                 return <Clock className="w-4 h-4" />;
+            case "PENDING_PAYMENT":
+                return <AlertTriangle className="w-4 h-4" />;
             case "CONFIRMED":
                 return <CheckCircle className="w-4 h-4" />;
             case "READY_FOR_CALL":
@@ -408,13 +357,13 @@ export default function PatientAppointments() {
         const today = dayjs();
         const todayAppointments = allAppointments.filter(
             (apt) =>
-                dayjs(apt.appointmentDateTime).isSame(today, "day") &&
+                parseLocalDateTime(apt.appointmentDateTime).isSame(today, "day") &&
                 apt.status !== "CANCELLED" &&
                 apt.status !== "NO_SHOW"
         );
         const upcomingAppointments = allAppointments.filter(
             (apt) =>
-                dayjs(apt.appointmentDateTime).isAfter(today) &&
+                parseLocalDateTime(apt.appointmentDateTime).isAfter(today) &&
                 apt.status !== "CANCELLED" &&
                 apt.status !== "NO_SHOW" &&
                 apt.status !== "COMPLETED"
@@ -422,7 +371,7 @@ export default function PatientAppointments() {
 
         const pendingAppointments = allAppointments.filter((apt) => apt.status === "PENDING");
         const completedToday = allAppointments.filter(
-            (apt) => dayjs(apt.appointmentDateTime).isSame(today, "day") && apt.status === "COMPLETED"
+            (apt) => parseLocalDateTime(apt.appointmentDateTime).isSame(today, "day") && apt.status === "COMPLETED"
         );
 
         const confirmedAppointments = allAppointments.filter((apt) => apt.status === "CONFIRMED");
@@ -454,7 +403,7 @@ export default function PatientAppointments() {
     const cellRender = (current: Dayjs) => {
         // Always use allAppointments for calendar rendering
         const dayAppointments = allAppointments.filter((appointment) =>
-            dayjs(appointment.appointmentDateTime).isSame(current, "day")
+            parseLocalDateTime(appointment.appointmentDateTime).isSame(current, "day")
         );
 
         if (dayAppointments.length === 0) return null;
@@ -530,15 +479,11 @@ export default function PatientAppointments() {
             setCancelLoading(true);
 
             console.log("values", values);
-            // const request: CancelAppointmentRequestDto = {
-            //     reason: values.reason,
-            // };
+            const request: CancelAppointmentRequestDto = {
+                reason: values.reason,
+            };
 
-            // Use mock data instead of API call
-            // await AppointmentApi.cancelAppointment(appointmentToCancel.id, request);
-
-            // Simulate API call delay
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await AppointmentApi.cancelAppointment(appointmentToCancel.id, request);
 
             message.success("Appointment cancelled successfully!");
             setCancelModalVisible(false);
@@ -735,6 +680,7 @@ export default function PatientAppointments() {
                             >
                                 <Option value="all">All Statuses</Option>
                                 <Option value="PENDING">Pending</Option>
+                                <Option value="PENDING_PAYMENT">Pending Payment</Option>
                                 <Option value="CONFIRMED">Confirmed</Option>
                                 <Option value="READY_FOR_CALL">Ready for Call</Option>
                                 <Option value="IN_PROGRESS">In Progress</Option>
@@ -883,11 +829,11 @@ export default function PatientAppointments() {
                                                         <div>
                                                             <Text strong>Dr. {appointment.doctor.name}</Text>
                                                             <div className="text-sm text-gray-500">
-                                                                {dayjs(appointment.appointmentDateTime).format(
-                                                                    "h:mm A"
-                                                                )}{" "}
+                                                                {parseLocalDateTime(
+                                                                    appointment.appointmentDateTime
+                                                                ).format("h:mm A")}{" "}
                                                                 -{" "}
-                                                                {dayjs(appointment.appointmentDateTime)
+                                                                {parseLocalDateTime(appointment.appointmentDateTime)
                                                                     .add(appointment.durationMinutes, "minute")
                                                                     .format("h:mm A")}
                                                             </div>
@@ -961,11 +907,9 @@ export default function PatientAppointments() {
                             {
                                 key: "past",
                                 label: `Past (${
-                                    // COMMENTED OUT FOR LIVE DEMO - REMOVE COMMENTS TO RE-ENABLE VALIDATION
-                                    // allAppointments.filter((apt) =>
-                                    //     dayjs(apt.appointmentDateTime).isBefore(dayjs(), "day")
-                                    // ).length
-                                    allAppointments.length // Show all appointments for demo
+                                    allAppointments.filter((apt) =>
+                                        parseLocalDateTime(apt.appointmentDateTime).isBefore(dayjs(), "day")
+                                    ).length
                                 })`,
                                 children: null,
                             },

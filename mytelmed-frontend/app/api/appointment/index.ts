@@ -42,8 +42,8 @@ const AppointmentApi = {
     /**
      * Book new appointment (Patient only)
      */
-    bookAppointment(request: BookAppointmentRequestDto): Promise<AxiosResponse<ApiResponse<void>>> {
-        return repository.post<ApiResponse<void>>(`${RESOURCE}`, request);
+    bookAppointment(request: BookAppointmentRequestDto): Promise<AxiosResponse<ApiResponse<string>>> {
+        return repository.post<ApiResponse<string>>(`${RESOURCE}`, request);
     },
 
     /**

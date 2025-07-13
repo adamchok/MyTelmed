@@ -176,7 +176,7 @@ const ReferralDetailModal: React.FC<ReferralDetailModalProps> = ({ referral, isV
     };
 
     const handleBookAppointment = () => {
-        router.push(`/patient/booking?referral=${referral.id}`);
+        router.push(`/patient/appointment/book`);
     };
 
     return (

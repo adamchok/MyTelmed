@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -122,20 +123,31 @@ public class PaymentService {
             throw new AppException("Insufficient permissions to make payment for appointments");
         }
 
-        // Check if bill already exists
-        if (billRepository.findByAppointmentId(appointmentId).isPresent()) {
-            throw new AppException("Payment for this appointment already exists");
-        }
-
         try {
             Patient patient = appointment.getPatient();
+            Bill bill;
 
-            // Create bill
-            Bill bill = createBill(patient, BillType.CONSULTATION, consultationFee,
-                    "Virtual consultation fee for appointment with Dr. " + appointment.getDoctor().getName(),
-                    appointment, null);
+            // Check if bill already exists
+            Optional<Bill> existingBill = billRepository.findByAppointmentId(appointmentId);
+            if (existingBill.isPresent()) {
+                bill = existingBill.get();
+                
+                // If bill is already paid, prevent duplicate payment
+                if (bill.getBillingStatus() == BillingStatus.PAID) {
+                    throw new AppException("Payment for this appointment has already been completed");
+                }
+                
+                // If bill is unpaid, we can reuse it for retry
+                log.info("Reusing existing unpaid bill {} for appointment {} retry", bill.getBillNumber(), appointmentId);
+            } else {
+                // Create new bill
+                bill = createBill(patient, BillType.CONSULTATION, consultationFee,
+                        "Virtual consultation fee for appointment with Dr. " + appointment.getDoctor().getName(),
+                        appointment, null);
+                log.info("Created new bill {} for appointment {}", bill.getBillNumber(), appointmentId);
+            }
 
-            // Create Stripe PaymentIntent
+            // Always create a new Stripe PaymentIntent for each attempt
             PaymentIntent paymentIntent = createStripePaymentIntent(bill);
 
             return new PaymentIntentResponseDto(
@@ -177,20 +189,31 @@ public class PaymentService {
             throw new AppException("Insufficient permissions to make payment for prescriptions");
         }
 
-        // Check if bill already exists
-        if (billRepository.findByPrescriptionId(prescriptionId).isPresent()) {
-            throw new AppException("Payment for this prescription already exists");
-        }
-
         try {
             Patient patient = prescription.getPatient();
+            Bill bill;
 
-            // Create bill for standardized delivery fee (RM 10)
-            Bill bill = createBill(patient, BillType.MEDICATION, deliveryFee,
-                    "Medication delivery fee for prescription: " + prescription.getId(),
-                    null, prescription);
+            // Check if bill already exists
+            Optional<Bill> existingBill = billRepository.findByPrescriptionId(prescriptionId);
+            if (existingBill.isPresent()) {
+                bill = existingBill.get();
+                
+                // If bill is already paid, prevent duplicate payment
+                if (bill.getBillingStatus() == BillingStatus.PAID) {
+                    throw new AppException("Payment for this prescription has already been completed");
+                }
+                
+                // If bill is unpaid, we can reuse it for retry
+                log.info("Reusing existing unpaid bill {} for prescription {} retry", bill.getBillNumber(), prescriptionId);
+            } else {
+                // Create new bill for standardized delivery fee (RM 10)
+                bill = createBill(patient, BillType.MEDICATION, deliveryFee,
+                        "Medication delivery fee for prescription: " + prescription.getId(),
+                        null, prescription);
+                log.info("Created new bill {} for prescription {}", bill.getBillNumber(), prescriptionId);
+            }
 
-            // Create Stripe PaymentIntent
+            // Always create a new Stripe PaymentIntent for each attempt
             PaymentIntent paymentIntent = createStripePaymentIntent(bill);
 
             return new PaymentIntentResponseDto(
@@ -359,6 +382,7 @@ public class PaymentService {
                 .setAutomaticPaymentMethods(
                         PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
                                 .setEnabled(true)
+                                .setAllowRedirects(PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
                                 .build())
                 .build();
 

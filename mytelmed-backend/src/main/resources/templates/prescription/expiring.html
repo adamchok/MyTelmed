@@ -114,8 +114,10 @@
 
             <p>
                 This is a friendly reminder that your prescription (ID:
-                <span th:text="${#strings.substring(prescriptionId, prescriptionId.length() - 6)}">ABC123</span>) is expiring
-                soon. Please review the details below and take any necessary action before the expiration date.
+                <span th:text="${#strings.substring(prescriptionId.toString(), prescriptionId.toString().length() - 6)}"
+                    >ABC123</span
+                >) is expiring soon. Please review the details below and take any necessary action before the expiration
+                date.
             </p>
 
             <div class="expiry-highlight">
@@ -124,7 +126,8 @@
                     <span th:text="${#temporals.format(expiryDate, 'EEEE, MMMM d, yyyy')}">-</span>
                 </div>
                 <p style="margin: 5px 0 0 0; color: #856404">
-                    You have <strong th:text="${daysUntilExpiry}">-</strong> day(s) remaining to act on this prescription.
+                    You have <strong th:text="${daysUntilExpiry}">-</strong> day(s) remaining to act on this
+                    prescription.
                 </p>
             </div>
 

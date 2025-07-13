@@ -4,7 +4,7 @@ import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.constant.appointment.AppointmentStatus;
 import com.mytelmed.common.constant.appointment.ConsultationMode;
 import com.mytelmed.common.constant.payment.BillingStatus;
-import com.mytelmed.common.event.payment.model.RefundCompletedEvent;
+import com.mytelmed.common.constant.payment.BillType;
 import com.mytelmed.common.event.payment.model.RefundFailedEvent;
 import com.mytelmed.core.appointment.entity.Appointment;
 import com.mytelmed.core.auth.entity.Account;
@@ -90,10 +90,11 @@ public class PaymentRefundService {
         // Validate refund eligibility
         validateRefundEligibility(bill, cancellationReason);
 
-        // Find the associated payment transaction
-        Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository.findByBillId(bill.getId());
+        // Find the successful/completed payment transaction for refund
+        Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository.findByBillIdAndStatus(
+                bill.getId(), PaymentTransaction.TransactionStatus.COMPLETED);
         if (transactionOpt.isEmpty()) {
-            throw new AppException("No payment transaction found for this appointment");
+            throw new AppException("No completed payment transaction found for this appointment");
         }
 
         PaymentTransaction transaction = transactionOpt.get();
@@ -114,8 +115,7 @@ public class PaymentRefundService {
                 updateBillForRefund(bill, refundResult.getRefund(), cancellationReason);
                 updateTransactionForRefund(transaction, refundResult.getRefund(), cancellationReason);
 
-                // Publish refund completed event
-                publishRefundCompletedEvent(bill, transaction, refundResult.getRefund());
+                // Note: RefundCompletedEvent will be published via webhook when Stripe confirms the refund
 
                 log.info("Successfully processed refund for appointment: {} with Stripe refund ID: {}",
                         appointmentId, refundResult.getRefund().getId());
@@ -158,10 +158,11 @@ public class PaymentRefundService {
             return RefundResult.notRequired("Bill not eligible for automatic refund");
         }
 
-        Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository.findByBillId(bill.getId());
+        Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository.findByBillIdAndStatus(
+                bill.getId(), PaymentTransaction.TransactionStatus.COMPLETED);
         if (transactionOpt.isEmpty()) {
-            log.warn("No transaction found for bill: {} during automatic refund", bill.getId());
-            return RefundResult.notRequired("No transaction found for automatic refund");
+            log.warn("No completed transaction found for bill: {} during automatic refund", bill.getId());
+            return RefundResult.notRequired("No completed transaction found for automatic refund");
         }
 
         PaymentTransaction transaction = transactionOpt.get();
@@ -181,7 +182,8 @@ public class PaymentRefundService {
             if (refundResult.isSuccessful()) {
                 updateBillForRefund(bill, refundResult.getRefund(), systemReason);
                 updateTransactionForRefund(transaction, refundResult.getRefund(), systemReason);
-                publishRefundCompletedEvent(bill, transaction, refundResult.getRefund());
+
+                // Note: RefundCompletedEvent will be published via webhook when Stripe confirms the refund
 
                 log.info("Successfully processed automatic refund for appointment: {} with Stripe refund ID: {}",
                         appointmentId, refundResult.getRefund().getId());
@@ -195,6 +197,119 @@ public class PaymentRefundService {
             handleRefundFailure(bill, transaction, e.getMessage());
             throw new AppException("Failed to process automatic refund: " + e.getMessage());
         }
+    }
+
+    /**
+     * Processes automatic refund for prescription/delivery cancellation.
+     * This method is called when a prescription delivery is cancelled and needs refund.
+     */
+    @Transactional
+    @Retryable(retryFor = {StripeException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
+    public RefundResult processPrescriptionRefund(UUID prescriptionId, String cancellationReason) throws AppException {
+        log.info("Processing prescription refund for prescription: {} due to: {}", prescriptionId, cancellationReason);
+
+        Optional<Bill> billOpt = billRepository.findByPrescriptionId(prescriptionId);
+        if (billOpt.isEmpty()) {
+            return RefundResult.notRequired("No payment found for this prescription");
+        }
+
+        Bill bill = billOpt.get();
+
+        // Only process if bill is paid and eligible for refund
+        if (!bill.isEligibleForFullRefund()) {
+            log.debug("Bill {} not eligible for prescription refund - Status: {}, Refund Status: {}",
+                    bill.getId(), bill.getBillingStatus(), bill.getRefundStatus());
+            return RefundResult.notRequired("Bill not eligible for prescription refund");
+        }
+
+        // Validate this is a prescription/medication bill
+        if (bill.getBillType() != BillType.MEDICATION) {
+            throw new AppException("Bill is not a prescription/medication bill");
+        }
+
+        Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository.findByBillIdAndStatus(
+                bill.getId(), PaymentTransaction.TransactionStatus.COMPLETED);
+        if (transactionOpt.isEmpty()) {
+            log.warn("No completed transaction found for bill: {} during prescription refund", bill.getId());
+            return RefundResult.notRequired("No completed transaction found for prescription refund");
+        }
+
+        PaymentTransaction transaction = transactionOpt.get();
+
+        if (!transaction.isEligibleForFullRefund()) {
+            log.debug("Transaction {} not eligible for prescription refund", transaction.getId());
+            return RefundResult.notRequired("Transaction not eligible for prescription refund");
+        }
+
+        try {
+            RefundResult refundResult = processStripeRefund(
+                    transaction.getStripeChargeId(),
+                    transaction.getAmount(),
+                    "Prescription delivery refund: " + cancellationReason,
+                    generatePrescriptionRefundMetadata(bill, transaction, cancellationReason));
+
+            if (refundResult.isSuccessful()) {
+                updateBillForRefund(bill, refundResult.getRefund(), cancellationReason);
+                updateTransactionForRefund(transaction, refundResult.getRefund(), cancellationReason);
+
+                // Note: RefundCompletedEvent will be published via webhook when Stripe confirms the refund
+
+                log.info("Successfully processed prescription refund for prescription: {} with Stripe refund ID: {}",
+                        prescriptionId, refundResult.getRefund().getId());
+            } else {
+                handleRefundFailure(bill, transaction, refundResult.getErrorMessage());
+            }
+
+            return refundResult;
+        } catch (StripeException e) {
+            log.error("Stripe error during prescription refund for prescription: {}", prescriptionId, e);
+            handleRefundFailure(bill, transaction, e.getMessage());
+            throw new AppException("Failed to process prescription refund: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Checks if a prescription is eligible for refund based on delivery status.
+     */
+    public boolean isPrescriptionEligibleForRefund(UUID prescriptionId) {
+        Optional<Bill> billOpt = billRepository.findByPrescriptionId(prescriptionId);
+        if (billOpt.isEmpty()) {
+            return false;
+        }
+
+        Bill bill = billOpt.get();
+        return bill.isEligibleForFullRefund() && bill.getBillType() == BillType.MEDICATION;
+    }
+
+    /**
+     * Gets refund status for a prescription.
+     */
+    @Transactional(readOnly = true)
+    public RefundStatus getPrescriptionRefundStatus(UUID prescriptionId) {
+        Optional<Bill> billOpt = billRepository.findByPrescriptionId(prescriptionId);
+        if (billOpt.isEmpty()) {
+            return RefundStatus.builder()
+                    .hasPayment(false)
+                    .refundEligible(false)
+                    .message("No payment found for this prescription")
+                    .build();
+        }
+
+        Bill bill = billOpt.get();
+        // Get the completed transaction for refund status (only successful payments can be refunded)
+        Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository.findByBillIdAndStatus(
+                bill.getId(), PaymentTransaction.TransactionStatus.COMPLETED);
+
+        return RefundStatus.builder()
+                .hasPayment(true)
+                .refundEligible(bill.isEligibleForFullRefund() && transactionOpt.isPresent())
+                .refundStatus(bill.getRefundStatus())
+                .refundAmount(bill.getRefundAmount())
+                .refundableAmount(bill.getRefundableAmount())
+                .stripeRefundId(bill.getStripeRefundId())
+                .refundedAt(bill.getRefundedAt())
+                .message(getPrescriptionRefundStatusMessage(bill, transactionOpt.orElse(null)))
+                .build();
     }
 
     /**
@@ -237,11 +352,13 @@ public class PaymentRefundService {
         }
 
         Bill bill = billOpt.get();
-        Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository.findByBillId(bill.getId());
+        // Get the completed transaction for refund status (only successful payments can be refunded)
+        Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository.findByBillIdAndStatus(
+                bill.getId(), PaymentTransaction.TransactionStatus.COMPLETED);
 
         return RefundStatus.builder()
                 .hasPayment(true)
-                .refundEligible(bill.isEligibleForFullRefund())
+                .refundEligible(bill.isEligibleForFullRefund() && transactionOpt.isPresent())
                 .refundStatus(bill.getRefundStatus())
                 .refundAmount(bill.getRefundAmount())
                 .refundableAmount(bill.getRefundableAmount())
@@ -380,6 +497,21 @@ public class PaymentRefundService {
         return metadata;
     }
 
+    private Map<String, String> generatePrescriptionRefundMetadata(Bill bill, PaymentTransaction transaction,
+                                                                   String reason) {
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("bill_id", bill.getId().toString());
+        metadata.put("bill_number", bill.getBillNumber());
+        metadata.put("transaction_id", transaction.getId().toString());
+        metadata.put("patient_id", bill.getPatient().getId().toString());
+        metadata.put("refund_type", "prescription_delivery_refund");
+        metadata.put("prescription_id", bill.getPrescription().getId().toString());
+        metadata.put("prescription_delivery_reason", reason);
+        metadata.put("refund_timestamp", Instant.now().toString());
+
+        return metadata;
+    }
+
     private String getRefundStatusMessage(Bill bill, PaymentTransaction transaction) {
         if (bill.getBillingStatus() != BillingStatus.PAID) {
             return "No refund needed - payment not completed";
@@ -396,22 +528,22 @@ public class PaymentRefundService {
         };
     }
 
-    private void publishRefundCompletedEvent(Bill bill, PaymentTransaction transaction, Refund stripeRefund) {
-        try {
-            RefundCompletedEvent event = RefundCompletedEvent.builder()
-                    .bill(bill)
-                    .transaction(transaction)
-                    .stripeRefundId(stripeRefund.getId())
-                    .refundAmount(BigDecimal.valueOf(stripeRefund.getAmount() / 100.0))
-                    .refundReason(bill.getRefundReason())
-                    .build();
-
-            eventPublisher.publishEvent(event);
-            log.debug("Published RefundCompletedEvent for bill: {}", bill.getId());
-        } catch (Exception e) {
-            log.error("Failed to publish RefundCompletedEvent for bill: {}", bill.getId(), e);
+    private String getPrescriptionRefundStatusMessage(Bill bill, PaymentTransaction transaction) {
+        if (bill.getBillingStatus() != BillingStatus.PAID) {
+            return "No refund needed - payment not completed";
         }
+
+        return switch (bill.getRefundStatus()) {
+            case REFUNDED -> "Full refund completed";
+            case REFUND_PROCESSING -> "Refund is being processed";
+            case REFUND_FAILED -> "Refund failed - please contact support";
+            case PARTIAL_REFUND -> "Partial refund completed";
+            case NOT_REFUNDED ->
+                    bill.isEligibleForFullRefund() ? "Eligible for full refund" : "Not eligible for refund";
+            default -> "Unknown refund status";
+        };
     }
+
 
     private void publishRefundFailedEvent(Bill bill, PaymentTransaction transaction, String errorMessage) {
         try {

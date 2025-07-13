@@ -166,27 +166,6 @@ public class AppointmentSchedulerService {
 
         for (Appointment appointment : unpaidAppointments) {
             try {
-                // Process refund for virtual appointments if payment was completed
-                if (appointment.getConsultationMode() == ConsultationMode.VIRTUAL) {
-                    try {
-                        String systemReason = "Auto-cancelled due to non-payment within 3 hours";
-                        PaymentRefundService.RefundResult refundResult = paymentRefundService
-                                .processAutomaticRefund(appointment.getId(), systemReason);
-
-                        if (refundResult.isSuccessful() && refundResult.getRefund() != null) {
-                            log.info("Successfully processed automatic refund for appointment: {} - Refund ID: {}",
-                                    appointment.getId(), refundResult.getRefund().getId());
-                        } else {
-                            log.debug("Automatic refund processing for appointment: {} - {}",
-                                    appointment.getId(), refundResult.getMessage());
-                        }
-                    } catch (Exception refundException) {
-                        // Log refund failure but continue with cancellation
-                        log.error("Failed to process automatic refund for appointment: {} - {}",
-                                appointment.getId(), refundException.getMessage());
-                    }
-                }
-
                 // Use state machine to validate transition
                 appointmentStateMachine.validateTransition(
                         appointment.getStatus(),

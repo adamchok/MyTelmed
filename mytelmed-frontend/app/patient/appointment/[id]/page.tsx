@@ -19,10 +19,10 @@ import {
     Badge,
     message,
     Modal,
-    Image,
     Form,
     Input,
     Select,
+    Checkbox,
 } from "antd";
 import {
     CalendarOutlined,
@@ -33,7 +33,6 @@ import {
     CloseCircleOutlined,
     ClockCircleOutlined,
     FileTextOutlined,
-    DownloadOutlined,
     EyeOutlined,
     PhoneOutlined,
     MailOutlined,
@@ -44,8 +43,10 @@ import {
     HomeOutlined,
     EnvironmentOutlined,
 } from "@ant-design/icons";
+import { RefreshCw, Maximize2, Minimize2, X } from "lucide-react";
 
 import dayjs from "dayjs";
+import { parseLocalDateTime } from "../../../utils/DateUtils";
 
 // Import API services
 import AppointmentApi from "../../../api/appointment";
@@ -59,6 +60,10 @@ import {
 import { AppointmentDocumentDto } from "@/app/api/props";
 import DocumentApi from "@/app/api/document";
 import { Document } from "@/app/api/document/props";
+
+// Import Payment components and hooks
+import PaymentModal from "@/app/components/PaymentModal/PaymentModal";
+import { useFamilyPermissions } from "@/app/hooks/useFamilyPermissions";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -194,6 +199,11 @@ export default function AppointmentDetails() {
     // State for document preview
     const [previewModal, setPreviewModal] = useState(false);
     const [selectedDocument, setSelectedDocument] = useState<AppointmentDocumentDto | null>(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [documentLoading, setDocumentLoading] = useState<boolean>(true);
+    const [documentError, setDocumentError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState<number>(0);
+    const [iframeKey, setIframeKey] = useState<number>(0);
 
     // State for update appointment modal
     const [updateModal, setUpdateModal] = useState(false);
@@ -207,6 +217,17 @@ export default function AppointmentDetails() {
     const [cancelModal, setCancelModal] = useState(false);
     const [cancelForm] = Form.useForm();
     const [cancelLoading, setCancelLoading] = useState(false);
+
+    // State for payment modal
+    const [paymentModal, setPaymentModal] = useState(false);
+
+    // Family permissions hook
+    const { canManageBilling } = useFamilyPermissions();
+
+    // Document comparison state
+    const [comparisonMode, setComparisonMode] = useState(false);
+    const [selectedForComparison, setSelectedForComparison] = useState<AppointmentDocumentDto[]>([]);
+    const [comparisonModalVisible, setComparisonModalVisible] = useState(false);
 
     // Convert document type enum to display name
     const getDocumentTypeDisplayName = (documentType: string) => {
@@ -247,132 +268,176 @@ export default function AppointmentDetails() {
         }
     };
 
-    // Render document preview content
-    const renderDocumentPreview = (docItem: AppointmentDocumentDto) => {
-        const doc = docItem;
+    // Document viewer functions
+    const handleDocumentLoad = () => {
+        setDocumentLoading(false);
+        setDocumentError(null);
+    };
 
-        // Document metadata section
-        const DocumentMetadata = () => (
-            <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
-                <div className="flex items-center justify-between mb-3">
-                    <Title level={4} className="mb-0">
-                        {doc.documentName}
-                    </Title>
-                    <div className="flex items-center space-x-2">
-                        <Tag color="blue">{getDocumentTypeDisplayName(doc.documentType)}</Tag>
-                    </div>
+    const handleDocumentError = () => {
+        setDocumentLoading(false);
+        if (retryCount === 0) {
+            setDocumentError(
+                "Document failed to load. This might be due to URL expiry or browser security restrictions."
+            );
+        } else {
+            setDocumentError("Unable to display document in browser. Please try refreshing the page.");
+        }
+    };
+
+    const handleDocumentRetry = () => {
+        setRetryCount((prev) => prev + 1);
+        setDocumentLoading(true);
+        setDocumentError(null);
+        setIframeKey((prev) => prev + 1);
+    };
+
+    const toggleFullscreen = () => {
+        setIsFullscreen(!isFullscreen);
+    };
+
+    const isValidDocumentUrl = (url: string) => {
+        if (!url || url.trim() === "") return false;
+        try {
+            new URL(url);
+            return true;
+        } catch {
+            return false;
+        }
+    };
+
+    // Reset document states when selected document changes
+    useEffect(() => {
+        if (selectedDocument?.documentUrl) {
+            setDocumentLoading(true);
+            setDocumentError(null);
+            setRetryCount(0);
+            setIframeKey((prev) => prev + 1);
+        }
+    }, [selectedDocument?.id, selectedDocument?.documentUrl]);
+
+    // Reset fullscreen when modal closes
+    useEffect(() => {
+        if (!previewModal) {
+            setIsFullscreen(false);
+        }
+    }, [previewModal]);
+
+    // Render document viewer
+    const renderDocumentViewer = () => {
+        if (!selectedDocument?.documentUrl) {
+            return (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                    <Text className="text-gray-500">Document not available for viewing.</Text>
                 </div>
+            );
+        }
 
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                    <div className="flex items-center space-x-4">
-                        <span>Size: {formatFileSize(doc.documentSize)}</span>
-                        <span>•</span>
-                        <span>Uploaded: {parseTimestamp(doc.createdAt).format("MMM DD, YYYY")}</span>
-                    </div>
-                </div>
+        const isValidUrl = isValidDocumentUrl(selectedDocument.documentUrl);
 
-                {docItem.notes && (
-                    <div>
-                        <Text strong className="text-blue-600">
-                            Notes:
-                        </Text>
-                        <div className="mt-1 p-3 bg-blue-50 border border-blue-200 rounded">
-                            <Text className="text-blue-800">{docItem.notes}</Text>
+        return (
+            <div
+                className="relative border rounded bg-gray-50"
+                style={{ height: isFullscreen ? "calc(100vh - 120px)" : "500px" }}
+            >
+                {documentLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10">
+                        <Spin size="large" />
+                        <div className="ml-3">
+                            <Text className="text-sm text-gray-600">Loading document...</Text>
                         </div>
+                    </div>
+                )}
+
+                {documentError || !isValidUrl ? (
+                    <div className="flex items-center justify-center h-full p-4">
+                        <Alert
+                            message="Document Display Issue"
+                            description={
+                                <div className="space-y-2">
+                                    <p>
+                                        {documentError || "Invalid document URL. The document link may have expired."}
+                                    </p>
+                                    <p className="text-sm">
+                                        <strong>Common causes:</strong>
+                                    </p>
+                                    <ul className="text-sm list-disc list-inside space-y-1">
+                                        <li>Document access URL has expired (URLs expire after 10 minutes)</li>
+                                        <li>Browser security restrictions for PDF display</li>
+                                        <li>Network connectivity issues</li>
+                                        <li>Document format not supported for inline viewing</li>
+                                    </ul>
+                                </div>
+                            }
+                            type="warning"
+                            showIcon
+                            action={
+                                <div className="flex flex-col gap-2">
+                                    {retryCount < 2 && (
+                                        <Button onClick={handleDocumentRetry} icon={<RefreshCw className="w-4 h-4" />}>
+                                            Retry Loading
+                                        </Button>
+                                    )}
+                                </div>
+                            }
+                        />
+                    </div>
+                ) : (
+                    <div className="h-full">
+                        <iframe
+                            key={iframeKey}
+                            src={`${selectedDocument.documentUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                            className="w-full h-full border-0"
+                            title={selectedDocument.documentName}
+                            onLoad={handleDocumentLoad}
+                            onError={handleDocumentError}
+                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                        />
                     </div>
                 )}
             </div>
         );
-
-        if (!doc.documentUrl) {
-            return (
-                <div>
-                    <DocumentMetadata />
-                    <div className="text-center p-8">
-                        <div className="text-6xl mb-4 text-gray-400">{getFileIcon(doc.documentType)}</div>
-                        <Text className="text-gray-500">Document URL not available</Text>
-                    </div>
-                </div>
-            );
-        }
-
-        const fileType = doc.documentUrl.split(".").pop()?.toLowerCase() || "pdf";
-
-        // Handle images
-        if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(fileType)) {
-            return (
-                <div>
-                    <DocumentMetadata />
-                    <div className="text-center">
-                        <Image
-                            src={doc.documentUrl}
-                            alt={doc.documentName}
-                            className="max-w-full max-h-96 mx-auto rounded-lg shadow-lg"
-                            onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = "none";
-                                target.nextElementSibling?.classList.remove("hidden");
-                            }}
-                        />
-                        <div className="hidden text-center p-8">
-                            <Text className="text-red-500">Failed to load image</Text>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        // Handle PDFs
-        if (fileType === "pdf") {
-            return (
-                <div>
-                    <DocumentMetadata />
-                    <div className="w-full h-[60vh]">
-                        <iframe
-                            src={doc.documentUrl}
-                            className="w-full h-full border-0 rounded-lg"
-                            title={doc.documentName}
-                        />
-                    </div>
-                </div>
-            );
-        }
-
-        // Handle other file types
-        return (
-            <div>
-                <DocumentMetadata />
-                <div className="text-center p-8">
-                    <div className="text-6xl mb-4">{getFileIcon(fileType)}</div>
-                    <div className="bg-gray-100 p-4 rounded-lg">
-                        <Text className="text-gray-500">Preview not available for {fileType.toUpperCase()} files</Text>
-                        <br />
-                        <Button
-                            type="link"
-                            icon={<DownloadOutlined />}
-                            onClick={() => window.open(doc.documentUrl, "_blank")}
-                            className="mt-2"
-                        >
-                            Open in new tab
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        );
     };
 
-    // Handle document view/download
-    const handleDocumentAction = (docItem: AppointmentDocumentDto, action: "view" | "download") => {
-        if (docItem.documentUrl) {
-            if (action === "view") {
-                setSelectedDocument(docItem);
-                setPreviewModal(true);
-            } else {
-                window.open(docItem.documentUrl, "_blank");
-            }
-        } else {
-            message.error("Document URL not available");
+    // Handle document view
+    const handleDocumentView = (docItem: AppointmentDocumentDto) => {
+        setSelectedDocument(docItem);
+        setPreviewModal(true);
+    };
+
+    // Document comparison handlers
+    const handleToggleComparisonMode = () => {
+        setComparisonMode(!comparisonMode);
+        setSelectedForComparison([]);
+    };
+
+    const handleAddToComparison = (document: AppointmentDocumentDto) => {
+        if (selectedForComparison.length >= 4) {
+            message.warning("You can compare up to 4 documents at a time");
+            return;
         }
+        setSelectedForComparison((prev) => [...prev, document]);
+    };
+
+    const handleRemoveFromComparison = (document: AppointmentDocumentDto) => {
+        setSelectedForComparison((prev) => prev.filter((d) => d.id !== document.id));
+    };
+
+    const handleClearAllComparison = () => {
+        setSelectedForComparison([]);
+    };
+
+    const handleStartComparison = () => {
+        if (selectedForComparison.length < 2) {
+            message.warning("Please select at least 2 documents to compare");
+            return;
+        }
+        setComparisonModalVisible(true);
+    };
+
+    const handleExitComparisonMode = () => {
+        setComparisonMode(false);
+        setSelectedForComparison([]);
     };
 
     // Load available documents for patient
@@ -504,6 +569,27 @@ export default function AppointmentDetails() {
         }
     };
 
+    // Handle payment modal
+    const handlePayNow = () => {
+        if (!appointment) return;
+
+        // Check if user has permission to manage billing for this patient
+        if (!canManageBilling(appointment.patient.id)) {
+            message.error("You don't have permission to make payments for this patient");
+            return;
+        }
+
+        setPaymentModal(true);
+    };
+
+    // Handle payment success
+    const handlePaymentSuccess = async () => {
+        message.success("Payment completed successfully!");
+        setPaymentModal(false);
+        // Reload appointment details to show updated status
+        await loadAppointmentDetails();
+    };
+
     // Render loading state
     if (loading) {
         return (
@@ -568,381 +654,521 @@ export default function AppointmentDetails() {
 
     const canStartCall = appointment.status === "READY_FOR_CALL" || appointment.status === "IN_PROGRESS";
 
+    const canMakePayment =
+        appointment.status === "PENDING_PAYMENT" &&
+        appointment.consultationMode === "VIRTUAL" &&
+        canManageBilling(appointment.patient.id);
+
     return (
-        <div className="bg-gray-50 p-4 mx-8">
-            <div className="max-w-5xl mx-auto">
-                {/* Header */}
-                <div className="mb-6">
-                    <Button
-                        type="text"
-                        icon={<LeftOutlined />}
-                        onClick={() => router.push("/patient/appointment")}
-                        className="mb-4"
-                    >
-                        Back to Appointments
-                    </Button>
+        <div className="container mx-auto px-4 py-6">
+            {/* Header */}
+            <div className="mb-6">
+                <Button
+                    type="text"
+                    icon={<LeftOutlined />}
+                    onClick={() => router.push("/patient/appointment")}
+                    className="mb-4"
+                >
+                    Back to Appointments
+                </Button>
 
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div>
-                            <Title level={2} className="text-blue-900 mb-2">
-                                <CalendarOutlined className="mr-2" />
-                                Appointment Details
-                            </Title>
-                            <Text className="text-gray-600">
-                                View your appointment information and attached documents
-                            </Text>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                            <Tag
-                                color={getStatusColor(appointment.status as AppointmentStatus)}
-                                icon={getStatusIcon(appointment.status as AppointmentStatus)}
-                                className="px-3 py-1 text-sm"
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                        <Title level={2} className="text-blue-900 mb-2">
+                            <CalendarOutlined className="mr-2" />
+                            Appointment Details
+                        </Title>
+                        <Text className="text-gray-600">View your appointment information and attached documents</Text>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <Tag
+                            color={getStatusColor(appointment.status as AppointmentStatus)}
+                            icon={getStatusIcon(appointment.status as AppointmentStatus)}
+                            className="px-3 py-1 text-sm"
+                        >
+                            {appointment.status.replaceAll("_", " ")}
+                        </Tag>
+
+                        <Tag
+                            color={appointment.consultationMode === "VIRTUAL" ? "blue" : "green"}
+                            className="px-3 py-1 text-sm"
+                        >
+                            {appointment.consultationMode === "VIRTUAL" ? "Virtual" : "Physical"}
+                        </Tag>
+
+                        {canMakePayment && (
+                            <Button
+                                type="primary"
+                                icon={<CheckCircleOutlined />}
+                                onClick={handlePayNow}
+                                className="bg-green-600 border-green-600 hover:bg-green-700"
+                                size="large"
                             >
-                                {appointment.status.replaceAll("_", " ")}
-                            </Tag>
+                                Pay Now - RM 2.00
+                            </Button>
+                        )}
 
-                            <Tag
-                                color={appointment.consultationMode === "VIRTUAL" ? "blue" : "green"}
-                                className="px-3 py-1 text-sm"
+                        {canStartCall && (
+                            <Button
+                                type="primary"
+                                icon={<VideoCameraOutlined />}
+                                onClick={() => window.open(`/video-call/${appointment.id}`, "_blank")}
+                                className="bg-green-600 border-green-600 hover:bg-green-700"
                             >
-                                {appointment.consultationMode === "VIRTUAL" ? "Virtual" : "Physical"}
-                            </Tag>
+                                {appointment.status === "IN_PROGRESS" ? "Join Video Call" : "Start Video Call"}
+                            </Button>
+                        )}
 
-                            {canStartCall && (
-                                <Button
-                                    type="primary"
-                                    icon={<VideoCameraOutlined />}
-                                    onClick={() => window.open(`/video-call/${appointment.id}`, "_blank")}
-                                    className="bg-green-600 border-green-600 hover:bg-green-700"
-                                >
-                                    {appointment.status === "IN_PROGRESS" ? "Join Video Call" : "Start Video Call"}
-                                </Button>
-                            )}
+                        {canEditAppointment && (
+                            <Button
+                                type="primary"
+                                icon={<EditOutlined />}
+                                onClick={openUpdateModal}
+                                className="bg-blue-600 border-blue-600 hover:bg-blue-700"
+                            >
+                                Edit Appointment
+                            </Button>
+                        )}
 
-                            {canEditAppointment && (
-                                <Button
-                                    type="primary"
-                                    icon={<EditOutlined />}
-                                    onClick={openUpdateModal}
-                                    className="bg-blue-600 border-blue-600 hover:bg-blue-700"
-                                >
-                                    Edit Appointment
-                                </Button>
-                            )}
-
-                            {canCancelAppointment && (
-                                <Button
-                                    type="primary"
-                                    danger
-                                    icon={<CloseCircleOutlined />}
-                                    onClick={handleCancelAppointment}
-                                    className="bg-red-600 border-red-600 hover:bg-red-700"
-                                >
-                                    Cancel Appointment
-                                </Button>
-                            )}
-                        </div>
+                        {canCancelAppointment && (
+                            <Button
+                                type="primary"
+                                danger
+                                icon={<CloseCircleOutlined />}
+                                onClick={handleCancelAppointment}
+                                className="bg-red-600 border-red-600 hover:bg-red-700"
+                            >
+                                Cancel Appointment
+                            </Button>
+                        )}
                     </div>
                 </div>
+            </div>
 
-                <Row gutter={[24, 24]}>
-                    {/* Left Column - Doctor & Appointment Info */}
-                    <Col xs={24} lg={16}>
-                        {/* Doctor Information */}
+            <Row gutter={[24, 24]}>
+                {/* Left Column - Doctor & Appointment Info */}
+                <Col xs={24} lg={16}>
+                    {/* Doctor Information */}
+                    <Card
+                        className="mb-6"
+                        title={
+                            <div className="flex items-center">
+                                <UserOutlined className="mr-2 text-blue-600" />
+                                Doctor Information
+                            </div>
+                        }
+                    >
+                        <div className="flex items-center space-x-4 mb-4">
+                            <Avatar
+                                size={80}
+                                src={appointment.doctor.profileImageUrl}
+                                className="bg-blue-600 border-2 border-blue-100"
+                                icon={<UserOutlined />}
+                            />
+                            <div className="flex-1">
+                                <Title level={3} className="mb-1 mt-0">
+                                    Dr. {appointment.doctor.name}
+                                </Title>
+                                <div className="flex items-center space-x-4 mt-2">
+                                    <Tooltip title="Email">
+                                        <div className="flex items-center text-gray-600">
+                                            <MailOutlined className="mr-1" />
+                                            <Text className="text-sm">{appointment.doctor.email}</Text>
+                                        </div>
+                                    </Tooltip>
+                                    <Tooltip title="Phone">
+                                        <div className="flex items-center text-gray-600">
+                                            <PhoneOutlined className="mr-1" />
+                                            <Text className="text-sm">{appointment.doctor.phone}</Text>
+                                        </div>
+                                    </Tooltip>
+                                </div>
+                            </div>
+                        </div>
+
+                        <Divider />
+
+                        <Row gutter={[16, 16]}>
+                            <Col span={12}>
+                                <Text strong>Gender: </Text>
+                                <Text className="capitalize">{appointment.doctor.gender.toLowerCase()}</Text>
+                            </Col>
+                            <Col span={12}>
+                                <Text strong>Date of Birth: </Text>
+                                <Text>
+                                    {appointment.doctor.dateOfBirth
+                                        ? parseLocalDateTime(appointment.doctor.dateOfBirth).format("MMM DD, YYYY")
+                                        : "N/A"}
+                                </Text>
+                            </Col>
+                            <Col span={12}>
+                                <Text strong>Specialities: </Text>
+                                <Text>
+                                    {appointment.doctor.specialityList && appointment.doctor.specialityList.length > 0
+                                        ? appointment.doctor.specialityList.join(", ")
+                                        : "General Practice"}
+                                </Text>
+                            </Col>
+                            <Col span={12}>
+                                <Text strong>Languages: </Text>
+                                <Text>
+                                    {appointment.doctor.languageList && appointment.doctor.languageList.length > 0
+                                        ? appointment.doctor.languageList.join(", ")
+                                        : "English"}
+                                </Text>
+                            </Col>
+                        </Row>
+
+                        {appointment.doctor.qualifications && (
+                            <>
+                                <Divider />
+                                <div>
+                                    <Text strong>Qualifications: </Text>
+                                    <Paragraph className="mt-1">{appointment.doctor.qualifications}</Paragraph>
+                                </div>
+                            </>
+                        )}
+                    </Card>
+
+                    {/* Facility Information */}
+                    {appointment.doctor.facility && (
                         <Card
                             className="mb-6"
                             title={
                                 <div className="flex items-center">
-                                    <UserOutlined className="mr-2 text-blue-600" />
-                                    Doctor Information
+                                    <HomeOutlined className="mr-2 text-blue-600" />
+                                    Facility Information
                                 </div>
                             }
                         >
                             <div className="flex items-center space-x-4 mb-4">
                                 <Avatar
-                                    size={80}
-                                    src={appointment.doctor.profileImageUrl}
-                                    className="bg-blue-600 border-2 border-blue-100"
-                                    icon={<UserOutlined />}
+                                    size={60}
+                                    src={appointment.doctor.facility.thumbnailUrl}
+                                    className="bg-green-600 border-2 border-green-100"
+                                    icon={<HomeOutlined />}
                                 />
                                 <div className="flex-1">
-                                    <Title level={3} className="mb-1 mt-0">
-                                        Dr. {appointment.doctor.name}
+                                    <Title level={4} className="mb-1 mt-0">
+                                        {appointment.doctor.facility.name}
                                     </Title>
-                                    <div className="flex items-center space-x-4 mt-2">
-                                        <Tooltip title="Email">
-                                            <div className="flex items-center text-gray-600">
-                                                <MailOutlined className="mr-1" />
-                                                <Text className="text-sm">{appointment.doctor.email}</Text>
-                                            </div>
-                                        </Tooltip>
-                                        <Tooltip title="Phone">
-                                            <div className="flex items-center text-gray-600">
-                                                <PhoneOutlined className="mr-1" />
-                                                <Text className="text-sm">{appointment.doctor.phone}</Text>
-                                            </div>
-                                        </Tooltip>
-                                    </div>
+                                    <Tag color="green">{appointment.doctor.facility.facilityType}</Tag>
                                 </div>
                             </div>
 
                             <Divider />
 
                             <Row gutter={[16, 16]}>
-                                <Col span={12}>
-                                    <Text strong>Gender: </Text>
-                                    <Text className="capitalize">{appointment.doctor.gender.toLowerCase()}</Text>
-                                </Col>
-                                <Col span={12}>
-                                    <Text strong>Date of Birth: </Text>
-                                    <Text>
-                                        {appointment.doctor.dateOfBirth
-                                            ? dayjs(appointment.doctor.dateOfBirth).format("MMM DD, YYYY")
-                                            : "N/A"}
-                                    </Text>
-                                </Col>
-                                <Col span={12}>
-                                    <Text strong>Specialities: </Text>
-                                    <Text>
-                                        {appointment.doctor.specialityList &&
-                                        appointment.doctor.specialityList.length > 0
-                                            ? appointment.doctor.specialityList.join(", ")
-                                            : "General Practice"}
-                                    </Text>
-                                </Col>
-                                <Col span={12}>
-                                    <Text strong>Languages: </Text>
-                                    <Text>
-                                        {appointment.doctor.languageList && appointment.doctor.languageList.length > 0
-                                            ? appointment.doctor.languageList.join(", ")
-                                            : "English"}
-                                    </Text>
+                                <Col span={24}>
+                                    <div className="flex items-center text-gray-600 mb-2">
+                                        <EnvironmentOutlined className="mr-2" />
+                                        <Text>{appointment.doctor.facility.address}</Text>
+                                    </div>
+                                    <div className="flex items-center text-gray-600 mb-2">
+                                        <Text>
+                                            {appointment.doctor.facility.city}, {appointment.doctor.facility.state}
+                                        </Text>
+                                    </div>
+                                    <div className="flex items-center text-gray-600">
+                                        <PhoneOutlined className="mr-2" />
+                                        <Text>{appointment.doctor.facility.telephone}</Text>
+                                    </div>
                                 </Col>
                             </Row>
-
-                            {appointment.doctor.qualifications && (
-                                <>
-                                    <Divider />
-                                    <div>
-                                        <Text strong>Qualifications: </Text>
-                                        <Paragraph className="mt-1">{appointment.doctor.qualifications}</Paragraph>
-                                    </div>
-                                </>
-                            )}
                         </Card>
+                    )}
 
-                        {/* Facility Information */}
-                        {appointment.doctor.facility && (
-                            <Card
-                                className="mb-6"
-                                title={
-                                    <div className="flex items-center">
-                                        <HomeOutlined className="mr-2 text-blue-600" />
-                                        Facility Information
+                    {/* Appointment Information */}
+                    <Card
+                        className="mb-6"
+                        title={
+                            <div className="flex items-center">
+                                <CalendarOutlined className="mr-2 text-blue-600" />
+                                Appointment Information
+                            </div>
+                        }
+                    >
+                        <Row gutter={[16, 16]}>
+                            <Col span={24}>
+                                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                                    <CalendarOutlined className="text-2xl text-blue-600 mb-2" />
+                                    <div className="text-xl font-semibold text-blue-800">
+                                        {parseTimestamp(appointment.appointmentDateTime).format("MMMM DD, YYYY")}
                                     </div>
-                                }
-                            >
-                                <div className="flex items-center space-x-4 mb-4">
-                                    <Avatar
-                                        size={60}
-                                        src={appointment.doctor.facility.thumbnailUrl}
-                                        className="bg-green-600 border-2 border-green-100"
-                                        icon={<HomeOutlined />}
-                                    />
-                                    <div className="flex-1">
-                                        <Title level={4} className="mb-1 mt-0">
-                                            {appointment.doctor.facility.name}
-                                        </Title>
-                                        <Tag color="green">{appointment.doctor.facility.facilityType}</Tag>
+                                    <div className="text-lg text-blue-600">
+                                        {parseTimestamp(appointment.appointmentDateTime).format("h:mm A")}
+                                    </div>
+                                    <div className="text-sm text-gray-600 mt-1">
+                                        Duration: {appointment.durationMinutes} minutes
                                     </div>
                                 </div>
+                            </Col>
+                        </Row>
 
+                        <Divider />
+
+                        <Row gutter={[16, 16]}>
+                            <Col span={12}>
+                                <Text strong>Patient: </Text>
+                                <Text>{appointment.patient.name}</Text>
+                            </Col>
+                            <Col span={12}>
+                                <Text strong>Consultation Mode: </Text>
+                                <Tag color={appointment.consultationMode === "VIRTUAL" ? "blue" : "green"}>
+                                    {appointment.consultationMode}
+                                </Tag>
+                            </Col>
+                            <Col span={12}>
+                                <Text strong>Created: </Text>
+                                <Text>{parseTimestamp(appointment.createdAt).format("MMM DD, YYYY h:mm A")}</Text>
+                            </Col>
+                            <Col span={12}>
+                                <Text strong>Last Updated: </Text>
+                                <Text>{parseTimestamp(appointment.updatedAt).format("MMM DD, YYYY h:mm A")}</Text>
+                            </Col>
+                            {appointment.completedAt && (
+                                <Col span={12}>
+                                    <Text strong>Completed: </Text>
+                                    <Text>{parseTimestamp(appointment.completedAt).format("MMM DD, YYYY h:mm A")}</Text>
+                                </Col>
+                            )}
+                            {appointment.cancelledBy && (
+                                <Col span={12}>
+                                    <Text strong>Cancelled By: </Text>
+                                    <Text>{appointment.cancelledBy}</Text>
+                                </Col>
+                            )}
+                        </Row>
+
+                        {appointment.cancellationReason && (
+                            <>
                                 <Divider />
+                                <div>
+                                    <Text strong>Cancellation Reason:</Text>
+                                    <Paragraph className="mt-1 p-3 bg-red-50 border border-red-200 rounded">
+                                        {appointment.cancellationReason}
+                                    </Paragraph>
+                                </div>
+                            </>
+                        )}
+                    </Card>
 
-                                <Row gutter={[16, 16]}>
-                                    <Col span={24}>
-                                        <div className="flex items-center text-gray-600 mb-2">
-                                            <EnvironmentOutlined className="mr-2" />
-                                            <Text>{appointment.doctor.facility.address}</Text>
-                                        </div>
-                                        <div className="flex items-center text-gray-600 mb-2">
-                                            <Text>
-                                                {appointment.doctor.facility.city}, {appointment.doctor.facility.state}
-                                            </Text>
-                                        </div>
-                                        <div className="flex items-center text-gray-600">
-                                            <PhoneOutlined className="mr-2" />
-                                            <Text>{appointment.doctor.facility.telephone}</Text>
-                                        </div>
-                                    </Col>
-                                </Row>
-                            </Card>
+                    {/* Payment Notice for Virtual Appointments */}
+                    {appointment.status === "PENDING_PAYMENT" && appointment.consultationMode === "VIRTUAL" && (
+                        <Card className="mb-6 border-l-4 border-l-yellow-500 bg-yellow-50">
+                            <div className="flex items-start space-x-3">
+                                <ExclamationCircleOutlined className="text-yellow-600 mt-1 text-xl" />
+                                <div className="flex-1">
+                                    <Title level={4} className="text-yellow-800 mb-2">
+                                        Payment Required
+                                    </Title>
+                                    <Text className="text-yellow-700 block mb-3">
+                                        This virtual consultation requires payment of <strong>RM 2.00</strong> before
+                                        the appointment can be confirmed. Please complete your payment to secure your
+                                        appointment slot.
+                                    </Text>
+                                    {canManageBilling(appointment.patient.id) ? (
+                                        <Button
+                                            type="primary"
+                                            icon={<CheckCircleOutlined />}
+                                            onClick={handlePayNow}
+                                            className="bg-green-600 border-green-600 hover:bg-green-700"
+                                        >
+                                            Pay Now - RM 2.00
+                                        </Button>
+                                    ) : (
+                                        <Text className="text-yellow-600 italic">
+                                            You don&apos;t have permission to make payments for this patient.
+                                        </Text>
+                                    )}
+                                </div>
+                            </div>
+                        </Card>
+                    )}
+                </Col>
+
+                {/* Right Column - Notes & Documents */}
+                <Col xs={24} lg={8}>
+                    {/* Notes Section */}
+                    <Card
+                        className="mb-6"
+                        title={
+                            <div className="flex items-center">
+                                <FileTextOutlined className="mr-2 text-blue-600" />
+                                Notes & Reasons
+                            </div>
+                        }
+                    >
+                        {appointment.reasonForVisit && (
+                            <div className="mb-4">
+                                <Text strong className="text-blue-600">
+                                    Reason for Visit:
+                                </Text>
+                                <Paragraph className="mt-1 p-3 bg-blue-50 border border-blue-200 rounded">
+                                    {appointment.reasonForVisit}
+                                </Paragraph>
+                            </div>
                         )}
 
-                        {/* Appointment Information */}
-                        <Card
-                            className="mb-6"
-                            title={
+                        {appointment.patientNotes && (
+                            <div className="mb-4">
+                                <Text strong className="text-green-600">
+                                    Your Notes:
+                                </Text>
+                                <Paragraph className="mt-1 p-3 bg-green-50 border border-green-200 rounded">
+                                    {appointment.patientNotes}
+                                </Paragraph>
+                            </div>
+                        )}
+
+                        {appointment.doctorNotes && (
+                            <div>
+                                <Text strong className="text-orange-600">
+                                    Doctor Notes:
+                                </Text>
+                                <Paragraph className="mt-1 p-3 bg-orange-50 border border-orange-200 rounded">
+                                    {appointment.doctorNotes}
+                                </Paragraph>
+                            </div>
+                        )}
+
+                        {!appointment.reasonForVisit && !appointment.patientNotes && !appointment.doctorNotes && (
+                            <div className="text-center py-4">
+                                <FileTextOutlined className="text-4xl text-gray-300 mb-2" />
+                                <Text className="text-gray-500">No notes available</Text>
+                            </div>
+                        )}
+                    </Card>
+
+                    {/* Attached Documents */}
+                    <Card
+                        title={
+                            <div className="flex items-center justify-between">
                                 <div className="flex items-center">
-                                    <CalendarOutlined className="mr-2 text-blue-600" />
-                                    Appointment Information
+                                    <FileOutlined className="mr-2 text-blue-600" />
+                                    Attached Documents
                                 </div>
-                            }
-                        >
-                            <Row gutter={[16, 16]}>
-                                <Col span={24}>
-                                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                                        <CalendarOutlined className="text-2xl text-blue-600 mb-2" />
-                                        <div className="text-xl font-semibold text-blue-800">
-                                            {parseTimestamp(appointment.appointmentDateTime).format("MMMM DD, YYYY")}
-                                        </div>
-                                        <div className="text-lg text-blue-600">
-                                            {parseTimestamp(appointment.appointmentDateTime).format("h:mm A")}
-                                        </div>
-                                        <div className="text-sm text-gray-600 mt-1">
-                                            Duration: {appointment.durationMinutes} minutes
-                                        </div>
-                                    </div>
-                                </Col>
-                            </Row>
-
-                            <Divider />
-
-                            <Row gutter={[16, 16]}>
-                                <Col span={12}>
-                                    <Text strong>Patient: </Text>
-                                    <Text>{appointment.patient.name}</Text>
-                                </Col>
-                                <Col span={12}>
-                                    <Text strong>Consultation Mode: </Text>
-                                    <Tag color={appointment.consultationMode === "VIRTUAL" ? "blue" : "green"}>
-                                        {appointment.consultationMode}
-                                    </Tag>
-                                </Col>
-                                <Col span={12}>
-                                    <Text strong>Created: </Text>
-                                    <Text>{parseTimestamp(appointment.createdAt).format("MMM DD, YYYY h:mm A")}</Text>
-                                </Col>
-                                <Col span={12}>
-                                    <Text strong>Last Updated: </Text>
-                                    <Text>{parseTimestamp(appointment.updatedAt).format("MMM DD, YYYY h:mm A")}</Text>
-                                </Col>
-                                {appointment.completedAt && (
-                                    <Col span={12}>
-                                        <Text strong>Completed: </Text>
-                                        <Text>
-                                            {parseTimestamp(appointment.completedAt).format("MMM DD, YYYY h:mm A")}
-                                        </Text>
-                                    </Col>
-                                )}
-                                {appointment.cancelledBy && (
-                                    <Col span={12}>
-                                        <Text strong>Cancelled By: </Text>
-                                        <Text>{appointment.cancelledBy}</Text>
-                                    </Col>
-                                )}
-                            </Row>
-
-                            {appointment.cancellationReason && (
-                                <>
-                                    <Divider />
-                                    <div>
-                                        <Text strong>Cancellation Reason:</Text>
-                                        <Paragraph className="mt-1 p-3 bg-red-50 border border-red-200 rounded">
-                                            {appointment.cancellationReason}
-                                        </Paragraph>
-                                    </div>
-                                </>
-                            )}
-                        </Card>
-                    </Col>
-
-                    {/* Right Column - Notes & Documents */}
-                    <Col xs={24} lg={8}>
-                        {/* Notes Section */}
-                        <Card
-                            className="mb-6"
-                            title={
-                                <div className="flex items-center">
-                                    <FileTextOutlined className="mr-2 text-blue-600" />
-                                    Notes & Reasons
-                                </div>
-                            }
-                        >
-                            {appointment.reasonForVisit && (
-                                <div className="mb-4">
-                                    <Text strong className="text-blue-600">
-                                        Reason for Visit:
-                                    </Text>
-                                    <Paragraph className="mt-1 p-3 bg-blue-50 border border-blue-200 rounded">
-                                        {appointment.reasonForVisit}
-                                    </Paragraph>
-                                </div>
-                            )}
-
-                            {appointment.patientNotes && (
-                                <div className="mb-4">
-                                    <Text strong className="text-green-600">
-                                        Your Notes:
-                                    </Text>
-                                    <Paragraph className="mt-1 p-3 bg-green-50 border border-green-200 rounded">
-                                        {appointment.patientNotes}
-                                    </Paragraph>
-                                </div>
-                            )}
-
-                            {appointment.doctorNotes && (
-                                <div>
-                                    <Text strong className="text-orange-600">
-                                        Doctor Notes:
-                                    </Text>
-                                    <Paragraph className="mt-1 p-3 bg-orange-50 border border-orange-200 rounded">
-                                        {appointment.doctorNotes}
-                                    </Paragraph>
-                                </div>
-                            )}
-
-                            {!appointment.reasonForVisit && !appointment.patientNotes && !appointment.doctorNotes && (
-                                <div className="text-center py-4">
-                                    <FileTextOutlined className="text-4xl text-gray-300 mb-2" />
-                                    <Text className="text-gray-500">No notes available</Text>
-                                </div>
-                            )}
-                        </Card>
-
-                        {/* Attached Documents */}
-                        <Card
-                            title={
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                        <FileOutlined className="mr-2 text-blue-600" />
-                                        Attached Documents
-                                    </div>
+                                <div className="flex items-center gap-2">
                                     <Badge count={appointment.attachedDocuments.length} color="blue" />
+                                    {appointment.attachedDocuments.length > 1 && !comparisonMode && (
+                                        <Button
+                                            type="text"
+                                            size="small"
+                                            icon={<EyeOutlined />}
+                                            onClick={handleToggleComparisonMode}
+                                            className="text-blue-600"
+                                        >
+                                            Compare
+                                        </Button>
+                                    )}
+                                    {comparisonMode && (
+                                        <div className="flex items-center gap-1">
+                                            <Button
+                                                type="primary"
+                                                size="small"
+                                                icon={<EyeOutlined />}
+                                                onClick={handleStartComparison}
+                                                disabled={selectedForComparison.length < 2}
+                                            >
+                                                Compare ({selectedForComparison.length})
+                                            </Button>
+                                            {selectedForComparison.length > 0 && (
+                                                <Button
+                                                    type="text"
+                                                    size="small"
+                                                    icon={<CloseCircleOutlined />}
+                                                    onClick={handleClearAllComparison}
+                                                >
+                                                    Clear
+                                                </Button>
+                                            )}
+                                            <Button
+                                                type="text"
+                                                size="small"
+                                                danger
+                                                icon={<CloseCircleOutlined />}
+                                                onClick={handleExitComparisonMode}
+                                            >
+                                                Exit
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
-                            }
-                        >
-                            {appointment.attachedDocuments.length === 0 ? (
-                                <div className="text-center py-6">
-                                    <FileOutlined className="text-4xl text-gray-300 mb-2" />
-                                    <div>
-                                        <Text className="text-gray-500">No documents attached</Text>
+                            </div>
+                        }
+                    >
+                        {comparisonMode && appointment.attachedDocuments.length > 1 && (
+                            <Alert
+                                message="Document Comparison Mode"
+                                description={`Select 2-4 documents to compare them side by side. Currently selected: ${selectedForComparison.length}/4`}
+                                type="info"
+                                showIcon
+                                className="mb-4"
+                                action={
+                                    <div className="flex gap-2">
+                                        {selectedForComparison.length > 0 && (
+                                            <Button size="small" onClick={handleClearAllComparison}>
+                                                Clear All
+                                            </Button>
+                                        )}
+                                        {selectedForComparison.length >= 2 && (
+                                            <Button size="small" type="primary" onClick={handleStartComparison}>
+                                                Compare Now
+                                            </Button>
+                                        )}
                                     </div>
+                                }
+                            />
+                        )}
+
+                        {appointment.attachedDocuments.length === 0 ? (
+                            <div className="text-center py-6">
+                                <FileOutlined className="text-4xl text-gray-300 mb-2" />
+                                <div>
+                                    <Text className="text-gray-500">No documents attached</Text>
                                 </div>
-                            ) : (
-                                <List
-                                    dataSource={appointment.attachedDocuments}
-                                    renderItem={(docItem) => (
+                            </div>
+                        ) : (
+                            <List
+                                dataSource={appointment.attachedDocuments}
+                                renderItem={(docItem) => {
+                                    const isSelected = selectedForComparison.some((d) => d.id === docItem.id);
+
+                                    return (
                                         <List.Item className="px-0">
                                             <Card
                                                 size="small"
-                                                className="w-full hover:shadow-md transition-shadow"
+                                                className={`w-full hover:shadow-md transition-shadow ${
+                                                    comparisonMode ? "cursor-pointer" : ""
+                                                } ${isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200"}`}
                                                 styles={{ body: { padding: "12px" } }}
+                                                onClick={() => {
+                                                    if (comparisonMode) {
+                                                        if (isSelected) {
+                                                            handleRemoveFromComparison(docItem);
+                                                        } else {
+                                                            handleAddToComparison(docItem);
+                                                        }
+                                                    }
+                                                }}
                                             >
                                                 <div className="space-y-3">
                                                     {/* Document Header */}
                                                     <div className="flex items-start justify-between">
                                                         <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                                            {comparisonMode && (
+                                                                <Checkbox
+                                                                    checked={isSelected}
+                                                                    onChange={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (isSelected) {
+                                                                            handleRemoveFromComparison(docItem);
+                                                                        } else {
+                                                                            handleAddToComparison(docItem);
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            )}
                                                             <div className="text-xl flex-shrink-0">
                                                                 {getFileIcon("pdf")}
                                                             </div>
@@ -971,21 +1197,11 @@ export default function AppointmentDetails() {
                                                                     type="text"
                                                                     size="small"
                                                                     icon={<EyeOutlined />}
-                                                                    onClick={() =>
-                                                                        handleDocumentAction(docItem, "view")
-                                                                    }
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleDocumentView(docItem);
+                                                                    }}
                                                                     className="text-blue-600 hover:text-blue-800"
-                                                                />
-                                                            </Tooltip>
-                                                            <Tooltip title="Download Document">
-                                                                <Button
-                                                                    type="text"
-                                                                    size="small"
-                                                                    icon={<DownloadOutlined />}
-                                                                    onClick={() =>
-                                                                        handleDocumentAction(docItem, "download")
-                                                                    }
-                                                                    className="text-green-600 hover:text-green-800"
                                                                 />
                                                             </Tooltip>
                                                         </div>
@@ -1012,35 +1228,49 @@ export default function AppointmentDetails() {
                                                 </div>
                                             </Card>
                                         </List.Item>
-                                    )}
-                                />
-                            )}
-                        </Card>
-                    </Col>
-                </Row>
-            </div>
+                                    );
+                                }}
+                            />
+                        )}
+                    </Card>
+                </Col>
+            </Row>
 
             {/* Document Preview Modal */}
             <Modal
                 title={
-                    <div className="flex items-center">
-                        <EyeOutlined className="mr-2" />
-                        Document Preview
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                            <EyeOutlined className="mr-2" />
+                            Document Preview
+                        </div>
+                        {selectedDocument && (
+                            <div className="flex items-center gap-2">
+                                {documentError && retryCount < 2 && (
+                                    <Button
+                                        size="small"
+                                        icon={<RefreshCw className="w-4 h-4" />}
+                                        onClick={handleDocumentRetry}
+                                        title="Retry Loading"
+                                    >
+                                        Retry
+                                    </Button>
+                                )}
+                                <Button
+                                    size="small"
+                                    icon={<Maximize2 className="w-4 h-4" />}
+                                    onClick={toggleFullscreen}
+                                    title="View Fullscreen"
+                                >
+                                    Fullscreen
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 }
                 open={previewModal}
                 onCancel={() => setPreviewModal(false)}
                 footer={[
-                    <Button
-                        key="download"
-                        icon={<DownloadOutlined />}
-                        onClick={() =>
-                            selectedDocument?.documentUrl && window.open(selectedDocument.documentUrl, "_blank")
-                        }
-                        disabled={!selectedDocument?.documentUrl}
-                    >
-                        Download
-                    </Button>,
                     <Button key="close" onClick={() => setPreviewModal(false)}>
                         Close
                     </Button>,
@@ -1049,7 +1279,293 @@ export default function AppointmentDetails() {
                 style={{ maxWidth: "1200px" }}
                 centered
             >
-                {selectedDocument && renderDocumentPreview(selectedDocument)}
+                {selectedDocument && (
+                    <div className="space-y-4">
+                        {/* Document Metadata */}
+                        <div className="p-4 bg-gray-50 rounded-lg border">
+                            <div className="flex items-center justify-between mb-3">
+                                <Title level={4} className="mb-0">
+                                    {selectedDocument.documentName}
+                                </Title>
+                                <div className="flex items-center space-x-2">
+                                    <Tag color="blue">{getDocumentTypeDisplayName(selectedDocument.documentType)}</Tag>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
+                                <span>Size: {formatFileSize(selectedDocument.documentSize)}</span>
+                                <span>•</span>
+                                <span>
+                                    Uploaded: {parseTimestamp(selectedDocument.createdAt).format("MMM DD, YYYY")}
+                                </span>
+                            </div>
+
+                            {selectedDocument.notes && (
+                                <div>
+                                    <Text strong className="text-blue-600">
+                                        Notes:
+                                    </Text>
+                                    <div className="mt-1 p-3 bg-blue-50 border border-blue-200 rounded">
+                                        <Text className="text-blue-800">{selectedDocument.notes}</Text>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Document Viewer */}
+                        {renderDocumentViewer()}
+
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                            <Text className="text-sm text-blue-700">
+                                <strong>Tip:</strong> Click the fullscreen button for a better viewing experience.
+                                Document URLs expire after 10 minutes for security.
+                            </Text>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
+            {/* Fullscreen Document Modal */}
+            {isFullscreen && selectedDocument && (
+                <Modal
+                    title={null}
+                    open={true}
+                    onCancel={() => setIsFullscreen(false)}
+                    footer={null}
+                    width="100vw"
+                    style={{
+                        maxWidth: "none",
+                        margin: 0,
+                        padding: 0,
+                        top: 0,
+                        left: 0,
+                        height: "100vh",
+                    }}
+                    styles={{
+                        body: {
+                            padding: 0,
+                            height: "100vh",
+                            display: "flex",
+                            flexDirection: "column",
+                        },
+                        content: {
+                            height: "100vh",
+                            display: "flex",
+                            flexDirection: "column",
+                        },
+                        mask: {
+                            backgroundColor: "rgba(0, 0, 0, 0.8)",
+                        },
+                    }}
+                    centered={false}
+                    destroyOnHidden={true}
+                    maskClosable={true}
+                    keyboard={true}
+                    zIndex={1100}
+                    getContainer={false}
+                >
+                    <div className="h-full flex flex-col bg-white">
+                        {/* Fullscreen Header */}
+                        <div className="flex items-center justify-between p-4 border-b bg-white">
+                            <div className="flex items-center gap-3">
+                                <FileOutlined className="w-6 h-6 text-blue-500" />
+                                <div>
+                                    <Title level={4} className="m-0">
+                                        {selectedDocument.documentName}
+                                    </Title>
+                                    <Tag color="blue" className="text-sm mt-1">
+                                        {getDocumentTypeDisplayName(selectedDocument.documentType)}
+                                    </Tag>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {documentError && retryCount < 2 && (
+                                    <Button
+                                        icon={<RefreshCw className="w-4 h-4" />}
+                                        onClick={handleDocumentRetry}
+                                        title="Retry Loading"
+                                    >
+                                        Retry
+                                    </Button>
+                                )}
+                                <Button
+                                    icon={<Minimize2 className="w-4 h-4" />}
+                                    onClick={() => setIsFullscreen(false)}
+                                    title="Exit Fullscreen"
+                                >
+                                    Exit Fullscreen
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Fullscreen Document Viewer */}
+                        <div className="flex-1 p-4">{renderDocumentViewer()}</div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Document Comparison Modal */}
+            <Modal
+                title={null}
+                open={comparisonModalVisible}
+                onCancel={() => setComparisonModalVisible(false)}
+                footer={null}
+                width="100vw"
+                style={{
+                    maxWidth: "none",
+                    margin: 0,
+                    padding: 0,
+                    top: 0,
+                    left: 0,
+                    height: "100vh",
+                }}
+                styles={{
+                    body: {
+                        padding: 0,
+                        height: "100vh",
+                        display: "flex",
+                        flexDirection: "column",
+                    },
+                    content: {
+                        height: "100vh",
+                        display: "flex",
+                        flexDirection: "column",
+                    },
+                    mask: {
+                        backgroundColor: "rgba(0, 0, 0, 0.8)",
+                    },
+                }}
+                centered={false}
+                destroyOnHidden={true}
+                maskClosable={true}
+                keyboard={true}
+                zIndex={1100}
+                getContainer={false}
+            >
+                <div className="h-full flex flex-col bg-white">
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-4 border-b bg-white">
+                        <div className="flex items-center gap-3">
+                            <FileOutlined className="w-6 h-6 text-blue-500" />
+                            <Title level={4} className="m-0">
+                                Document Comparison ({selectedForComparison.length} documents)
+                            </Title>
+                        </div>
+                        <Button
+                            type="text"
+                            icon={<X className="w-5 h-5" />}
+                            onClick={() => setComparisonModalVisible(false)}
+                            className="hover:bg-gray-100"
+                            size="large"
+                        >
+                            Close Comparison
+                        </Button>
+                    </div>
+
+                    {/* Document Grid */}
+                    <div className="flex-1 p-4">
+                        <div
+                            className={`grid ${
+                                selectedForComparison.length === 1
+                                    ? "grid-cols-1"
+                                    : selectedForComparison.length === 2
+                                    ? "grid-cols-2"
+                                    : selectedForComparison.length === 3
+                                    ? "grid-cols-3"
+                                    : "grid-cols-2"
+                            } ${selectedForComparison.length <= 2 ? "grid-rows-1" : "grid-rows-2"} gap-4 h-full`}
+                        >
+                            {selectedForComparison.map((docItem) => (
+                                <Card
+                                    key={docItem.id}
+                                    className="h-full flex flex-col"
+                                    styles={{
+                                        body: {
+                                            padding: "12px",
+                                            height: "100%",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                        },
+                                    }}
+                                >
+                                    {/* Document Header */}
+                                    <div className="flex items-center justify-between mb-3 border-b pb-2">
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            <div className="text-lg flex-shrink-0">{getFileIcon("pdf")}</div>
+                                            <div className="min-w-0 flex-1">
+                                                <Tooltip title={docItem.documentName}>
+                                                    <Text strong className="block truncate text-sm">
+                                                        {docItem.documentName}
+                                                    </Text>
+                                                </Tooltip>
+                                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                    <Tag color="blue" className="text-xs">
+                                                        {getDocumentTypeDisplayName(docItem.documentType)}
+                                                    </Tag>
+                                                    <span>{formatFileSize(docItem.documentSize)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            type="text"
+                                            size="small"
+                                            icon={<CloseCircleOutlined />}
+                                            onClick={() => handleRemoveFromComparison(docItem)}
+                                            className="text-red-600 hover:text-red-800"
+                                        />
+                                    </div>
+
+                                    {/* Document Viewer */}
+                                    <div className="flex-1 overflow-auto border rounded bg-gray-50 relative">
+                                        {docItem.documentUrl ? (
+                                            <div className="h-full">
+                                                <iframe
+                                                    src={`${docItem.documentUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                                    className="w-full h-full border-0"
+                                                    title={docItem.documentName}
+                                                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-center h-full p-4">
+                                                <Text className="text-gray-500">
+                                                    Document not available for viewing
+                                                </Text>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Document Notes */}
+                                    {docItem.notes && (
+                                        <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                                            <Text className="text-blue-800">
+                                                <strong>Note:</strong> {docItem.notes}
+                                            </Text>
+                                        </div>
+                                    )}
+
+                                    {/* Document Info */}
+                                    <div className="mt-2 pt-2 border-t">
+                                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                                            <Text className="text-xs">
+                                                Uploaded: {parseTimestamp(docItem.createdAt).format("MMM DD, YYYY")}
+                                            </Text>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Footer with tips */}
+                    <div className="p-4 border-t bg-blue-50">
+                        <Text className="text-sm text-blue-700">
+                            <strong>Tip:</strong> Document URLs expire after 10 minutes for security. If documents fail
+                            to load, try refreshing the page. Some PDFs may not display properly in browsers due to
+                            security restrictions.
+                        </Text>
+                    </div>
+                </div>
             </Modal>
 
             {/* Update Appointment Modal */}
@@ -1320,6 +1836,16 @@ export default function AppointmentDetails() {
                     </div>
                 )}
             </Modal>
+
+            {/* Payment Modal */}
+            {appointment && (
+                <PaymentModal
+                    visible={paymentModal}
+                    onClose={() => setPaymentModal(false)}
+                    appointment={appointment}
+                    onPaymentSuccess={handlePaymentSuccess}
+                />
+            )}
         </div>
     );
 }

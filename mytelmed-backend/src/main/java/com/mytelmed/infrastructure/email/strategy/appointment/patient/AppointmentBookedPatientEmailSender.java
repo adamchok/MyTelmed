@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import java.util.Map;
 
+
 @Slf4j
 @Component
 public class AppointmentBookedPatientEmailSender extends BaseEmailSenderStrategy {
@@ -37,7 +38,7 @@ public class AppointmentBookedPatientEmailSender extends BaseEmailSenderStrategy
     @Override
     protected void validateRequiredVariables(Map<String, Object> variables) {
         validateRequiredVariable(variables, "appointmentId", "Appointment ID is required");
-        validateRequiredVariable(variables, "inviterName", "Patient name is required");
+        validateRequiredVariable(variables, "patientName", "Patient name is required");
         validateRequiredVariable(variables, "providerName", "Provider name is required");
         validateRequiredVariable(variables, "appointmentDateTime", "Appointment date and time is required");
         validateRequiredVariable(variables, "consultationMode", "Consultation mode is required");

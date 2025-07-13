@@ -377,9 +377,6 @@ export default function AppointmentDetailsStep() {
                                         Upload New Document
                                     </Button>
                                 </Upload>
-                                <Text className="text-gray-500 text-sm">
-                                    Upload medical records, test results, or other relevant documents
-                                </Text>
                             </div>
                         </>
                     )}

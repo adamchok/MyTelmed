@@ -134,8 +134,8 @@
             <p>Dear <strong th:text="${patientName}">Patient Name</strong>,</p>
 
             <p>
-                Thank you for booking an appointment through MyTelmed. Your booking has been successfully submitted. Below
-                are the details of your appointment:
+                Thank you for booking an appointment through MyTelmed. Your booking has been successfully submitted.
+                Below are the details of your appointment:
             </p>
 
             <div class="datetime-highlight">
@@ -152,7 +152,7 @@
                     <span class="detail-label">Appointment ID:</span>
                     <span
                         class="detail-value"
-                        th:text="${appointmentId.length() > 6 ? appointmentId.substring(appointmentId.length() - 6) : appointmentId}"
+                        th:text="${appointmentId.toString().length() > 6 ? appointmentId.toString().substring(appointmentId.toString().length() - 6) : appointmentId.toString()}"
                         >-</span
                     >
                 </div>
@@ -187,8 +187,8 @@
             </div>
 
             <p>
-                You will receive a reminder before your appointment. If you need to make changes or cancel, please visit your
-                appointments page.
+                You will receive a reminder before your appointment. If you need to make changes or cancel, please visit
+                your appointments page.
             </p>
 
             <div class="footer">

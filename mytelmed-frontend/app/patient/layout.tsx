@@ -37,9 +37,9 @@ const navItems = [
         label: <Link href="/patient/dashboard">Dashboard</Link>,
     },
     {
-        key: "/patient/booking",
+        key: "/patient/appointment/book",
         icon: <PlusCircle className="w-5 h-5" />,
-        label: <Link href="/patient/booking">Book Appointment</Link>,
+        label: <Link href="/patient/appointment/book">Book Appointment</Link>,
     },
     {
         key: "/patient/appointment",

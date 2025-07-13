@@ -136,7 +136,8 @@
 
             <p>
                 We regret to inform you that your appointment with
-                <strong th:text="${providerName}">Provider Name</strong> has been cancelled. Please find the details below:
+                <strong th:text="${providerName}">Provider Name</strong> has been cancelled. Please find the details
+                below:
             </p>
 
             <div class="datetime-highlight">
@@ -153,7 +154,7 @@
                     <span class="detail-label">Appointment ID:</span>
                     <span
                         class="detail-value"
-                        th:text="${appointmentId.length() > 6 ? appointmentId.substring(appointmentId.length() - 6) : appointmentId}"
+                        th:text="${appointmentId.toString().length() > 6 ? appointmentId.toString().substring(appointmentId.toString().length() - 6) : appointmentId.toString()}"
                         >-</span
                     >
                 </div>
@@ -189,7 +190,8 @@
             </div>
 
             <p>
-                If you have any questions, please contact us through your MyTelmed portal or reach out to our support team at
+                If you have any questions, please contact us through your MyTelmed portal or reach out to our support
+                team at
                 <a href="mailto:support@mytelmed.live">support@mytelmed.live</a>.
             </p>
 

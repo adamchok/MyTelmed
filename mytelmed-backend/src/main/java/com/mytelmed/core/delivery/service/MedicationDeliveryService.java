@@ -309,7 +309,7 @@ public class MedicationDeliveryService {
             try {
                 UUID prescriptionId = delivery.getPrescription().getId();
                 // Use the prescription ID to find the bill for refund processing
-                paymentRefundService.processAutomaticRefund(prescriptionId, 
+                paymentRefundService.processPrescriptionRefund(prescriptionId, 
                     "Home delivery cancelled by pharmacist: " + reason);
                 log.info("Auto-refund processed for cancelled home delivery: {}", deliveryId);
             } catch (Exception e) {
@@ -370,7 +370,7 @@ public class MedicationDeliveryService {
             try {
                 UUID prescriptionId = delivery.getPrescription().getId();
                 // Use the prescription ID to find the bill for refund processing
-                paymentRefundService.processAutomaticRefund(prescriptionId, 
+                paymentRefundService.processPrescriptionRefund(prescriptionId, 
                     "Home delivery cancelled by patient: " + reason);
                 log.info("Auto-refund processed for patient cancelled home delivery: {}", deliveryId);
             } catch (Exception e) {

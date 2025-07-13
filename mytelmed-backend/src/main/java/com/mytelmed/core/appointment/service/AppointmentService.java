@@ -188,7 +188,7 @@ public class AppointmentService {
     }
 
     @Transactional
-    public void book(Account account, BookAppointmentRequestDto request) throws AppException {
+    public UUID book(Account account, BookAppointmentRequestDto request) throws AppException {
         log.debug("Booking {} appointment for account {} with request {}",
                 request.consultationMode(), account.getId(), request);
 
@@ -273,6 +273,8 @@ public class AppointmentService {
             log.info("Booked {} appointment with ID {} for patient {} with doctor {} by account {}",
                     appointment.getConsultationMode(), appointment.getId(), patient.getId(),
                     request.doctorId(), account.getId());
+
+            return appointment.getId();
         } catch (Exception e) {
             log.error("Unexpected error while booking {} appointment", request.consultationMode(), e);
             throw new AppException("Failed to book appointment");

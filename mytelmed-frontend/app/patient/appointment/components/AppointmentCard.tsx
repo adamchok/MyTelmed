@@ -15,8 +15,8 @@ import {
     MapPin,
     Phone,
 } from "lucide-react";
-import dayjs from "dayjs";
 import { AppointmentDto, AppointmentStatus } from "@/app/api/appointment/props";
+import { parseLocalDateTime } from "@/app/utils/DateUtils";
 
 const { Title, Text } = Typography;
 
@@ -31,6 +31,8 @@ const getStatusColor = (status: AppointmentStatus): string => {
     switch (status) {
         case "PENDING":
             return "warning";
+        case "PENDING_PAYMENT":
+            return "orange";
         case "CONFIRMED":
             return "processing";
         case "READY_FOR_CALL":
@@ -52,6 +54,8 @@ const getStatusIcon = (status: AppointmentStatus) => {
     switch (status) {
         case "PENDING":
             return <Clock className="w-4 h-4" />;
+        case "PENDING_PAYMENT":
+            return <AlertTriangle className="w-4 h-4" />;
         case "CONFIRMED":
             return <CheckCircle className="w-4 h-4" />;
         case "READY_FOR_CALL":
@@ -132,14 +136,14 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
                         <div className="flex items-center space-x-2">
                             <Calendar size={14} className="text-blue-600 sm:w-4 sm:h-4 flex-shrink-0" />
                             <Text strong className="text-xs sm:text-sm">
-                                {dayjs(appointment.appointmentDateTime).format("MMM DD, YYYY")}
+                                {parseLocalDateTime(appointment.appointmentDateTime).format("MMM DD, YYYY")}
                             </Text>
                         </div>
                         <div className="flex items-center space-x-2">
                             <Clock size={14} className="text-green-600 sm:w-4 sm:h-4 flex-shrink-0" />
                             <Text className="text-xs sm:text-sm">
-                                {dayjs(appointment.appointmentDateTime).format("h:mm A")} ({appointment.durationMinutes}{" "}
-                                min)
+                                {parseLocalDateTime(appointment.appointmentDateTime).format("h:mm A")} (
+                                {appointment.durationMinutes} min)
                             </Text>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -188,7 +192,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 pt-2 border-t border-gray-100">
                     <div className="text-xs text-gray-500">
-                        Created: {dayjs(appointment.createdAt).format("MMM DD, YYYY")}
+                        Created: {parseLocalDateTime(appointment.createdAt).format("MMM DD, YYYY")}
                     </div>
                     <Space size="small" className="w-full sm:w-auto">
                         <Button
