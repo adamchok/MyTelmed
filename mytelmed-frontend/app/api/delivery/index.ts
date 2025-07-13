@@ -80,7 +80,9 @@ const DeliveryApi = {
     /**
      * Patient chooses home delivery method (Patient only)
      */
-    chooseHomeDelivery(request: ChooseHomeDeliveryRequestDto): Promise<AxiosResponse<ApiResponse<MedicationDeliveryDto>>> {
+    chooseHomeDelivery(
+        request: ChooseHomeDeliveryRequestDto
+    ): Promise<AxiosResponse<ApiResponse<MedicationDeliveryDto>>> {
         return repository.post<ApiResponse<MedicationDeliveryDto>>(`${RESOURCE}/choose-home-delivery`, request);
     },
 
@@ -113,10 +115,31 @@ const DeliveryApi = {
     },
 
     /**
-     * Cancel delivery (Patient only)
+     * Patient cancels delivery (Patient only)
      */
-    cancelDelivery(request: CancelDeliveryRequestDto): Promise<AxiosResponse<ApiResponse<void>>> {
-        return repository.put<ApiResponse<void>>(`${RESOURCE}/cancel`, request);
+    cancelDeliveryByPatient(request: CancelDeliveryRequestDto): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.put<ApiResponse<void>>(`${RESOURCE}/patient/cancel`, request);
+    },
+
+    /**
+     * Pharmacist cancels delivery (Pharmacist only)
+     */
+    cancelDeliveryByPharmacist(request: CancelDeliveryRequestDto): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.put<ApiResponse<void>>(`${RESOURCE}/pharmacist/cancel`, request);
+    },
+
+    /**
+     * Check if delivery is cancellable by patient (Patient only)
+     */
+    isDeliveryCancellableByPatient(deliveryId: string): Promise<AxiosResponse<ApiResponse<boolean>>> {
+        return repository.get<ApiResponse<boolean>>(`${RESOURCE}/${deliveryId}/patient/cancellable`);
+    },
+
+    /**
+     * Check if delivery is cancellable by pharmacist (Pharmacist only)
+     */
+    isDeliveryCancellableByPharmacist(deliveryId: string): Promise<AxiosResponse<ApiResponse<boolean>>> {
+        return repository.get<ApiResponse<boolean>>(`${RESOURCE}/${deliveryId}/pharmacist/cancellable`);
     },
 };
 

@@ -2,6 +2,7 @@ package com.mytelmed.infrastructure.push.config;
 
 import com.mytelmed.infrastructure.push.factory.AbstractPushNotificationFactory;
 import com.mytelmed.infrastructure.push.factory.appointment.AppointmentPushNotificationFactory;
+import com.mytelmed.infrastructure.push.factory.delivery.DeliveryPushNotificationFactory;
 import com.mytelmed.infrastructure.push.factory.prescription.PrescriptionPushNotificationFactory;
 import com.mytelmed.infrastructure.push.strategy.PushNotificationStrategy;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,12 @@ public class PushNotificationFactoryConfig {
     public PrescriptionPushNotificationFactory prescriptionPushNotificationFactory(List<PushNotificationStrategy> strategies) {
         log.info("Registering PrescriptionPushNotificationFactory with {} total strategies", strategies.size());
         return new PrescriptionPushNotificationFactory(strategies);
+    }
+
+    @Bean
+    public DeliveryPushNotificationFactory deliveryPushNotificationFactory(List<PushNotificationStrategy> strategies) {
+        log.info("Registering DeliveryPushNotificationFactory with {} total strategies", strategies.size());
+        return new DeliveryPushNotificationFactory(strategies);
     }
 
     @Bean

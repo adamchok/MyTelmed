@@ -11,6 +11,7 @@ export interface FamilyMember extends BaseEntity {
         dateOfBirth: string;
         gender: string;
         profileImageUrl?: string;
+        serialNumber: string;
         enabled: boolean;
         createdAt: string;
         updatedAt: string;

@@ -105,8 +105,8 @@ public class FamilyPermissionValidatorImpl implements FamilyPermissionValidator 
             // Check if family member has the required permission
             boolean hasPermission = switch (permissionType) {
                 case VIEW_MEDICAL_RECORDS, VIEW_REFERRALS -> familyMember.isCanViewMedicalRecords();
-                case VIEW_APPOINTMENTS, JOIN_VIDEO_CALL -> familyMember.isCanViewAppointments();
-                case MANAGE_APPOINTMENTS -> familyMember.isCanManageAppointments();
+                case VIEW_APPOINTMENTS -> familyMember.isCanViewAppointments();
+                case MANAGE_APPOINTMENTS, JOIN_VIDEO_CALL -> familyMember.isCanManageAppointments();
                 case VIEW_PRESCRIPTIONS -> familyMember.isCanViewPrescriptions();
                 case MANAGE_PRESCRIPTIONS -> familyMember.isCanManagePrescriptions();
                 case VIEW_BILLING -> familyMember.isCanViewBilling();

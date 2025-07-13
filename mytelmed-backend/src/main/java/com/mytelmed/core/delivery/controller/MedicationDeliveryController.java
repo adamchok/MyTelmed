@@ -229,14 +229,51 @@ public class MedicationDeliveryController {
     /**
      * Cancel delivery
      */
-    @PutMapping("/cancel")
+    @PutMapping("/patient/cancel")
     @PreAuthorize("hasRole('PATIENT')")
-    public ResponseEntity<ApiResponse<Void>> cancelDelivery(
-            @Valid @RequestBody CancelDeliveryRequestDto request) {
-        log.info("Cancelling delivery: {}", request.deliveryId());
+    public ResponseEntity<ApiResponse<Void>> cancelDeliveryByPatient(
+            @Valid @RequestBody CancelDeliveryRequestDto request,
+            @AuthenticationPrincipal Account account) {
+        log.info("Patient cancelling delivery: {}", request.deliveryId());
 
-        deliveryService.cancelDelivery(request.deliveryId(), request.reason());
+        deliveryService.cancelDeliveryByPatient(request.deliveryId(), account, request.reason());
 
         return ResponseEntity.ok(ApiResponse.success("Delivery cancelled successfully"));
+    }
+
+    @PutMapping("/pharmacist/cancel")
+    @PreAuthorize("hasRole('PHARMACIST')")
+    public ResponseEntity<ApiResponse<Void>> cancelDeliveryByPharmacist(
+            @Valid @RequestBody CancelDeliveryRequestDto request,
+            @AuthenticationPrincipal Account account) {
+        log.info("Pharmacist cancelling delivery: {}", request.deliveryId());
+
+        deliveryService.cancelDeliveryByPharmacist(request.deliveryId(), account, request.reason());
+
+        return ResponseEntity.ok(ApiResponse.success("Delivery cancelled successfully"));
+    }
+
+    @GetMapping("/{deliveryId}/patient/cancellable")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<Boolean>> isDeliveryCancellableByPatient(
+            @PathVariable UUID deliveryId,
+            @AuthenticationPrincipal Account account) {
+        log.info("Checking if delivery {} is cancellable by patient", deliveryId);
+
+        boolean cancellable = deliveryService.isDeliveryCancellableByPatient(deliveryId, account);
+
+        return ResponseEntity.ok(ApiResponse.success(cancellable, "Patient delivery cancellation status retrieved"));
+    }
+
+    @GetMapping("/{deliveryId}/pharmacist/cancellable")
+    @PreAuthorize("hasRole('PHARMACIST')")
+    public ResponseEntity<ApiResponse<Boolean>> isDeliveryCancellableByPharmacist(
+            @PathVariable UUID deliveryId,
+            @AuthenticationPrincipal Account account) {
+        log.info("Checking if delivery {} is cancellable by pharmacist", deliveryId);
+
+        boolean cancellable = deliveryService.isDeliveryCancellableByPharmacist(deliveryId, account);
+
+        return ResponseEntity.ok(ApiResponse.success(cancellable, "Pharmacist delivery cancellation status retrieved"));
     }
 }

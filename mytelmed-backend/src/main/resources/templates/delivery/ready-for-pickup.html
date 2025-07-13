@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Medication Ready for Pickup - MyTelmed</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f4f4f4;
+            }
+            .container {
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: white;
+                padding: 20px;
+            }
+            .header {
+                background-color: #27ae60;
+                color: white;
+                padding: 20px;
+                text-align: center;
+            }
+            .content {
+                padding: 20px;
+                line-height: 1.6;
+            }
+            .footer {
+                background-color: #ecf0f1;
+                padding: 15px;
+                text-align: center;
+                font-size: 12px;
+            }
+            .button {
+                background-color: #3498db;
+                color: white;
+                padding: 10px 20px;
+                text-decoration: none;
+                border-radius: 5px;
+            }
+            .success {
+                color: #27ae60;
+                font-weight: bold;
+            }
+            .important {
+                background-color: #fff3cd;
+                border: 1px solid #ffeaa7;
+                padding: 15px;
+                margin: 15px 0;
+                border-radius: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Medication Ready for Pickup</h1>
+            </div>
+
+            <div class="content">
+                <p>Dear <span th:text="${patientName}">Patient</span>,</p>
+
+                <p class="success">Great news! Your medication is ready for pickup!</p>
+
+                <p>
+                    Your prescription <strong th:text="${prescriptionNumber}">PR-123456</strong> has been processed and
+                    is now available for collection.
+                </p>
+
+                <div class="important">
+                    <h3>Pickup Details:</h3>
+                    <p><strong>Facility:</strong> <span th:text="${facilityName}">Healthcare Facility</span></p>
+                    <p><strong>Address:</strong> <span th:text="${facilityAddress}">Facility Address</span></p>
+                    <p><strong>Operating Hours:</strong> 8:00 AM - 6:00 PM, Monday to Friday</p>
+                </div>
+
+                <p>
+                    <strong>Important:</strong> Please bring your prescription number and a valid ID when collecting
+                    your medication. You will need to validate your prescription number with the pharmacist for security
+                    purposes.
+                </p>
+
+                <p>
+                    <a th:href="${uiHost}/patient/medical-records" class="button">View Medical Records</a>
+                </p>
+
+                <p>Thank you for choosing MyTelmed.</p>
+
+                <p>
+                    Best regards,<br />
+                    MyTelmed Team
+                </p>
+            </div>
+
+            <div class="footer">
+                <p>&copy; 2024 MyTelmed. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+</html>

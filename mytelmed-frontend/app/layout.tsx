@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import StoreProvider from "@/lib/StoreProvider";
 import React from "react";
+import "@stream-io/video-react-sdk/dist/css/styles.css";
+import "stream-chat-react/dist/css/v2/index.css";
 import "./globals.css";
 import MainLayout from "./layout/MainLayout";
 

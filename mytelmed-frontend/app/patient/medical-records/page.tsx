@@ -64,9 +64,9 @@ const MedicalRecordsPage = () => {
                         if (!member.pending && member.canViewMedicalRecords && member.patient) {
                             options.push({
                                 id: member.patient.id,
-                                name: member.name,
+                                name: member.patient.name,
                                 relationship: member.relationship,
-                                canViewDocuments: true,
+                                canViewDocuments: member.canViewMedicalRecords,
                             });
                         }
                     });

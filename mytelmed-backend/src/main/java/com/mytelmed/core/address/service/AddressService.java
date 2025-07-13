@@ -67,10 +67,10 @@ public class AddressService {
             Patient patient = patientService.findPatientByAccountId(accountId);
 
             Address address = Address.builder()
-                    .address(request.address())
-                    .postcode(request.postcode())
-                    .city(request.city())
-                    .state(request.state())
+                    .address(request.address().trim())
+                    .postcode(request.postcode().trim())
+                    .city(request.city().trim())
+                    .state(request.state().trim())
                     .patient(patient)
                     .build();
 
@@ -96,7 +96,7 @@ public class AddressService {
             existingAddress.setCity(request.city());
             existingAddress.setState(request.state());
 
-            Address updatedAddress = addressRepository.save(existingAddress);
+            addressRepository.save(existingAddress);
             log.info("Updated address with ID: {}", addressId);
         } catch (ResourceNotFoundException e) {
             throw e;

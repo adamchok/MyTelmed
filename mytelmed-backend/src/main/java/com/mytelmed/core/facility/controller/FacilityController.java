@@ -55,7 +55,7 @@ class FacilityController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PATIENT')")
     public ResponseEntity<ApiResponse<List<FacilityDto>>> getAllFacilities() {
         log.info("Received request to get all facilities");
 

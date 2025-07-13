@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
-import { Typography, Tag, Button, Form, Input, Select, Modal, message, Upload, Progress, Tooltip } from "antd";
+import { Typography, Tag, Button, Form, Input, Select, Modal, message, Upload, Progress, Tooltip, Image } from "antd";
 import {
     EditOutlined,
     DeleteOutlined,
@@ -85,7 +84,7 @@ const TutorialManagement = () => {
 
     useEffect(() => {
         loadTutorials();
-    }, [pagination.current, pagination.pageSize]);
+    }, [pagination.pageSize, pagination.current]);
 
     // Filter and search effect
     useEffect(() => {
@@ -289,7 +288,7 @@ const TutorialManagement = () => {
         }
 
         try {
-            setThumbnailUploadProgress(10);
+            setThumbnailUploadProgress(20);
 
             const response = await TutorialApi.uploadTutorialThumbnail(selectedTutorial.id, file);
 
@@ -331,7 +330,7 @@ const TutorialManagement = () => {
             render: (value, record) => (
                 <div className="flex items-center justify-center">
                     {value ? (
-                        <img
+                        <Image
                             src={value}
                             alt={`${record.title} thumbnail`}
                             width={100}
@@ -449,7 +448,7 @@ const TutorialManagement = () => {
             <div className="bg-white p-4 rounded-lg shadow-sm mb-6 border">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                        <span className="block text-sm font-medium text-gray-700 mb-2">Search</span>
                         <Input
                             placeholder="Search by title or description..."
                             value={searchTerm}
@@ -458,7 +457,7 @@ const TutorialManagement = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <span className="block text-sm font-medium text-gray-700 mb-2">Category</span>
                         <Select
                             placeholder="All categories"
                             value={selectedCategory}
@@ -474,7 +473,7 @@ const TutorialManagement = () => {
                         </Select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Video Status</label>
+                        <span className="block text-sm font-medium text-gray-700 mb-2">Video Status</span>
                         <Select
                             placeholder="All statuses"
                             value={selectedVideoStatus}
@@ -487,7 +486,7 @@ const TutorialManagement = () => {
                         </Select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Thumbnail Status</label>
+                        <span className="block text-sm font-medium text-gray-700 mb-2">Thumbnail Status</span>
                         <Select
                             placeholder="All statuses"
                             value={selectedThumbnailStatus}
@@ -691,6 +690,7 @@ const TutorialManagement = () => {
                                         <source src={selectedTutorial.videoUrl} type="video/mp4" />
                                         <source src={selectedTutorial.videoUrl} type="video/webm" />
                                         <source src={selectedTutorial.videoUrl} type="video/ogg" />
+                                        <track kind="captions" src="" label="English" />
                                         Your browser does not support the video tag.
                                     </video>
                                 </div>

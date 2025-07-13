@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Medication Processing Started - MyTelmed</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f4f4f4;
+            }
+            .container {
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: white;
+                padding: 20px;
+            }
+            .header {
+                background-color: #e67e22;
+                color: white;
+                padding: 20px;
+                text-align: center;
+            }
+            .content {
+                padding: 20px;
+                line-height: 1.6;
+            }
+            .footer {
+                background-color: #ecf0f1;
+                padding: 15px;
+                text-align: center;
+                font-size: 12px;
+            }
+            .button {
+                background-color: #3498db;
+                color: white;
+                padding: 10px 20px;
+                text-decoration: none;
+                border-radius: 5px;
+            }
+            .info {
+                color: #2980b9;
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Medication Processing Started</h1>
+            </div>
+
+            <div class="content">
+                <p>Dear <span th:text="${patientName}">Patient</span>,</p>
+
+                <p class="info">Your medication is now being processed by the pharmacist!</p>
+
+                <p>
+                    Prescription <strong th:text="${prescriptionNumber}">PR-123456</strong> is currently being prepared
+                    at <strong th:text="${facilityName}">Healthcare Facility</strong>.
+                </p>
+
+                <p><strong>Delivery Method:</strong> <span th:text="${deliveryMethod}">Home Delivery</span></p>
+
+                <div th:if="${deliveryMethod == 'HOME_DELIVERY'}">
+                    <p>
+                        Once your medication is ready, it will be dispatched for home delivery. You will receive
+                        tracking information when it's out for delivery.
+                    </p>
+                </div>
+
+                <div th:if="${deliveryMethod == 'PICKUP'}">
+                    <p>
+                        Once your medication is ready, you will receive a notification that it's available for pickup at
+                        the facility.
+                    </p>
+                </div>
+
+                <p>
+                    <a th:href="${uiHost}/patient/medical-records" class="button">View Medical Records</a>
+                </p>
+
+                <p>Thank you for your patience.</p>
+
+                <p>
+                    Best regards,<br />
+                    MyTelmed Team
+                </p>
+            </div>
+
+            <div class="footer">
+                <p>&copy; 2024 MyTelmed. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+</html>

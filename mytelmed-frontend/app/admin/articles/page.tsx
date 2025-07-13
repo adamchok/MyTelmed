@@ -1,8 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, forwardRef } from "react";
-import { Typography, Tag, Button, Form, Input, Select, Modal, message, Tooltip } from "antd";
-import { EditOutlined, DeleteOutlined, ExclamationCircleOutlined, EyeOutlined } from "@ant-design/icons";
+import { Typography, Tag, Button, Form, Input, Select, Modal, message, Tooltip, Upload, Progress, Image } from "antd";
+import {
+    EditOutlined,
+    DeleteOutlined,
+    ExclamationCircleOutlined,
+    EyeOutlined,
+    PictureOutlined,
+} from "@ant-design/icons";
 import dynamic from "next/dynamic";
 import DataTable, { DataTableColumn, DataTableAction } from "../../components/DataTable/DataTable";
 import FormModal from "../../components/FormModal/FormModal";
@@ -85,10 +91,12 @@ const ArticleManagement = () => {
     const [loading, setLoading] = useState(true);
     const [createModalVisible, setCreateModalVisible] = useState(false);
     const [editModalVisible, setEditModalVisible] = useState(false);
+    const [thumbnailUploadModalVisible, setThumbnailUploadModalVisible] = useState(false);
     const [viewModalVisible, setViewModalVisible] = useState(false);
     const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
     const [createLoading, setCreateLoading] = useState(false);
     const [editLoading, setEditLoading] = useState(false);
+    const [thumbnailUploadProgress, setThumbnailUploadProgress] = useState(0);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedSubject, setSelectedSubject] = useState<string | undefined>(undefined);
     const [createForm] = Form.useForm();
@@ -243,7 +251,81 @@ const ArticleManagement = () => {
         setEditModalVisible(true);
     };
 
+    const handleThumbnailUpload = async (file: File) => {
+        if (!file) return Upload.LIST_IGNORE;
+
+        if (!selectedArticle) return false;
+
+        // Validate file type
+        const isImage = file.type.startsWith("image/");
+        if (!isImage) {
+            message.error("Please upload an image file (JPG, PNG, etc.)");
+            return false;
+        }
+
+        // Validate file size (5MB limit)
+        const isLt5M = file.size / 1024 / 1024 < 5;
+        if (!isLt5M) {
+            message.error("Image must be smaller than 5MB");
+            return false;
+        }
+
+        try {
+            setThumbnailUploadProgress(20);
+
+            const response = await ArticleApi.uploadArticleThumbnail(selectedArticle.id, file);
+
+            if (response.data.isSuccess) {
+                setThumbnailUploadProgress(100);
+                message.success("Thumbnail uploaded successfully");
+                setTimeout(() => {
+                    setThumbnailUploadModalVisible(false);
+                    setThumbnailUploadProgress(0);
+                    loadArticles();
+                }, 1000);
+            } else {
+                message.error(response.data.message || "Failed to upload thumbnail");
+                setThumbnailUploadProgress(0);
+            }
+        } catch (error) {
+            console.error("Error uploading thumbnail:", error);
+            message.error("Failed to upload thumbnail");
+            setThumbnailUploadProgress(0);
+        }
+
+        return false;
+    };
+
+    const handleUploadThumbnail = (article: Article) => {
+        setSelectedArticle(article);
+        setThumbnailUploadModalVisible(true);
+        setThumbnailUploadProgress(0);
+    };
+
     const columns: DataTableColumn<Article>[] = [
+        {
+            title: "Thumbnail",
+            dataIndex: "thumbnailUrl",
+            key: "thumbnail",
+            width: 120,
+            render: (value, record) => (
+                <div className="flex items-center justify-center">
+                    {value ? (
+                        <Image
+                            src={record.thumbnailUrl}
+                            alt={`${record.title} thumbnail`}
+                            width={100}
+                            height={60}
+                            className="object-cover rounded border shadow-sm"
+                        />
+                    ) : (
+                        <div className="w-25 h-15 bg-gray-100 rounded border flex items-center justify-center">
+                            <PictureOutlined className="text-gray-400" />
+                        </div>
+                    )}
+                </div>
+            ),
+        },
         {
             title: "Title",
             dataIndex: "title",
@@ -313,7 +395,17 @@ const ArticleManagement = () => {
         },
         {
             label: "",
-            onClick: (record) => handleDeleteArticle(record.id),
+            onClick: (record) => handleUploadThumbnail(record),
+            icon: (
+                <Tooltip title="Upload thumbnail">
+                    <PictureOutlined />
+                </Tooltip>
+            ),
+            type: "default",
+        },
+        {
+            label: "",
+            onClick: (record) => void handleDeleteArticle(record.id),
             icon: (
                 <Tooltip title="Delete article">
                     <DeleteOutlined />
@@ -336,7 +428,7 @@ const ArticleManagement = () => {
             <div className="bg-white p-4 rounded-lg shadow-sm mb-6 border">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                        <span className="block text-sm font-medium text-gray-700 mb-2">Search</span>
                         <Input
                             placeholder="Search by title or content..."
                             value={searchTerm}
@@ -345,7 +437,7 @@ const ArticleManagement = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                        <span className="block text-sm font-medium text-gray-700 mb-2">Subject</span>
                         <Select
                             placeholder="All subjects"
                             value={selectedSubject}
@@ -521,6 +613,18 @@ const ArticleManagement = () => {
                             <Title level={5}>Subject</Title>
                             <Tag color="blue">{selectedArticle.subject}</Tag>
                         </div>
+                        {selectedArticle.thumbnailUrl && (
+                            <div>
+                                <Title level={5}>Thumbnail</Title>
+                                <Image
+                                    src={selectedArticle.thumbnailUrl}
+                                    alt="Article thumbnail"
+                                    width={300}
+                                    height={169}
+                                    className="object-cover rounded border shadow-sm"
+                                />
+                            </div>
+                        )}
                         <div>
                             <Title level={5}>Content</Title>
                             <div
@@ -534,6 +638,58 @@ const ArticleManagement = () => {
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            {/* Upload Thumbnail Modal */}
+            <Modal
+                title="Upload Article Thumbnail"
+                open={thumbnailUploadModalVisible}
+                onCancel={() => {
+                    setThumbnailUploadModalVisible(false);
+                    setThumbnailUploadProgress(0);
+                }}
+                footer={null}
+                width={500}
+            >
+                <div className="space-y-4">
+                    <div>
+                        <Title level={5}>Article: {selectedArticle?.title}</Title>
+                    </div>
+
+                    {selectedArticle?.thumbnailUrl && (
+                        <div>
+                            <Title level={5}>Current Thumbnail</Title>
+                            <Image
+                                src={selectedArticle.thumbnailUrl}
+                                alt="Current thumbnail"
+                                width={200}
+                                height={112}
+                                className="object-cover rounded border"
+                            />
+                        </div>
+                    )}
+
+                    {thumbnailUploadProgress > 0 && thumbnailUploadProgress < 100 && (
+                        <div>
+                            <Progress percent={thumbnailUploadProgress} status="active" />
+                            <div className="text-center text-sm text-gray-500 mt-2">Uploading thumbnail...</div>
+                        </div>
+                    )}
+
+                    {thumbnailUploadProgress === 0 && (
+                        <Upload beforeUpload={handleThumbnailUpload} accept="image/*" showUploadList={false}>
+                            <Button icon={<PictureOutlined />} size="large" block>
+                                Select Thumbnail Image
+                            </Button>
+                        </Upload>
+                    )}
+
+                    <div className="text-sm text-gray-500">
+                        <p>Supported formats: JPG, PNG, GIF, WebP</p>
+                        <p>Maximum file size: 5MB</p>
+                        <p>Recommended size: 1280x720 pixels</p>
+                    </div>
+                </div>
             </Modal>
         </div>
     );

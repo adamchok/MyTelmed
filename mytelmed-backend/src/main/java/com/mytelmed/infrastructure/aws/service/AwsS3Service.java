@@ -94,19 +94,19 @@ public class AwsS3Service {
         String originalFileName = file.getOriginalFilename();
         String key = buildObjectKey(storageOptions, originalFileName);
 
+        if (storageOptions.fileType().equals(FileType.DOCUMENT) && originalFileName != null) {
+            if (!originalFileName.endsWith(".pdf")) {
+                throw new InvalidInputException("File must be a PDF");
+            }
+        }
+
         try {
             PutObjectRequest request = PutObjectRequest.builder()
                     .bucket(bucket)
                     .key(key)
+                    .contentType("application/pdf")
                     .build();
 
-            if (storageOptions.fileType().equals(FileType.DOCUMENT) && originalFileName != null) {
-                if (!originalFileName.endsWith(".pdf")) {
-                    throw new InvalidInputException("File must be a PDF");
-                }
-                request.metadata().put("Content-Type", "application/pdf");
-            }
-            
             s3Client.putObject(request, RequestBody.fromBytes(file.getBytes()));
             log.info("Successfully uploaded file to S3 with key: {}", key);
 

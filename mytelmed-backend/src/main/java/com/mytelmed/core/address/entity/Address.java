@@ -38,8 +38,7 @@ public class Address {
     private String address;
 
     @Convert(converter = EncryptionConverter.class)
-    @Column(name = "postcode", length = 5, nullable = false)
-    @Pattern(regexp = "\\d{5}", message = "Postcode must be 5 digits")
+    @Column(name = "postcode", nullable = false)
     private String postcode;
 
     @Convert(converter = EncryptionConverter.class)

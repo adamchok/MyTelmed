@@ -202,13 +202,9 @@ public class AppointmentService {
         if (authorizedPatientIds.size() == 1) {
             targetPatientId = authorizedPatientIds.getFirst();
         } else {
-            // Multiple patients accessible - need to determine which one to book for
-            // For now, we'll use the first patient, but this should be specified in the request
-            // TODO: Update BookAppointmentRequestDto to include patientId field for family members
-            targetPatientId = authorizedPatientIds.getFirst();
-            log.warn("Account {} has access to {} patients, booking for first patient {}. " +
-                            "Consider updating the frontend to specify target patient.",
-                    account.getId(), authorizedPatientIds.size(), targetPatientId);
+            targetPatientId = authorizedPatientIds.stream()
+                    .filter(patientId -> patientId.equals(request.patientId()))
+                    .findFirst().orElse(null);
         }
 
         // Verify the account has BOOK_APPOINTMENT permission for the target patient
@@ -545,7 +541,7 @@ public class AppointmentService {
         switch (account.getPermission().getType()) {
             case PATIENT -> {
                 isAuthorized = familyMemberPermissionService.isAuthorizedForPatient(
-                        account, appointment.getPatient().getId(), FamilyPermissionType.MANAGE_APPOINTMENTS);
+                        account, appointment.getPatient().getId(), FamilyPermissionType.JOIN_VIDEO_CALL);
             }
             case DOCTOR -> {
                 isAuthorized = appointment.getDoctor().getAccount().getId().equals(account.getId());

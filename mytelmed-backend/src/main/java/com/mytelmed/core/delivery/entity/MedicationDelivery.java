@@ -2,9 +2,10 @@ package com.mytelmed.core.delivery.entity;
 
 import com.mytelmed.common.constant.delivery.DeliveryMethod;
 import com.mytelmed.common.constant.delivery.DeliveryStatus;
-import com.mytelmed.core.address.entity.Address;
+import com.mytelmed.common.utils.conveter.EncryptionConverter;
 import com.mytelmed.core.prescription.entity.Prescription;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -12,7 +13,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+
 
 /**
  * Medication delivery entity for tracking delivery logistics in Malaysian
@@ -59,9 +60,21 @@ public class MedicationDelivery {
     @Builder.Default
     private DeliveryStatus status = DeliveryStatus.PENDING_PAYMENT;
 
-    @ManyToOne
-    @JoinColumn(name = "delivery_address_id")
-    private Address deliveryAddress;
+    @Convert(converter = EncryptionConverter.class)
+    @Column(name = "delivery_address", length = 300)
+    private String deliveryAddress;
+
+    @Convert(converter = EncryptionConverter.class)
+    @Column(name = "delivery_postcode")
+    private String deliveryPostcode;
+
+    @Convert(converter = EncryptionConverter.class)
+    @Column(name = "delivery_city")
+    private String deliveryCity;
+
+    @Convert(converter = EncryptionConverter.class)
+    @Column(name = "delivery_state")
+    private String deliveryState;
 
     @Column(name = "delivery_fee", precision = 10, scale = 2)
     private BigDecimal deliveryFee;

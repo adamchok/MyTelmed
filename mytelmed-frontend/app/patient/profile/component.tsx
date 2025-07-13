@@ -22,6 +22,7 @@ import {
 import { User, Mail, Phone, Calendar, Edit, Save, Camera, Shield, Info } from "lucide-react";
 import dayjs from "dayjs";
 import { ProfileComponentProps } from "./props";
+import AddressManagement from "./components/AddressManagement";
 
 const { Title, Text } = Typography;
 
@@ -32,12 +33,25 @@ const ProfilePageComponent = ({
     saving,
     uploadingImage,
     error,
+    addresses,
+    addressLoading,
+    addressError,
+    modalVisible,
+    editingAddress,
+    submitting,
+    deletingAddressId,
     onToggleEditMode,
     onCancelEdit,
     onUpdateProfile,
     onImageUpload,
     onClearError,
     onRetry,
+    onAddAddress,
+    onEditAddress,
+    onDeleteAddress,
+    onSubmitAddress,
+    onCancelModal,
+    onClearAddressError,
 }: ProfileComponentProps) => {
     const [form] = Form.useForm();
 
@@ -388,6 +402,23 @@ const ProfilePageComponent = ({
                     </Card>
                 </Col>
             </Row>
+
+            {/* Address Management Section */}
+            <AddressManagement
+                addresses={addresses}
+                loading={addressLoading}
+                error={addressError}
+                modalVisible={modalVisible}
+                editingAddress={editingAddress}
+                submitting={submitting}
+                deletingAddressId={deletingAddressId}
+                onAddAddress={onAddAddress}
+                onEditAddress={onEditAddress}
+                onDeleteAddress={onDeleteAddress}
+                onSubmitAddress={onSubmitAddress}
+                onCancelModal={onCancelModal}
+                onClearError={onClearAddressError}
+            />
         </div>
     );
 };

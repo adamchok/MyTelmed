@@ -23,7 +23,7 @@ public class PrescriptionEmailSenderFactory implements AbstractEmailSenderFactor
                 .filter(strategy -> strategy.getEmailType().getFamily() == EmailFamily.PRESCRIPTION)
                 .collect(Collectors.toMap(EmailSenderStrategy::getEmailType, Function.identity()));
 
-        log.info("Initialized FamilyEmailSenderFactory with {} strategies: {}",
+        log.info("Initialized PrescriptionEmailSenderFactory with {} strategies: {}",
                 prescriptionEmailStrategyMap.size(), prescriptionEmailStrategyMap.keySet());
     }
 

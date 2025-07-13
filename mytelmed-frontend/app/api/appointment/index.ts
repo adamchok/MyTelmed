@@ -1,7 +1,13 @@
 import { AxiosResponse } from "axios";
 import repository from "../RepositoryManager";
 import { ApiResponse, PaginatedResponse } from "../props";
-import { AppointmentDto, BookAppointmentRequestDto, UpdateAppointmentRequestDto, AppointmentSearchOptions } from "./props";
+import {
+    AppointmentDto,
+    BookAppointmentRequestDto,
+    UpdateAppointmentRequestDto,
+    CancelAppointmentRequestDto,
+    AppointmentSearchOptions,
+} from "./props";
 
 const RESOURCE: string = "/api/v1/appointment";
 const DEFAULT_PAGE_SIZE: number = 10;
@@ -43,7 +49,7 @@ const AppointmentApi = {
     /**
      * Update appointment details (Patient only)
      */
-    updateAppointmentDetails(
+    updateAppointment(
         appointmentId: string,
         request: UpdateAppointmentRequestDto
     ): Promise<AxiosResponse<ApiResponse<void>>> {
@@ -53,8 +59,11 @@ const AppointmentApi = {
     /**
      * Cancel appointment (Patient and Doctor)
      */
-    cancelAppointment(appointmentId: string, reason?: string): Promise<AxiosResponse<ApiResponse<void>>> {
-        return repository.post<ApiResponse<void>>(`${RESOURCE}/cancel/${appointmentId}`, reason || "", {
+    cancelAppointment(
+        appointmentId: string,
+        request: CancelAppointmentRequestDto
+    ): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.post<ApiResponse<void>>(`${RESOURCE}/cancel/${appointmentId}`, request.reason || "", {
             headers: { "Content-Type": "text/plain" },
         });
     },

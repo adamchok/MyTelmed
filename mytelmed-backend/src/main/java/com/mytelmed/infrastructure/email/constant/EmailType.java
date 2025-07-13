@@ -42,7 +42,16 @@ public enum EmailType {
     PAYMENT_RECEIPT(EmailFamily.PAYMENT),
 
     // Referral notifications
-    REFERRAL_CREATED(EmailFamily.REFERRAL);
+    REFERRAL_CREATED(EmailFamily.REFERRAL),
+
+    // Delivery notifications
+    DELIVERY_CREATED(EmailFamily.DELIVERY),
+    DELIVERY_PAYMENT_CONFIRMED(EmailFamily.DELIVERY),
+    DELIVERY_PROCESSING_STARTED(EmailFamily.DELIVERY),
+    DELIVERY_READY_FOR_PICKUP(EmailFamily.DELIVERY),
+    DELIVERY_CANCELLED(EmailFamily.DELIVERY),
+    DELIVERY_COMPLETED(EmailFamily.DELIVERY),
+    DELIVERY_OUT(EmailFamily.DELIVERY);
 
     private final EmailFamily family;
 

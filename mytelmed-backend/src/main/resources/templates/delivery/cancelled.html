@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>MyTelmed - Medication Delivery Cancelled</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            justify-content: center;
+            border-bottom: 3px solid #dc3545;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .cancellation-highlight {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .cancellation-highlight .cancellation-message {
+            font-size: 24px;
+            font-weight: bold;
+            color: #721c24;
+            margin-bottom: 10px;
+        }
+
+        .delivery-details {
+            background-color: #f8f9fa;
+            border-left: 4px solid #dc3545;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            min-width: 140px;
+            color: #495057;
+        }
+
+        .detail-value {
+            color: #333;
+            flex: 1;
+        }
+
+        .cancellation-reason {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .cancellation-reason h4 {
+            color: #856404;
+            margin-top: 0;
+        }
+
+        .reason-text {
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-style: italic;
+            color: #495057;
+        }
+
+        .next-steps {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .next-steps h4 {
+            color: #0c5460;
+            margin-top: 0;
+        }
+
+        .important-info {
+            background-color: #e7f3ff;
+            border: 1px solid #b8daff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .important-info h4 {
+            color: #004085;
+            margin-top: 0;
+        }
+
+        .action-buttons {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 0 10px;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+
+        .footer {
+            border-top: 1px solid #dee2e6;
+            padding-top: 20px;
+            margin-top: 30px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        a {
+            color: #007bff;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2 style="color: #495057; margin: 0">Medication Delivery Cancelled ❌</h2>
+    </div>
+
+    <p>Dear <strong th:text="${patientName}">Patient Name</strong>,</p>
+
+    <p>
+        We regret to inform you that your medication delivery has been cancelled. We apologize for any
+        inconvenience this may cause and are here to help you with alternative arrangements.
+    </p>
+
+    <div class="cancellation-highlight">
+        <div class="cancellation-message">🚫 Delivery Cancelled</div>
+        <p style="margin: 5px 0 0 0; color: #721c24">
+            Your prescription delivery has been cancelled and will not proceed.
+        </p>
+    </div>
+
+    <div class="delivery-details">
+        <h3 style="color: #dc3545; margin-top: 0">📋 Cancellation Details</h3>
+        <div class="detail-row">
+            <span class="detail-label">Prescription Number:</span>
+            <span class="detail-value" th:text="${prescriptionNumber}">RX123456</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Delivery Method:</span>
+            <span
+                    class="detail-value"
+                    th:text="${deliveryMethod == 'HOME_DELIVERY' ? 'Home Delivery' : 'Pharmacy Pickup'}"
+            >Home Delivery</span
+            >
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Healthcare Facility:</span>
+            <span class="detail-value" th:text="${facilityName}">Facility Name</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Cancelled Date:</span>
+            <span
+                    class="detail-value"
+                    th:text="${#temporals.format(#temporals.createNow(), 'dd MMM yyyy, HH:mm')}"
+            >Today</span
+            >
+        </div>
+    </div>
+
+    <div class="cancellation-reason">
+        <h4>📝 Cancellation Reason</h4>
+        <div class="reason-text" th:text="${cancellationReason}">
+            Cancellation reason will be displayed here
+        </div>
+    </div>
+
+    <div class="next-steps">
+        <h4>📋 What Happens Next?</h4>
+        <ul style="margin: 10px 0; padding-left: 20px">
+            <li>
+                If you paid for this delivery, any applicable refunds will be processed within 3-5 business days
+            </li>
+            <li>You can choose a new delivery method for your prescription</li>
+            <li>Contact our customer service team if you need assistance</li>
+            <li>Your prescription remains valid and can be processed again</li>
+        </ul>
+    </div>
+
+    <div class="important-info">
+        <h4>📋 Alternative Options</h4>
+        <ul style="margin: 10px 0; padding-left: 20px">
+            <li><strong>Pharmacy Pickup:</strong> Collect your medication directly from the pharmacy</li>
+            <li><strong>Reschedule Delivery:</strong> Choose a new delivery date and time</li>
+            <li><strong>Change Address:</strong> Update your delivery address if needed</li>
+            <li><strong>Contact Support:</strong> Our team is available to help with any concerns</li>
+        </ul>
+    </div>
+
+    <div class="action-buttons">
+        <a th:href="${uiHost + '/patient/prescription/' + prescriptionNumber}" class="btn btn-danger">
+            View Prescription Details
+        </a>
+        <a th:href="${uiHost + '/patient/delivery'}" class="btn btn-warning"> Choose New Delivery Method </a>
+        <a th:href="${uiHost + '/patient/support'}" class="btn"> Contact Support </a>
+    </div>
+
+    <div class="footer">
+        <p>This is an automated message, please do not reply to this email.</p>
+        <p>&copy; 2025 MyTelmed. All rights reserved.</p>
+        <p>
+            <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
+            <a th:href="${uiHost + '/terms'}">Terms of Service</a>
+        </p>
+    </div>
+</div>
+</body>
+</html>

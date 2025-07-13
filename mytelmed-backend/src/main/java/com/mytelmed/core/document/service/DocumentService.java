@@ -96,8 +96,8 @@ public class DocumentService {
 
         try {
             DocumentAccess newAccess = DocumentAccess.builder()
-                    .canView(false)
-                    .canAttach(false)
+                    .canView(true)
+                    .canAttach(true)
                     .expiryDate(null)
                     .build();
 

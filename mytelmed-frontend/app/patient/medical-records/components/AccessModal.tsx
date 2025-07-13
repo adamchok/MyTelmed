@@ -211,10 +211,8 @@ const AccessModal: React.FC<AccessModalProps> = ({
                         <Card className="w-full shadow-sm">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-md font-medium">Download Access</h3>
-                                    <p className="text-sm text-gray-500">
-                                        Allow family members to download this document
-                                    </p>
+                                    <h3 className="text-md font-medium">Attach Access</h3>
+                                    <p className="text-sm text-gray-500">Allowed to be attached to appointments</p>
                                 </div>
                                 <Form.Item name="canAttach" valuePropName="checked" className="mb-0">
                                     <Switch disabled={isLoading} />

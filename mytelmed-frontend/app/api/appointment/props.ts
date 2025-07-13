@@ -11,11 +11,11 @@ export interface AddAppointmentDocumentRequestDto {
     notes?: string;
 }
 
-// Main Appointment DTO
+// Main Appointment DTO - matches backend AppointmentDto
 export interface AppointmentDto {
     id: string;
     patient: Patient;
-    doctor: Doctor;
+    doctor: Doctor; // Fixed: was "provider" but backend returns "doctor"
     appointmentDateTime: string; // LocalDateTime as ISO string
     durationMinutes: number;
     status: string; // AppointmentStatus as string
@@ -24,8 +24,10 @@ export interface AppointmentDto {
     doctorNotes?: string;
     reasonForVisit?: string;
     cancellationReason?: string;
+    cancelledBy?: string;
     completedAt?: string;
     attachedDocuments: AppointmentDocumentDto[];
+    hasAttachedDocuments: boolean; // Added: convenience field for UI
     createdAt: string;
     updatedAt: string;
 }
@@ -33,6 +35,7 @@ export interface AppointmentDto {
 // Request DTOs
 export interface BookAppointmentRequestDto {
     doctorId: string;
+    patientId: string;
     timeSlotId: string;
     consultationMode: ConsultationMode;
     patientNotes?: string;
@@ -42,9 +45,13 @@ export interface BookAppointmentRequestDto {
 
 export interface UpdateAppointmentRequestDto {
     patientNotes?: string;
-    nutritionistNotes?: string;
     reasonForVisit?: string;
     documentRequestList?: AddAppointmentDocumentRequestDto[];
+}
+
+// Cancel Appointment Request DTO - matches backend CancelAppointmentRequestDto
+export interface CancelAppointmentRequestDto {
+    reason?: string;
 }
 
 // Search/filter options

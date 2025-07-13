@@ -82,6 +82,9 @@ public class FamilyMemberController {
         List<FamilyMemberDto> familyMemberResponseDtoList = familyMemberList.stream()
                 .map(familyMember -> familyMemberMapper.toDto(familyMember, awsS3Service))
                 .collect(Collectors.toList());
+
+        log.info("Family member {} has access to patients: {}", account.getUsername(), familyMemberResponseDtoList);
+
         return ResponseEntity.ok(ApiResponse.success(familyMemberResponseDtoList));
     }
 

@@ -14,6 +14,9 @@ import {
     LogOut,
     UserCircle,
     Settings,
+    MessageCircle,
+    Pill,
+    CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -34,9 +37,19 @@ const navItems = [
         label: <Link href="/patient/dashboard">Dashboard</Link>,
     },
     {
-        key: "/patient/appointments",
+        key: "/patient/booking",
+        icon: <PlusCircle className="w-5 h-5" />,
+        label: <Link href="/patient/booking">Book Appointment</Link>,
+    },
+    {
+        key: "/patient/appointment",
         icon: <Calendar className="w-5 h-5" />,
-        label: <Link href="/patient/appointments">Appointments</Link>,
+        label: <Link href="/patient/appointment">Appointments</Link>,
+    },
+    {
+        key: "/patient/chat",
+        icon: <MessageCircle className="w-5 h-5" />,
+        label: <Link href="/patient/chat">Chat</Link>,
     },
     {
         key: "/patient/medical-records",
@@ -54,9 +67,14 @@ const navItems = [
         label: <Link href="/patient/family">Family Access</Link>,
     },
     {
-        key: "/patient/booking",
-        icon: <PlusCircle className="w-5 h-5" />,
-        label: <Link href="/patient/booking">Book Appointment</Link>,
+        key: "/patient/prescriptions",
+        icon: <Pill className="w-5 h-5" />,
+        label: <Link href="/patient/prescriptions">Prescriptions</Link>,
+    },
+    {
+        key: "/patient/billing",
+        icon: <CreditCard className="w-5 h-5" />,
+        label: <Link href="/patient/billing">Billing</Link>,
     },
 ];
 

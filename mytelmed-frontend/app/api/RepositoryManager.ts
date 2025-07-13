@@ -18,6 +18,7 @@ const repository = axios.create({
 // Add refresh session control
 let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
+const MAX_RETRIES = 3;
 
 /**
  * Request interceptor to add the access token to the Authorization header.
@@ -55,6 +56,13 @@ repository.interceptors.response.use(
             return Promise.reject(new Error(error.message || "Token refresh failed"));
         }
 
+        // Check if this is a retry attempt and limit retries
+        const retryCount = config._retryCount || 0;
+        if (retryCount >= MAX_RETRIES) {
+            console.error(`Max retries (${MAX_RETRIES}) exceeded for request:`, config.url);
+            return Promise.reject(new Error(`Request failed after ${MAX_RETRIES} retries`));
+        }
+
         if (response?.status === 401) {
             // If already refreshing, queue this request
             if (isRefreshing && refreshPromise) {
@@ -62,6 +70,7 @@ repository.interceptors.response.use(
                     .then((token) => {
                         if (token) {
                             config.headers["Authorization"] = `Bearer ${token}`;
+                            config._retryCount = retryCount + 1;
                             return repository.request(config);
                         } else {
                             return Promise.reject(new Error("Token refresh failed"));
@@ -92,6 +101,7 @@ repository.interceptors.response.use(
                 .then((token) => {
                     if (token) {
                         config.headers["Authorization"] = `Bearer ${token}`;
+                        config._retryCount = retryCount + 1;
                         return repository.request(config);
                     } else {
                         return Promise.reject(new Error("Token refresh failed"));
@@ -102,9 +112,15 @@ repository.interceptors.response.use(
                 });
         }
 
-        console.error(error);
+        // For non-401 errors, don't retry and just reject the promise
+        console.error("Request failed:", {
+            url: config.url,
+            status: response.status,
+            statusText: response.statusText,
+            data: response.data,
+        });
 
-        return response;
+        return Promise.reject(new Error(error.message || "Request failed"));
     }
 );
 
@@ -130,10 +146,15 @@ async function refreshSession(): Promise<void> {
         }
     } catch (err) {
         console.error("Refresh session failed:", err);
-        // Clear all auth data
+        // Clear all auth data to prevent further retries
         localStorage.removeItem("isLogin");
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
+
+        // Reset refresh state to prevent infinite loops
+        isRefreshing = false;
+        refreshPromise = null;
+
         throw err;
     }
 }

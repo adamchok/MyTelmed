@@ -6,5 +6,6 @@ public enum EmailFamily {
     PRESCRIPTION,
     FAMILY,
     PAYMENT,
-    REFERRAL
+    REFERRAL,
+    DELIVERY
 }
