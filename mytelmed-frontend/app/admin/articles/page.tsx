@@ -662,32 +662,32 @@ const ArticleManagement = () => {
                             <Image
                                 src={selectedArticle.thumbnailUrl}
                                 alt="Current thumbnail"
-                                width={200}
-                                height={112}
                                 className="object-cover rounded border"
                             />
                         </div>
                     )}
 
-                    {thumbnailUploadProgress > 0 && thumbnailUploadProgress < 100 && (
-                        <div>
-                            <Progress percent={thumbnailUploadProgress} status="active" />
-                            <div className="text-center text-sm text-gray-500 mt-2">Uploading thumbnail...</div>
+                    <div className="flex flex-col justify-center items-center">
+                        {thumbnailUploadProgress > 0 && thumbnailUploadProgress < 100 && (
+                            <div>
+                                <Progress percent={thumbnailUploadProgress} status="active" />
+                                <div className="text-center text-sm text-gray-500 mt-2">Uploading thumbnail...</div>
+                            </div>
+                        )}
+
+                        {thumbnailUploadProgress === 0 && (
+                            <Upload beforeUpload={handleThumbnailUpload} accept="image/*" showUploadList={false}>
+                                <Button icon={<PictureOutlined />} size="large" block>
+                                    Select Thumbnail Image
+                                </Button>
+                            </Upload>
+                        )}
+
+                        <div className="text-sm text-gray-500 text-center">
+                            <p>Supported formats: JPG, PNG, GIF, WebP</p>
+                            <p>Maximum file size: 5MB</p>
+                            <p>Recommended size: 1280x720 pixels</p>
                         </div>
-                    )}
-
-                    {thumbnailUploadProgress === 0 && (
-                        <Upload beforeUpload={handleThumbnailUpload} accept="image/*" showUploadList={false}>
-                            <Button icon={<PictureOutlined />} size="large" block>
-                                Select Thumbnail Image
-                            </Button>
-                        </Upload>
-                    )}
-
-                    <div className="text-sm text-gray-500">
-                        <p>Supported formats: JPG, PNG, GIF, WebP</p>
-                        <p>Maximum file size: 5MB</p>
-                        <p>Recommended size: 1280x720 pixels</p>
                     </div>
                 </div>
             </Modal>

@@ -2,18 +2,25 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import DocumentApi from "@/app/api/document";
-import PatientApi from "@/app/api/patient";
-import { FamilyMemberApi } from "@/app/api/family";
 import { Document, CreateDocumentRequest, UpdateAccessRequest } from "@/app/api/document/props";
 import { DocumentType } from "@/app/api/props";
-import { FamilyMember } from "@/app/api/family/props";
 import { DocumentsFilterOptions, PatientOption } from "./props";
 import MedicalRecordsComponent from "./component";
+import { useFamilyPermissions } from "@/app/hooks/useFamilyPermissions";
 import dayjs from "dayjs";
 
 const ITEMS_PER_PAGE = 10;
 
 const MedicalRecordsPage = () => {
+    // Family permissions hook
+    const {
+        getAuthorizedPatientsForMedicalRecords,
+        getPatientOption,
+        currentPatient,
+        familyMembers,
+        loading: familyLoading
+    } = useFamilyPermissions();
+
     const [documents, setDocuments] = useState<Document[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -23,70 +30,28 @@ const MedicalRecordsPage = () => {
     const [filters, setFilters] = useState<DocumentsFilterOptions>({});
 
     // Patient selection state
-    const [patientOptions, setPatientOptions] = useState<PatientOption[]>([]);
     const [selectedPatientId, setSelectedPatientId] = useState<string>("");
-    const [currentPatientId, setCurrentPatientId] = useState<string>("");
-    const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
 
-    // Fetch patient options (self + family members with document viewing permission)
-    const fetchPatientOptions = useCallback(async () => {
-        try {
-            setError(null);
+    // Get patient options from hook
+    const getPatientOptions = (): PatientOption[] => {
+        const authorizedPatients = getAuthorizedPatientsForMedicalRecords();
+        return authorizedPatients.map(patient => {
+            const option = getPatientOption(patient.id);
+            return {
+                id: patient.id,
+                name: option?.name || patient.name,
+                relationship: option?.relationship || "Unknown",
+                canViewDocuments: true, // Already filtered by hook
+            };
+        });
+    };
 
-            // Get current patient profile
-            const profileResponse = await PatientApi.getPatientProfile();
-            if (!profileResponse.data?.isSuccess || !profileResponse.data.data) {
-                throw new Error("Failed to load patient profile");
-            }
-
-            const currentPatient = profileResponse.data.data;
-            setCurrentPatientId(currentPatient.id);
-
-            // Initialize options with current patient
-            const options: PatientOption[] = [
-                {
-                    id: currentPatient.id,
-                    name: "You",
-                    relationship: "You",
-                    canViewDocuments: true,
-                },
-            ];
-
-            // Get family members
-            try {
-                const familyResponse = await FamilyMemberApi.getPatientsByMemberAccount();
-                if (familyResponse.data?.isSuccess && familyResponse.data.data) {
-                    const familyMembersList = familyResponse.data.data;
-                    setFamilyMembers(familyMembersList);
-
-                    // Add family members with document viewing permission
-                    familyMembersList.forEach((member: FamilyMember) => {
-                        if (!member.pending && member.canViewMedicalRecords && member.patient) {
-                            options.push({
-                                id: member.patient.id,
-                                name: member.patient.name,
-                                relationship: member.relationship,
-                                canViewDocuments: member.canViewMedicalRecords,
-                            });
-                        }
-                    });
-                }
-            } catch (familyError) {
-                console.warn("Failed to fetch family members:", familyError);
-                // Continue without family members
-            }
-
-            setPatientOptions(options);
-
-            // Set default selection to current patient if not already set
-            if (!selectedPatientId && options.length > 0) {
-                setSelectedPatientId(currentPatient.id);
-            }
-        } catch (err: any) {
-            console.error("Failed to fetch patient options:", err);
-            setError(err.response?.data?.message || "Failed to load patient options. Please try again.");
+    // Set default patient selection when hook loads
+    useEffect(() => {
+        if (!familyLoading && currentPatient && !selectedPatientId) {
+            setSelectedPatientId(currentPatient.id);
         }
-    }, [selectedPatientId]);
+    }, [familyLoading, currentPatient, selectedPatientId]);
 
     // Fetch documents for selected patient
     const fetchDocuments = useCallback(async () => {
@@ -99,7 +64,7 @@ const MedicalRecordsPage = () => {
             let documentsResponse;
 
             // Fetch documents based on whether viewing own or family member's documents
-            if (selectedPatientId === currentPatientId) {
+            if (selectedPatientId === currentPatient?.id) {
                 documentsResponse = await DocumentApi.getDocumentsByPatientAccount();
             } else {
                 documentsResponse = await DocumentApi.getDocumentsByPatientId(selectedPatientId);
@@ -110,7 +75,7 @@ const MedicalRecordsPage = () => {
 
                 // Filter out expired documents for family members
                 let filteredDocuments = documentsList;
-                if (selectedPatientId !== currentPatientId) {
+                if (selectedPatientId !== currentPatient?.id) {
                     filteredDocuments = documentsList.filter((doc: Document) => {
                         // Only show documents with view access
                         if (!doc.documentAccess.canView) return false;
@@ -136,12 +101,7 @@ const MedicalRecordsPage = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [selectedPatientId, currentPatientId]);
-
-    // Initial load
-    useEffect(() => {
-        fetchPatientOptions();
-    }, [fetchPatientOptions]);
+    }, [selectedPatientId, currentPatient?.id]);
 
     // Fetch documents when patient selection changes
     useEffect(() => {
@@ -189,7 +149,7 @@ const MedicalRecordsPage = () => {
             const matchesDateRange =
                 filters.dateRange?.[0] && filters.dateRange?.[1]
                     ? new Date(document.createdAt) >= new Date(filters.dateRange[0]) &&
-                      new Date(document.createdAt) <= new Date(filters.dateRange[1])
+                    new Date(document.createdAt) <= new Date(filters.dateRange[1])
                     : true;
 
             return matchesDocumentType && matchesDateRange;
@@ -213,7 +173,7 @@ const MedicalRecordsPage = () => {
     const totalPages = Math.ceil(filteredDocuments.length / ITEMS_PER_PAGE) || 1;
 
     // Check if viewing own documents
-    const isViewingOwnDocuments = selectedPatientId === currentPatientId;
+    const isViewingOwnDocuments = selectedPatientId === currentPatient?.id;
 
     // Handler functions
     const handleUploadDocument = useCallback(
@@ -314,8 +274,8 @@ const MedicalRecordsPage = () => {
 
     // Handle refresh
     const handleRefresh = useCallback(async () => {
-        await Promise.all([fetchPatientOptions(), fetchDocuments()]);
-    }, [fetchPatientOptions, fetchDocuments]);
+        await fetchDocuments();
+    }, [fetchDocuments]);
 
     return (
         <MedicalRecordsComponent
@@ -328,7 +288,7 @@ const MedicalRecordsPage = () => {
             filters={filters}
             documentTypeOptions={documentTypeOptions}
             searchQuery={searchQuery}
-            patientOptions={patientOptions}
+            patientOptions={getPatientOptions()}
             selectedPatientId={selectedPatientId}
             isViewingOwnDocuments={isViewingOwnDocuments}
             onUploadDocument={handleUploadDocument}

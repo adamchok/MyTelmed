@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface VideoCallRepository extends JpaRepository<VideoCall, UUID> {
     Optional<VideoCall> findByAppointmentId(UUID appointmentId);
+    Optional<VideoCall> findByStreamCallId(String streamCallId);
 }

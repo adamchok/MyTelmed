@@ -13,12 +13,11 @@ import {
     nextStep,
     previousStep,
 } from "@/lib/reducers/appointment-booking-reducer";
-import { FamilyMemberApi } from "@/app/api/family";
 import DocumentApi from "@/app/api/document";
-import PatientApi from "@/app/api/patient";
 import { Document } from "@/app/api/document/props";
 import { Patient } from "@/app/api/patient/props";
 import { DocumentType } from "@/app/api/props";
+import { useFamilyPermissions } from "@/app/hooks/useFamilyPermissions";
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -30,18 +29,26 @@ export default function AppointmentDetailsStep() {
         (state: RootState) => state.rootReducer.appointmentBooking
     );
 
+    // Family permissions hook
+    const {
+        currentPatient,
+        familyMembers: authorizedFamilyMembers,
+        loading: familyLoading
+    } = useFamilyPermissions();
+
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [documentsLoading, setDocumentsLoading] = useState(false);
-    const [currentPatient, setCurrentPatient] = useState<Patient | null>(null);
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [availableDocuments, setAvailableDocuments] = useState<Document[]>([]);
     const [uploadingDocument, setUploadingDocument] = useState(false);
 
-    // Load data on mount
+    // Load data when family permissions are ready
     useEffect(() => {
-        loadInitialData();
-    }, []);
+        if (!familyLoading) {
+            loadInitialData();
+        }
+    }, [familyLoading, currentPatient, authorizedFamilyMembers]);
 
     useEffect(() => {
         if (selectedPatient) {
@@ -64,33 +71,30 @@ export default function AppointmentDetailsStep() {
         try {
             setLoading(true);
 
-            // Load current patient profile
-            const patientResponse = await PatientApi.getPatientProfile();
-            if (patientResponse.data.isSuccess && patientResponse.data.data) {
-                const patient = patientResponse.data.data;
-                setCurrentPatient(patient);
-                setSelectedPatient(patient);
+            // Wait for family permissions to load
+            if (familyLoading) {
+                return;
+            }
+
+            // Set current patient and default selection
+            if (currentPatient) {
+                setSelectedPatient(currentPatient);
 
                 // Set default to self if not already set
                 if (!appointmentDetails.patientId) {
                     dispatch(
                         setAppointmentDetails({
-                            patientId: patient.id,
-                            patientName: patient.name,
+                            patientId: currentPatient.id,
+                            patientName: currentPatient.name,
                             isForSelf: true,
                         })
                     );
                 }
             }
 
-            // Load family members
-            const familyResponse = await FamilyMemberApi.getPatientsByMemberAccount();
-            if (familyResponse.data.isSuccess) {
-                const members = familyResponse.data.data || [];
-                // Only include family members with appointment management permissions
-                const authorizedMembers = members.filter((member) => member.canManageAppointments && !member.pending);
-                dispatch(setFamilyMembers(authorizedMembers));
-            }
+            // Set authorized family members from hook
+            const authorizedMembers = authorizedFamilyMembers.filter(member => member.canManageAppointments && !member.pending);
+            dispatch(setFamilyMembers(authorizedMembers));
         } catch {
             message.error("Failed to load appointment details");
         } finally {
@@ -236,14 +240,16 @@ export default function AppointmentDetailsStep() {
             });
         }
 
-        // Add family members
-        familyMembers.forEach((member) => {
-            options.push({
-                value: member.patient?.id,
-                label: `${member.patient?.name} (${member.relationship})`,
-                patient: member.patient,
+        // Add authorized family members with appointment management permissions
+        authorizedFamilyMembers
+            .filter(member => member.canManageAppointments && !member.pending && member.patient)
+            .forEach((member) => {
+                options.push({
+                    value: member.patient?.id,
+                    label: `${member.patient?.name} (${member.relationship})`,
+                    patient: member.patient,
+                });
             });
-        });
 
         return options;
     };

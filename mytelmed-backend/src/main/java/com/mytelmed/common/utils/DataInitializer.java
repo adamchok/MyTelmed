@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Component
 public class DataInitializer implements CommandLineRunner {
-    private final String ADMIN_USERNAME = "admin@mytelmed.live";
+    private final String ADMIN_NRIC = "000000000000";
     private final AdminService adminService;
 
     public DataInitializer(AdminService adminService) {
@@ -21,7 +21,7 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     @Override
     public void run(String... args) {
-        boolean isDefaultAdminExist = adminService.isAdminExistsByUsername(ADMIN_USERNAME);
+        boolean isDefaultAdminExist = adminService.isAdminExistsByHashNric(ADMIN_NRIC);
 
         if (!isDefaultAdminExist) {
             log.info("No default admin found. Creating default admin...");
@@ -36,8 +36,8 @@ public class DataInitializer implements CommandLineRunner {
         try {
             // Create default admin request
             CreateAdminRequestDto request = CreateAdminRequestDto.builder()
-                    .nric("000000000000")
-                    .email(ADMIN_USERNAME)
+                    .nric(ADMIN_NRIC)
+                    .email("admin@mytelmed.live")
                     .name("Default Admin")
                     .phone("0372721998")
                     .build();
@@ -45,9 +45,9 @@ public class DataInitializer implements CommandLineRunner {
             // Create and save default admin
             adminService.create(request);
 
-            log.info("Default admin created successfully: {}", ADMIN_USERNAME);
+            log.info("Default admin created successfully: {}", ADMIN_NRIC);
         } catch (Exception e) {
-            log.error("Unexpected error while creating default admin: {}}", ADMIN_USERNAME, e);
+            log.error("Unexpected error while creating default admin: {}}", ADMIN_NRIC, e);
         }
     }
 }

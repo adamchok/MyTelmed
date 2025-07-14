@@ -224,12 +224,12 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
                     <div className="h-full">
                         <iframe
                             key={iframeKey}
-                            src={`${documentUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                            src={documentUrl}
                             className="w-full h-full border-0"
                             title={document.documentName}
                             onLoad={handleLoad}
                             onError={handleError}
-                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads allow-top-navigation"
                         />
                     </div>
                 )}

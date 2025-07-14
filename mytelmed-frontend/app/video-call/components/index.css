@@ -1,0 +1,134 @@
+.str-video {
+  /* Brand Colors - Blue Accents */
+  --str-video__brand-color1: #005fff;
+  --str-video__brand-color2: #69b8ff;
+  --str-video__brand-color3: #3aa0ff;
+  --str-video__brand-color4: #ffcf40;
+  --str-video__brand-color5: #ff4d4f;
+  --str_video__brand-color6: #85a5ff;
+
+  /* Base Colors - Light Theme */
+  --str-video__base-color1: #ffffff;
+  --str-video__base-color2: #f8fafc;
+  --str-video__base-color3: #f1f5f9;
+  --str-video__base-color4: #e2e8f0;
+  --str-video__base-color5: #cbd5e1;
+  --str-video__base-color6: #94a3b8;
+  --str-video__base-color7: #64748b;
+
+  /* Backdrops */
+  --str-video__backdrop1: rgba(0, 0, 0, 0.1);
+
+  --str-video__button-primary-base: #ffffff;
+  --str-video__button-primary-hover: #f8fafc;
+  --str-video__button-primary-pressed: #f1f5f9;
+  --str-video__button-primary-active: #f8fafc;
+
+  --str-video__button-secondary-base: #f8fafc;
+  --str-video__button-secondary-hover: #e2e8f0;
+  --str-video__button-secondary-pressed: #cbd5e1;
+  --str-video__button-secondary-active: #e2e8f0;
+
+  --str-video__button-tertiary-base: #ff4d4f;
+  --str-video__button-tertiary-hover: #ff7875;
+  --str-video__button-tertiary-pressed: #d9363e;
+  --str-video__button-tertiary-active: #b91c1c;
+
+  /* Icon Colors - High Contrast */
+  --str-video__icon-default: #1e293b;
+  --str-video__icon-pressed: #334155;
+  --str-video__icon-active: #005fff;
+  --str-video__icon-alert: #f59e0b;
+  --str-video__icon-disabled: #94a3b8;
+
+  /* Alerts */
+  --str-video__alert-success: #10b981;
+  --str-video__alert-caution: #f59e0b;
+  --str-video__alert-warning: #ef4444;
+
+  --str-video__alert-success-background: rgba(16, 185, 129, 0.1);
+  --str-video__alert-caution-background: rgba(245, 158, 11, 0.1);
+  --str-video__alert-warning-background: rgba(239, 68, 68, 0.1);
+
+  /* Font Sizes */
+  --str-video__font-size-xxs: 0.625rem;
+  --str-video__font-size-xs: 0.75rem;
+  --str-video__font-size-sm: 0.875rem;
+  --str-video__font-size-md: 1rem;
+  --str-video__font-size-lg: 1.125rem;
+  --str-video__font-size-xl: 1.25rem;
+  --str-video__font-size-xxl: 1.5rem;
+
+  /* Border Radii */
+  --str-video__border-radius-xxs: 4px;
+  --str-video__border-radius-xs: 8px;
+  --str-video__border-radius-sm: 12px;
+  --str-video__border-radius-md: 18px;
+  --str-video__border-radius-lg: 24px;
+  --str-video__border-radius-xl: 30px;
+  --str-video__border-radius-xxl: 48px;
+  --str-video__border-radius-circle: 999px;
+
+  /* Spacing */
+  --str-video__spacing-xxs: 4px;
+  --str-video__spacing-xs: 6px;
+  --str-video__spacing-sm: 8px;
+  --str-video__spacing-md: 12px;
+  --str-video__spacing-lg: 16px;
+  --str-video__spacing-xl: 20px;
+
+  /* Primary & Secondary Colors */
+  --str-video__primary-color: #005fff;
+  --str-video__secondary-color: #69b8ff;
+
+  /* Text Colors - High Contrast */
+  --str-video__text-color1: #0f172a;
+  --str-video__text-color2: #1e293b;
+  --str-video__text-color3: #334155;
+  --str-video__text-color4: #64748b;
+
+  /* Info & Danger */
+  --str-video__info-color: #3aa0ff;
+  --str-video__info-color--accent: #005fff;
+  --str-video__danger-color: #ef4444;
+  --str-video__danger-color--accent: #b91c1c;
+
+  /* Background & Surfaces - Light Theme */
+  --str-video__background-color0: #ffffff;
+  --str-video__background-color1: #f8fafc;
+  --str-video__background-color2: #f1f5f9;
+  --str-video__background-color3: #e2e8f0;
+  --str-video__background-color4: #cbd5e1;
+  --str-video__background-color5: #94a3b8;
+  --str-video__background-color6: #64748b;
+  --str-video__background-color7: #475569;
+
+  --str-video__overlay-color: rgba(0, 0, 0, 0.1);
+  --str-video__livestream-overlay-color: rgba(0, 0, 0, 0.05);
+  --str-video__livestream-overlay-color-hovered: rgba(0, 0, 0, 0.1);
+}
+
+/* Device settings styling */
+.str-video__device-settings {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.str-video__device-settings__option {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+.str-video__device-settings__option:hover {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.str-video__device-settings__option--selected {
+  background: #dbeafe !important;
+  border-color: #005fff !important;
+  color: #005fff !important;
+}

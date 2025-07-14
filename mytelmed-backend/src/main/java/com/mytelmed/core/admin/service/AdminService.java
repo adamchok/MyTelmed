@@ -9,6 +9,7 @@ import com.mytelmed.common.event.account.model.AccountActivatedEvent;
 import com.mytelmed.common.event.account.model.AccountDeactivatedEvent;
 import com.mytelmed.common.event.account.model.AccountDeletionEvent;
 import com.mytelmed.common.event.account.model.AccountPasswordResetEvent;
+import com.mytelmed.common.utils.HashUtil;
 import com.mytelmed.common.utils.PasswordGenerator;
 import com.mytelmed.core.admin.dto.CreateAdminRequestDto;
 import com.mytelmed.core.admin.dto.UpdateAdminProfileRequestDto;
@@ -29,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import java.util.UUID;
-import com.mytelmed.common.utils.HashUtil;
 
 
 @Slf4j
@@ -49,8 +49,8 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
-    public boolean isAdminExistsByUsername(String username) {
-        return adminRepository.existsAdminByAccountUsername(username);
+    public boolean isAdminExistsByHashNric(String nric) {
+        return adminRepository.findByHashedNric(HashUtil.sha256(nric)).isPresent();
     }
 
     @Transactional(readOnly = true)

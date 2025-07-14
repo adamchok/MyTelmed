@@ -26,8 +26,12 @@ import java.util.UUID;
 
 /**
  * Service for managing video calls in Malaysian public healthcare telemedicine.
- * Only supports VIRTUAL appointments - PHYSICAL appointments do not use video
- * calls.
+ * Only supports VIRTUAL appointments - PHYSICAL appointments do not use video calls.
+ *
+ * Features automatic appointment completion when all participants leave the call via:
+ * 1. Stream webhook events (primary method)
+ * 2. Stream API participant count check (fallback method)
+ * 3. Manual endVideoCall method (legacy method)
  */
 @Slf4j
 @Service
@@ -104,6 +108,9 @@ public class VideoCallService {
         // Validate appointment status and timing
         validateAppointmentForVideoCall(appointment);
 
+        // Validate user has permission to create the call
+        validateUserCanCreateCall(appointment, account);
+
         try {
             // Create Stream call using the existing StreamService
             CallResponse callResponse = streamService.createCall(appointment, account.getId().toString());
@@ -170,14 +177,30 @@ public class VideoCallService {
 
             // Update video call with a token
             if (userCallInfo.isPatient) {
-                videoCall.setPatientToken(token);
-                if (videoCall.getPatientJoinedAt() == null) {
-                    videoCall.setPatientJoinedAt(Instant.now());
+                if (userCallInfo.isPrimaryPatient) {
+                    // Primary patient joining
+                    videoCall.setPatientToken(token);
+                    if (videoCall.getPatientJoinedAt() == null) {
+                        videoCall.setPatientJoinedAt(Instant.now());
+                        log.info("Primary patient joined video call for appointment: {}", appointmentId);
+                    }
+                } else {
+                    // Family member joining - they get the patient token but don't update join time
+                    // unless it's the first patient-side participant
+                    if (videoCall.getPatientJoinedAt() == null) {
+                        videoCall.setPatientJoinedAt(Instant.now());
+                        log.info("Family member {} joined video call for appointment: {}", 
+                                userCallInfo.userName, appointmentId);
+                    } else {
+                        log.info("Additional family member {} joined video call for appointment: {}", 
+                                userCallInfo.userName, appointmentId);
+                    }
                 }
             } else {
                 videoCall.setProviderToken(token);
                 if (videoCall.getProviderJoinedAt() == null) {
                     videoCall.setProviderJoinedAt(Instant.now());
+                    log.info("Provider joined video call for appointment: {}", appointmentId);
                 }
             }
 
@@ -236,15 +259,24 @@ public class VideoCallService {
             // Determine user role
             UserCallInfo userCallInfo = getUserCallInfo(appointment, account);
 
-            // Update leave time
+            // Update leave time based on participant type
             if (userCallInfo.isPatient) {
-                videoCall.setPatientLeftAt(Instant.now());
+                if (userCallInfo.isPrimaryPatient) {
+                    // Primary patient is leaving - this should end the call
+                    videoCall.setPatientLeftAt(Instant.now());
+                    log.info("Primary patient left video call for appointment: {}", appointmentId);
+                } else {
+                    // Family member leaving - don't update patientLeftAt yet
+                    log.info("Family member {} left video call for appointment: {}", 
+                            userCallInfo.userName, appointmentId);
+                }
             } else {
                 videoCall.setProviderLeftAt(Instant.now());
+                log.info("Provider left video call for appointment: {}", appointmentId);
             }
 
-            // If both participants have left, end the meeting
-            boolean shouldEndMeeting = videoCall.getPatientLeftAt() != null && videoCall.getProviderLeftAt() != null;
+            // Determine if meeting should end
+            boolean shouldEndMeeting = shouldEndMeeting(videoCall, appointment, userCallInfo);
 
             if (shouldEndMeeting && videoCall.getMeetingEndedAt() == null) {
                 // Update video call
@@ -257,6 +289,10 @@ public class VideoCallService {
                 appointmentRepository.save(appointment);
 
                 log.info("Successfully ended video call for virtual appointment: {}", appointmentId);
+            } else if (!shouldEndMeeting) {
+                // As a fallback, check with Stream API if all participants have actually left
+                // This helps catch cases where webhook events might be missed
+                checkStreamCallParticipantsAndCompleteIfEmpty(videoCall, appointment);
             }
 
             // Save video call
@@ -264,6 +300,51 @@ public class VideoCallService {
         } catch (Exception e) {
             log.error("Failed to end video call for appointment: {}", appointmentId, e);
             throw new AppException("Failed to end video call: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Manually checks if a video call has no participants and completes the appointment if so.
+     * This is useful for testing or manual intervention when webhooks might not be working.
+     *
+     * @param appointmentId The appointment ID to check
+     * @return true if the appointment was completed, false otherwise
+     */
+    @Transactional
+    public boolean checkAndCompleteIfNoParticipants(UUID appointmentId) {
+        try {
+            Appointment appointment = appointmentService.findById(appointmentId);
+
+            if (!appointment.isVirtualConsultation()) {
+                log.debug("Appointment {} is not virtual, skipping participant check", appointmentId);
+                return false;
+            }
+
+            if (appointment.getStatus() != AppointmentStatus.IN_PROGRESS) {
+                log.debug("Appointment {} is not in progress, skipping participant check", appointmentId);
+                return false;
+            }
+
+            VideoCall videoCall = findByAppointmentId(appointmentId);
+
+            if (videoCall.getStreamCallId() == null) {
+                log.debug("No Stream call ID for appointment {}, skipping participant check", appointmentId);
+                return false;
+            }
+
+            int participantCount = streamService.getCallParticipantCount(videoCall.getStreamCallId());
+
+            if (participantCount == 0) {
+                log.info("Manual check found no participants in call for appointment {}, completing", appointmentId);
+                checkStreamCallParticipantsAndCompleteIfEmpty(videoCall, appointment);
+                return true;
+            } else {
+                log.debug("Manual check found {} participants still in call for appointment {}", participantCount, appointmentId);
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("Error during manual participant check for appointment {}: {}", appointmentId, e.getMessage());
+            return false;
         }
     }
 
@@ -307,10 +388,10 @@ public class VideoCallService {
                     return;
                 }
 
-                // Check if account is a family member with video call permission
+                // Check if account is a family member with video call permission (MANAGE_APPOINTMENTS)
                 if (!familyPermissionService.hasPermission(account, appointment.getPatient().getId(),
-                        FamilyPermissionType.JOIN_VIDEO_CALL)) {
-                    throw new AppException("You are not authorized to join this video call");
+                        FamilyPermissionType.MANAGE_APPOINTMENTS)) {
+                    throw new AppException("You are not authorized to join this video call. You need appointment management permissions.");
                 }
             }
             case DOCTOR -> {
@@ -319,6 +400,92 @@ public class VideoCallService {
                 }
             }
             default -> throw new AppException("You are not authorized to join this video call");
+        }
+    }
+
+    private void validateUserCanCreateCall(Appointment appointment, Account account) throws AppException {
+        log.debug("Validating if account {} can create video call for appointment {}", account.getId(), appointment.getId());
+
+        switch (account.getPermission().getType()) {
+            case PATIENT -> {
+                // Patient themselves can always create calls for their appointments
+                if (appointment.getPatient().getAccount().getId().equals(account.getId())) {
+                    return;
+                }
+
+                // Family members need MANAGE_APPOINTMENTS permission to create calls
+                if (!familyPermissionService.hasPermission(account, appointment.getPatient().getId(),
+                        FamilyPermissionType.MANAGE_APPOINTMENTS)) {
+                    throw new AppException("You don't have permission to start this video call. Contact the patient or request appointment management permissions.");
+                }
+            }
+            case DOCTOR -> {
+                if (!appointment.getDoctor().getAccount().getId().equals(account.getId())) {
+                    throw new AppException("You are not the assigned doctor for this appointment");
+                }
+            }
+            default -> throw new AppException("You are not authorized to start this video call");
+        }
+
+        log.debug("Account {} is authorized to create video call for appointment {}", account.getId(), appointment.getId());
+    }
+
+    /**
+     * Determines if the video call meeting should end based on who has left.
+     * Meeting ends ONLY when BOTH primary patient and doctor have left.
+     * Family members leaving does not affect this decision.
+     */
+    private boolean shouldEndMeeting(VideoCall videoCall, Appointment appointment, UserCallInfo leavingUser) {
+        // Check if primary patient has left (either previously or leaving now)
+        boolean primaryPatientLeft = videoCall.getPatientLeftAt() != null || 
+                                   (leavingUser.isPatient && leavingUser.isPrimaryPatient);
+        
+        // Check if provider has left (either previously or leaving now)
+        boolean providerLeft = videoCall.getProviderLeftAt() != null || 
+                             (!leavingUser.isPatient);
+
+        // Call ends only when BOTH primary patient and doctor have left
+        return primaryPatientLeft && providerLeft;
+    }
+
+    /**
+     * Fallback method to check Stream API for actual participant count
+     * and complete appointment if no participants remain.
+     * This serves as a backup to webhook-based completion.
+     */
+    private void checkStreamCallParticipantsAndCompleteIfEmpty(VideoCall videoCall, Appointment appointment) {
+        try {
+            if (videoCall.getStreamCallId() == null) {
+                log.debug("No Stream call ID available for video call: {}", videoCall.getId());
+                return;
+            }
+
+            int participantCount = streamService.getCallParticipantCount(videoCall.getStreamCallId());
+
+            if (participantCount == 0 && videoCall.getMeetingEndedAt() == null) {
+                log.info("Stream API confirms no participants in call {}, completing appointment {}", 
+                        videoCall.getStreamCallId(), appointment.getId());
+
+                // Complete the video call
+                videoCall.setMeetingEndedAt(Instant.now());
+                videoCall.setIsActive(false);
+                videoCall.setPatientLeftAt(Instant.now());
+                videoCall.setProviderLeftAt(Instant.now());
+                videoCallRepository.save(videoCall);
+
+                // Complete the appointment
+                appointment.setStatus(AppointmentStatus.COMPLETED);
+                appointment.setCompletedAt(Instant.now());
+                String completionNote = "Automatically completed - Stream API confirmed all participants left";
+                appointment.setDoctorNotes(appointment.getDoctorNotes() != null ? 
+                        appointment.getDoctorNotes() + "\n\n" + completionNote : completionNote);
+                appointmentRepository.save(appointment);
+
+                log.info("Successfully auto-completed appointment {} via Stream API fallback", appointment.getId());
+            }
+
+        } catch (Exception e) {
+            log.warn("Failed to check Stream participant count for fallback completion: {}", e.getMessage());
         }
     }
 
@@ -347,26 +514,30 @@ public class VideoCallService {
                     return new UserCallInfo(
                             appointment.getPatient().getId().toString(),
                             appointment.getPatient().getName(),
-                            true);
+                            true,
+                            true); // isPrimaryPatient = true
                 } else {
-                    // Account is a family member - get their info but mark as patient side
-                    try {
-                        Patient familyMemberPatient = patientService.findPatientByAccountId(account.getId());
-                        return new UserCallInfo(
-                                account.getId().toString(), // Use account ID as unique identifier
-                                familyMemberPatient.getName() + " (Family)",
-                                true // Still on patient side
-                        );
-                    } catch (Exception e) {
-                        throw new AppException("Unable to get family member information for video call");
-                    }
+                    // Account is a family member - find their family member record
+                    return appointment.getPatient().getFamilyMemberList()
+                            .stream()
+                            .filter(fm -> !fm.isPending() && 
+                                    fm.getMemberAccount() != null &&
+                                    fm.getMemberAccount().getId().equals(account.getId()))
+                            .findFirst()
+                            .map(familyMember -> new UserCallInfo(
+                                    account.getId().toString(), // Use account ID as unique identifier
+                                    familyMember.getName() + " (Family)",
+                                    true, // Still on patient side
+                                    false)) // isPrimaryPatient = false
+                            .orElseThrow(() -> new AppException("Family member not found or not authorized for this appointment"));
                 }
             }
             case DOCTOR -> {
                 return new UserCallInfo(
                         appointment.getDoctor().getId().toString(),
                         appointment.getDoctor().getName(),
-                        false);
+                        false,
+                        false); // isPrimaryPatient = false (doctor)
             }
             default -> throw new AppException("Invalid account type for video call");
         }
@@ -376,11 +547,13 @@ public class VideoCallService {
         final String userId;
         final String userName;
         final boolean isPatient;
+        final boolean isPrimaryPatient;
 
-        UserCallInfo(String userId, String userName, boolean isPatient) {
+        UserCallInfo(String userId, String userName, boolean isPatient, boolean isPrimaryPatient) {
             this.userId = userId;
             this.userName = userName;
             this.isPatient = isPatient;
+            this.isPrimaryPatient = isPrimaryPatient;
         }
     }
 }

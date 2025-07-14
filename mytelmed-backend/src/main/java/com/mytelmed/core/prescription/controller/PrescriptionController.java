@@ -63,6 +63,20 @@ public class PrescriptionController {
         return ResponseEntity.ok(ApiResponse.success(prescriptionDto));
     }
 
+    @GetMapping
+    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<Page<PrescriptionDto>>> getPrescriptions(
+            @PageableDefault(size = 20) Pageable pageable,
+            @AuthenticationPrincipal Account account) {
+        log.info("Fetching prescriptions for {} account with ID: {}", account.getPermission().getType(), account.getId());
+
+        Page<Prescription> prescriptionPage = prescriptionService.findByAccount(account, pageable);
+        Page<PrescriptionDto> prescriptionDtoPage = prescriptionPage
+                .map(prescription -> prescriptionMapper.toDto(prescription, awsS3Service));
+
+        return ResponseEntity.ok(ApiResponse.success(prescriptionDtoPage));
+    }
+
     @GetMapping("/patient/{patientId}")
     @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<Page<PrescriptionDto>>> getPrescriptionsByPatient(

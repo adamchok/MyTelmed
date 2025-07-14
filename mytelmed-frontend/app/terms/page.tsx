@@ -1,7 +1,7 @@
 "use client";
 
 import { Typography, Divider, Button } from "antd";
-import { FileTextOutlined, CalendarOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import { FileText, Calendar, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Footer from "../components/Footer/Footer";
 import BackButton from "../components/BackButton/BackButton";
@@ -20,7 +20,7 @@ export default function TermsOfServicePage() {
                     <div className="flex flex-col items-center justify-center text-center w-full">
                         <div className="flex items-center justify-center mb-4">
                             <div className="bg-white rounded-2xl p-3 mr-4">
-                                <FileTextOutlined className="text-blue-600 text-3xl" />
+                                <FileText className="text-blue-600 w-8 h-8" />
                             </div>
                             <Title level={1} className="text-white mb-0 text-4xl md:text-5xl font-bold">
                                 Terms of Service
@@ -31,7 +31,7 @@ export default function TermsOfServicePage() {
                             platform.
                         </p>
                         <div className="flex items-center text-gray-50 text-sm mt-4 mb-4">
-                            <CalendarOutlined className="mr-2" />
+                            <Calendar className="mr-2 w-4 h-4" />
                             <span>Last updated: {lastUpdated}</span>
                         </div>
                     </div>
@@ -538,7 +538,7 @@ export default function TermsOfServicePage() {
                     {/* Footer Actions */}
                     <div className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-gray-200 gap-4 mt-12">
                         <Button
-                            icon={<ArrowLeftOutlined />}
+                            icon={<ArrowLeft className="w-4 h-4" />}
                             onClick={() => router.back()}
                             className="rounded-lg w-full sm:w-auto"
                         >

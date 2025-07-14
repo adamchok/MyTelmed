@@ -82,7 +82,7 @@ const AccountComponent = ({
                 <Col xs={24} md={16} lg={12}>
                     <Card className="shadow-lg border-0 bg-white" styles={{ body: { padding: "32px" } }}>
                         <div className="flex items-center mb-8">
-                            <Shield className="w-8 h-8 text-blue-500 mr-4" />
+                            <Shield className="w-8 h-8 text-green-500 mr-4" />
                             <Title level={3} className="m-0 text-gray-800">
                                 Change Password
                             </Title>
@@ -99,7 +99,7 @@ const AccountComponent = ({
                             <Form.Item
                                 label={
                                     <span className="text-sm font-medium text-gray-700 flex items-center">
-                                        <Lock className="mr-2 text-blue-500" size={18} strokeWidth={2.2} />
+                                        <Lock className="mr-2 text-green-500" size={18} strokeWidth={2.2} />
                                         Current Password
                                     </span>
                                 }
@@ -108,7 +108,7 @@ const AccountComponent = ({
                             >
                                 <Input.Password
                                     placeholder="Enter your current password"
-                                    className="h-12 rounded-xl border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors"
+                                    className="h-12 rounded-xl border-gray-200 hover:border-green-700 focus:border-green-700 transition-colors"
                                     size="large"
                                 />
                             </Form.Item>
@@ -117,7 +117,7 @@ const AccountComponent = ({
                             <Form.Item
                                 label={
                                     <span className="text-sm font-medium text-gray-700 flex items-center">
-                                        <Lock className="mr-2 text-blue-500" size={18} strokeWidth={2.2} />
+                                        <Lock className="mr-2 text-green-500" size={18} strokeWidth={2.2} />
                                         New Password
                                     </span>
                                 }
@@ -126,7 +126,7 @@ const AccountComponent = ({
                             >
                                 <Input.Password
                                     placeholder="Enter your new password"
-                                    className="h-12 rounded-xl border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors"
+                                    className="h-12 rounded-xl border-gray-200 hover:border-green-700 focus:border-green-700 transition-colors"
                                     size="large"
                                     onChange={(e) => onCalculatePasswordStrength(e.target.value)}
                                 />
@@ -186,7 +186,7 @@ const AccountComponent = ({
                             <Form.Item
                                 label={
                                     <span className="text-sm font-medium text-gray-700 flex items-center">
-                                        <Lock className="mr-2 text-blue-500" size={18} strokeWidth={2.2} />
+                                        <Lock className="mr-2 text-green-500" size={18} strokeWidth={2.2} />
                                         Confirm New Password
                                     </span>
                                 }
@@ -195,7 +195,7 @@ const AccountComponent = ({
                             >
                                 <Input.Password
                                     placeholder="Confirm your new password"
-                                    className="h-12 rounded-xl border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors"
+                                    className="h-12 rounded-xl border-gray-200 hover:border-green-700 focus:border-green-700 transition-colors"
                                     size="large"
                                     onPaste={(e) => e.preventDefault()}
                                 />
@@ -212,6 +212,7 @@ const AccountComponent = ({
                                     size="large"
                                     loading={loading}
                                     icon={<Lock className="w-4 h-4" />}
+                                    className="bg-green-700 hover:bg-green-800 border-green-700"
                                 >
                                     Update Password
                                 </Button>

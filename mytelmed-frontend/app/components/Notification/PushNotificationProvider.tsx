@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePushNotifications } from "../hooks/usePushNotifications";
+import { usePushNotifications } from "../../hooks/usePushNotifications";
 import { registerServiceWorker } from "@/lib/serviceWorkerRegistration";
 
 export default function ServiceWorkerRegistration() {

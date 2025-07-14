@@ -12,7 +12,7 @@ import "./index.css";
 const { Title, Text } = Typography;
 
 const ChatPage = () => {
-    const { streamUser, isLoading, error } = useStreamChat();
+    const { chatClient, streamUser, isLoading, error } = useStreamChat();
     const [isMobileView, setIsMobileView] = useState(false);
     const [showChannelList, setShowChannelList] = useState(true);
 
@@ -120,8 +120,8 @@ const ChatPage = () => {
         );
     }
 
-    // No user state
-    if (!streamUser) {
+    // No user or client state
+    if (!streamUser || !chatClient) {
         return (
             <div className="container mx-auto">
                 {/* Header */}
@@ -165,7 +165,7 @@ const ChatPage = () => {
             {/* Chat Interface */}
             <Card className="shadow-lg border-0 bg-white chat-main-card" styles={{ body: { padding: 0 } }}>
                 <div className="chat-container">
-                    <ChatProvider>
+                    <ChatProvider chatClient={chatClient}>
                         <div className="str-chat-container">
                             {/* Channel List - Show on desktop always, or on mobile when showChannelList is true */}
                             {(!isMobileView || showChannelList) && (

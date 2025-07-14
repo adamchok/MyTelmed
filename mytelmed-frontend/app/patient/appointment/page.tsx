@@ -50,10 +50,8 @@ import dayjs from "dayjs";
 // Import API services
 import AppointmentApi from "../../api/appointment";
 import { AppointmentDto, AppointmentStatus, CancelAppointmentRequestDto } from "../../api/appointment/props";
-import { FamilyMember } from "../../api/family/props";
-import { FamilyMemberApi } from "@/app/api/family";
-import PatientApi from "@/app/api/patient";
 import { parseLocalDateTime } from "../../utils/DateUtils";
+import { useFamilyPermissions } from "../../hooks/useFamilyPermissions";
 
 import { AppointmentCard } from "./components/AppointmentCard";
 
@@ -76,6 +74,14 @@ type ViewMode = "calendar" | "table";
 export default function PatientAppointments() {
     const router = useRouter();
 
+    // Family permissions hook
+    const {
+        getAuthorizedPatientsForAppointments,
+        getPatientOption,
+        loading: familyLoading,
+        currentPatient: hookCurrentPatient
+    } = useFamilyPermissions();
+
     // State variables
     const [loading, setLoading] = useState(true);
     const [allAppointments, setAllAppointments] = useState<AppointmentDto[]>([]); // All appointments for both views
@@ -83,9 +89,7 @@ export default function PatientAppointments() {
     const [pageSize] = useState(5);
 
     // Patient selection state
-    const [patientOptions, setPatientOptions] = useState<PatientOption[]>([]);
     const [selectedPatientId, setSelectedPatientId] = useState<string>("all");
-    const [familyLoading, setFamilyLoading] = useState(false);
 
     // View mode state
     const [viewMode, setViewMode] = useState<ViewMode>("table"); // Default to table view for mobile
@@ -122,65 +126,19 @@ export default function PatientAppointments() {
     const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus | "all">("all");
     const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
 
-    // Load patient options (self + family members with appointment viewing permission)
-    const loadPatientOptions = async () => {
-        try {
-            setFamilyLoading(true);
-
-            const profileResponse = await PatientApi.getPatientProfile();
-            if (!profileResponse.data?.isSuccess || !profileResponse.data.data) {
-                throw new Error("Failed to load patient profile");
-            }
-            const currentPatient = profileResponse.data.data;
-
-            // Initialize options with current patient
-            const options: PatientOption[] = [
-                {
-                    id: currentPatient.id,
-                    name: "You",
-                    relationship: "You",
-                    canViewAppointments: true,
-                    canManageAppointments: true,
-                },
-            ];
-
-            try {
-                const response = await FamilyMemberApi.getPatientsByMemberAccount();
-                if (response.data.isSuccess && response.data.data) {
-                    const familyMembers = response.data.data;
-                    console.log("family members", familyMembers);
-                    familyMembers.forEach((member: FamilyMember) => {
-                        if (
-                            !member.pending &&
-                            member.canViewAppointments &&
-                            member.canManageAppointments &&
-                            member.patient
-                        ) {
-                            options.push({
-                                id: member.patient.id,
-                                name: member.patient.name,
-                                relationship: member.relationship,
-                                canViewAppointments: member.canViewAppointments,
-                                canManageAppointments: member.canManageAppointments,
-                            });
-                        }
-                    });
-                }
-            } catch (familyError) {
-                console.warn("Failed to fetch family members:", familyError);
-            }
-
-            setPatientOptions(options);
-
-            // Set default selection to current patient if not already set
-            if (selectedPatientId === "all" && options.length > 0) {
-                setSelectedPatientId(currentPatient.id);
-            }
-        } catch (error) {
-            console.error("Error loading patient options:", error);
-        } finally {
-            setFamilyLoading(false);
-        }
+    // Get patient options from the hook
+    const getPatientOptions = (): PatientOption[] => {
+        const authorizedPatients = getAuthorizedPatientsForAppointments();
+        return authorizedPatients.map(patient => {
+            const option = getPatientOption(patient.id);
+            return {
+                id: patient.id,
+                name: option?.name || patient.name,
+                relationship: option?.relationship || "Unknown",
+                canViewAppointments: true, // Already filtered by hook
+                canManageAppointments: true, // Already filtered by hook
+            };
+        });
     };
 
     // Load all appointments for both views
@@ -206,8 +164,14 @@ export default function PatientAppointments() {
     // Load appointments and patient options on component mount
     useEffect(() => {
         loadAllAppointments();
-        loadPatientOptions();
     }, []);
+
+    // Set default patient selection when hook loads
+    useEffect(() => {
+        if (!familyLoading && hookCurrentPatient && selectedPatientId === "all") {
+            setSelectedPatientId(hookCurrentPatient.id);
+        }
+    }, [familyLoading, hookCurrentPatient, selectedPatientId]);
 
     // Reset current page when switching views or changing filters
     useEffect(() => {
@@ -290,8 +254,6 @@ export default function PatientAppointments() {
             case "cancelled":
                 matchesTab = appointment.status === "CANCELLED" || appointment.status === "NO_SHOW";
                 break;
-            default:
-                matchesTab = true;
         }
 
         return matchesPatient && matchesSearch && matchesStatus && matchesDateRange && matchesTab;
@@ -570,9 +532,8 @@ export default function PatientAppointments() {
                                 setDateRange(null);
                                 setSelectedPatientId("all");
                             }}
-                            className={`w-full sm:w-auto ${
-                                viewMode === "calendar" ? "bg-blue-600 border-blue-600" : ""
-                            }`}
+                            className={`w-full sm:w-auto ${viewMode === "calendar" ? "bg-blue-600 border-blue-600" : ""
+                                }`}
                         >
                             Calendar
                         </Button>
@@ -699,7 +660,7 @@ export default function PatientAppointments() {
                                 allowClear
                             >
                                 <Option value="all">All Patients</Option>
-                                {patientOptions.map((option) => (
+                                {getPatientOptions().map((option: PatientOption) => (
                                     <Option key={option.id} value={option.id}>
                                         {option.name}
                                     </Option>
@@ -803,16 +764,16 @@ export default function PatientAppointments() {
                                                 />,
                                                 ...(appointment.status === "PENDING"
                                                     ? [
-                                                          <Button
-                                                              key="cancel"
-                                                              type="text"
-                                                              danger
-                                                              size="small"
-                                                              icon={<Trash2 />}
-                                                              onClick={() => handleCancelAppointment(appointment)}
-                                                              className="text-red-600 hover:text-red-800"
-                                                          />,
-                                                      ]
+                                                        <Button
+                                                            key="cancel"
+                                                            type="text"
+                                                            danger
+                                                            size="small"
+                                                            icon={<Trash2 />}
+                                                            onClick={() => handleCancelAppointment(appointment)}
+                                                            className="text-red-600 hover:text-red-800"
+                                                        />,
+                                                    ]
                                                     : []),
                                             ]}
                                         >
@@ -906,11 +867,10 @@ export default function PatientAppointments() {
                             },
                             {
                                 key: "past",
-                                label: `Past (${
-                                    allAppointments.filter((apt) =>
-                                        parseLocalDateTime(apt.appointmentDateTime).isBefore(dayjs(), "day")
-                                    ).length
-                                })`,
+                                label: `Past (${allAppointments.filter((apt) =>
+                                    parseLocalDateTime(apt.appointmentDateTime).isBefore(dayjs(), "day")
+                                ).length
+                                    })`,
                                 children: null,
                             },
                             {
@@ -935,9 +895,8 @@ export default function PatientAppointments() {
                             },
                             {
                                 key: "completed",
-                                label: `Completed (${
-                                    allAppointments.filter((apt) => apt.status === "COMPLETED").length
-                                })`,
+                                label: `Completed (${allAppointments.filter((apt) => apt.status === "COMPLETED").length
+                                    })`,
                                 children: null,
                             },
                             {
@@ -981,9 +940,7 @@ export default function PatientAppointments() {
                                             key={appointment.id}
                                             appointment={appointment}
                                             onView={(appointment) => {
-                                                // Handle view appointment details
-                                                console.log("View appointment:", appointment);
-                                                // You can add navigation or modal here
+                                                router.push(`/patient/appointment/${appointment.id}`);
                                             }}
                                             onCancel={
                                                 appointment.status === "PENDING" ? handleCancelAppointment : undefined

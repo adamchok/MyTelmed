@@ -86,4 +86,17 @@ public class VideoCallController {
         videoCallService.endVideoCall(UUID.fromString(appointmentId), account);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
+    @PostMapping("/check-and-complete/{appointmentId}")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Boolean>> checkAndCompleteIfNoParticipants(
+            @PathVariable String appointmentId,
+            @AuthenticationPrincipal Account account
+    ) {
+        log.info("User {} manually checking participants for appointment: {}", account.getId(), appointmentId);
+
+        boolean completed = videoCallService.checkAndCompleteIfNoParticipants(UUID.fromString(appointmentId));
+        
+        return ResponseEntity.ok(ApiResponse.success(completed));
+    }
 }

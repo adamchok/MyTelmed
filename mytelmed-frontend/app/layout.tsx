@@ -7,7 +7,8 @@ import "@stream-io/video-react-sdk/dist/css/styles.css";
 import "stream-chat-react/dist/css/v2/index.css";
 import "./globals.css";
 import MainLayout from "./layout/MainLayout";
-import PushNotificationProvider from "./components/PushNotificationProvider";
+import PushNotificationProvider from "./components/Notification/PushNotificationProvider";
+import { NotificationDisplay } from "./components/Notification/NotificationDisplay";
 
 const inter = Inter({ subsets: ["latin"] });
 const APP_NAME = "MyTelmed - Telemedicine Application";
@@ -160,6 +161,7 @@ export default function RootLayout({
                         <React.Suspense fallback="Loading...">
                             <MainLayout>{children}</MainLayout>
                             <PushNotificationProvider />
+                            <NotificationDisplay />
                         </React.Suspense>
                     </StoreProvider>
                 </AntdRegistry>

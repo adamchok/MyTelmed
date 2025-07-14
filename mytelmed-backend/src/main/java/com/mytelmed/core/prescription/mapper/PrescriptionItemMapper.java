@@ -11,5 +11,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface PrescriptionItemMapper {
     @Mapping(target = "id", expression = "java(prescriptionItem.getId().toString())")
+    @Mapping(target = "isSubstituted", ignore = true)
+    @Mapping(target = "substitutionReason",  ignore = true)
     PrescriptionItemDto toDto(PrescriptionItem prescriptionItem);
 }

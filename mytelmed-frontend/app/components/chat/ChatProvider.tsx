@@ -2,16 +2,14 @@
 
 import { Chat } from "stream-chat-react";
 import React from "react";
-import { useStreamChat } from "@/app/hooks/useStreamChat";
+import { StreamChat } from "stream-chat";
 
-const ChatProvider = ({ children }: { children: React.ReactNode }) => {
-    const { chatClient, isLoading, error } = useStreamChat();
+interface ChatProviderProps {
+    children: React.ReactNode;
+    chatClient: StreamChat;
+}
 
-    // Let ChatPage handle loading and error states
-    if (isLoading || error || !chatClient) {
-        return null;
-    }
-
+const ChatProvider = ({ children, chatClient }: ChatProviderProps) => {
     return <Chat client={chatClient}>{children}</Chat>;
 };
 

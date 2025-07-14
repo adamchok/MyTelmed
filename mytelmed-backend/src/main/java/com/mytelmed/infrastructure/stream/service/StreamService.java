@@ -2,31 +2,33 @@ package com.mytelmed.infrastructure.stream.service;
 
 import com.mytelmed.core.appointment.entity.Appointment;
 import com.mytelmed.core.doctor.entity.Doctor;
+import com.mytelmed.core.family.entity.FamilyMember;
 import com.mytelmed.core.patient.entity.Patient;
-
 import io.getstream.exceptions.StreamException;
+import io.getstream.models.CallParticipantResponse;
 import io.getstream.models.CallRequest;
 import io.getstream.models.CallResponse;
 import io.getstream.models.ChannelInput;
 import io.getstream.models.ChannelMember;
 import io.getstream.models.ChannelResponse;
-import io.getstream.models.CheckExternalStorageRequest;
 import io.getstream.models.CreateExternalStorageRequest;
 import io.getstream.models.GetOrCreateCallRequest;
+import io.getstream.models.GetOrCreateCallResponse;
 import io.getstream.models.GetOrCreateChannelRequest;
 import io.getstream.models.MemberRequest;
 import io.getstream.models.S3Request;
 import io.getstream.models.UpdateCallTypeRequest;
 import io.getstream.models.UpdateUsersRequest;
 import io.getstream.models.UserRequest;
+import io.getstream.models.framework.StreamResponse;
 import io.getstream.services.Call;
 import io.getstream.services.Channel;
 import io.getstream.services.framework.StreamSDKClient;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -86,29 +88,43 @@ public class StreamService {
 
         createOrUpdateUsers(patientId, patientName, doctorId, doctorName);
 
-        appointment.getPatient().getFamilyMemberList()
-                .forEach(familyMember -> {
-                    try {
-                        createOrUpdateUser(familyMember.getMemberAccount().getId().toString(),
-                                familyMember.getName());
-                    } catch (StreamException e) {
-                        log.warn("Unable to create Stream user for patient family member: {}",
-                                familyMember.getId());
-                    }
-                });
+        // Only add family members who have MANAGE_APPOINTMENTS permission (which includes video call access)
+        List<FamilyMember> authorizedFamilyMembers = appointment.getPatient().getFamilyMemberList()
+                .stream()
+                .filter(familyMember -> !familyMember.isPending() &&
+                        familyMember.getMemberAccount() != null &&
+                        familyMember.isCanManageAppointments()) // Only authorized family members
+                .toList();
 
-        List<MemberRequest> members = List.of(
+        // Create Stream users for authorized family members
+        for (FamilyMember familyMember : authorizedFamilyMembers) {
+            try {
+                createOrUpdateUser(familyMember.getMemberAccount().getId().toString(),
+                        familyMember.getName());
+            } catch (StreamException e) {
+                log.warn("Unable to create Stream user for authorized family member: {}",
+                        familyMember.getId());
+            }
+        }
+
+        // Create base member list with patient and doctor
+        List<MemberRequest> members = new ArrayList<>(List.of(
                 MemberRequest.builder()
                         .userID(patientId)
                         .build(),
                 MemberRequest.builder()
                         .userID(doctorId)
-                        .build());
-
-        appointment.getPatient().getFamilyMemberList()
-                .forEach(familyMember -> members.add(MemberRequest.builder()
-                        .userID(familyMember.getMemberAccount().getId().toString())
                         .build()));
+
+        // Add authorized family members to call
+        for (FamilyMember familyMember : authorizedFamilyMembers) {
+            members.add(MemberRequest.builder()
+                    .userID(familyMember.getMemberAccount().getId().toString())
+                    .build());
+        }
+
+        log.info("Created Stream call with {} authorized family members for appointment: {}", 
+                authorizedFamilyMembers.size(), appointment.getId());
 
         CallRequest callRequest = CallRequest.builder()
                 .createdByID(accountId)
@@ -197,6 +213,36 @@ public class StreamService {
                 .build();
 
         client.updateUsers(usersRequest).execute();
+    }
+
+    /**
+     * Gets the current participant count for a Stream call
+     * @param callId The Stream call ID
+     * @return Number of active participants in the call
+     * @throws StreamException if there's an error querying the call
+     */
+    public int getCallParticipantCount(String callId) throws StreamException {
+        try {
+            Call call = new Call("development", callId, client.video());
+            StreamResponse<GetOrCreateCallResponse> callResponse = call.getOrCreate();
+
+            if (callResponse.getData() != null && callResponse.getData().getCall() != null && callResponse.getData().getCall().getSession() != null) {
+                List<CallParticipantResponse> participants = callResponse.getData().getCall().getSession().getParticipants();
+                int count = participants != null ? participants.size() : 0;
+                
+                log.debug("Call {} has {} active participants", callId, count);
+                return count;
+            }
+            
+            log.debug("Call {} not found or has no session", callId);
+            return 0;
+        } catch (StreamException e) {
+            log.error("Error getting participant count for call {}: {}", callId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error getting participant count for call {}: {}", callId, e.getMessage());
+            return 0;
+        }
     }
 
     public void createRecordingS3Storage() throws StreamException {

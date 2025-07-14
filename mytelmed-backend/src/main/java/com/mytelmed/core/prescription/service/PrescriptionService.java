@@ -81,6 +81,32 @@ public class PrescriptionService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Prescription> findByAccount(Account account, Pageable pageable) throws ResourceNotFoundException {
+        log.info("Fetching prescriptions for {} with account ID: {}", account.getPermission().getType(), account.getId());
+
+        Page<Prescription> prescriptionPage;
+        switch (account.getPermission().getType()) {
+            case PATIENT: {
+                prescriptionPage = prescriptionRepository.findByPatientAccount(account, pageable);
+                break;
+            }
+            case DOCTOR: {
+                prescriptionPage = prescriptionRepository.findByDoctorAccount(account, pageable);
+                break;
+            }
+            default:
+                throw new ResourceNotFoundException("Unauthorized to get prescriptions with current account");
+        }
+
+        log.debug("Found {} prescriptions for {} account with ID: {}",
+                prescriptionPage.getTotalElements(),
+                account.getPermission().getType(),
+                account.getId());
+
+        return prescriptionPage;
+    }
+
+    @Transactional(readOnly = true)
     public Page<Prescription> findByPatientId(UUID patientId, Pageable pageable) {
         log.info("Fetching prescriptions for patient: {}", patientId);
 

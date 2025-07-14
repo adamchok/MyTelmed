@@ -20,6 +20,7 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.UUID;
 
 
@@ -94,18 +95,24 @@ public class AwsS3Service {
         String originalFileName = file.getOriginalFilename();
         String key = buildObjectKey(storageOptions, originalFileName);
 
-        if (storageOptions.fileType().equals(FileType.DOCUMENT) && originalFileName != null) {
-            if (!originalFileName.endsWith(".pdf")) {
-                throw new InvalidInputException("File must be a PDF");
-            }
+        if (storageOptions.fileType().equals(FileType.DOCUMENT) && !Objects.requireNonNull(originalFileName).endsWith(".pdf")) {
+            throw new InvalidInputException("File must be a PDF");
         }
 
         try {
-            PutObjectRequest request = PutObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(key)
-                    .contentType("application/pdf")
-                    .build();
+            PutObjectRequest request;
+            if (storageOptions.fileType().equals(FileType.DOCUMENT)) {
+                request = PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .contentType("application/pdf")
+                        .build();
+            } else {
+                request = PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .build();
+            }
 
             s3Client.putObject(request, RequestBody.fromBytes(file.getBytes()));
             log.info("Successfully uploaded file to S3 with key: {}", key);
@@ -145,6 +152,10 @@ public class AwsS3Service {
             throw new InvalidInputException("Update file cannot be null or empty");
         }
 
+        if (key.startsWith("/document") && Objects.requireNonNull(file.getOriginalFilename()).endsWith(".pdf")) {
+            throw new InvalidInputException("File must be a PDF");
+        }
+
         try {
             // Check if file exists
             try {
@@ -158,10 +169,19 @@ public class AwsS3Service {
                 throw new IllegalArgumentException("File does not exist in S3", e);
             }
 
-            PutObjectRequest request = PutObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(key)
-                    .build();
+            PutObjectRequest request;
+            if (key.startsWith("/document")) {
+                request = PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .contentType("application/pdf")
+                        .build();
+            } else {
+                request = PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .build();
+            }
 
             log.debug("Updating existing S3 object at key: {} in bucket: {}", key, bucket);
             s3Client.putObject(request, RequestBody.fromBytes(file.getBytes()));

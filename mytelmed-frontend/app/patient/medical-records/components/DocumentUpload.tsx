@@ -20,12 +20,20 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUpload, isVisible, on
         if (isVisible) {
             setFileList([]);
             form.resetFields();
+            // Auto-select the first document type option
+            form.setFieldsValue({
+                documentType: DocumentType.PRESCRIPTION
+            });
         }
     }, [isVisible, form]);
 
     const resetForm = () => {
         setFileList([]);
         form.resetFields();
+        // Auto-select the first document type option
+        form.setFieldsValue({
+            documentType: DocumentType.PRESCRIPTION
+        });
     };
 
     const handleUpload = async () => {

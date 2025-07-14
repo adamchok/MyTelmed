@@ -26,6 +26,20 @@ import { ProfileComponentProps } from "./props";
 
 const { Title, Text } = Typography;
 
+// Define languages in one place as the single source of truth
+const LANGUAGE_MAP: Record<string, string> = {
+    "ENGLISH": "English",
+    "MANDARIN": "Mandarin",
+    "MALAY": "Malay",
+    "TAMIL": "Tamil"
+};
+
+// Generate Select options from the language map
+const LANGUAGE_OPTIONS = Object.entries(LANGUAGE_MAP).map(([value, label]) => ({
+    value,
+    label
+}));
+
 const ProfilePageComponent = ({
     doctor,
     isEditing,
@@ -42,7 +56,7 @@ const ProfilePageComponent = ({
 }: ProfileComponentProps) => {
     const [form] = Form.useForm();
 
-    // Set form values when patient data changes
+    // Set form values when doctor data changes
     useEffect(() => {
         if (doctor) {
             form.setFieldsValue({
@@ -50,7 +64,9 @@ const ProfilePageComponent = ({
                 email: doctor.email,
                 phone: doctor.phone,
                 dateOfBirth: doctor.dateOfBirth ? dayjs(doctor.dateOfBirth) : null,
-                gender: doctor.gender,
+                gender: doctor.gender.toUpperCase(),
+                languageList: doctor.languageList?.map((language) => language.toUpperCase()) || [],
+                qualifications: doctor.qualifications || "",
             });
         }
     }, [doctor, form]);
@@ -68,11 +84,19 @@ const ProfilePageComponent = ({
         };
     };
 
+    // Map language codes to display names
+    const mapLanguageCode = (code: string): string => {
+        if (code) {
+            return LANGUAGE_MAP[code.toString().toUpperCase()] || code;
+        }
+        return "N/A";
+    };
+
     if (loading) {
         return (
             <div className="container mx-auto">
                 <div className="flex justify-center items-center min-h-[400px]">
-                    <Spin size="large" />
+                    <Spin size="large" className="text-green-700" />
                 </div>
             </div>
         );
@@ -197,6 +221,36 @@ const ProfilePageComponent = ({
                                     {doctor?.nric || "N/A"}
                                 </Text>
                             </div>
+                        </div>
+
+                        {/* Professional Information */}
+                        <Divider />
+                        <div className="space-y-4">
+                            <div>
+                                <Text className="text-gray-600 text-xs sm:text-sm block mb-2">Languages</Text>
+                                <div className="flex flex-wrap gap-1">
+                                    {doctor?.languageList && doctor.languageList.length > 0 ? (
+                                        doctor.languageList.map((language, index) => (
+                                            <span
+                                                key={index}
+                                                className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full"
+                                            >
+                                                {mapLanguageCode(language)}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <Text className="text-gray-400 text-xs">No languages specified</Text>
+                                    )}
+                                </div>
+                            </div>
+                            {doctor?.qualifications && (
+                                <div>
+                                    <Text className="text-gray-600 text-xs sm:text-sm block mb-2">Qualifications</Text>
+                                    <Text className="text-xs sm:text-sm text-gray-800">
+                                        {doctor.qualifications}
+                                    </Text>
+                                </div>
+                            )}
                         </div>
                     </Card>
                 </Col>
@@ -341,6 +395,48 @@ const ProfilePageComponent = ({
                                                 { value: "MALE", label: "Male" },
                                                 { value: "FEMALE", label: "Female" },
                                             ]}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+
+                            {/* Doctor-specific fields */}
+                            <Row gutter={[16, 16]}>
+                                <Col span={24}>
+                                    <Form.Item
+                                        label={
+                                            <span className="text-xs sm:text-sm font-medium text-gray-700 flex items-center">
+                                                <Building2 className="mr-2 text-green-700" size={16} strokeWidth={2.2} />
+                                                Languages
+                                            </span>
+                                        }
+                                        name="languageList"
+                                    >
+                                        <Select
+                                            mode="tags"
+                                            placeholder="Enter languages you speak"
+                                            className="w-full h-10 sm:h-12 rounded-xl border-gray-200 hover:border-green-700 focus:border-green-700 transition-colors"
+                                            options={LANGUAGE_OPTIONS}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+
+                            <Row gutter={[16, 16]}>
+                                <Col span={24}>
+                                    <Form.Item
+                                        label={
+                                            <span className="text-xs sm:text-sm font-medium text-gray-700 flex items-center">
+                                                <Info className="mr-2 text-green-700" size={16} strokeWidth={2.2} />
+                                                Qualifications
+                                            </span>
+                                        }
+                                        name="qualifications"
+                                    >
+                                        <Input.TextArea
+                                            placeholder="Enter your medical qualifications and certifications"
+                                            className="rounded-xl border-gray-200 hover:border-green-700 focus:border-green-700 transition-colors"
+                                            rows={5}
                                         />
                                     </Form.Item>
                                 </Col>

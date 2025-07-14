@@ -1,6 +1,7 @@
 package com.mytelmed.core.prescription.repository;
 
 import com.mytelmed.common.constant.prescription.PrescriptionStatus;
+import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.prescription.entity.Prescription;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,10 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, UUID
     Optional<Prescription> findByPrescriptionNumber(String prescriptionNumber);
 
     Page<Prescription> findByPatientId(UUID patientId, Pageable pageable);
+
+    Page<Prescription> findByPatientAccount(Account patientAccount, Pageable pageable);
+
+    Page<Prescription> findByDoctorAccount(Account doctorAccount, Pageable pageable);
 
     Page<Prescription> findByDoctorId(UUID doctorId, Pageable pageable);
 

@@ -386,12 +386,12 @@ export default function AppointmentDetails() {
                     <div className="h-full">
                         <iframe
                             key={iframeKey}
-                            src={`${selectedDocument.documentUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                            src={selectedDocument.documentUrl}
                             className="w-full h-full border-0"
                             title={selectedDocument.documentName}
                             onLoad={handleDocumentLoad}
                             onError={handleDocumentError}
-                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads allow-top-navigation"
                         />
                     </div>
                 )}
@@ -1138,9 +1138,8 @@ export default function AppointmentDetails() {
                                         <List.Item className="px-0">
                                             <Card
                                                 size="small"
-                                                className={`w-full hover:shadow-md transition-shadow ${
-                                                    comparisonMode ? "cursor-pointer" : ""
-                                                } ${isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200"}`}
+                                                className={`w-full hover:shadow-md transition-shadow ${comparisonMode ? "cursor-pointer" : ""
+                                                    } ${isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200"}`}
                                                 styles={{ body: { padding: "12px" } }}
                                                 onClick={() => {
                                                     if (comparisonMode) {
@@ -1465,15 +1464,14 @@ export default function AppointmentDetails() {
                     {/* Document Grid */}
                     <div className="flex-1 p-4">
                         <div
-                            className={`grid ${
-                                selectedForComparison.length === 1
-                                    ? "grid-cols-1"
-                                    : selectedForComparison.length === 2
+                            className={`grid ${selectedForComparison.length === 1
+                                ? "grid-cols-1"
+                                : selectedForComparison.length === 2
                                     ? "grid-cols-2"
                                     : selectedForComparison.length === 3
-                                    ? "grid-cols-3"
-                                    : "grid-cols-2"
-                            } ${selectedForComparison.length <= 2 ? "grid-rows-1" : "grid-rows-2"} gap-4 h-full`}
+                                        ? "grid-cols-3"
+                                        : "grid-cols-2"
+                                } ${selectedForComparison.length <= 2 ? "grid-rows-1" : "grid-rows-2"} gap-4 h-full`}
                         >
                             {selectedForComparison.map((docItem) => (
                                 <Card
@@ -1520,10 +1518,10 @@ export default function AppointmentDetails() {
                                         {docItem.documentUrl ? (
                                             <div className="h-full">
                                                 <iframe
-                                                    src={`${docItem.documentUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                                    src={docItem.documentUrl}
                                                     className="w-full h-full border-0"
                                                     title={docItem.documentName}
-                                                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                                                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads allow-top-navigation"
                                                 />
                                             </div>
                                         ) : (

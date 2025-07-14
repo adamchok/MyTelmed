@@ -95,9 +95,20 @@ const MedicalRecordsComponent: React.FC<MedicalRecordsComponentProps> = ({
     };
 
     const handleDownload = (documentId: string) => {
-        const document = documents.find((d) => d.id === documentId);
-        if (document?.documentUrl) {
-            window.open(document.documentUrl, "_blank");
+        const documentRecord = documents.find((d) => d.id === documentId);
+        if (documentRecord?.documentUrl) {
+            // Create a temporary anchor element to trigger download
+            // This avoids Chrome's popup blocker issues with window.open()
+            const link = window.document.createElement('a');
+            link.href = documentRecord.documentUrl;
+            link.download = documentRecord.documentName || 'document.pdf';
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+
+            // Append to body, click, and remove
+            window.document.body.appendChild(link);
+            link.click();
+            window.document.body.removeChild(link);
         }
     };
 
@@ -460,9 +471,9 @@ const MedicalRecordsComponent: React.FC<MedicalRecordsComponentProps> = ({
                                     value={
                                         filters.dateRange
                                             ? ([
-                                                  filters.dateRange[0] ? dayjs(filters.dateRange[0]) : null,
-                                                  filters.dateRange[1] ? dayjs(filters.dateRange[1]) : null,
-                                              ] as any)
+                                                filters.dateRange[0] ? dayjs(filters.dateRange[0]) : null,
+                                                filters.dateRange[1] ? dayjs(filters.dateRange[1]) : null,
+                                            ] as any)
                                             : null
                                     }
                                     placeholder={["Start Date", "End Date"]}

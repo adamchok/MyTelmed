@@ -22,6 +22,18 @@ const PrescriptionApi = {
     },
 
     /**
+     * Get prescriptions by current account (Patient and Doctor only)
+     */
+    getPrescriptions(
+        options?: PrescriptionSearchOptions
+    ): Promise<AxiosResponse<ApiResponse<PaginatedResponse<PrescriptionDto>>>> {
+        const page: number = options?.page ?? 0;
+        const size: number = options?.size ?? DEFAULT_PAGE_SIZE;
+        const query: string = `?page=${page}&size=${size}`;
+        return repository.get<ApiResponse<PaginatedResponse<PrescriptionDto>>>(`${RESOURCE}${query}`);
+    },
+
+    /**
      * Get prescriptions by patient ID (Patient only)
      */
     getPrescriptionsByPatient(

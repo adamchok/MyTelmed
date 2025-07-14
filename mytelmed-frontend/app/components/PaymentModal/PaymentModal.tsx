@@ -199,7 +199,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
                 size="large"
                 loading={loading}
                 disabled={!stripe || !cardComplete || loading}
-                className="w-full bg-blue-600 border-blue-600 hover:bg-blue-700"
+                className="w-full bg-blue-600 border-blue-600 hover:bg-blue-700 text-white"
                 icon={<CreditCard className="w-5 h-5" />}
             >
                 {loading ? "Processing Payment..." : `Pay RM ${paymentIntent.amount.toFixed(2)}`}

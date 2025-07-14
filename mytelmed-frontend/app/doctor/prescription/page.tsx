@@ -41,17 +41,7 @@ export default function DoctorPrescriptionPage() {
     // Load prescriptions and calculate statistics
     const loadPrescriptions = async () => {
         try {
-            // Get current user from localStorage or API call to get doctor ID
-            const userStr = localStorage.getItem('user');
-            if (!userStr) {
-                message.error("User session not found");
-                return;
-            }
-
-            const user = JSON.parse(userStr);
-            const doctorId = user.id; // Assuming user object has the doctor ID
-
-            const response = await PrescriptionApi.getPrescriptionsByDoctor(doctorId);
+            const response = await PrescriptionApi.getPrescriptions();
             if (response.data.isSuccess && response.data.data) {
                 const prescriptionList = response.data.data.content || [];
                 setPrescriptions(prescriptionList);

@@ -5,9 +5,9 @@ import { Layout, Menu, Avatar, Button, Drawer, Space, Dropdown, message } from "
 import {
     Home,
     Calendar,
+    Clock,
     User,
     Menu as LucideMenu,
-    PlusCircle,
     FileCheck,
     LogOut,
     UserCircle,
@@ -22,8 +22,8 @@ import DoctorApi from "@/app/api/doctor";
 import AuthApi from "@/app/api/auth";
 import { Doctor } from "../api/doctor/props";
 import { clearProfile } from "@/lib/reducers/profile-reducer";
-import "./doctor-menu.css";
 import { useDispatch, useSelector } from "react-redux";
+import "./doctor-menu.css";
 
 const { Header, Sider, Content } = Layout;
 
@@ -34,9 +34,9 @@ const navItems = [
         label: <Link href="/doctor/dashboard">Dashboard</Link>,
     },
     {
-        key: "/doctor/appointment/book",
-        icon: <PlusCircle className="w-5 h-5" />,
-        label: <Link href="/doctor/appointment/book">Book Appointment</Link>,
+        key: "/doctor/time-slot",
+        icon: <Clock className="w-5 h-5" />,
+        label: <Link href="/doctor/time-slot">Time Slots</Link>,
     },
     {
         key: "/doctor/appointment",
@@ -88,7 +88,7 @@ export default function DoctorLayout({ children }: Readonly<{ children: React.Re
     }, [isMobile]);
 
     const darkGreen = "#2f855a";
-    const lightText = "#fff";
+    const lightText = "#ffffff";
 
     // Handle logout
     const handleLogout = useCallback(async () => {
