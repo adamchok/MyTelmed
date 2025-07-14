@@ -50,6 +50,7 @@ export interface PrescriptionDto {
     notes?: string;
     instructions: string;
     status: PrescriptionStatus;
+    prescriptionItems: PrescriptionItemDto[];
     expiryDate: string;
     createdAt: string;
     updatedAt: string;

@@ -15,10 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Focuses on medical prescription data only, delivery concerns are handled
  * separately.
  */
-@Mapper(componentModel = "spring", uses = { PharmacistMapper.class })
+@Mapper(componentModel = "spring", uses = { PharmacistMapper.class, PrescriptionItemMapper.class })
 public abstract class PrescriptionMapper {
     protected PharmacistMapper pharmacistMapper;
     protected AppointmentMapper appointmentMapper;
+    protected PrescriptionItemMapper prescriptionItemMapper;
 
     @Autowired
     public void setPharmacistMapper(PharmacistMapper pharmacistMapper) {
@@ -30,8 +31,14 @@ public abstract class PrescriptionMapper {
         this.appointmentMapper = appointmentMapper;
     }
 
+    @Autowired
+    public void setPrescriptionItemMapper(PrescriptionItemMapper prescriptionItemMapper) {
+        this.prescriptionItemMapper = prescriptionItemMapper;
+    }
+
     @Mapping(target = "id", expression = "java(prescription.getId().toString())")
     @Mapping(target = "appointment", expression = "java(appointmentMapper.toDto(prescription.getAppointment(), awsS3Service))")
     @Mapping(target = "pharmacist", expression = "java(prescription.getPharmacist() != null ? pharmacistMapper.toDto(prescription.getPharmacist(), awsS3Service) : null)")
+    @Mapping(target = "prescriptionItems", expression = "java(prescription.getPrescriptionItems().stream().map(prescriptionItemMapper::toDto).collect(java.util.stream.Collectors.toList()))")
     public abstract PrescriptionDto toDto(Prescription prescription, @Context AwsS3Service awsS3Service);
 }
