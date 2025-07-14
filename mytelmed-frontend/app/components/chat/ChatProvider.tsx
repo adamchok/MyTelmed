@@ -2,14 +2,42 @@
 
 import { Chat } from "stream-chat-react";
 import React from "react";
-import { StreamChat } from "stream-chat";
+import { Button, Spin } from "antd";
+import { useStreamChat } from "@/app/hooks/useStreamChat";
 
-interface ChatProviderProps {
-    children: React.ReactNode;
-    chatClient: StreamChat;
-}
+const ChatProvider = ({ children }: { children: React.ReactNode }) => {
+    const { chatClient, isLoading, error } = useStreamChat();
 
-const ChatProvider = ({ children, chatClient }: ChatProviderProps) => {
+    if (isLoading) {
+        return (
+            <div className="h-screen w-full flex flex-col items-center justify-center">
+                <Spin size="large" />
+                <span className="mt-4 text-gray-600 text-center">
+                    Initializing chat client...
+                </span>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="h-screen w-full flex items-center justify-center p-12">
+                <div className="text-center text-red-600">
+                    <p className="mb-4">Error: {error}</p>
+                    <Button onClick={() => window.location.reload()}>Retry</Button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!chatClient) {
+        return (
+            <div className="h-screen w-full flex items-center justify-center p-12">
+                <p>Chat client not available</p>
+            </div>
+        );
+    }
+
     return <Chat client={chatClient}>{children}</Chat>;
 };
 
