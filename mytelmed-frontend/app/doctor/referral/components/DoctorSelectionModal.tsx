@@ -17,17 +17,9 @@ import {
     Spin,
     message,
     Badge,
+    Pagination,
 } from "antd";
-import {
-    Search,
-    MapPin,
-    Stethoscope,
-    Languages,
-    User,
-    Building2,
-    Filter,
-    CheckCircle,
-} from "lucide-react";
+import { Search, MapPin, Stethoscope, Languages, User, Building2, Filter, CheckCircle } from "lucide-react";
 import DoctorApi from "@/app/api/doctor";
 import FacilityApi from "@/app/api/facility";
 import { Doctor } from "@/app/api/doctor/props";
@@ -51,9 +43,14 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
 }) => {
     const [doctors, setDoctors] = useState<Doctor[]>([]);
     const [facilities, setFacilities] = useState<Facility[]>([]);
-    const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
     const [loading, setLoading] = useState(false);
     const [facilitiesLoading, setFacilitiesLoading] = useState(false);
+    const [currentDoctor, setCurrentDoctor] = useState<Doctor | null>(null);
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize] = useState(12);
+    const [totalDoctors, setTotalDoctors] = useState(0);
 
     // Filter states
     const [searchTerm, setSearchTerm] = useState("");
@@ -68,10 +65,19 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
         }
     }, [visible]);
 
-    // Apply filters when data or filters change
+    // Load doctors when page or filters change
     useEffect(() => {
-        applyFilters();
-    }, [doctors, searchTerm, selectedFacilityId, selectedSpeciality]);
+        if (visible) {
+            loadDoctors();
+        }
+    }, [currentPage, searchTerm, selectedFacilityId, selectedSpeciality, visible]);
+
+    // Reset page when filters change
+    useEffect(() => {
+        if (currentPage !== 1) {
+            setCurrentPage(1);
+        }
+    }, [searchTerm, selectedFacilityId, selectedSpeciality]);
 
     // Reset filters when modal closes
     useEffect(() => {
@@ -79,15 +85,52 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
             setSearchTerm("");
             setSelectedFacilityId("");
             setSelectedSpeciality("");
+            setCurrentPage(1);
         }
     }, [visible]);
 
     const loadDoctors = async () => {
         try {
             setLoading(true);
-            const response = await DoctorApi.getDoctors(0, 100); // Load more doctors
+
+            const responseProfile = await DoctorApi.getDoctorProfile();
+            if (responseProfile.data.isSuccess && responseProfile.data.data) {
+                setCurrentDoctor(responseProfile.data.data);
+            }
+
+            const response = await DoctorApi.getDoctors(currentPage - 1, pageSize);
             if (response.data.isSuccess && response.data.data) {
-                setDoctors(response.data.data.content || []);
+                const doctorsData = response.data.data.content || [];
+                const totalElements = response.data.data.totalElements || 0;
+
+                // Apply client-side filters to the paginated results
+                let filtered = [...doctorsData];
+
+                // Filter current doctor
+                filtered = filtered.filter((doctor) => doctor.id !== currentDoctor?.id);
+
+                // Search filter
+                if (searchTerm.trim()) {
+                    const searchLower = searchTerm.toLowerCase().trim();
+                    filtered = filtered.filter(
+                        (doctor) =>
+                            doctor.name.toLowerCase().includes(searchLower) ||
+                            doctor.specialityList.some((spec) => spec.toLowerCase().includes(searchLower))
+                    );
+                }
+
+                // Facility filter
+                if (selectedFacilityId) {
+                    filtered = filtered.filter((doctor) => doctor.facility.id === selectedFacilityId);
+                }
+
+                // Speciality filter
+                if (selectedSpeciality) {
+                    filtered = filtered.filter((doctor) => doctor.specialityList.includes(selectedSpeciality));
+                }
+
+                setDoctors(filtered);
+                setTotalDoctors(totalElements);
             }
         } catch {
             message.error("Failed to load doctors");
@@ -110,39 +153,28 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
         }
     };
 
-    const applyFilters = () => {
-        let filtered = [...doctors];
+    // Load all doctors to get distinct specialities for filter
+    const [allDoctorsForFilters, setAllDoctorsForFilters] = useState<Doctor[]>([]);
 
-        // Search filter
-        if (searchTerm.trim()) {
-            const searchLower = searchTerm.toLowerCase().trim();
-            filtered = filtered.filter(doctor =>
-                doctor.name.toLowerCase().includes(searchLower) ||
-                doctor.specialityList.some(spec =>
-                    spec.toLowerCase().includes(searchLower)
-                )
-            );
+    useEffect(() => {
+        if (visible && allDoctorsForFilters.length === 0) {
+            loadAllDoctorsForFilters();
         }
+    }, [visible, allDoctorsForFilters.length]);
 
-        // Facility filter
-        if (selectedFacilityId) {
-            filtered = filtered.filter(doctor =>
-                doctor.facility.id === selectedFacilityId
-            );
+    const loadAllDoctorsForFilters = async () => {
+        try {
+            const response = await DoctorApi.getDoctors(0, 1000); // Load a large number for filters
+            if (response.data.isSuccess && response.data.data) {
+                setAllDoctorsForFilters(response.data.data.content || []);
+            }
+        } catch {
+            // Silently fail - filters will just be empty
         }
-
-        // Speciality filter
-        if (selectedSpeciality) {
-            filtered = filtered.filter(doctor =>
-                doctor.specialityList.includes(selectedSpeciality)
-            );
-        }
-
-        setFilteredDoctors(filtered);
     };
 
     const getDistinctSpecialities = () => {
-        const allSpecialities = doctors.flatMap(doctor => doctor.specialityList);
+        const allSpecialities = allDoctorsForFilters.flatMap((doctor) => doctor.specialityList);
         return Array.from(new Set(allSpecialities)).sort((a, b) => a.localeCompare(b));
     };
 
@@ -165,6 +197,11 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
         setSearchTerm("");
         setSelectedFacilityId("");
         setSelectedSpeciality("");
+        setCurrentPage(1);
+    };
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
     };
 
     const renderDoctorsContent = () => {
@@ -176,92 +213,99 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
             );
         }
 
-        if (filteredDoctors.length === 0) {
-            return (
-                <Empty
-                    description="No doctors found matching your criteria"
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                />
-            );
+        if (doctors.length === 0) {
+            return <Empty description="No doctors found matching your criteria" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
         }
 
         return (
-            <Row gutter={[16, 16]}>
-                {filteredDoctors.map((doctor) => (
-                    <Col key={doctor.id} xs={24} sm={12} lg={8} xl={6}>
-                        <Card
-                            hoverable
-                            className={`cursor-pointer transition-all border-2 h-full ${selectedDoctorId === doctor.id
-                                ? "border-green-500 bg-green-50 shadow-md"
-                                : "border-gray-200 hover:border-green-300 hover:shadow-md"
+            <div className="space-y-4">
+                <Row gutter={[16, 16]}>
+                    {doctors.map((doctor) => (
+                        <Col key={doctor.id} xs={24} sm={12} lg={8} xl={6}>
+                            <Card
+                                hoverable
+                                className={`cursor-pointer transition-all border-2 h-full ${
+                                    selectedDoctorId === doctor.id
+                                        ? "border-green-500 bg-green-50 shadow-md"
+                                        : "border-gray-200 hover:border-green-300 hover:shadow-md"
                                 }`}
-                            onClick={() => handleDoctorSelect(doctor)}
-                            size="small"
-                        >
-                            <div className="text-center space-y-3">
-                                {/* Doctor Avatar */}
-                                <div className="relative">
-                                    <Avatar
-                                        src={doctor.profileImageUrl}
-                                        icon={<User className="w-6 h-6" />}
-                                        size={64}
-                                        className="border-2 border-green-100 mx-auto"
-                                    />
-                                    {selectedDoctorId === doctor.id && (
-                                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                                            <CheckCircle className="w-4 h-4 text-white" />
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Doctor Info */}
-                                <div className="space-y-2">
-                                    <Title level={5} className="mb-1 text-sm">
-                                        {doctor.name}
-                                    </Title>
-
-                                    {/* Specialities */}
-                                    <div className="flex flex-wrap justify-center gap-1">
-                                        {doctor.specialityList.slice(0, 2).map((speciality) => (
-                                            <Tag
-                                                key={speciality}
-                                                color="green"
-                                                className="text-xs px-2 py-0"
-                                            >
-                                                {speciality}
-                                            </Tag>
-                                        ))}
-                                        {doctor.specialityList.length > 2 && (
-                                            <Tag color="default" className="text-xs px-2 py-0">
-                                                +{doctor.specialityList.length - 2}
-                                            </Tag>
+                                onClick={() => handleDoctorSelect(doctor)}
+                                size="small"
+                            >
+                                <div className="text-center space-y-3">
+                                    {/* Doctor Avatar */}
+                                    <div className="relative">
+                                        <Avatar
+                                            src={doctor.profileImageUrl}
+                                            icon={<User className="w-6 h-6" />}
+                                            size={64}
+                                            className="border-2 border-green-100 mx-auto"
+                                        />
+                                        {selectedDoctorId === doctor.id && (
+                                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="w-4 h-4 text-white" />
+                                            </div>
                                         )}
                                     </div>
 
-                                    {/* Facility */}
-                                    <div className="flex items-center justify-center space-x-1 text-xs text-gray-600">
-                                        <MapPin className="w-3 h-3" />
-                                        <Text className="text-xs" ellipsis={{ tooltip: doctor.facility.name }}>
-                                            {doctor.facility.name}
-                                        </Text>
-                                    </div>
+                                    {/* Doctor Info */}
+                                    <div className="space-y-2">
+                                        <Title level={5} className="mb-1 text-sm">
+                                            {doctor.name}
+                                        </Title>
 
-                                    {/* Languages */}
-                                    <div className="flex items-center justify-center space-x-1 text-xs text-gray-500">
-                                        <Languages className="w-3 h-3" />
-                                        <Text className="text-xs">
-                                            {doctor.languageList.slice(0, 2)
-                                                .map(getLanguageName)
-                                                .join(", ")}
-                                            {doctor.languageList.length > 2 && " +more"}
-                                        </Text>
+                                        {/* Specialities */}
+                                        <div className="flex flex-wrap justify-center gap-1">
+                                            {doctor.specialityList.slice(0, 2).map((speciality) => (
+                                                <Tag key={speciality} color="green" className="text-xs px-2 py-0">
+                                                    {speciality}
+                                                </Tag>
+                                            ))}
+                                            {doctor.specialityList.length > 2 && (
+                                                <Tag color="default" className="text-xs px-2 py-0">
+                                                    +{doctor.specialityList.length - 2}
+                                                </Tag>
+                                            )}
+                                        </div>
+
+                                        {/* Facility */}
+                                        <div className="flex items-center justify-center space-x-1 text-xs text-gray-600">
+                                            <MapPin className="w-3 h-3" />
+                                            <Text className="text-xs" ellipsis={{ tooltip: doctor.facility.name }}>
+                                                {doctor.facility.name}
+                                            </Text>
+                                        </div>
+
+                                        {/* Languages */}
+                                        <div className="flex items-center justify-center space-x-1 text-xs text-gray-500">
+                                            <Languages className="w-3 h-3" />
+                                            <Text className="text-xs">
+                                                {doctor.languageList.slice(0, 2).map(getLanguageName).join(", ")}
+                                                {doctor.languageList.length > 2 && " +more"}
+                                            </Text>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </Card>
-                    </Col>
-                ))}
-            </Row>
+                            </Card>
+                        </Col>
+                    ))}
+                </Row>
+
+                {/* Pagination */}
+                {totalDoctors > pageSize && (
+                    <div className="flex justify-center pt-4">
+                        <Pagination
+                            current={currentPage}
+                            pageSize={pageSize}
+                            total={totalDoctors}
+                            onChange={handlePageChange}
+                            showSizeChanger={false}
+                            showQuickJumper={false}
+                            showTotal={(total, range) => `Showing ${range[0]}-${range[1]} of ${total} doctors`}
+                        />
+                    </div>
+                )}
+            </div>
         );
     };
 
@@ -304,7 +348,7 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
                                 className="w-full"
                                 size="middle"
                             >
-                                {facilities.map(facility => (
+                                {facilities.map((facility) => (
                                     <Option key={facility.id} value={facility.id}>
                                         <Space>
                                             <Building2 className="w-4 h-4" />
@@ -324,7 +368,7 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
                                 className="w-full"
                                 size="middle"
                             >
-                                {getDistinctSpecialities().map(speciality => (
+                                {getDistinctSpecialities().map((speciality) => (
                                     <Option key={speciality} value={speciality}>
                                         <Space>
                                             <Stethoscope className="w-4 h-4" />
@@ -337,32 +381,25 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
 
                         <Col xs={24} sm={24} md={6}>
                             <Space>
-                                <Button
-                                    icon={<Filter className="w-4 h-4" />}
-                                    onClick={clearFilters}
-                                    size="middle"
-                                >
+                                <Button icon={<Filter className="w-4 h-4" />} onClick={clearFilters} size="middle">
                                     Clear Filters
                                 </Button>
-                                <Badge count={filteredDoctors.length} showZero>
-                                    <Text type="secondary" className="text-xs">
-                                        Results
-                                    </Text>
-                                </Badge>
+                                <Text type="secondary" className="text-xs">
+                                    Results
+                                </Text>
+                                <Badge count={doctors.length} showZero></Badge>
                             </Space>
                         </Col>
                     </Row>
                 </Card>
 
                 {/* Doctors Grid */}
-                <div className="max-h-96 overflow-y-auto">
-                    {renderDoctorsContent()}
-                </div>
+                <div className="max-h-96 overflow-y-auto overflow-x-hidden">{renderDoctorsContent()}</div>
 
                 {/* Summary */}
                 {!loading && (
                     <div className="text-center text-sm text-gray-500 pt-4 border-t">
-                        Showing {filteredDoctors.length} of {doctors.length} doctors
+                        Total: {totalDoctors} doctors available
                     </div>
                 )}
             </div>
@@ -370,4 +407,4 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
     );
 };
 
-export default DoctorSelectionModal; 
+export default DoctorSelectionModal;

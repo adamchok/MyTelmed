@@ -18,24 +18,14 @@ import {
     Divider,
     Radio,
 } from "antd";
-import {
-    User,
-    Clock,
-    AlertTriangle,
-    CheckCircle,
-    Building,
-} from "lucide-react";
+import { User, Clock, AlertTriangle, CheckCircle, Building } from "lucide-react";
 import dayjs from "dayjs";
 import AppointmentApi from "@/app/api/appointment";
 
 import ReferralApi from "@/app/api/referral";
 import { AppointmentDto } from "@/app/api/appointment/props";
 import { Doctor } from "@/app/api/doctor/props";
-import {
-    CreateReferralRequestDto,
-    ReferralType,
-    ReferralPriority
-} from "@/app/api/referral/props";
+import { CreateReferralRequestDto, ReferralType, ReferralPriority } from "@/app/api/referral/props";
 import DoctorSelectionModal from "./DoctorSelectionModal";
 
 const { Title, Text } = Typography;
@@ -48,11 +38,7 @@ interface CreateReferralModalProps {
     onSuccess: () => void;
 }
 
-const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
-    visible,
-    onCancel,
-    onSuccess,
-}) => {
+const CreateReferralModal: React.FC<CreateReferralModalProps> = ({ visible, onCancel, onSuccess }) => {
     const [form] = Form.useForm();
     const [currentStep, setCurrentStep] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -86,9 +72,7 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
             const response = await AppointmentApi.getAllAppointmentsByAccount();
             if (response.data.isSuccess && response.data.data) {
                 // Filter only completed appointments
-                const completed = response.data.data.filter(
-                    (apt) => apt.status === "COMPLETED"
-                );
+                const completed = response.data.data.filter((apt) => apt.status === "COMPLETED");
                 setCompletedAppointments(completed);
             }
         } catch {
@@ -204,9 +188,7 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
                 return (
                     <div className="space-y-4">
                         <Title level={4}>Select Patient from Completed Appointments</Title>
-                        <Text type="secondary">
-                            You can only refer patients from appointments you have completed.
-                        </Text>
+                        <Text type="secondary">You can only refer patients from appointments you have completed.</Text>
 
                         {completedAppointments.length === 0 ? (
                             <div className="text-center py-8">
@@ -218,10 +200,11 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
                                     <Card
                                         key={appointment.id}
                                         hoverable
-                                        className={`cursor-pointer border-2 transition-all ${selectedAppointment?.id === appointment.id
-                                            ? "border-green-500 bg-green-50"
-                                            : "border-gray-200 hover:border-green-300"
-                                            }`}
+                                        className={`cursor-pointer border-2 transition-all ${
+                                            selectedAppointment?.id === appointment.id
+                                                ? "border-green-500 bg-green-50"
+                                                : "border-gray-200 hover:border-green-300"
+                                        }`}
                                         onClick={() => setSelectedAppointment(appointment)}
                                         size="small"
                                     >
@@ -234,7 +217,12 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
                                             <div className="flex-1">
                                                 <Text strong>{appointment.patient.name}</Text>
                                                 <div className="text-xs text-gray-500">
-                                                    Completed: {dayjs(appointment.completedAt).format("MMM DD, YYYY")}
+                                                    Completed:{" "}
+                                                    {appointment.completedAt
+                                                        ? dayjs(Number(appointment.completedAt) * 1000).format(
+                                                              "MMM DD, YYYY HH:mm"
+                                                          )
+                                                        : "N/A"}
                                                 </div>
                                                 <div className="text-xs text-gray-500">
                                                     {appointment.reasonForVisit}
@@ -367,10 +355,7 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
 
                                 <Row gutter={[16, 16]}>
                                     <Col xs={24} sm={12}>
-                                        <Form.Item
-                                            name="externalContactNumber"
-                                            label="Contact Number"
-                                        >
+                                        <Form.Item name="externalContactNumber" label="Contact Number">
                                             <Input placeholder="Enter contact number" />
                                         </Form.Item>
                                     </Col>
@@ -416,7 +401,7 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
                             <DatePicker
                                 className="w-full"
                                 format="DD-MM-YYYY"
-                                disabledDate={(current) => current && current <= dayjs().endOf('day')}
+                                disabledDate={(current) => current && current <= dayjs().endOf("day")}
                                 placeholder="Select expiry date"
                             />
                         </Form.Item>
@@ -454,10 +439,7 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
                             />
                         </Form.Item>
 
-                        <Form.Item
-                            name="investigationsDone"
-                            label="Investigations Done"
-                        >
+                        <Form.Item name="investigationsDone" label="Investigations Done">
                             <TextArea
                                 rows={3}
                                 placeholder="List any tests, scans, or investigations performed..."
@@ -468,10 +450,7 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
 
                         <Row gutter={[16, 16]}>
                             <Col xs={24} sm={12}>
-                                <Form.Item
-                                    name="currentMedications"
-                                    label="Current Medications"
-                                >
+                                <Form.Item name="currentMedications" label="Current Medications">
                                     <TextArea
                                         rows={3}
                                         placeholder="List current medications..."
@@ -481,10 +460,7 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
                                 </Form.Item>
                             </Col>
                             <Col xs={24} sm={12}>
-                                <Form.Item
-                                    name="allergies"
-                                    label="Known Allergies"
-                                >
+                                <Form.Item name="allergies" label="Known Allergies">
                                     <TextArea
                                         rows={3}
                                         placeholder="List any known allergies..."
@@ -495,22 +471,11 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
                             </Col>
                         </Row>
 
-                        <Form.Item
-                            name="vitalSigns"
-                            label="Vital Signs"
-                        >
-                            <TextArea
-                                rows={2}
-                                placeholder="BP, HR, Temp, etc..."
-                                maxLength={300}
-                                showCount
-                            />
+                        <Form.Item name="vitalSigns" label="Vital Signs">
+                            <TextArea rows={2} placeholder="BP, HR, Temp, etc..." maxLength={300} showCount />
                         </Form.Item>
 
-                        <Form.Item
-                            name="notes"
-                            label="Additional Notes"
-                        >
+                        <Form.Item name="notes" label="Additional Notes">
                             <TextArea
                                 rows={3}
                                 placeholder="Any additional notes or instructions..."
@@ -535,9 +500,13 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
                                         size={48}
                                     />
                                     <div>
-                                        <Text strong className="block">{selectedAppointment.patient.name}</Text>
+                                        <Text strong className="block">
+                                            {selectedAppointment.patient.name}
+                                        </Text>
                                         <Text type="secondary">{selectedAppointment.patient.email}</Text>
-                                        <Text type="secondary" className="block">{selectedAppointment.patient.phone}</Text>
+                                        <Text type="secondary" className="block">
+                                            {selectedAppointment.patient.phone}
+                                        </Text>
                                     </div>
                                 </div>
                             </Card>
@@ -545,13 +514,25 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
 
                         <Card title="Referral Summary" size="small">
                             <div className="space-y-2">
-                                <div><Text strong>Type:</Text> {referralType}</div>
-                                <div><Text strong>Priority:</Text> {form.getFieldValue('priority')}</div>
-                                <div><Text strong>Expiry Date:</Text> {form.getFieldValue('expiryDate')?.format('DD-MM-YYYY')}</div>
+                                <div>
+                                    <Text strong>Type:</Text> {referralType}
+                                </div>
+                                <div>
+                                    <Text strong>Priority:</Text> {form.getFieldValue("priority")}
+                                </div>
+                                <div>
+                                    <Text strong>Expiry Date:</Text>{" "}
+                                    {form.getFieldValue("expiryDate")?.format("DD-MM-YYYY")}
+                                </div>
                                 {referralType === ReferralType.INTERNAL ? (
-                                    <div><Text strong>Referred To:</Text> {selectedDoctor?.name || 'No doctor selected'}</div>
+                                    <div>
+                                        <Text strong>Referred To:</Text> {selectedDoctor?.name || "No doctor selected"}
+                                    </div>
                                 ) : (
-                                    <div><Text strong>External Doctor:</Text> {form.getFieldValue('externalDoctorName')} - {form.getFieldValue('externalDoctorSpeciality')}</div>
+                                    <div>
+                                        <Text strong>External Doctor:</Text> {form.getFieldValue("externalDoctorName")}{" "}
+                                        - {form.getFieldValue("externalDoctorSpeciality")}
+                                    </div>
                                 )}
                             </div>
                         </Card>
@@ -559,13 +540,17 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
                         <Card title="Clinical Information" size="small">
                             <div className="space-y-3">
                                 <div>
-                                    <Text strong className="block">Reason for Referral:</Text>
-                                    <Text>{form.getFieldValue('reasonForReferral')}</Text>
+                                    <Text strong className="block">
+                                        Reason for Referral:
+                                    </Text>
+                                    <Text>{form.getFieldValue("reasonForReferral")}</Text>
                                 </div>
                                 <Divider className="my-2" />
                                 <div>
-                                    <Text strong className="block">Clinical Summary:</Text>
-                                    <Text>{form.getFieldValue('clinicalSummary')}</Text>
+                                    <Text strong className="block">
+                                        Clinical Summary:
+                                    </Text>
+                                    <Text>{form.getFieldValue("clinicalSummary")}</Text>
                                 </div>
                             </div>
                         </Card>
@@ -602,17 +587,12 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
                 </Form>
 
                 <div className="flex justify-between pt-4 border-t">
-                    <Button
-                        onClick={handleStepPrev}
-                        disabled={currentStep === 0}
-                    >
+                    <Button onClick={handleStepPrev} disabled={currentStep === 0}>
                         Previous
                     </Button>
 
                     <Space>
-                        <Button onClick={onCancel}>
-                            Cancel
-                        </Button>
+                        <Button onClick={onCancel}>Cancel</Button>
 
                         {currentStep < steps.length - 1 ? (
                             <Button
@@ -648,4 +628,4 @@ const CreateReferralModal: React.FC<CreateReferralModalProps> = ({
     );
 };
 
-export default CreateReferralModal; 
+export default CreateReferralModal;

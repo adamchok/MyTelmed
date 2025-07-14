@@ -10,8 +10,6 @@ import com.mytelmed.core.appointment.repository.AppointmentRepository;
 import com.mytelmed.core.appointment.service.AppointmentService;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.family.service.FamilyMemberPermissionService;
-import com.mytelmed.core.patient.entity.Patient;
-import com.mytelmed.core.patient.service.PatientService;
 import com.mytelmed.core.videocall.entity.VideoCall;
 import com.mytelmed.core.videocall.repository.VideoCallRepository;
 import com.mytelmed.infrastructure.stream.service.StreamService;
@@ -24,10 +22,11 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+
 /**
  * Service for managing video calls in Malaysian public healthcare telemedicine.
  * Only supports VIRTUAL appointments - PHYSICAL appointments do not use video calls.
- *
+ * <p>
  * Features automatic appointment completion when all participants leave the call via:
  * 1. Stream webhook events (primary method)
  * 2. Stream API participant count check (fallback method)
@@ -41,20 +40,17 @@ public class VideoCallService {
     private final AppointmentRepository appointmentRepository;
     private final StreamService streamService;
     private final FamilyMemberPermissionService familyPermissionService;
-    private final PatientService patientService;
 
     public VideoCallService(VideoCallRepository videoCallRepository,
-            AppointmentService appointmentService,
-            AppointmentRepository appointmentRepository,
-            StreamService streamService,
-            FamilyMemberPermissionService familyPermissionService,
-            PatientService patientService) {
+                            AppointmentService appointmentService,
+                            AppointmentRepository appointmentRepository,
+                            StreamService streamService,
+                            FamilyMemberPermissionService familyPermissionService) {
         this.videoCallRepository = videoCallRepository;
         this.appointmentService = appointmentService;
         this.appointmentRepository = appointmentRepository;
         this.streamService = streamService;
         this.familyPermissionService = familyPermissionService;
-        this.patientService = patientService;
     }
 
     public VideoCall findById(UUID id) throws ResourceNotFoundException {
@@ -105,8 +101,9 @@ public class VideoCallService {
             return videoCall;
         }
 
+        // TODO: Uncomment for production
         // Validate appointment status and timing
-        validateAppointmentForVideoCall(appointment);
+//        validateAppointmentForVideoCall(appointment);
 
         // Validate user has permission to create the call
         validateUserCanCreateCall(appointment, account);
@@ -157,7 +154,9 @@ public class VideoCallService {
 
         // Validate authorization and timing
         validateUserCanJoinCall(appointment, account);
-        validateCallTiming(appointment);
+
+        // TODO: Undo for production
+//        validateCallTiming(appointment);
 
         // Determine user role and get appropriate info
         UserCallInfo userCallInfo = getUserCallInfo(appointment, account);
@@ -189,10 +188,10 @@ public class VideoCallService {
                     // unless it's the first patient-side participant
                     if (videoCall.getPatientJoinedAt() == null) {
                         videoCall.setPatientJoinedAt(Instant.now());
-                        log.info("Family member {} joined video call for appointment: {}", 
+                        log.info("Family member {} joined video call for appointment: {}",
                                 userCallInfo.userName, appointmentId);
                     } else {
-                        log.info("Additional family member {} joined video call for appointment: {}", 
+                        log.info("Additional family member {} joined video call for appointment: {}",
                                 userCallInfo.userName, appointmentId);
                     }
                 }
@@ -262,12 +261,11 @@ public class VideoCallService {
             // Update leave time based on participant type
             if (userCallInfo.isPatient) {
                 if (userCallInfo.isPrimaryPatient) {
-                    // Primary patient is leaving - this should end the call
                     videoCall.setPatientLeftAt(Instant.now());
                     log.info("Primary patient left video call for appointment: {}", appointmentId);
                 } else {
                     // Family member leaving - don't update patientLeftAt yet
-                    log.info("Family member {} left video call for appointment: {}", 
+                    log.info("Family member {} left video call for appointment: {}",
                             userCallInfo.userName, appointmentId);
                 }
             } else {
@@ -275,25 +273,25 @@ public class VideoCallService {
                 log.info("Provider left video call for appointment: {}", appointmentId);
             }
 
-            // Determine if meeting should end
-            boolean shouldEndMeeting = shouldEndMeeting(videoCall, appointment, userCallInfo);
-
-            if (shouldEndMeeting && videoCall.getMeetingEndedAt() == null) {
-                // Update video call
-                videoCall.setMeetingEndedAt(Instant.now());
-                videoCall.setIsActive(false);
-
-                // Complete the appointment
-                appointment.setStatus(AppointmentStatus.COMPLETED);
-                appointment.setCompletedAt(Instant.now());
-                appointmentRepository.save(appointment);
-
-                log.info("Successfully ended video call for virtual appointment: {}", appointmentId);
-            } else if (!shouldEndMeeting) {
-                // As a fallback, check with Stream API if all participants have actually left
-                // This helps catch cases where webhook events might be missed
-                checkStreamCallParticipantsAndCompleteIfEmpty(videoCall, appointment);
-            }
+//            // Determine if meeting should end
+//            boolean shouldEndMeeting = shouldEndMeeting(videoCall, appointment, userCallInfo);
+//
+//            if (shouldEndMeeting && videoCall.getMeetingEndedAt() == null) {
+//                // Update video call
+//                videoCall.setMeetingEndedAt(Instant.now());
+//                videoCall.setIsActive(false);
+//
+//                // Complete the appointment
+//                appointment.setStatus(AppointmentStatus.COMPLETED);
+//                appointment.setCompletedAt(Instant.now());
+//                appointmentRepository.save(appointment);
+//
+//                log.info("Successfully ended video call for virtual appointment: {}", appointmentId);
+//            } else if (!shouldEndMeeting) {
+//                // As a fallback, check with Stream API if all participants have actually left
+//                // This helps catch cases where webhook events might be missed
+//                checkStreamCallParticipantsAndCompleteIfEmpty(videoCall, appointment);
+//            }
 
             // Save video call
             videoCallRepository.save(videoCall);
@@ -437,12 +435,12 @@ public class VideoCallService {
      */
     private boolean shouldEndMeeting(VideoCall videoCall, Appointment appointment, UserCallInfo leavingUser) {
         // Check if primary patient has left (either previously or leaving now)
-        boolean primaryPatientLeft = videoCall.getPatientLeftAt() != null || 
-                                   (leavingUser.isPatient && leavingUser.isPrimaryPatient);
-        
+        boolean primaryPatientLeft = videoCall.getPatientLeftAt() != null ||
+                (leavingUser.isPatient && leavingUser.isPrimaryPatient);
+
         // Check if provider has left (either previously or leaving now)
-        boolean providerLeft = videoCall.getProviderLeftAt() != null || 
-                             (!leavingUser.isPatient);
+        boolean providerLeft = videoCall.getProviderLeftAt() != null ||
+                (!leavingUser.isPatient);
 
         // Call ends only when BOTH primary patient and doctor have left
         return primaryPatientLeft && providerLeft;
@@ -463,7 +461,7 @@ public class VideoCallService {
             int participantCount = streamService.getCallParticipantCount(videoCall.getStreamCallId());
 
             if (participantCount == 0 && videoCall.getMeetingEndedAt() == null) {
-                log.info("Stream API confirms no participants in call {}, completing appointment {}", 
+                log.info("Stream API confirms no participants in call {}, completing appointment {}",
                         videoCall.getStreamCallId(), appointment.getId());
 
                 // Complete the video call
@@ -477,7 +475,7 @@ public class VideoCallService {
                 appointment.setStatus(AppointmentStatus.COMPLETED);
                 appointment.setCompletedAt(Instant.now());
                 String completionNote = "Automatically completed - Stream API confirmed all participants left";
-                appointment.setDoctorNotes(appointment.getDoctorNotes() != null ? 
+                appointment.setDoctorNotes(appointment.getDoctorNotes() != null ?
                         appointment.getDoctorNotes() + "\n\n" + completionNote : completionNote);
                 appointmentRepository.save(appointment);
 
@@ -520,7 +518,7 @@ public class VideoCallService {
                     // Account is a family member - find their family member record
                     return appointment.getPatient().getFamilyMemberList()
                             .stream()
-                            .filter(fm -> !fm.isPending() && 
+                            .filter(fm -> !fm.isPending() &&
                                     fm.getMemberAccount() != null &&
                                     fm.getMemberAccount().getId().equals(account.getId()))
                             .findFirst()

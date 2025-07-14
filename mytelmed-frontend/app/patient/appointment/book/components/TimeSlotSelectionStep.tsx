@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Card, Row, Col, Button, Typography, DatePicker, Select, Tag, Avatar, Empty, Spin, message } from "antd";
+import { Card, Row, Col, Button, Typography, DatePicker, Select, Tag, Avatar, Empty, Spin, message, Badge } from "antd";
 import { Calendar, Clock, Video, MapPin, ArrowRight, ArrowLeft, User } from "lucide-react";
 import dayjs from "dayjs";
 import { RootState } from "@/lib/store";
@@ -26,23 +26,33 @@ export default function TimeSlotSelectionStep() {
     );
 
     const [timeSlots, setTimeSlots] = useState<TimeSlotDto[]>([]);
+    const [availableDates, setAvailableDates] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(false);
+    const [loadingDates, setLoadingDates] = useState(false);
     const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs>(dayjs());
 
-    // Load time slots when component mounts or filters change
+    // Load available dates when component mounts or doctor changes
+    useEffect(() => {
+        if (selectedDoctor) {
+            loadAvailableDates();
+        }
+    }, [selectedDoctor, timeSlotFilters.consultationMode]);
+
+    // Load time slots when date or filters change
     useEffect(() => {
         if (selectedDoctor) {
             loadTimeSlots();
         }
     }, [selectedDoctor, selectedDate, timeSlotFilters]);
 
-    const loadTimeSlots = async () => {
+    const loadAvailableDates = async () => {
         if (!selectedDoctor) return;
 
         try {
-            setLoading(true);
-            const startDate = selectedDate.startOf("day").format("YYYY-MM-DDTHH:mm:ss");
-            const endDate = selectedDate.add(7, "day").endOf("day").format("YYYY-MM-DDTHH:mm:ss");
+            setLoadingDates(true);
+            const startDate = dayjs().startOf("day").format("YYYY-MM-DDTHH:mm:ss");
+            // Load next 60 days to show available dates
+            const endDate = dayjs().add(60, "day").endOf("day").format("YYYY-MM-DDTHH:mm:ss");
 
             const response = await TimeSlotApi.getAvailableTimeSlots(selectedDoctor.id, startDate, endDate);
 
@@ -54,8 +64,56 @@ export default function TimeSlotSelectionStep() {
                     slots = slots.filter((slot) => slot.consultationMode === timeSlotFilters.consultationMode);
                 }
 
-                // Filter by selected date
-                slots = slots.filter((slot) => dayjs(slot.startTime).isSame(selectedDate, "day"));
+                // Extract unique dates that have available slots
+                const uniqueDates = new Set<string>();
+                slots.forEach((slot) => {
+                    const slotDate = dayjs(slot.startTime).format("YYYY-MM-DD");
+                    // Only include future dates
+                    if (dayjs(slot.startTime).isAfter(dayjs(), "minute")) {
+                        uniqueDates.add(slotDate);
+                    }
+                });
+
+                setAvailableDates(uniqueDates);
+
+                // If currently selected date is not available, reset to first available date
+                const selectedDateStr = selectedDate.format("YYYY-MM-DD");
+                if (!uniqueDates.has(selectedDateStr) && uniqueDates.size > 0) {
+                    const firstAvailableDate = Array.from(uniqueDates).sort()[0];
+                    setSelectedDate(dayjs(firstAvailableDate));
+                }
+            }
+        } catch {
+            message.error("Failed to load available dates");
+        } finally {
+            setLoadingDates(false);
+        }
+    };
+
+    const loadTimeSlots = async () => {
+        if (!selectedDoctor) return;
+
+        try {
+            setLoading(true);
+            const startDate = selectedDate.startOf("day").format("YYYY-MM-DDTHH:mm:ss");
+            const endDate = selectedDate.endOf("day").format("YYYY-MM-DDTHH:mm:ss");
+
+            const response = await TimeSlotApi.getAvailableTimeSlots(selectedDoctor.id, startDate, endDate);
+
+            if (response.data.isSuccess) {
+                let slots = response.data.data || [];
+
+                // Apply consultation mode filter
+                if (timeSlotFilters.consultationMode !== "all") {
+                    slots = slots.filter((slot) => slot.consultationMode === timeSlotFilters.consultationMode);
+                }
+
+                // Filter by selected date and only future slots
+                slots = slots.filter(
+                    (slot) =>
+                        dayjs(slot.startTime).isSame(selectedDate, "day") &&
+                        dayjs(slot.startTime).isAfter(dayjs(), "minute")
+                );
 
                 setTimeSlots(slots);
             }
@@ -69,11 +127,15 @@ export default function TimeSlotSelectionStep() {
     const handleDateChange = (date: dayjs.Dayjs | null) => {
         if (date) {
             setSelectedDate(date);
+            // Clear selected time slot when date changes
+            dispatch(setSelectedTimeSlot(null));
         }
     };
 
     const handleConsultationModeFilter = (mode: ConsultationMode | "all") => {
         dispatch(setTimeSlotFilters({ consultationMode: mode }));
+        // Clear selected time slot when filter changes
+        dispatch(setSelectedTimeSlot(null));
     };
 
     const handleSelectTimeSlot = (slot: TimeSlotDto) => {
@@ -123,7 +185,26 @@ export default function TimeSlotSelectionStep() {
     };
 
     const disabledDate = (current: dayjs.Dayjs) => {
-        return current?.isBefore(dayjs(), "day");
+        if (current?.isBefore(dayjs(), "day")) {
+            return true;
+        }
+        // Disable dates that don't have available slots
+        const dateStr = current.format("YYYY-MM-DD");
+        return !availableDates.has(dateStr);
+    };
+
+    // Custom cell render for DatePicker to show available dates
+    const cellRender = (current: string | number | dayjs.Dayjs, info: any) => {
+        if (info.type === "date" && dayjs.isDayjs(current)) {
+            const dateStr = current.format("YYYY-MM-DD");
+            const isAvailable = availableDates.has(dateStr);
+            const isSelected = current.isSame(selectedDate, "day");
+
+            if (isAvailable && !isSelected) {
+                return <div className="ant-picker-cell-inner bg-green-500">{current.date()}</div>;
+            }
+        }
+        return info.originNode;
     };
 
     return (
@@ -150,13 +231,23 @@ export default function TimeSlotSelectionStep() {
                                 <Calendar className="inline w-4 h-4 mr-1" />
                                 Select Date
                             </Text>
-                            <DatePicker
-                                value={selectedDate}
-                                onChange={handleDateChange}
-                                className="w-full h-10"
-                                disabledDate={disabledDate}
-                                format="MMMM D, YYYY"
-                            />
+                            <div className="space-y-1">
+                                <DatePicker
+                                    value={selectedDate}
+                                    onChange={handleDateChange}
+                                    className="w-full h-10"
+                                    disabledDate={disabledDate}
+                                    format="MMMM D, YYYY"
+                                    cellRender={cellRender}
+                                />
+                                <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                    <div className="flex items-center space-x-1">
+                                        <Badge color="green" size="small" />
+                                        <span>Available dates</span>
+                                    </div>
+                                    <span>{availableDates.size} days available</span>
+                                </div>
+                            </div>
                         </div>
                     </Col>
                     <Col xs={24} md={12}>
@@ -169,6 +260,7 @@ export default function TimeSlotSelectionStep() {
                                 value={timeSlotFilters.consultationMode}
                                 onChange={handleConsultationModeFilter}
                                 className="w-full h-10"
+                                loading={loadingDates}
                             >
                                 <Option value="all">All Modes</Option>
                                 <Option value={ConsultationMode.VIRTUAL}>Virtual</Option>
@@ -192,7 +284,9 @@ export default function TimeSlotSelectionStep() {
                             <div className="text-center">
                                 <Text>No available time slots for the selected date</Text>
                                 <br />
-                                <Text className="text-gray-500">Try selecting a different date</Text>
+                                <Text className="text-gray-500">
+                                    Try selecting a different date or consultation mode
+                                </Text>
                             </div>
                         }
                     />

@@ -12,8 +12,8 @@ import io.getstream.models.ChannelInput;
 import io.getstream.models.ChannelMember;
 import io.getstream.models.ChannelResponse;
 import io.getstream.models.CreateExternalStorageRequest;
+import io.getstream.models.GetCallResponse;
 import io.getstream.models.GetOrCreateCallRequest;
-import io.getstream.models.GetOrCreateCallResponse;
 import io.getstream.models.GetOrCreateChannelRequest;
 import io.getstream.models.MemberRequest;
 import io.getstream.models.S3Request;
@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+
 @Slf4j
 @Service
 public class StreamService {
@@ -46,10 +47,10 @@ public class StreamService {
     private static final String externalStorageName = "stream-recording-storage";
 
     public StreamService(StreamSDKClient client,
-            @Value("${aws.region}") String awsRegion,
-            @Value("${aws.accessKey}") String awsAccessKey,
-            @Value("${aws.secretKey}") String awsSecret,
-            @Value("${aws.s3.bucket.name}") String bucketName) {
+                         @Value("${aws.region}") String awsRegion,
+                         @Value("${aws.accessKey}") String awsAccessKey,
+                         @Value("${aws.secretKey}") String awsSecret,
+                         @Value("${aws.s3.bucket.name}") String bucketName) {
         this.client = client;
         this.awsRegion = awsRegion;
         this.awsAccessKey = awsAccessKey;
@@ -123,7 +124,7 @@ public class StreamService {
                     .build());
         }
 
-        log.info("Created Stream call with {} authorized family members for appointment: {}", 
+        log.info("Created Stream call with {} authorized family members for appointment: {}",
                 authorizedFamilyMembers.size(), appointment.getId());
 
         CallRequest callRequest = CallRequest.builder()
@@ -217,6 +218,7 @@ public class StreamService {
 
     /**
      * Gets the current participant count for a Stream call
+     *
      * @param callId The Stream call ID
      * @return Number of active participants in the call
      * @throws StreamException if there's an error querying the call
@@ -224,16 +226,16 @@ public class StreamService {
     public int getCallParticipantCount(String callId) throws StreamException {
         try {
             Call call = new Call("development", callId, client.video());
-            StreamResponse<GetOrCreateCallResponse> callResponse = call.getOrCreate();
+            StreamResponse<GetCallResponse> callResponse = call.get();
 
             if (callResponse.getData() != null && callResponse.getData().getCall() != null && callResponse.getData().getCall().getSession() != null) {
                 List<CallParticipantResponse> participants = callResponse.getData().getCall().getSession().getParticipants();
                 int count = participants != null ? participants.size() : 0;
-                
+
                 log.debug("Call {} has {} active participants", callId, count);
                 return count;
             }
-            
+
             log.debug("Call {} not found or has no session", callId);
             return 0;
         } catch (StreamException e) {

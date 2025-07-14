@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
+
 /**
  * Controller for handling Stream SDK webhooks for video call events.
  * Stream will send notifications when participants join/leave calls,
@@ -18,7 +19,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/webhooks/stream")
+@RequestMapping("/api/v1/webhook/stream")
 public class StreamWebhookController {
     private final String streamApiKey;
     private final StreamWebhookService streamWebhookService;
@@ -36,11 +37,11 @@ public class StreamWebhookController {
      * - call.session_participant_left
      * - call.session_ended
      */
-    @PostMapping("/events")
+    @PostMapping
     public ResponseEntity<String> handleStreamWebhook(
             @RequestBody Map<String, Object> payload,
             @RequestHeader(value = "X-API-KEY", required = false) String signature) {
-        
+
         try {
             log.debug("Received Stream webhook event: {}", payload.get("type"));
 
@@ -48,9 +49,9 @@ public class StreamWebhookController {
                 log.warn("Signature mismatch: {}", signature);
                 return ResponseEntity.ok("Unable to process event due to invalid signature");
             }
-            
+
             streamWebhookService.processWebhookEvent(payload);
-            
+
             return ResponseEntity.ok("Event processed successfully");
         } catch (Exception e) {
             log.error("Error processing Stream webhook event", e);

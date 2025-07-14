@@ -1,40 +1,21 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-    Card,
-    Tabs,
-    Button,
-    Typography,
-    Row,
-    Col,
-    Statistic,
-    Spin,
-    message,
-} from "antd";
-import {
-    UserCheck,
-    Send,
-    Clock,
-    CheckCircle,
-    Calendar,
-    Plus,
-    FileText,
-    TrendingUp,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Card, Tabs, Button, Typography, Row, Col, Statistic, Spin, message } from "antd";
+import { UserCheck, Send, Clock, CheckCircle, Calendar, Plus, FileText, TrendingUp } from "lucide-react";
 import ReferralApi from "@/app/api/referral";
 import { ReferralStatisticsDto } from "@/app/api/referral/props";
 import MyReferralsTab from "./components/MyReferralsTab";
 import ReferralsForMeTab from "./components/ReferralsForMeTab";
-import CreateReferralModal from "./components/CreateReferralModal";
 
 const { Title } = Typography;
 
 export default function DoctorReferralPage() {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState("outgoing");
     const [loading, setLoading] = useState(true);
     const [statistics, setStatistics] = useState<ReferralStatisticsDto | null>(null);
-    const [showCreateModal, setShowCreateModal] = useState(false);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     // Load statistics
@@ -65,13 +46,11 @@ export default function DoctorReferralPage() {
     }, [refreshTrigger]);
 
     const handleRefresh = () => {
-        setRefreshTrigger(prev => prev + 1);
+        setRefreshTrigger((prev) => prev + 1);
     };
 
-    const handleCreateSuccess = () => {
-        setShowCreateModal(false);
-        handleRefresh();
-        message.success("Referral created successfully");
+    const handleCreateReferral = () => {
+        router.push("/doctor/referral/create");
     };
 
     if (loading) {
@@ -97,7 +76,7 @@ export default function DoctorReferralPage() {
                 <Button
                     type="primary"
                     icon={<Plus className="w-4 h-4" />}
-                    onClick={() => setShowCreateModal(true)}
+                    onClick={handleCreateReferral}
                     size="middle"
                     className="bg-green-700 hover:bg-green-800 border-green-700 w-full sm:w-auto"
                 >
@@ -176,11 +155,7 @@ export default function DoctorReferralPage() {
                                     <span className="sm:hidden">Sent</span>
                                 </span>
                             ),
-                            children: (
-                                <MyReferralsTab
-                                    refreshTrigger={refreshTrigger}
-                                />
-                            ),
+                            children: <MyReferralsTab refreshTrigger={refreshTrigger} />,
                         },
                         {
                             key: "incoming",
@@ -191,23 +166,11 @@ export default function DoctorReferralPage() {
                                     <span className="sm:hidden">Received</span>
                                 </span>
                             ),
-                            children: (
-                                <ReferralsForMeTab
-                                    refreshTrigger={refreshTrigger}
-                                    onRefresh={handleRefresh}
-                                />
-                            ),
+                            children: <ReferralsForMeTab refreshTrigger={refreshTrigger} onRefresh={handleRefresh} />,
                         },
                     ]}
                 />
             </Card>
-
-            {/* Create Referral Modal */}
-            <CreateReferralModal
-                visible={showCreateModal}
-                onCancel={() => setShowCreateModal(false)}
-                onSuccess={handleCreateSuccess}
-            />
         </div>
     );
 }

@@ -73,7 +73,7 @@ public class AppointmentSchedulerService {
      * tasks.
      * Scheduled to align with 15-minute appointment intervals.
      */
-    @Scheduled(cron = "0 */15 * * * *")
+    @Scheduled(cron = "*/15 * * * * *")
     @Async("schedulerExecutor")
     @Transactional
     public void processAppointmentScheduling() {
@@ -106,13 +106,24 @@ public class AppointmentSchedulerService {
     public void processAppointmentAutoConfirmation() {
         log.debug("Processing appointment auto-confirmation (PENDING → CONFIRMED)");
 
+        // TODO: Uncomment for production:
+//        LocalDateTime now = LocalDateTime.now();
+//        LocalDateTime confirmationThreshold = now.plusHours(12);
+//
+//        List<Appointment> pendingAppointments = appointmentRepository
+//                .findByStatusAndTimeSlotStartTimeBefore(
+//                        AppointmentStatus.PENDING,
+//                        confirmationThreshold);
+
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime confirmationThreshold = now.plusHours(12);
+        LocalDateTime oneHourFromNow = now.plusWeeks(2);
 
         List<Appointment> pendingAppointments = appointmentRepository
-                .findByStatusAndTimeSlotStartTimeBefore(
+                .findByStatusAndStartTimeBetween(
                         AppointmentStatus.PENDING,
-                        confirmationThreshold);
+                        now,
+                        oneHourFromNow);
+
 
         for (Appointment appointment : pendingAppointments) {
             try {
@@ -217,14 +228,21 @@ public class AppointmentSchedulerService {
     public void processVirtualAppointmentReadyForCall() {
         log.debug("Processing READY_FOR_CALL transition (CONFIRMED → READY_FOR_CALL for virtual appointments)");
 
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime readyThreshold = now.plusMinutes(15);
+        // TODO: Uncomment for production:
+//        LocalDateTime now = LocalDateTime.now();
+//        LocalDateTime readyThreshold = now.plusMinutes(15);
+//
+//        List<Appointment> confirmedVirtualAppointments = appointmentRepository
+//                .findByStatusAndConsultationModeAndTimeSlotStartTimeBefore(
+//                        AppointmentStatus.CONFIRMED,
+//                        ConsultationMode.VIRTUAL,
+//                        readyThreshold);
 
-        List<Appointment> confirmedVirtualAppointments = appointmentRepository
-                .findByStatusAndConsultationModeAndTimeSlotStartTimeBefore(
-                        AppointmentStatus.CONFIRMED,
-                        ConsultationMode.VIRTUAL,
-                        readyThreshold);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime readyWindowEnd = now.plusWeeks(2);
+
+        List<Appointment> confirmedVirtualAppointments = appointmentRepository.findByStatusAndStartTimeBetween(
+                AppointmentStatus.CONFIRMED, now, readyWindowEnd);
 
         for (Appointment appointment : confirmedVirtualAppointments) {
             try {

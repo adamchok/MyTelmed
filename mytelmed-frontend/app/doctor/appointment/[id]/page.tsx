@@ -47,11 +47,7 @@ import { parseLocalDateTime } from "../../../utils/DateUtils";
 
 // Import API services
 import AppointmentApi from "../../../api/appointment";
-import {
-    AppointmentDto,
-    AppointmentStatus,
-    CancelAppointmentRequestDto,
-} from "../../../api/appointment/props";
+import { AppointmentDto, AppointmentStatus, CancelAppointmentRequestDto } from "../../../api/appointment/props";
 import { AppointmentDocumentDto } from "@/app/api/props";
 
 const { Title, Text } = Typography;
@@ -316,12 +312,15 @@ export default function DoctorAppointmentDetails() {
                             showIcon
                             action={
                                 retryCount < 2 && (
-                                    <Button onClick={() => {
-                                        setDocumentError(false);
-                                        setDocumentLoading(true);
-                                        setIframeKey(prev => prev + 1);
-                                        setRetryCount(prev => prev + 1);
-                                    }} icon={<RefreshCw className="w-4 h-4" />}>
+                                    <Button
+                                        onClick={() => {
+                                            setDocumentError(false);
+                                            setDocumentLoading(true);
+                                            setIframeKey((prev) => prev + 1);
+                                            setRetryCount((prev) => prev + 1);
+                                        }}
+                                        icon={<RefreshCw className="w-4 h-4" />}
+                                    >
                                         Retry Loading
                                     </Button>
                                 )
@@ -343,7 +342,7 @@ export default function DoctorAppointmentDetails() {
                             onError={() => {
                                 setDocumentLoading(false);
                                 setDocumentError(true);
-                                setRetryCount(prev => prev + 1);
+                                setRetryCount((prev) => prev + 1);
                             }}
                             sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads allow-top-navigation"
                         />
@@ -564,7 +563,9 @@ export default function DoctorAppointmentDetails() {
                                             <div>
                                                 <Text className="text-sm text-gray-500">Date</Text>
                                                 <div className="font-medium">
-                                                    {parseLocalDateTime(appointment.appointmentDateTime).format("MMMM DD, YYYY")}
+                                                    {parseLocalDateTime(appointment.appointmentDateTime).format(
+                                                        "MMMM DD, YYYY"
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -575,7 +576,9 @@ export default function DoctorAppointmentDetails() {
                                             <div>
                                                 <Text className="text-sm text-gray-500">Time</Text>
                                                 <div className="font-medium">
-                                                    {parseLocalDateTime(appointment.appointmentDateTime).format("h:mm A")}
+                                                    {parseLocalDateTime(appointment.appointmentDateTime).format(
+                                                        "h:mm A"
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -668,7 +671,9 @@ export default function DoctorAppointmentDetails() {
                                     ) : (
                                         <div className="text-center py-8 text-gray-500">
                                             <FileText className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                                            <Text>No doctor notes yet. Click &apos;Edit Notes&apos; to add your notes.</Text>
+                                            <Text>
+                                                No doctor notes yet. Click &apos;Edit Notes&apos; to add your notes.
+                                            </Text>
                                         </div>
                                     )}
                                 </div>
@@ -728,7 +733,11 @@ export default function DoctorAppointmentDetails() {
                                         const isExpired = isDocumentAccessExpired(document);
 
                                         return (
-                                            <List.Item className={`${isSelected ? "bg-green-50 border border-green-200 rounded-lg" : ""} ${!canView || isExpired ? "opacity-60" : ""}`}>
+                                            <List.Item
+                                                className={`${
+                                                    isSelected ? "bg-green-50 border border-green-200 rounded-lg" : ""
+                                                } ${!canView || isExpired ? "opacity-60" : ""}`}
+                                            >
                                                 <div className="flex items-center justify-between w-full">
                                                     <div className="flex items-center space-x-3">
                                                         {comparisonMode && canView && !isExpired && (
@@ -757,7 +766,11 @@ export default function DoctorAppointmentDetails() {
 
                                                     <div className="flex items-center space-x-2">
                                                         {!canView || isExpired ? (
-                                                            <Tooltip title={isExpired ? "Access expired" : "No view permission"}>
+                                                            <Tooltip
+                                                                title={
+                                                                    isExpired ? "Access expired" : "No view permission"
+                                                                }
+                                                            >
                                                                 <Button
                                                                     icon={<Lock className="w-4 h-4" />}
                                                                     disabled
@@ -799,7 +812,13 @@ export default function DoctorAppointmentDetails() {
                             <div className="flex items-center space-x-2">
                                 <Button
                                     type="text"
-                                    icon={fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                                    icon={
+                                        fullscreen ? (
+                                            <Minimize2 className="w-4 h-4" />
+                                        ) : (
+                                            <Maximize2 className="w-4 h-4" />
+                                        )
+                                    }
                                     onClick={() => setFullscreen(!fullscreen)}
                                 />
                             </div>

@@ -46,7 +46,7 @@ public class DoctorController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PATIENT', 'DOCTOR')")
     public ResponseEntity<ApiResponse<Page<DoctorDto>>> getDoctors(
             @RequestParam Integer page,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize
