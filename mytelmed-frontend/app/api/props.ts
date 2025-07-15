@@ -8,12 +8,31 @@ export interface ApiResponse<T> {
 // Comprehensive Pagination Interface
 export interface PaginatedResponse<T> {
     content: T[];
+    pageable: {
+        pageNumber: number;
+        pageSize: number;
+        sort: {
+            empty: boolean;
+            sorted: boolean;
+            unsorted: boolean;
+        };
+        offset: number;
+        paged: boolean;
+        unpaged: boolean;
+    };
     totalElements: number;
     totalPages: number;
-    number?: number; // Current page number
-    size?: number; // Page size
-    first?: boolean; // Is first page
-    last?: boolean; // Is last page
+    last: boolean;
+    first: boolean;
+    numberOfElements: number; // Number of elements in current page
+    size: number; // Page size
+    number: number; // Current page number (0-based)
+    sort: {
+        empty: boolean;
+        sorted: boolean;
+        unsorted: boolean;
+    };
+    empty: boolean; // Whether the page is empty
 }
 
 // Generic Search Options

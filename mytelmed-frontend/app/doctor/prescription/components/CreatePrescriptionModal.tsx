@@ -357,7 +357,7 @@ const CreatePrescriptionModal: React.FC<CreatePrescriptionModalProps> = ({
                             <div className="space-y-4">
                                 {prescriptionItems.map((item, index) => (
                                     <Card
-                                        key={index}
+                                        key={item.medicationName + "-" + index}
                                         size="small"
                                         title={`Medication ${index + 1}`}
                                         extra={
@@ -575,7 +575,7 @@ const CreatePrescriptionModal: React.FC<CreatePrescriptionModalProps> = ({
 
                         <Card title={`Medications (${prescriptionItems.length})`}>
                             {prescriptionItems.map((item, index) => (
-                                <div key={index} className={`p-3 ${index > 0 ? 'border-t' : ''}`}>
+                                <div key={item.medicationName + "-" + index} className={`p-3 ${index > 0 ? 'border-t' : ''}`}>
                                     <div className="flex justify-between items-start mb-2">
                                         <Text className="font-medium text-blue-600">
                                             {item.medicationName} {item.strength}

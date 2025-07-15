@@ -26,8 +26,14 @@ import {
     CheckCircle,
 } from "lucide-react";
 import dayjs, { Dayjs } from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 import TimeSlotApi from "@/app/api/timeslot";
 import ReferralApi from "@/app/api/referral";
+
+// Extend dayjs with timezone plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import { TimeSlotDto } from "@/app/api/timeslot/props";
 import { ReferralDto } from "@/app/api/referral/props";
 import { ConsultationMode } from "@/app/api/props";
@@ -163,6 +169,8 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
     const [selectedSlot, setSelectedSlot] = useState<TimeSlotDto | null>(null);
     const [loading, setLoading] = useState(false);
     const [slotsLoading, setSlotsLoading] = useState(false);
+    const [monthlySlots, setMonthlySlots] = useState<Map<string, TimeSlotDto[]>>(new Map());
+    const [monthSlotsLoading, setMonthSlotsLoading] = useState(false);
 
     // Load available slots when date changes
     useEffect(() => {
@@ -171,12 +179,20 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
         }
     }, [visible, selectedDate]);
 
+    // Load monthly slots when modal opens or month changes
+    useEffect(() => {
+        if (visible && selectedDate) {
+            loadMonthlySlots(selectedDate);
+        }
+    }, [visible, selectedDate.format('YYYY-MM')]);
+
     // Reset state when modal opens/closes
     useEffect(() => {
         if (!visible) {
             setSelectedDate(dayjs().add(7, 'days'));
             setAvailableSlots([]);
             setSelectedSlot(null);
+            setMonthlySlots(new Map());
         }
     }, [visible]);
 
@@ -185,8 +201,8 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
 
         try {
             setSlotsLoading(true);
-            const startDate = date.startOf('day').toISOString();
-            const endDate = date.endOf('day').toISOString();
+            const startDate = date.tz('Asia/Kuala_Lumpur').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
+            const endDate = date.tz('Asia/Kuala_Lumpur').endOf('day').format('YYYY-MM-DDTHH:mm:ss');
 
             const response = await TimeSlotApi.getAvailableTimeSlots(
                 referral.referredDoctor.id,
@@ -207,6 +223,46 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
             setAvailableSlots([]);
         } finally {
             setSlotsLoading(false);
+        }
+    };
+
+    const loadMonthlySlots = async (date: Dayjs) => {
+        if (!referral?.referredDoctor?.id) return;
+
+        try {
+            setMonthSlotsLoading(true);
+            const startDate = date.tz('Asia/Kuala_Lumpur').startOf('month').format('YYYY-MM-DDTHH:mm:ss');
+            const endDate = date.tz('Asia/Kuala_Lumpur').endOf('month').format('YYYY-MM-DDTHH:mm:ss');
+
+            const response = await TimeSlotApi.getAvailableTimeSlots(
+                referral.referredDoctor.id,
+                startDate,
+                endDate
+            );
+
+            if (response.data.isSuccess && response.data.data) {
+                const oneWeekFromNow = dayjs().add(7, 'days');
+                const validSlots = response.data.data.filter(slot =>
+                    dayjs(slot.startTime).isAfter(oneWeekFromNow)
+                );
+
+                // Group slots by date
+                const slotsByDate = new Map<string, TimeSlotDto[]>();
+                validSlots.forEach(slot => {
+                    const slotDate = dayjs(slot.startTime).format('YYYY-MM-DD');
+                    if (!slotsByDate.has(slotDate)) {
+                        slotsByDate.set(slotDate, []);
+                    }
+                    slotsByDate.get(slotDate)!.push(slot);
+                });
+
+                setMonthlySlots(slotsByDate);
+            }
+        } catch {
+            console.error("Failed to load monthly time slots");
+            setMonthlySlots(new Map());
+        } finally {
+            setMonthSlotsLoading(false);
         }
     };
 
@@ -244,6 +300,72 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
     const disabledDate = (current: Dayjs) => {
         const oneWeekFromNow = dayjs().add(7, 'days');
         return current && (current.isBefore(oneWeekFromNow, 'day') || current.isAfter(dayjs().add(3, 'months')));
+    };
+
+    const dateCellRender = (date: Dayjs) => {
+        const dateKey = date.format('YYYY-MM-DD');
+        const hasSlots = monthlySlots.has(dateKey) && monthlySlots.get(dateKey)!.length > 0;
+        const isDisabled = disabledDate(date);
+        const isSelected = date.isSame(selectedDate, 'day');
+
+        const baseStyle: React.CSSProperties = {
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '6px',
+            position: 'relative',
+        };
+
+        let cellStyle: React.CSSProperties;
+
+        if (monthSlotsLoading) {
+            cellStyle = {
+                ...baseStyle,
+                backgroundColor: '#f5f5f5',
+            };
+        } else if (isDisabled) {
+            cellStyle = {
+                ...baseStyle,
+                backgroundColor: '#f5f5f5',
+                color: '#d9d9d9',
+            };
+        } else if (hasSlots) {
+            cellStyle = {
+                ...baseStyle,
+                backgroundColor: isSelected ? '#52c41a' : '#f6ffed',
+                border: '1px solid #b7eb8f',
+                color: isSelected ? 'white' : '#52c41a',
+                fontWeight: 'bold',
+            };
+        } else {
+            cellStyle = {
+                ...baseStyle,
+                backgroundColor: isSelected ? '#ff7875' : '#fff2f0',
+                border: '1px solid #ffccc7',
+                color: isSelected ? 'white' : '#ff4d4f',
+            };
+        }
+
+        return (
+            <div style={cellStyle}>
+                {date.format('D')}
+                {hasSlots && !isDisabled && (
+                    <div
+                        style={{
+                            position: 'absolute',
+                            bottom: '2px',
+                            right: '2px',
+                            width: '6px',
+                            height: '6px',
+                            backgroundColor: isSelected ? 'white' : '#52c41a',
+                            borderRadius: '50%',
+                        }}
+                    />
+                )}
+            </div>
+        );
     };
 
     if (!referral) return null;
@@ -319,10 +441,29 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
                                 value={selectedDate}
                                 onSelect={handleDateSelect}
                                 disabledDate={disabledDate}
+                                dateCellRender={dateCellRender}
                                 headerRender={({ value, onChange }) => (
                                     <CalendarHeader value={value} onChange={onChange} />
                                 )}
                             />
+                            {/* Legend */}
+                            <div className="mt-3 p-2 bg-gray-50 rounded">
+                                <Text className="text-xs font-medium mb-2 block">Legend:</Text>
+                                <div className="flex flex-wrap gap-2 text-xs">
+                                    <div className="flex items-center gap-1">
+                                        <div className="w-3 h-3 bg-green-50 border border-green-300 rounded"></div>
+                                        <span>Available</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <div className="w-3 h-3 bg-red-50 border border-red-300 rounded"></div>
+                                        <span>No slots</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <div className="w-3 h-3 bg-gray-200 rounded"></div>
+                                        <span>Disabled</span>
+                                    </div>
+                                </div>
+                            </div>
                         </Card>
                     </Col>
 

@@ -51,7 +51,7 @@ export default function ReferralTypeStep() {
             dispatch(
                 updateFormData({
                     priority: values.priority,
-                    expiryDate: values.expiryDate ? dayjs(values.expiryDate).format("DD-MM-YYYY") : undefined,
+                    expiryDate: dayjs(values.expiryDate).format("DD/MM/YYYY"),
                     externalDoctorName: values.externalDoctorName,
                     externalDoctorSpeciality: values.externalDoctorSpeciality,
                     externalFacilityName: values.externalFacilityName,
@@ -252,7 +252,7 @@ export default function ReferralTypeStep() {
                 >
                     <DatePicker
                         className="w-full"
-                        format="DD-MM-YYYY"
+                        format="DD/MM/YYYY"
                         disabledDate={(current) => current && current <= dayjs().endOf("day")}
                         placeholder="Select expiry date"
                     />
