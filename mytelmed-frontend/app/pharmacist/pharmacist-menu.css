@@ -1,0 +1,18 @@
+.custom-pharmacist-menu .ant-menu-item-selected,
+.custom-pharmacist-menu .ant-menu-item-active,
+.custom-pharmacist-menu .ant-menu-item:hover {
+    background-color: #ffffff !important;
+}
+
+.custom-pharmacist-menu .ant-menu-item-selected > .ant-menu-title-content,
+.custom-pharmacist-menu .ant-menu-item-active > .ant-menu-title-content,
+.custom-pharmacist-menu .ant-menu-item:hover > .ant-menu-title-content,
+.custom-pharmacist-menu .ant-menu-item-selected .ant-menu-item-icon,
+.custom-pharmacist-menu .ant-menu-item-active .ant-menu-item-icon,
+.custom-pharmacist-menu .ant-menu-item:hover .ant-menu-item-icon {
+    color: #2f855a !important;
+}
+
+.custom-pharmacist-menu .ant-menu-item {
+    color: #ffffff !important;
+}
