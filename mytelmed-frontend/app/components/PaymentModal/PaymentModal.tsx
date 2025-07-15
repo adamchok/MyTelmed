@@ -8,6 +8,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import PaymentApi from "@/app/api/payment";
 import { PaymentIntentResponseDto, ConfirmPaymentRequestDto } from "@/app/api/payment/props";
 import { AppointmentDto } from "@/app/api/appointment/props";
+import { PrescriptionDto } from "@/app/api/prescription/props";
 
 const { Title, Text } = Typography;
 
@@ -32,8 +33,55 @@ const cardElementOptions = {
     hidePostalCode: true,
 };
 
+// Payment context types
+export interface AppointmentPaymentContext {
+    type: "appointment";
+    data: AppointmentDto;
+}
+
+export interface PrescriptionPaymentContext {
+    type: "prescription";
+    data: PrescriptionDto;
+}
+
+export type PaymentContext = AppointmentPaymentContext | PrescriptionPaymentContext;
+
+// Helper functions to extract common information
+const getPaymentInfo = (context: PaymentContext) => {
+    switch (context.type) {
+        case "appointment":
+            return {
+                patientName: context.data.patient.name,
+                patientEmail: context.data.patient.email,
+                doctorName: context.data.doctor.name,
+                title: "Appointment Payment",
+                description: `Appointment with Dr. ${context.data.doctor.name}`,
+                id: context.data.id,
+            };
+        case "prescription":
+            return {
+                patientName: context.data.appointment.patient.name,
+                patientEmail: context.data.appointment.patient.email,
+                doctorName: context.data.appointment.doctor.name,
+                title: "Prescription Payment",
+                description: `Prescription from Dr. ${context.data.appointment.doctor.name}`,
+                id: context.data.id,
+            };
+    }
+};
+
+// Payment intent creation
+const createPaymentIntent = async (context: PaymentContext) => {
+    switch (context.type) {
+        case "appointment":
+            return PaymentApi.createAppointmentPaymentIntent(context.data.id);
+        case "prescription":
+            return PaymentApi.createPrescriptionPaymentIntent(context.data.id);
+    }
+};
+
 interface PaymentFormProps {
-    appointment: AppointmentDto;
+    context: PaymentContext;
     paymentIntent: PaymentIntentResponseDto;
     onPaymentSuccess: () => void;
     onPaymentError: (error: string) => void;
@@ -43,7 +91,7 @@ interface PaymentFormProps {
 
 // Payment form component that uses Stripe Elements
 const PaymentForm: React.FC<PaymentFormProps> = ({
-    appointment,
+    context,
     paymentIntent,
     onPaymentSuccess,
     onPaymentError,
@@ -54,6 +102,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     const elements = useElements();
     const [cardComplete, setCardComplete] = useState(false);
     const [cardError, setCardError] = useState<string | null>(null);
+
+    const paymentInfo = getPaymentInfo(context);
 
     const handleCardChange = (event: any) => {
         setCardComplete(event.complete);
@@ -87,8 +137,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
                 type: "card",
                 card: cardElement,
                 billing_details: {
-                    name: appointment.patient.name,
-                    email: appointment.patient.email,
+                    name: paymentInfo.patientName,
+                    email: paymentInfo.patientEmail,
                 },
             });
 
@@ -136,22 +186,29 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             {/* Payment Information */}
-            <Card className="border-blue-200 bg-blue-50">
+            <Card className="border-green-200 bg-green-50">
                 <Row gutter={[16, 16]}>
                     <Col xs={24} sm={12}>
                         <div className="space-y-1">
-                            <Text strong className="text-blue-800">
-                                Appointment with
+                            <Text strong className="text-green-800">
+                                {paymentInfo.description}
                             </Text>
-                            <div className="text-blue-700">Dr. {appointment.doctor.name}</div>
+                            <div className="text-green-700">
+                                {context.type === "prescription" && (
+                                    <>Prescription #{context.data.prescriptionNumber}</>
+                                )}
+                                {context.type === "appointment" && (
+                                    <>Consultation with Dr. {paymentInfo.doctorName}</>
+                                )}
+                            </div>
                         </div>
                     </Col>
                     <Col xs={24} sm={12}>
                         <div className="space-y-1 text-right">
-                            <Text strong className="text-blue-800">
+                            <Text strong className="text-green-800">
                                 Amount
                             </Text>
-                            <div className="text-2xl font-bold text-blue-700">RM {paymentIntent.amount.toFixed(2)}</div>
+                            <div className="text-2xl font-bold text-green-700">RM {paymentIntent.amount.toFixed(2)}</div>
                         </div>
                     </Col>
                 </Row>
@@ -199,7 +256,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
                 size="large"
                 loading={loading}
                 disabled={!stripe || !cardComplete || loading}
-                className="w-full bg-blue-600 border-blue-600 hover:bg-blue-700 text-white"
+                className="w-full bg-green-600 border-green-600 hover:bg-green-700 text-white"
                 icon={<CreditCard className="w-5 h-5" />}
             >
                 {loading ? "Processing Payment..." : `Pay RM ${paymentIntent.amount.toFixed(2)}`}
@@ -211,23 +268,25 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 interface PaymentModalProps {
     visible: boolean;
     onClose: () => void;
-    appointment: AppointmentDto;
+    context: PaymentContext;
     onPaymentSuccess: () => void;
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onClose, appointment, onPaymentSuccess }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onClose, context, onPaymentSuccess }) => {
     const [paymentIntent, setPaymentIntent] = useState<PaymentIntentResponseDto | null>(null);
     const [loading, setLoading] = useState(false);
     const [creating, setCreating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
 
+    const paymentInfo = getPaymentInfo(context);
+
     // Create payment intent when modal opens
     useEffect(() => {
-        if (visible && appointment && !paymentIntent) {
-            createPaymentIntent();
+        if (visible && context && !paymentIntent) {
+            createPaymentIntentHandler();
         }
-    }, [visible, appointment]);
+    }, [visible, context]);
 
     // Reset state when modal closes
     useEffect(() => {
@@ -240,12 +299,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onClose, appointme
         }
     }, [visible]);
 
-    const createPaymentIntent = async () => {
+    const createPaymentIntentHandler = async () => {
         try {
             setCreating(true);
             setError(null);
 
-            const response = await PaymentApi.createAppointmentPaymentIntent(appointment.id);
+            const response = await createPaymentIntent(context);
 
             if (response.data.isSuccess && response.data.data) {
                 setPaymentIntent(response.data.data);
@@ -286,8 +345,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onClose, appointme
         <Modal
             title={
                 <div className="flex items-center space-x-2">
-                    <CreditCard className="w-5 h-5 text-blue-600" />
-                    <span>Complete Payment</span>
+                    <CreditCard className="w-5 h-5 text-green-600" />
+                    <span>{paymentInfo.title}</span>
                 </div>
             }
             open={visible}
@@ -317,7 +376,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onClose, appointme
                             showIcon
                             icon={<AlertCircle className="w-5 h-5" />}
                             action={
-                                <Button type="primary" size="small" onClick={createPaymentIntent}>
+                                <Button type="primary" size="small" onClick={createPaymentIntentHandler}>
                                     Try Again
                                 </Button>
                             }
@@ -337,7 +396,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onClose, appointme
                                     Payment Successful!
                                 </Title>
                                 <Text className="text-gray-600">
-                                    Your appointment payment has been processed successfully.
+                                    Your {context.type} payment has been processed successfully.
                                     <br />
                                     You will receive a confirmation email shortly.
                                 </Text>
@@ -350,7 +409,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onClose, appointme
                 {paymentIntent && !success && !error && (
                     <Elements stripe={stripePromise}>
                         <PaymentForm
-                            appointment={appointment}
+                            context={context}
                             paymentIntent={paymentIntent}
                             onPaymentSuccess={handlePaymentSuccess}
                             onPaymentError={handlePaymentError}

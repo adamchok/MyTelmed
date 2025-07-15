@@ -4,6 +4,7 @@ import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.constant.appointment.AppointmentStatus;
 import com.mytelmed.common.constant.delivery.DeliveryStatus;
 import com.mytelmed.common.constant.payment.BillingStatus;
+import com.mytelmed.common.constant.prescription.PrescriptionStatus;
 import com.mytelmed.common.event.payment.model.PaymentCompletedEvent;
 import com.mytelmed.common.event.payment.model.RefundCompletedEvent;
 import com.mytelmed.core.appointment.entity.Appointment;
@@ -15,6 +16,7 @@ import com.mytelmed.core.payment.entity.Bill;
 import com.mytelmed.core.payment.entity.PaymentTransaction;
 import com.mytelmed.core.payment.repository.BillRepository;
 import com.mytelmed.core.payment.repository.PaymentTransactionRepository;
+import com.stripe.model.Charge;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.Refund;
@@ -42,11 +44,11 @@ public class PaymentWebhookService {
     private final AppointmentStateMachine appointmentStateMachine;
 
     public PaymentWebhookService(PaymentTransactionRepository paymentTransactionRepository,
-                                 BillRepository billRepository,
-                                 AppointmentRepository appointmentRepository,
-                                 MedicationDeliveryRepository deliveryRepository,
-                                 ApplicationEventPublisher eventPublisher,
-                                 AppointmentStateMachine appointmentStateMachine) {
+            BillRepository billRepository,
+            AppointmentRepository appointmentRepository,
+            MedicationDeliveryRepository deliveryRepository,
+            ApplicationEventPublisher eventPublisher,
+            AppointmentStateMachine appointmentStateMachine) {
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.billRepository = billRepository;
         this.appointmentRepository = appointmentRepository;
@@ -63,7 +65,7 @@ public class PaymentWebhookService {
         log.info("Processing webhook event: {} with ID: {}", event.getType(), event.getId());
 
         switch (event.getType()) {
-            case "payment_intent.succeeded" -> handlePaymentSucceeded(event);
+            case "charge.succeeded" -> handleChargeSucceeded(event);
             case "payment_intent.payment_failed" -> handlePaymentFailed(event);
             case "payment_intent.canceled" -> handlePaymentCanceled(event);
             case "payment_intent.requires_action" -> handlePaymentRequiresAction(event);
@@ -73,39 +75,45 @@ public class PaymentWebhookService {
     }
 
     /**
-     * Handles successful payment events
+     * Handles successful charge events from Stripe
      */
-    private void handlePaymentSucceeded(Event event) throws AppException {
-        PaymentIntent paymentIntent = extractPaymentIntent(event);
-        log.info("Processing successful payment for PaymentIntent: {}", paymentIntent.getId());
+    private void handleChargeSucceeded(Event event) throws AppException {
+        Charge charge = extractCharge(event);
+        log.info("Processing successful charge: {}", charge.getId());
 
+        // Find the transaction by charge ID
         Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository
-                .findByStripePaymentIntentId(paymentIntent.getId());
+                .findByStripeChargeId(charge.getId());
 
         if (transactionOpt.isEmpty()) {
-            log.warn("Payment transaction not found for PaymentIntent: {}", paymentIntent.getId());
+            log.warn("Payment transaction not found for Charge: {}", charge.getId());
             return;
         }
 
         PaymentTransaction transaction = transactionOpt.get();
 
         // Update transaction status
-        updateTransactionStatus(transaction, PaymentTransaction.TransactionStatus.COMPLETED, paymentIntent);
+        updateTransactionStatusFromCharge(transaction, PaymentTransaction.TransactionStatus.COMPLETED, charge);
 
         // Update bill status
-        updateBillStatus(transaction.getBill(), BillingStatus.PAID, paymentIntent);
+        updateBillStatusFromCharge(transaction.getBill(), BillingStatus.PAID, charge);
 
         // Update related entities (appointment or delivery)
         processSuccessfulPaymentSideEffects(transaction.getBill());
 
-        // Publish payment completed event for receipt email
+        // Extract receipt URL from charge
+        String receiptUrl = charge.getReceiptUrl();
+
+        // Publish payment completed event for receipt email with receipt URL
         PaymentCompletedEvent paymentEvent = PaymentCompletedEvent.builder()
                 .bill(transaction.getBill())
                 .transaction(transaction)
+                .receiptUrl(receiptUrl)
                 .build();
         eventPublisher.publishEvent(paymentEvent);
 
-        log.info("Successfully processed payment success for transaction: {}", transaction.getTransactionNumber());
+        log.info("Successfully processed charge success for transaction: {} with receipt URL: {}",
+                transaction.getTransactionNumber(), receiptUrl);
     }
 
     /**
@@ -128,8 +136,9 @@ public class PaymentWebhookService {
         // Update transaction status
         transaction.setStatus(PaymentTransaction.TransactionStatus.FAILED);
         transaction
-                .setFailureReason(paymentIntent.getLastPaymentError() != null ? paymentIntent.getLastPaymentError().getMessage()
-                        : "Payment failed");
+                .setFailureReason(
+                        paymentIntent.getLastPaymentError() != null ? paymentIntent.getLastPaymentError().getMessage()
+                                : "Payment failed");
         paymentTransactionRepository.save(transaction);
 
         log.info("Marked payment as failed for transaction: {}", transaction.getTransactionNumber());
@@ -243,24 +252,38 @@ public class PaymentWebhookService {
     }
 
     /**
-     * Updates transaction status and related fields
+     * Extracts Charge from webhook event
      */
-    private void updateTransactionStatus(PaymentTransaction transaction,
-                                         PaymentTransaction.TransactionStatus status,
-                                         PaymentIntent paymentIntent) {
+    private Charge extractCharge(Event event) throws AppException {
+        StripeObject stripeObject = event.getDataObjectDeserializer().getObject().orElse(null);
+
+        if (!(stripeObject instanceof Charge)) {
+            throw new AppException("Invalid webhook event data - expected Charge");
+        }
+
+        return (Charge) stripeObject;
+    }
+
+    /**
+     * Updates transaction status and related fields from a Charge object
+     */
+    private void updateTransactionStatusFromCharge(PaymentTransaction transaction,
+            PaymentTransaction.TransactionStatus status,
+            Charge charge) {
         transaction.setStatus(status);
-        transaction.setStripeChargeId(paymentIntent.getLatestCharge());
+        transaction.setStripeChargeId(charge.getId());
         transaction.setProcessedAt(Instant.now());
         paymentTransactionRepository.save(transaction);
     }
 
     /**
-     * Updates bill status and related fields
+     * Updates bill status and related fields from a Charge object
      */
-    private void updateBillStatus(Bill bill, BillingStatus status, PaymentIntent paymentIntent) {
+    private void updateBillStatusFromCharge(Bill bill, BillingStatus status, Charge charge) {
         bill.setBillingStatus(status);
-        bill.setStripePaymentIntentId(paymentIntent.getId());
-        bill.setStripeChargeId(paymentIntent.getLatestCharge());
+        bill.setStripePaymentIntentId(charge.getPaymentIntent());
+        bill.setStripeChargeId(charge.getId());
+        bill.setReceiptUrl(charge.getReceiptUrl()); // Store encrypted receipt URL
         bill.setPaidAt(Instant.now());
         billRepository.save(bill);
     }
@@ -300,7 +323,8 @@ public class PaymentWebhookService {
                 appointment.setStatus(AppointmentStatus.PENDING);
                 appointmentRepository.save(appointment);
 
-                log.info("Updated appointment {} status to PENDING after payment confirmation (PENDING_PAYMENT → PENDING)",
+                log.info(
+                        "Updated appointment {} status to PENDING after payment confirmation (PENDING_PAYMENT → PENDING)",
                         appointment.getId());
             } catch (Exception e) {
                 log.error("Failed to update appointment status after payment: {}", appointment.getId(), e);
@@ -323,6 +347,8 @@ public class PaymentWebhookService {
             // Update delivery status from PENDING_PAYMENT to PAID
             if (delivery.getStatus() == DeliveryStatus.PENDING_PAYMENT) {
                 delivery.setStatus(DeliveryStatus.PAID);
+
+                delivery.getPrescription().setStatus(PrescriptionStatus.READY_FOR_PROCESSING);
                 deliveryRepository.save(delivery);
 
                 log.info("Updated delivery {} status to PAID after payment confirmation", delivery.getId());

@@ -13,6 +13,7 @@ export enum DeliveryStatus {
     PENDING_PAYMENT = "PENDING_PAYMENT",
     PAID = "PAID",
     PREPARING = "PREPARING",
+    READY_FOR_PICKUP = "READY_FOR_PICKUP",
     OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
     DELIVERED = "DELIVERED",
     CANCELLED = "CANCELLED",
@@ -54,6 +55,25 @@ export interface AppointmentDto {
 export interface MedicationDeliveryDto {
     id: string;
     prescription: PrescriptionDto;
+    deliveryMethod: DeliveryMethod;
+    status: DeliveryStatus;
+    deliveryInstructions?: string;
+    deliveryFee: number;
+    estimatedDeliveryDate?: string;
+    actualDeliveryDate?: string;
+    pickupDate?: string;
+    trackingReference?: string;
+    courierName?: string;
+    deliveryContactPhone?: string;
+    deliveryNotes?: string;
+    cancellationReason?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// Simple Delivery DTO (without prescription details to avoid circular dependency)
+export interface MedicationDeliverySimpleDto {
+    id: string;
     deliveryMethod: DeliveryMethod;
     status: DeliveryStatus;
     deliveryInstructions?: string;

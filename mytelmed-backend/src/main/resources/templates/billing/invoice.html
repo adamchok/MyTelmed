@@ -5,44 +5,63 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>MyTelmed - Invoice</title>
         <style>
+            /* Base Styles */
             body {
                 font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
                 line-height: 1.6;
                 color: #333333;
                 max-width: 600px;
                 margin: 0 auto;
-                padding: 20px;
+                padding: 10px;
                 background-color: #f8f9fa;
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+                box-sizing: border-box;
             }
 
             .container {
                 background-color: #ffffff;
                 border-radius: 10px;
-                padding: 30px;
+                padding: 25px;
                 box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                width: 100%;
+                box-sizing: border-box;
             }
 
             .header {
                 text-align: center;
                 justify-content: center;
                 border-bottom: 3px solid #28a745;
-                padding-bottom: 20px;
-                margin-bottom: 30px;
+                padding-bottom: 15px;
+                margin-bottom: 25px;
             }
 
-            .logo {
-                width: 192px;
-                height: auto;
-                max-width: 100%;
-                display: block;
-                margin: 0 auto;
+            .header h2 {
+                color: #495057;
+                margin: 10px 0 0 0;
+                font-size: 26px;
+                font-weight: 600;
+                line-height: 1.3;
             }
 
             .invoice-header {
                 display: flex;
                 justify-content: space-between;
-                margin-bottom: 30px;
+                margin-bottom: 25px;
                 align-items: flex-start;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .invoice-header-left {
+                flex: 1;
+                min-width: 200px;
+            }
+
+            .invoice-header-right {
+                flex: 1;
+                text-align: right;
+                min-width: 200px;
             }
 
             .invoice-details {
@@ -51,6 +70,17 @@
                 padding: 20px;
                 margin: 20px 0;
                 border-radius: 5px;
+            }
+
+            .invoice-details h4 {
+                margin: 0 0 15px 0;
+                color: #007bff;
+                font-size: 18px;
+            }
+
+            .invoice-details div {
+                margin-bottom: 8px;
+                line-height: 1.5;
             }
 
             .invoice-number {
@@ -67,11 +97,31 @@
                 margin: 20px 0;
             }
 
+            .bill-summary h4 {
+                margin: 0 0 20px 0;
+                color: #495057;
+                font-size: 18px;
+            }
+
             .summary-row {
                 display: flex;
                 justify-content: space-between;
                 margin-bottom: 10px;
                 padding: 5px 0;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .summary-row span:first-child {
+                font-weight: 500;
+                flex: 1;
+                min-width: 120px;
+            }
+
+            .summary-row span:last-child {
+                flex: 1;
+                text-align: right;
+                word-break: break-word;
             }
 
             .summary-row.total {
@@ -96,9 +146,22 @@
                 margin: 20px 0;
             }
 
+            .payment-info h4 {
+                margin: 0 0 10px 0;
+                color: #856404;
+                font-size: 16px;
+            }
+
+            .payment-info p {
+                margin: 0;
+                color: #856404;
+                font-size: 14px;
+                line-height: 1.5;
+            }
+
             .action-buttons {
                 text-align: center;
-                margin: 30px 0;
+                margin: 25px 0;
             }
 
             .btn {
@@ -110,6 +173,7 @@
                 text-decoration: none;
                 border-radius: 5px;
                 font-weight: bold;
+                transition: background-color 0.3s ease;
             }
 
             .btn:hover {
@@ -124,41 +188,213 @@
                 background-color: #1e7e34;
             }
 
+            .content-text {
+                font-size: 16px;
+                line-height: 1.6;
+                margin-bottom: 16px;
+            }
+
             .footer {
                 border-top: 1px solid #dee2e6;
-                padding-top: 20px;
-                margin-top: 30px;
+                padding-top: 15px;
+                margin-top: 25px;
                 text-align: center;
                 color: #6c757d;
                 font-size: 14px;
             }
 
-            .service-details {
-                border: 1px solid #dee2e6;
-                border-radius: 8px;
-                margin: 20px 0;
+            .footer p {
+                margin: 8px 0;
             }
 
-            .service-header {
-                background-color: #007bff;
-                color: white;
-                padding: 15px;
-                border-radius: 8px 8px 0 0;
-                font-weight: bold;
+            .footer a {
+                color: #007bff;
+                text-decoration: none;
             }
 
-            .service-body {
-                padding: 15px;
+            .footer a:hover {
+                text-decoration: underline;
             }
 
-            @media (max-width: 600px) {
+            /* Tablet Styles (600px - 768px) */
+            @media screen and (max-width: 768px) and (min-width: 600px) {
+                body {
+                    padding: 15px;
+                }
+
+                .container {
+                    padding: 20px;
+                }
+
+                .header h2 {
+                    font-size: 24px;
+                }
+
+                .invoice-header {
+                    gap: 20px;
+                }
+
+                .btn {
+                    padding: 10px 20px;
+                    margin: 5px;
+                }
+            }
+
+            /* Mobile Styles (< 600px) */
+            @media screen and (max-width: 599px) {
+                body {
+                    padding: 5px;
+                    max-width: 100%;
+                }
+
+                .container {
+                    padding: 15px;
+                    border-radius: 8px;
+                }
+
+                .header {
+                    padding-bottom: 12px;
+                    margin-bottom: 20px;
+                }
+
+                .header h2 {
+                    font-size: 22px;
+                    line-height: 1.2;
+                }
+
                 .invoice-header {
                     flex-direction: column;
+                    gap: 15px;
+                    margin-bottom: 20px;
+                }
+
+                .invoice-header-right {
+                    text-align: left;
+                }
+
+                .invoice-details {
+                    padding: 15px;
+                    margin: 15px 0;
+                }
+
+                .invoice-details h4 {
+                    font-size: 16px;
+                    margin-bottom: 12px;
+                }
+
+                .invoice-details div {
+                    font-size: 14px;
+                    margin-bottom: 6px;
+                }
+
+                .invoice-number {
+                    font-size: 16px;
+                }
+
+                .bill-summary {
+                    padding: 15px;
+                    margin: 15px 0;
+                }
+
+                .bill-summary h4 {
+                    font-size: 16px;
+                    margin-bottom: 15px;
                 }
 
                 .summary-row {
                     flex-direction: column;
                     align-items: flex-start;
+                    margin-bottom: 12px;
+                    gap: 4px;
+                }
+
+                .summary-row span:first-child {
+                    font-size: 14px;
+                    min-width: auto;
+                }
+
+                .summary-row span:last-child {
+                    text-align: left;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+
+                .summary-row.total {
+                    font-size: 16px;
+                    padding-top: 12px;
+                    margin-top: 12px;
+                }
+
+                .payment-info {
+                    padding: 12px;
+                    margin: 15px 0;
+                }
+
+                .payment-info h4 {
+                    font-size: 14px;
+                }
+
+                .payment-info p {
+                    font-size: 13px;
+                }
+
+                .action-buttons {
+                    margin: 20px 0;
+                }
+
+                .btn {
+                    display: block;
+                    width: 100%;
+                    margin: 10px 0;
+                    padding: 12px;
+                    box-sizing: border-box;
+                    font-size: 14px;
+                }
+
+                .content-text {
+                    font-size: 14px;
+                    line-height: 1.5;
+                    margin-bottom: 14px;
+                }
+
+                .footer {
+                    padding-top: 12px;
+                    margin-top: 20px;
+                    font-size: 12px;
+                }
+
+                .footer p {
+                    margin: 6px 0;
+                }
+            }
+
+            /* Extra Small Mobile (< 400px) */
+            @media screen and (max-width: 399px) {
+                .container {
+                    padding: 12px;
+                }
+
+                .header h2 {
+                    font-size: 20px;
+                }
+
+                .invoice-number {
+                    font-size: 15px;
+                }
+
+                .summary-row.total {
+                    font-size: 15px;
+                }
+
+                .content-text {
+                    font-size: 13px;
+                }
+            }
+
+            /* High DPI Displays */
+            @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+                .container {
+                    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
                 }
             }
         </style>
@@ -166,16 +402,16 @@
     <body>
         <div class="container">
             <div class="header">
-                <h2 style="color: #495057; margin: 10px 0 0 0">Invoice for Healthcare Services</h2>
+                <h2>Invoice for Healthcare Services</h2>
             </div>
 
             <div class="invoice-header">
-                <div>
+                <div class="invoice-header-left">
                     <h3 style="margin: 0 0 10px 0; color: #495057">Bill To:</h3>
                     <strong th:text="${patientName}">Patient Name</strong><br />
                     <span th:text="${patientEmail}">patient@email.com</span>
                 </div>
-                <div style="text-align: right">
+                <div class="invoice-header-right">
                     <div class="invoice-number">Invoice #<span th:text="${billNumber}">INV-001</span></div>
                     <div>
                         <strong>Date:</strong>
@@ -189,7 +425,7 @@
             </div>
 
             <div class="invoice-details">
-                <h4 style="margin: 0 0 15px 0; color: #007bff">Service Details</h4>
+                <h4>Service Details</h4>
                 <div>
                     <strong>Service Type:</strong>
                     <span th:text="${billType == 'CONSULTATION' ? 'Virtual Consultation' : 'Medication Delivery'}"
@@ -215,7 +451,7 @@
             </div>
 
             <div class="bill-summary">
-                <h4 style="margin: 0 0 20px 0; color: #495057">Billing Summary</h4>
+                <h4>Billing Summary</h4>
 
                 <div class="summary-row">
                     <span th:text="${billType == 'CONSULTATION' ? 'Virtual Consultation Fee' : 'Medication Delivery Fee'}"
@@ -238,8 +474,8 @@
             </div>
 
             <div class="payment-info">
-                <h4 style="margin: 0 0 10px 0; color: #856404"><i class="icon">💳</i> Payment Information</h4>
-                <p style="margin: 0; color: #856404">
+                <h4><i class="icon">💳</i> Payment Information</h4>
+                <p>
                     This invoice is for services provided under the Malaysian public healthcare telemedicine program. Please
                     complete payment to access your scheduled services.
                 </p>
@@ -249,20 +485,19 @@
                 <a th:href="${paymentUrl}" class="btn btn-success">
                     Pay Invoice - RM <span th:text="${#numbers.formatDecimal(amount, 1, 'COMMA', 2, 'POINT')}">0.00</span>
                 </a>
-                <a th:href="${uiHost + '/patient/billing/' + billId}" class="btn"> View Details </a>
             </div>
 
-            <p>
+            <p class="content-text">
                 <strong>Payment Terms:</strong> Payment is due upon receipt for consultation services. Medication delivery
                 fees are due before dispatch of prescriptions.
             </p>
 
-            <p>
+            <p class="content-text">
                 For questions about this invoice or payment assistance, please contact our billing support team or visit your
                 nearest participating healthcare facility.
             </p>
 
-            <p>
+            <p class="content-text">
                 Best regards,<br />
                 MyTelmed Billing Department<br />
                 Malaysian Public Healthcare Telemedicine Services
@@ -273,8 +508,7 @@
                 <p>&copy; 2025 MyTelmed. All rights reserved.</p>
                 <p>
                     <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
-                    <a th:href="${uiHost + '/terms'}">Terms of Service</a> |
-                    <a th:href="${uiHost + '/billing-policy'}">Billing Policy</a>
+                    <a th:href="${uiHost + '/terms'}">Terms of Service</a>
                 </p>
             </div>
         </div>

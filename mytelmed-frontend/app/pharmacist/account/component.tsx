@@ -47,7 +47,7 @@ const AccountComponent = ({
         <div className="container mx-auto">
             {/* Header */}
             <div className="mb-8 relative">
-                <Link href="/doctor/profile" className="absolute left-0 top-0 z-10">
+                <Link href="/pharmacist/profile" className="absolute left-0 top-0 z-10">
                     <Button
                         type="text"
                         icon={<ArrowLeft className="w-4 h-4" />}
@@ -203,7 +203,7 @@ const AccountComponent = ({
 
                             {/* Form Actions */}
                             <div className="flex justify-end space-x-4">
-                                <Link href="/doctor/profile">
+                                <Link href="/pharmacist/profile">
                                     <Button size="large">Cancel</Button>
                                 </Link>
                                 <Button

@@ -18,17 +18,13 @@ const DEFAULT_PAGE_SIZE: number = 10;
 
 const PaymentApi = {
     // Payment Intent Endpoints
-    createAppointmentPaymentIntent(
-        appointmentId: string
-    ): Promise<AxiosResponse<ApiResponse<PaymentIntentResponseDto>>> {
+    createAppointmentPaymentIntent(appointmentId: string): Promise<AxiosResponse<ApiResponse<PaymentIntentResponseDto>>> {
         return repository.post<ApiResponse<PaymentIntentResponseDto>>(
             `${PAYMENT_RESOURCE}/appointment/${appointmentId}/create-intent`
         );
     },
 
-    createPrescriptionPaymentIntent(
-        prescriptionId: string
-    ): Promise<AxiosResponse<ApiResponse<PaymentIntentResponseDto>>> {
+    createPrescriptionPaymentIntent(prescriptionId: string): Promise<AxiosResponse<ApiResponse<PaymentIntentResponseDto>>> {
         return repository.post<ApiResponse<PaymentIntentResponseDto>>(
             `${PAYMENT_RESOURCE}/prescription/${prescriptionId}/create-intent`
         );
@@ -39,14 +35,35 @@ const PaymentApi = {
     },
 
     // Bill Endpoints
-    getPatientBills(options?: PaymentSearchOptions): Promise<AxiosResponse<ApiResponse<PaginatedResponse<BillDto>>>> {
+    getPatientBills(
+        options?: PaymentSearchOptions & {
+            patientId?: string;
+            billType?: string;
+            billingStatus?: string;
+            searchQuery?: string;
+            startDate?: string;
+            endDate?: string;
+        }
+    ): Promise<AxiosResponse<ApiResponse<PaginatedResponse<BillDto>>>> {
         const page: number = options?.page ?? 0;
         const size: number = options?.size ?? DEFAULT_PAGE_SIZE;
         const sortBy: string = options?.sortBy ?? "createdAt";
         const sortDir: string = options?.sortDir ?? "desc";
 
-        const query: string = `?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`;
-        return repository.get<ApiResponse<PaginatedResponse<BillDto>>>(`${PAYMENT_RESOURCE}/bills${query}`);
+        const params = new URLSearchParams();
+        params.append("page", page.toString());
+        params.append("size", size.toString());
+        params.append("sortBy", sortBy);
+        params.append("sortDir", sortDir);
+
+        if (options?.patientId) params.append("patientId", options.patientId);
+        if (options?.billType) params.append("billType", options.billType);
+        if (options?.billingStatus) params.append("billingStatus", options.billingStatus);
+        if (options?.searchQuery) params.append("searchQuery", options.searchQuery);
+        if (options?.startDate) params.append("startDate", options.startDate);
+        if (options?.endDate) params.append("endDate", options.endDate);
+
+        return repository.get<ApiResponse<PaginatedResponse<BillDto>>>(`${PAYMENT_RESOURCE}/bills?${params.toString()}`);
     },
 
     // Transaction Endpoints

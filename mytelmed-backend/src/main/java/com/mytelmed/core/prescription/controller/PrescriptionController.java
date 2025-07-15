@@ -1,5 +1,6 @@
 package com.mytelmed.core.prescription.controller;
 
+import com.mytelmed.common.constant.prescription.PrescriptionStatus;
 import com.mytelmed.common.dto.ApiResponse;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.prescription.dto.CreatePrescriptionRequestDto;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
@@ -68,7 +70,8 @@ public class PrescriptionController {
     public ResponseEntity<ApiResponse<Page<PrescriptionDto>>> getPrescriptions(
             @PageableDefault(size = 20) Pageable pageable,
             @AuthenticationPrincipal Account account) {
-        log.info("Fetching prescriptions for {} account with ID: {}", account.getPermission().getType(), account.getId());
+        log.info("Fetching prescriptions for {} account with ID: {}", account.getPermission().getType(),
+                account.getId());
 
         Page<Prescription> prescriptionPage = prescriptionService.findByAccount(account, pageable);
         Page<PrescriptionDto> prescriptionDtoPage = prescriptionPage
@@ -109,10 +112,17 @@ public class PrescriptionController {
     @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<ApiResponse<Page<PrescriptionDto>>> getPrescriptionsByFacility(
             @PathVariable UUID facilityId,
-            @PageableDefault(size = 20) Pageable pageable) {
-        log.info("Fetching prescriptions by facility: {}", facilityId);
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) PrescriptionStatus status) {
+        log.info("Fetching prescriptions by facility: {} with status filter: {}", facilityId, status);
 
-        Page<Prescription> prescriptions = prescriptionService.findByFacilityId(facilityId, pageable);
+        Page<Prescription> prescriptions;
+        if (status != null) {
+            prescriptions = prescriptionService.findByFacilityIdAndStatus(facilityId, status, pageable);
+        } else {
+            prescriptions = prescriptionService.findByFacilityId(facilityId, pageable);
+        }
+
         Page<PrescriptionDto> response = prescriptions
                 .map(prescription -> prescriptionMapper.toDto(prescription, awsS3Service));
 
@@ -123,8 +133,7 @@ public class PrescriptionController {
     @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<PrescriptionDto>> createPrescription(
             @Valid @RequestBody CreatePrescriptionRequestDto request,
-            @AuthenticationPrincipal Account account
-    ) {
+            @AuthenticationPrincipal Account account) {
         log.info("Received request to create prescription for appointment: {}", request.appointmentId());
 
         Prescription prescription = prescriptionService.createPrescription(account, request);
@@ -138,8 +147,7 @@ public class PrescriptionController {
     @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<Void>> markAsReadyForProcessing(
             @PathVariable UUID prescriptionId,
-            @AuthenticationPrincipal Account account
-    ) {
+            @AuthenticationPrincipal Account account) {
         log.info("Patient marking prescription as ready for processing: {}", prescriptionId);
 
         prescriptionService.markAsReadyForProcessing(prescriptionId, account);
@@ -151,8 +159,7 @@ public class PrescriptionController {
     @PreAuthorize("hasRole('PHARMACIST')")
     public ResponseEntity<ApiResponse<Void>> startProcessing(
             @PathVariable UUID prescriptionId,
-            @AuthenticationPrincipal Account account
-    ) {
+            @AuthenticationPrincipal Account account) {
         log.info("Pharmacist starting to process prescription: {}", prescriptionId);
 
         prescriptionService.startProcessing(prescriptionId, account);

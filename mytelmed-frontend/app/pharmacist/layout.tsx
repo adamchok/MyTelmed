@@ -227,7 +227,7 @@ export default function PharmacistLayout({ children }: Readonly<{ children: Reac
                                 src={profileData?.profileImageUrl || pharmacist?.profileImageUrl}
                                 icon={<User className="w-5 h-5" />}
                                 size={36}
-                                style={{ backgroundColor: "#2f855a", color: lightText, cursor: "pointer" }}
+                                style={{ backgroundColor: "#9333ea", color: lightText, cursor: "pointer" }}
                                 alt="User avatar"
                             />
                         </Dropdown>

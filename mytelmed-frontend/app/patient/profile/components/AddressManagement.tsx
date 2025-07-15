@@ -101,11 +101,10 @@ const AddressManagement = ({
 
                 {!loading && addresses.length > 0 && (
                     <Row gutter={[16, 16]}>
-                        {addresses.map((address, index) => (
+                        {addresses.map((address) => (
                             <Col xs={24} md={12} lg={8} key={address.id}>
                                 <AddressCard
                                     address={address}
-                                    isDefault={index === 0} // First address is default
                                     onEdit={onEditAddress}
                                     onDelete={onDeleteAddress}
                                     isDeleting={deletingAddressId === address.id}

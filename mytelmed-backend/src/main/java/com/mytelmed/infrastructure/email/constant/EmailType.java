@@ -2,7 +2,6 @@ package com.mytelmed.infrastructure.email.constant;
 
 import lombok.Getter;
 
-
 /**
  * Email types for Malaysian public healthcare telemedicine system.
  * Supports both PHYSICAL and VIRTUAL appointment notifications.
@@ -43,6 +42,9 @@ public enum EmailType {
 
     // Referral notifications
     REFERRAL_CREATED(EmailFamily.REFERRAL),
+    REFERRAL_ACCEPTED(EmailFamily.REFERRAL),
+    REFERRAL_REJECTED(EmailFamily.REFERRAL),
+    REFERRAL_SCHEDULED(EmailFamily.REFERRAL),
 
     // Delivery notifications
     DELIVERY_CREATED(EmailFamily.DELIVERY),

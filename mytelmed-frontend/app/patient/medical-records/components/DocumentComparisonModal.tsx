@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Modal, Typography, Button, Card, Tag, Alert, Spin } from "antd";
+import { Modal, Typography, Button, Card, Tag, Alert } from "antd";
 import { X, FileText, Calendar, User, Maximize2, Minimize2, RefreshCw } from "lucide-react";
 import { Document } from "@/app/api/document/props";
 import { DocumentType } from "@/app/api/props";
@@ -32,32 +32,12 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
     isFullscreen = false,
     onToggleFullscreen,
 }) => {
-    const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState<number>(0);
-    const [iframeKey, setIframeKey] = useState<number>(0);
-
-    const handleLoad = () => {
-        setLoading(false);
-        setError(null);
-    };
-
-    const handleError = () => {
-        setLoading(false);
-
-        // Provide more specific error messages based on common issues
-        if (retryCount === 0) {
-            setError("Document failed to load. This might be due to URL expiry or browser security restrictions.");
-        } else {
-            setError("Unable to display document in browser. Please download the document to view it.");
-        }
-    };
 
     const handleRetry = () => {
         setRetryCount((prev) => prev + 1);
-        setLoading(true);
         setError(null);
-        setIframeKey((prev) => prev + 1); // Force iframe recreation
     };
 
     const getDocumentTypeColor = (type: DocumentType | undefined) => {
@@ -107,10 +87,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
     // Reset states when document changes
     useEffect(() => {
-        setLoading(true);
         setError(null);
         setRetryCount(0);
-        setIframeKey((prev) => prev + 1);
     }, [document.id]);
 
     return (
@@ -177,15 +155,6 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
             {/* Document Viewer */}
             <div className="flex-1 overflow-auto border rounded bg-gray-50 relative">
-                {loading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10">
-                        <Spin size="large" />
-                        <div className="ml-3">
-                            <Text className="text-sm text-gray-600">Loading document...</Text>
-                        </div>
-                    </div>
-                )}
-
                 {error || !isValidUrl ? (
                     <div className="flex items-center justify-center h-full p-4">
                         <Alert
@@ -223,13 +192,9 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 ) : (
                     <div className="h-full">
                         <iframe
-                            key={iframeKey}
                             src={documentUrl}
                             className="w-full h-full border-0"
                             title={document.documentName}
-                            onLoad={handleLoad}
-                            onError={handleError}
-                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads allow-top-navigation"
                         />
                     </div>
                 )}

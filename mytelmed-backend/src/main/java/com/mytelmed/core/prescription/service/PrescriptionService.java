@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
-
 /**
  * Service for managing medical prescriptions in Malaysian public healthcare
  * telemedicine.
@@ -41,10 +40,10 @@ public class PrescriptionService {
     private final ApplicationEventPublisher applicationEventPublisher;
 
     public PrescriptionService(PrescriptionRepository prescriptionRepository,
-                               PrescriptionItemRepository prescriptionItemRepository,
-                               AppointmentService appointmentService,
-                               PharmacistService pharmacistService,
-                               ApplicationEventPublisher applicationEventPublisher) {
+            PrescriptionItemRepository prescriptionItemRepository,
+            AppointmentService appointmentService,
+            PharmacistService pharmacistService,
+            ApplicationEventPublisher applicationEventPublisher) {
         this.prescriptionRepository = prescriptionRepository;
         this.prescriptionItemRepository = prescriptionItemRepository;
         this.appointmentService = appointmentService;
@@ -82,7 +81,8 @@ public class PrescriptionService {
 
     @Transactional(readOnly = true)
     public Page<Prescription> findByAccount(Account account, Pageable pageable) throws ResourceNotFoundException {
-        log.info("Fetching prescriptions for {} with account ID: {}", account.getPermission().getType(), account.getId());
+        log.info("Fetching prescriptions for {} with account ID: {}", account.getPermission().getType(),
+                account.getId());
 
         Page<Prescription> prescriptionPage;
         switch (account.getPermission().getType()) {
@@ -133,6 +133,17 @@ public class PrescriptionService {
         return prescriptions;
     }
 
+    @Transactional(readOnly = true)
+    public Page<Prescription> findByFacilityIdAndStatus(UUID facilityId, PrescriptionStatus status, Pageable pageable) {
+        log.info("Fetching prescriptions by facility: {} and status: {}", facilityId, status);
+
+        Page<Prescription> prescriptions = prescriptionRepository.findByFacilityIdAndStatus(facilityId, status,
+                pageable);
+        log.debug("Found {} prescriptions for facility: {} with status: {}", prescriptions.getTotalElements(),
+                facilityId, status);
+        return prescriptions;
+    }
+
     @Transactional
     public Prescription createPrescription(Account account, CreatePrescriptionRequestDto request) throws AppException {
         log.info("Creating prescription for appointment: {}", request.appointmentId());
@@ -148,10 +159,11 @@ public class PrescriptionService {
             throw new AppException("Not authorized to create prescription for this appointment");
         }
 
+        // TODO: Undo for production
         // Check if prescription already exists for this appointment
-        if (prescriptionRepository.existsByAppointmentId(request.appointmentId())) {
-            throw new AppException("Prescription already exists for this appointment");
-        }
+//        if (prescriptionRepository.existsByAppointmentId(request.appointmentId())) {
+//            throw new AppException("Prescription already exists for this appointment");
+//        }
 
         try {
             // Create a prescription record

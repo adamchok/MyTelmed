@@ -88,9 +88,8 @@ const UserManagementComponent: React.FC<UserManagementComponentProps> = ({
                             />
                         ) : null}
                         <div
-                            className={`w-[80px] h-[80px] rounded-full bg-gray-200 flex items-center justify-center ${
-                                value ? "hidden" : ""
-                            }`}
+                            className={`w-[80px] h-[80px] rounded-full bg-gray-200 flex items-center justify-center ${value ? "hidden" : ""
+                                }`}
                         >
                             <UserOutlined className="text-gray-400 text-xl" />
                         </div>

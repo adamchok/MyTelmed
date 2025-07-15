@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 
-
 /**
  * Event listener for billing-related events in Malaysian public healthcare
  * telemedicine.
@@ -26,7 +25,7 @@ public class BillingEventListener {
     private final String frontendUrl;
 
     public BillingEventListener(EmailSenderFactoryRegistry emailService,
-                                @Value("${application.frontend.url}") String frontendUrl) {
+            @Value("${application.frontend.url}") String frontendUrl) {
         this.emailService = emailService;
         this.frontendUrl = frontendUrl;
     }
@@ -138,6 +137,11 @@ public class BillingEventListener {
         variables.put("currency", event.transaction().getCurrency());
         variables.put("stripeChargeId", event.transaction().getStripeChargeId());
 
+        // Receipt URL from Stripe (if available)
+        if (event.receiptUrl() != null && !event.receiptUrl().trim().isEmpty()) {
+            variables.put("receiptUrl", event.receiptUrl());
+        }
+
         // Service-specific information
         if (event.bill().getAppointment() != null) {
             variables.put("doctorName", "Dr. " + event.bill().getAppointment().getDoctor().getName());
@@ -159,12 +163,11 @@ public class BillingEventListener {
      */
     private String buildPaymentUrl(com.mytelmed.core.payment.entity.Bill bill) {
         if (bill.getAppointment() != null) {
-            return frontendUrl + "/patient/appointment/" + bill.getAppointment().getId() + "/payment";
+            return frontendUrl + "/patient/appointment/" + bill.getAppointment().getId();
         } else if (bill.getPrescription() != null) {
-            return frontendUrl + "/patient/prescription/" + bill.getPrescription().getId() + "/payment";
-        } else {
-            return frontendUrl + "/patient/billing/" + bill.getId() + "/payment";
+            return frontendUrl + "/patient/prescription/" + bill.getPrescription().getId();
         }
+        return null;
     }
 
     /**

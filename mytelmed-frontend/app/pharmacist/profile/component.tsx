@@ -405,7 +405,7 @@ const ProfilePageComponent = ({
                                                 <Image
                                                     src={pharmacist.facility.thumbnailUrl}
                                                     alt={pharmacist.facility.name}
-                                                    className="w-full h-full object-cover"
+                                                    className="w-full h-full object-cover rounded-lg"
                                                     loading="eager"
                                                 />
                                             ) : (

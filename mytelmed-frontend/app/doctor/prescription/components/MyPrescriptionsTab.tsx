@@ -11,7 +11,6 @@ import {
     Select,
     Row,
     Col,
-    Badge,
 } from "antd";
 import {
     Calendar,
@@ -20,7 +19,6 @@ import {
     Eye,
     Search,
     Filter,
-    FileText,
 } from "lucide-react";
 import dayjs from "dayjs";
 import { PrescriptionDto, PrescriptionStatus } from "@/app/api/prescription/props";
@@ -52,48 +50,10 @@ const MyPrescriptionsTab: React.FC<MyPrescriptionsTabProps> = ({
             prescription.appointment.patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             prescription.diagnosis.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const matchesStatus = statusFilter === "" || prescription.status === statusFilter;
+        const matchesStatus = statusFilter === "" || statusFilter === undefined || prescription.status === statusFilter;
 
         return matchesSearch && matchesStatus;
     });
-
-    const getStatusColor = (status: PrescriptionStatus) => {
-        switch (status) {
-            case PrescriptionStatus.CREATED:
-                return "blue";
-            case PrescriptionStatus.READY_FOR_PROCESSING:
-                return "orange";
-            case PrescriptionStatus.PROCESSING:
-                return "purple";
-            case PrescriptionStatus.READY:
-                return "green";
-            case PrescriptionStatus.EXPIRED:
-                return "red";
-            case PrescriptionStatus.CANCELLED:
-                return "default";
-            default:
-                return "default";
-        }
-    };
-
-    const getStatusText = (status: PrescriptionStatus) => {
-        switch (status) {
-            case PrescriptionStatus.CREATED:
-                return "Created";
-            case PrescriptionStatus.READY_FOR_PROCESSING:
-                return "Ready for Processing";
-            case PrescriptionStatus.PROCESSING:
-                return "Processing";
-            case PrescriptionStatus.READY:
-                return "Ready";
-            case PrescriptionStatus.EXPIRED:
-                return "Expired";
-            case PrescriptionStatus.CANCELLED:
-                return "Cancelled";
-            default:
-                return status;
-        }
-    };
 
     const handleViewDetails = (prescription: PrescriptionDto) => {
         setSelectedPrescription(prescription);
@@ -167,76 +127,74 @@ const MyPrescriptionsTab: React.FC<MyPrescriptionsTabProps> = ({
                     dataSource={filteredPrescriptions}
                     renderItem={(prescription) => (
                         <List.Item>
-                            <Badge.Ribbon
-                                text={getStatusText(prescription.status)}
-                                color={getStatusColor(prescription.status)}
+                            <Card
+                                className="h-full hover:shadow-lg transition-all duration-200 cursor-pointer"
+                                onClick={() => handleViewDetails(prescription)}
+                                styles={{
+                                    body: {
+                                        padding: '16px',
+                                    },
+                                }}
                             >
-                                <Card
-                                    className="h-full hover:shadow-lg transition-all duration-200 cursor-pointer"
-                                    onClick={() => handleViewDetails(prescription)}
-                                    bodyStyle={{ padding: '16px' }}
-                                >
-                                    <div className="space-y-3">
-                                        {/* Header */}
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1 min-w-0">
-                                                <Text className="font-medium text-gray-900 block truncate">
-                                                    {prescription.prescriptionNumber}
-                                                </Text>
-                                                <Text className="text-sm text-gray-500">
-                                                    #{prescription.id.substring(0, 8)}...
-                                                </Text>
-                                            </div>
-                                            <FileText className="w-5 h-5 text-blue-600 ml-2 flex-shrink-0" />
-                                        </div>
-
-                                        {/* Patient Info */}
-                                        <div className="flex items-center gap-2">
-                                            <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                                            <Text className="text-sm text-gray-700 truncate">
-                                                {prescription.appointment.patient.name}
+                                <div className="space-y-3">
+                                    {/* Header */}
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-1 min-w-0">
+                                            <Text className="font-medium text-gray-900 block truncate">
+                                                {prescription.prescriptionNumber}
                                             </Text>
-                                        </div>
-
-                                        {/* Diagnosis */}
-                                        <div className="space-y-1">
-                                            <Text className="text-xs text-gray-500 uppercase tracking-wide">
-                                                Diagnosis
+                                            <Text className="text-sm text-gray-500">
+                                                #{prescription.id.substring(0, 8)}...
                                             </Text>
-                                            <Text className="text-sm text-gray-700 line-clamp-2">
-                                                {prescription.diagnosis}
-                                            </Text>
-                                        </div>
-
-                                        {/* Dates */}
-                                        <div className="flex justify-between items-center text-xs text-gray-500">
-                                            <div className="flex items-center gap-1">
-                                                <Calendar className="w-3 h-3" />
-                                                <span>Created: {dayjs(prescription.createdAt).format('MMM D, YYYY')}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <Clock className="w-3 h-3" />
-                                                <span>Expires: {dayjs(prescription.expiryDate).format('MMM D')}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Action Button */}
-                                        <div className="pt-2 border-t">
-                                            <Button
-                                                type="link"
-                                                icon={<Eye className="w-4 h-4" />}
-                                                className="p-0 h-auto text-blue-600 hover:text-blue-700"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleViewDetails(prescription);
-                                                }}
-                                            >
-                                                View Details
-                                            </Button>
                                         </div>
                                     </div>
-                                </Card>
-                            </Badge.Ribbon>
+
+                                    {/* Patient Info */}
+                                    <div className="flex items-center gap-2">
+                                        <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                        <Text className="text-sm text-gray-700 truncate">
+                                            {prescription.appointment.patient.name}
+                                        </Text>
+                                    </div>
+
+                                    {/* Diagnosis */}
+                                    <div className="space-y-1">
+                                        <Text className="text-xs text-gray-500 uppercase tracking-wide">
+                                            Diagnosis
+                                        </Text>
+                                        <Text className="text-sm text-gray-700 line-clamp-2">
+                                            {prescription.diagnosis}
+                                        </Text>
+                                    </div>
+
+                                    {/* Dates */}
+                                    <div className="flex justify-between items-center text-xs text-gray-500">
+                                        <div className="flex items-center gap-1">
+                                            <Calendar className="w-3 h-3" />
+                                            <span>Created: {dayjs(Number(prescription.createdAt) * 1000).format('MMM D, YYYY')}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            <span>Expires: {dayjs(Number(prescription.expiryDate) * 1000).format('MMM D, YYYY')}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Button */}
+                                    <div className="pt-2 border-t">
+                                        <Button
+                                            type="link"
+                                            icon={<Eye className="w-4 h-4" />}
+                                            className="p-0 h-auto text-blue-600 hover:text-blue-700"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleViewDetails(prescription);
+                                            }}
+                                        >
+                                            View Details
+                                        </Button>
+                                    </div>
+                                </div>
+                            </Card>
                         </List.Item>
                     )}
                 />

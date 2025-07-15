@@ -3,29 +3,45 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Your Appointment Confirmation - MyTelmed</title>
+        <title>Appointment Confirmed - MyTelmed</title>
         <style>
+            /* Base Styles */
             body {
                 font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
                 line-height: 1.6;
                 color: #333333;
-                padding: 20px;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 10px;
                 background-color: #f8f9fa;
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+                box-sizing: border-box;
             }
 
             .container {
                 background-color: #ffffff;
                 border-radius: 10px;
-                padding: 30px;
+                padding: 25px;
                 box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                width: 100%;
+                box-sizing: border-box;
             }
 
             .header {
                 text-align: center;
                 justify-content: center;
                 border-bottom: 3px solid #28a745;
-                padding-bottom: 20px;
-                margin-bottom: 30px;
+                padding-bottom: 15px;
+                margin-bottom: 25px;
+            }
+
+            .header h2 {
+                color: #495057;
+                margin: 0;
+                font-size: 24px;
+                font-weight: 600;
+                line-height: 1.3;
             }
 
             .logo {
@@ -36,6 +52,34 @@
                 margin: 0 auto;
             }
 
+            .confirmation-status {
+                background-color: #d4edda;
+                border: 1px solid #c3e6cb;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+                text-align: center;
+            }
+
+            .confirmation-status .status-icon {
+                font-size: 48px;
+                color: #28a745;
+                margin-bottom: 10px;
+                display: block;
+            }
+
+            .confirmation-status h3 {
+                color: #155724;
+                margin: 0 0 10px 0;
+                font-size: 20px;
+            }
+
+            .confirmation-status p {
+                margin: 0;
+                color: #155724;
+                font-size: 16px;
+            }
+
             .appointment-details {
                 background-color: #f8f9fa;
                 border-left: 4px solid #28a745;
@@ -44,46 +88,58 @@
                 border-radius: 5px;
             }
 
+            .appointment-details h3 {
+                color: #28a745;
+                margin-top: 0;
+                margin-bottom: 15px;
+                font-size: 18px;
+            }
+
             .detail-row {
                 display: flex;
                 margin-bottom: 12px;
-                align-items: center;
+                align-items: flex-start;
+                flex-wrap: wrap;
+                gap: 8px;
             }
 
             .detail-label {
                 font-weight: bold;
-                color: #495057;
+                color: #17a2b8;
                 min-width: 140px;
-                margin-right: 10px;
+                flex-shrink: 0;
             }
 
             .detail-value {
                 color: #333;
                 flex: 1;
+                word-break: break-word;
             }
 
             .datetime-highlight {
                 background-color: #28a745;
-                color: white;
-                padding: 15px;
+                color: #ffffff;
+                padding: 20px;
                 border-radius: 8px;
                 text-align: center;
                 margin: 20px 0;
             }
 
             .datetime-highlight .date {
-                font-size: 24px;
+                font-size: 22px;
                 font-weight: bold;
                 margin-bottom: 5px;
+                line-height: 1.2;
             }
 
             .datetime-highlight .time {
                 font-size: 18px;
+                font-weight: 500;
             }
 
             .action-buttons {
                 text-align: center;
-                margin: 30px 0;
+                margin: 25px 0;
             }
 
             .btn {
@@ -95,41 +151,251 @@
                 text-decoration: none;
                 border-radius: 5px;
                 font-weight: bold;
+                transition: background-color 0.3s ease;
             }
 
             .btn:hover {
                 background-color: #0056b3;
             }
 
+            .btn-success {
+                background-color: #28a745;
+            }
+
+            .btn-success:hover {
+                background-color: #1e7e34;
+            }
+
+            .content-text {
+                font-size: 16px;
+                line-height: 1.6;
+                margin-bottom: 16px;
+            }
+
             .footer {
                 border-top: 1px solid #dee2e6;
-                padding-top: 20px;
-                margin-top: 30px;
+                padding-top: 15px;
+                margin-top: 25px;
                 text-align: center;
                 color: #6c757d;
                 font-size: 14px;
             }
 
-            a {
-                color: #007bff;
+            .footer p {
+                margin: 8px 0;
             }
 
-            a:hover {
+            .footer a {
+                color: #007bff;
+                text-decoration: none;
+            }
+
+            .footer a:hover {
                 text-decoration: underline;
+            }
+
+            /* Tablet Styles (600px - 768px) */
+            @media screen and (max-width: 768px) and (min-width: 600px) {
+                body {
+                    padding: 15px;
+                }
+
+                .container {
+                    padding: 20px;
+                }
+
+                .header h2 {
+                    font-size: 22px;
+                }
+
+                .confirmation-status .status-icon {
+                    font-size: 42px;
+                }
+
+                .confirmation-status h3 {
+                    font-size: 18px;
+                }
+
+                .datetime-highlight .date {
+                    font-size: 20px;
+                }
+
+                .datetime-highlight .time {
+                    font-size: 16px;
+                }
+
+                .detail-label {
+                    min-width: 120px;
+                }
+
+                .btn {
+                    padding: 10px 20px;
+                    margin: 5px;
+                }
+            }
+
+            /* Mobile Styles (< 600px) */
+            @media screen and (max-width: 599px) {
+                body {
+                    padding: 5px;
+                    max-width: 100%;
+                }
+
+                .container {
+                    padding: 15px;
+                    border-radius: 8px;
+                }
+
+                .header {
+                    padding-bottom: 12px;
+                    margin-bottom: 20px;
+                }
+
+                .header h2 {
+                    font-size: 20px;
+                    line-height: 1.2;
+                }
+
+                .confirmation-status {
+                    padding: 15px;
+                    margin: 15px 0;
+                }
+
+                .confirmation-status .status-icon {
+                    font-size: 36px;
+                }
+
+                .confirmation-status h3 {
+                    font-size: 16px;
+                }
+
+                .confirmation-status p {
+                    font-size: 14px;
+                }
+
+                .appointment-details {
+                    padding: 15px;
+                    margin: 15px 0;
+                }
+
+                .appointment-details h3 {
+                    font-size: 16px;
+                    margin-bottom: 12px;
+                }
+
+                .detail-row {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 4px;
+                    margin-bottom: 16px;
+                }
+
+                .detail-label {
+                    min-width: auto;
+                    font-size: 14px;
+                    margin-bottom: 4px;
+                }
+
+                .detail-value {
+                    font-size: 14px;
+                    padding-left: 0;
+                }
+
+                .datetime-highlight {
+                    padding: 15px;
+                    margin: 15px 0;
+                }
+
+                .datetime-highlight .date {
+                    font-size: 18px;
+                    margin-bottom: 8px;
+                }
+
+                .datetime-highlight .time {
+                    font-size: 16px;
+                }
+
+                .action-buttons {
+                    margin: 20px 0;
+                }
+
+                .btn {
+                    display: block;
+                    width: 100%;
+                    margin: 10px 0;
+                    padding: 12px;
+                    box-sizing: border-box;
+                }
+
+                .content-text {
+                    font-size: 14px;
+                    line-height: 1.5;
+                    margin-bottom: 14px;
+                }
+
+                .footer {
+                    padding-top: 12px;
+                    margin-top: 20px;
+                    font-size: 12px;
+                }
+
+                .footer p {
+                    margin: 6px 0;
+                }
+            }
+
+            /* Extra Small Mobile (< 400px) */
+            @media screen and (max-width: 399px) {
+                .container {
+                    padding: 12px;
+                }
+
+                .header h2 {
+                    font-size: 18px;
+                }
+
+                .confirmation-status .status-icon {
+                    font-size: 32px;
+                }
+
+                .datetime-highlight .date {
+                    font-size: 16px;
+                }
+
+                .datetime-highlight .time {
+                    font-size: 14px;
+                }
+
+                .content-text {
+                    font-size: 13px;
+                }
+            }
+
+            /* High DPI Displays */
+            @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+                .container {
+                    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+                }
             }
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <h2 style="color: #495057; margin: 0">Your Appointment is Confirmed</h2>
+                <h2>Your Appointment is Confirmed</h2>
             </div>
 
-            <p>Dear <strong th:text="${patientName}">Patient Name</strong>,</p>
+            <div class="confirmation-status">
+                <div class="status-icon">✅</div>
+                <h3>Appointment Confirmed!</h3>
+                <p>Your appointment has been successfully confirmed by the healthcare provider.</p>
+            </div>
 
-            <p>
-                Your appointment with <strong th:text="${providerName}">Provider Name</strong> has been confirmed.
-                Please find the details below:
+            <p class="content-text">Dear <strong th:text="${patientName}">Patient Name</strong>,</p>
+
+            <p class="content-text">
+                Great news! Your appointment has been confirmed by the healthcare provider. Please mark your calendar and
+                prepare for your upcoming consultation.
             </p>
 
             <div class="datetime-highlight">
@@ -140,7 +406,7 @@
             </div>
 
             <div class="appointment-details">
-                <h3 style="color: #28a745; margin-top: 0">Confirmed Appointment Details</h3>
+                <h3>Confirmed Appointment Details</h3>
 
                 <div class="detail-row">
                     <span class="detail-label">Appointment ID:</span>
@@ -165,6 +431,11 @@
                     <span class="detail-value" th:text="${providerName}">-</span>
                 </div>
 
+                <div class="detail-row" th:if="${facilityName}">
+                    <span class="detail-label">Healthcare Facility:</span>
+                    <span class="detail-value" th:text="${facilityName}">-</span>
+                </div>
+
                 <div class="detail-row" th:if="${reasonForVisit}">
                     <span class="detail-label">Reason for Visit:</span>
                     <span class="detail-value" th:text="${reasonForVisit}">-</span>
@@ -172,8 +443,17 @@
             </div>
 
             <div class="action-buttons">
-                <a th:href="${uiHost + '/patient/appointment/' + appointmentId}" class="btn"> View Appointment </a>
+                <a th:href="${uiHost + '/patient/appointment/' + appointmentId}" class="btn btn-success">
+                    View Appointment
+                </a>
             </div>
+
+            <p class="content-text">
+                You will receive a reminder 24 hours before your appointment. If you need to reschedule or cancel, please
+                contact us at least 24 hours in advance.
+            </p>
+
+            <p class="content-text">We look forward to providing you with excellent healthcare service.</p>
 
             <div class="footer">
                 <p>This is an automated message, please do not reply to this email.</p>

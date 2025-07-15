@@ -525,7 +525,7 @@ const Component = () => {
                             </div>
                         }
                         extra={
-                            <Link href="/patient/prescriptions" className="text-purple-500 hover:text-purple-700">
+                            <Link href="/patient/prescription" className="text-purple-500 hover:text-purple-700">
                                 View All <ChevronRight className="w-4 h-4 inline" />
                             </Link>
                         }

@@ -3,10 +3,12 @@ package com.mytelmed.core.payment.entity;
 import com.mytelmed.common.constant.payment.BillType;
 import com.mytelmed.common.constant.payment.BillingStatus;
 import com.mytelmed.common.constant.payment.PaymentMode;
+import com.mytelmed.common.utils.conveter.EncryptionConverter;
 import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.appointment.entity.Appointment;
 import com.mytelmed.core.prescription.entity.Prescription;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -76,6 +78,10 @@ public class Bill {
 
     @Column(name = "stripe_charge_id")
     private String stripeChargeId;
+
+    @Convert(converter = EncryptionConverter.class)
+    @Column(name = "receipt_url", columnDefinition = "TEXT")
+    private String receiptUrl;
 
     // Refund tracking fields
     @Column(name = "refund_amount", precision = 10, scale = 2)

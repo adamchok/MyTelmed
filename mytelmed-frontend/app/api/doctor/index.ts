@@ -8,9 +8,12 @@ const DOCTOR_BASE = "/api/v1/doctor";
 const DoctorApi = {
     // Get all doctors (paginated) - matches GET /api/v1/doctor
     getDoctors(page = 0, pageSize = 10): Promise<AxiosResponse<ApiResponse<PaginatedResponse<Doctor>>>> {
-        return repository.get<ApiResponse<PaginatedResponse<Doctor>>>(
-            `${DOCTOR_BASE}?page=${page}&pageSize=${pageSize}`
-        );
+        return repository.get<ApiResponse<PaginatedResponse<Doctor>>>(`${DOCTOR_BASE}?page=${page}&pageSize=${pageSize}`);
+    },
+
+    // Get all doctors (list) - matches GET /api/v1/doctor/all
+    getAllDoctors(): Promise<AxiosResponse<ApiResponse<Doctor[]>>> {
+        return repository.get<ApiResponse<Doctor[]>>(`${DOCTOR_BASE}/all`);
     },
 
     // Get doctors by facility ID - matches GET /api/v1/doctor/facility/{facilityId}

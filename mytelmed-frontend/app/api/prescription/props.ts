@@ -1,6 +1,7 @@
 import { Pharmacist } from "../pharmacist/props";
 import { AppointmentDto } from "../appointment/props";
 import { SearchOptions } from "../props";
+import { MedicationDeliverySimpleDto } from "../delivery/props";
 
 // Prescription Status Enum
 export enum PrescriptionStatus {
@@ -54,6 +55,7 @@ export interface PrescriptionDto {
     expiryDate: string;
     createdAt: string;
     updatedAt: string;
+    delivery?: MedicationDeliverySimpleDto;
 }
 
 // Request DTOs
@@ -69,5 +71,15 @@ export interface UpdatePrescriptionStatusRequest {
     status: PrescriptionStatus;
 }
 
-// Search/filter options
-export type PrescriptionSearchOptions = SearchOptions;
+// Enhanced search/filter options for prescriptions
+export interface PrescriptionSearchOptions extends SearchOptions {
+    sortBy?: string;
+    sortDirection?: "asc" | "desc";
+    status?: PrescriptionStatus;
+    patientId?: string;
+    doctorId?: string;
+    facilityId?: string;
+    startDate?: string;
+    endDate?: string;
+    searchQuery?: string;
+}

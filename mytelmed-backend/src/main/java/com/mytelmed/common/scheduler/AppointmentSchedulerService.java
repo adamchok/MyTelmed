@@ -160,7 +160,7 @@ public class AppointmentSchedulerService {
     }
 
     /**
-     * Auto-cancel unpaid appointments after 3 hours of booking time.
+     * Auto-cancel unpaid appointments after 30 minutes of booking time.
      * Cancels billing, transactions, and releases time slot.
      */
     @Transactional
@@ -185,7 +185,7 @@ public class AppointmentSchedulerService {
 
                 // Cancel the appointment
                 appointment.setStatus(AppointmentStatus.CANCELLED);
-                appointment.setCancellationReason("Auto-cancelled due to non-payment within 3 hours");
+                appointment.setCancellationReason("Auto-cancelled due to non-payment within 30 minutes");
                 appointmentRepository.save(appointment);
 
                 // Cancel associated bill

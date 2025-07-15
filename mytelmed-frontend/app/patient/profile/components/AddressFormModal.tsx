@@ -1,7 +1,6 @@
 import { Modal, Form, Input, Button, Row, Col, Typography } from "antd";
 import { MapPin, Building, Home, Navigation } from "lucide-react";
 import { AddressDto, RequestAddressDto } from "@/app/api/address/props";
-import TextArea from "antd/es/input/TextArea";
 import { useEffect } from "react";
 
 const { Text } = Typography;
@@ -31,6 +30,9 @@ const AddressFormModal = ({ visible, address, loading, onCancel, onSubmit }: Add
                 // Reset form for new address
                 form.resetFields();
             }
+        } else {
+            // Reset form when modal closes
+            form.resetFields();
         }
     }, [visible, address, form]);
 
@@ -74,9 +76,9 @@ const AddressFormModal = ({ visible, address, loading, onCancel, onSubmit }: Add
                 initialValues={
                     address
                         ? {
-                              ...address,
-                              postcode: address.postcode ? address.postcode.replace(/\D/g, "").slice(0, 5) : "",
-                          }
+                            ...address,
+                            postcode: address.postcode ? address.postcode.replace(/\D/g, "").slice(0, 5) : "",
+                        }
                         : {}
                 }
                 className="mt-4"
@@ -86,23 +88,68 @@ const AddressFormModal = ({ visible, address, loading, onCancel, onSubmit }: Add
                         <Form.Item
                             label={
                                 <span className="text-sm font-medium text-gray-700 flex items-center">
-                                    <MapPin className="mr-2 text-blue-500" size={16} />
-                                    Address
+                                    <Home className="mr-2 text-blue-500" size={16} />
+                                    Address Name
                                 </span>
                             }
-                            name="address"
+                            name="addressName"
                             rules={[
-                                { required: true, message: "Please enter the address" },
-                                { min: 5, message: "Address must be at least 5 characters" },
-                                { max: 300, message: "Address cannot exceed 300 characters" },
+                                { required: true, message: "Please enter an address name" },
+                                { min: 2, message: "Address name must be at least 2 characters" },
+                                { max: 100, message: "Address name cannot exceed 100 characters" },
                             ]}
                         >
-                            <TextArea
-                                placeholder="Enter your full address"
-                                className="h-28 rounded-lg border-gray-200 hover:border-blue-400 focus:border-blue-500"
+                            <Input
+                                placeholder="e.g., Home, Office, Parents' House"
+                                className="h-10 rounded-lg border-gray-200 hover:border-blue-400 focus:border-blue-500"
+                                size="large"
+                                maxLength={100}
+                            />
+                        </Form.Item>
+                    </Col>
+
+                    <Col span={24}>
+                        <Form.Item
+                            label={
+                                <span className="text-sm font-medium text-gray-700 flex items-center">
+                                    <MapPin className="mr-2 text-blue-500" size={16} />
+                                    Address Line 1
+                                </span>
+                            }
+                            name="address1"
+                            rules={[
+                                { required: true, message: "Please enter address line 1" },
+                                { min: 5, message: "Address line 1 must be at least 5 characters" },
+                                { max: 300, message: "Address line 1 cannot exceed 300 characters" },
+                            ]}
+                        >
+                            <Input
+                                placeholder="Street address, building number"
+                                className="h-10 rounded-lg border-gray-200 hover:border-blue-400 focus:border-blue-500"
                                 size="large"
                                 maxLength={300}
-                                showCount
+                            />
+                        </Form.Item>
+                    </Col>
+
+                    <Col span={24}>
+                        <Form.Item
+                            label={
+                                <span className="text-sm font-medium text-gray-700 flex items-center">
+                                    <MapPin className="mr-2 text-blue-500" size={16} />
+                                    Address Line 2 (Optional)
+                                </span>
+                            }
+                            name="address2"
+                            rules={[
+                                { max: 300, message: "Address line 2 cannot exceed 300 characters" },
+                            ]}
+                        >
+                            <Input
+                                placeholder="Apartment, suite, unit, floor, etc."
+                                className="h-10 rounded-lg border-gray-200 hover:border-blue-400 focus:border-blue-500"
+                                size="large"
+                                maxLength={300}
                             />
                         </Form.Item>
                     </Col>

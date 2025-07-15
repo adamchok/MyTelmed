@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MyTelmed - Referral Appointment Scheduled</title>
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333333;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f8f9fa;
+            }
+
+            .container {
+                background-color: #ffffff;
+                border-radius: 10px;
+                padding: 30px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
+
+            .header {
+                text-align: center;
+                justify-content: center;
+                border-bottom: 3px solid #28a745;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+            }
+
+            .logo {
+                width: 192px;
+                height: auto;
+                max-width: 100%;
+                display: block;
+                margin: 0 auto;
+            }
+
+            .appointment-status {
+                background-color: #d4edda;
+                border: 1px solid #28a745;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+                text-align: center;
+            }
+
+            .appointment-status .status-icon {
+                font-size: 48px;
+                color: #28a745;
+                margin-bottom: 10px;
+            }
+
+            .appointment-status h3 {
+                color: #155724;
+                margin: 0 0 10px 0;
+            }
+
+            .appointment-details {
+                background-color: #e8f5e8;
+                border-left: 4px solid #28a745;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 5px;
+            }
+
+            .referral-number {
+                font-size: 18px;
+                font-weight: bold;
+                color: #28a745;
+                margin-bottom: 10px;
+            }
+
+            .appointment-datetime {
+                background-color: #007bff;
+                color: white;
+                padding: 15px;
+                border-radius: 8px;
+                text-align: center;
+                margin: 20px 0;
+                font-size: 18px;
+                font-weight: bold;
+            }
+
+            .virtual-badge {
+                background-color: #17a2b8;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: bold;
+                display: inline-block;
+                margin-bottom: 15px;
+            }
+
+            .physical-badge {
+                background-color: #6f42c1;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: bold;
+                display: inline-block;
+                margin-bottom: 15px;
+            }
+
+            .doctor-info {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+            }
+
+            .info-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 10px;
+                padding: 8px 0;
+                border-bottom: 1px solid #e9ecef;
+            }
+
+            .info-label {
+                font-weight: bold;
+                color: #495057;
+                flex: 0 0 40%;
+            }
+
+            .info-value {
+                color: #212529;
+                text-align: right;
+                flex: 1;
+                word-break: break-word;
+            }
+
+            .action-buttons {
+                text-align: center;
+                margin: 30px 0;
+            }
+
+            .btn {
+                display: inline-block;
+                padding: 12px 24px;
+                margin: 10px;
+                border-radius: 5px;
+                text-decoration: none;
+                font-weight: bold;
+                transition: background-color 0.3s;
+                border: 2px solid transparent;
+            }
+
+            .btn-primary {
+                background-color: #007bff;
+                color: white;
+                border-color: #007bff;
+            }
+
+            .btn-primary:hover {
+                background-color: #0056b3;
+                border-color: #0056b3;
+            }
+
+            .btn-success {
+                background-color: #28a745;
+                color: white;
+                border-color: #28a745;
+            }
+
+            .btn-success:hover {
+                background-color: #218838;
+                border-color: #218838;
+            }
+
+            .btn {
+                background-color: #6c757d;
+                color: white;
+                border-color: #6c757d;
+            }
+
+            .btn:hover {
+                background-color: #545b62;
+                border-color: #545b62;
+            }
+
+            .important-notice {
+                background-color: #fff3cd;
+                border: 1px solid #ffeaa7;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+            }
+
+            .footer {
+                text-align: center;
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid #dee2e6;
+                font-size: 12px;
+                color: #6c757d;
+            }
+
+            .footer a {
+                color: #007bff;
+                text-decoration: none;
+            }
+
+            .footer a:hover {
+                text-decoration: underline;
+            }
+
+            @media (max-width: 600px) {
+                .info-row {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+
+                .info-value {
+                    text-align: left;
+                    margin-top: 5px;
+                }
+
+                .btn {
+                    display: block;
+                    margin: 10px 0;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2 style="color: #495057; margin: 10px 0 0 0">Appointment Scheduled</h2>
+            </div>
+
+            <div class="appointment-status">
+                <div class="status-icon">📅</div>
+                <h3>Your Referral Appointment is Confirmed</h3>
+                <p style="margin: 0; color: #155724">
+                    Your specialist appointment has been successfully scheduled. Please review the details below.
+                </p>
+            </div>
+
+            <div class="appointment-details">
+                <div class="referral-number">Referral #<span th:text="${referralNumber}">REF-001</span></div>
+
+                <div th:if="${consultationMode == 'VIRTUAL'}" class="virtual-badge">💻 Virtual Appointment</div>
+                <div th:if="${consultationMode == 'PHYSICAL'}" class="physical-badge">🏥 Physical Appointment</div>
+
+                <div class="appointment-datetime">
+                    📅 <span th:text="${#temporals.format(appointmentDateTime, 'EEEE, dd MMMM yyyy')}">Date</span><br />
+                    🕐 <span th:text="${#temporals.format(appointmentDateTime, 'HH:mm')}">Time</span>
+                </div>
+
+                <h4 style="margin: 15px 0 10px 0; color: #28a745">Appointment Information</h4>
+
+                <div class="info-row">
+                    <span class="info-label">Patient Name:</span>
+                    <span class="info-value" th:text="${patientName}">Patient Name</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Appointment Type:</span>
+                    <span
+                        class="info-value"
+                        th:text="${consultationMode == 'VIRTUAL' ? 'Virtual Consultation' : 'Physical Consultation'}"
+                        >Type</span
+                    >
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Appointment ID:</span>
+                    <span class="info-value" th:text="${appointmentId}">APT-001</span>
+                </div>
+            </div>
+
+            <div class="doctor-info">
+                <h4 style="margin: 0 0 15px 0; color: #495057">Specialist Details</h4>
+
+                <div class="info-row">
+                    <span class="info-label">Doctor Name:</span>
+                    <span class="info-value" th:text="${referredDoctorName}">Dr. Specialist</span>
+                </div>
+
+                <div class="info-row" th:if="${referredDoctorSpeciality}">
+                    <span class="info-label">Speciality:</span>
+                    <span class="info-value" th:text="${referredDoctorSpeciality}">Speciality</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Healthcare Facility:</span>
+                    <span class="info-value" th:text="${facilityName}">Facility Name</span>
+                </div>
+
+                <div class="info-row" th:if="${facilityAddress}">
+                    <span class="info-label">Facility Address:</span>
+                    <span class="info-value" th:text="${facilityAddress}">Address</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Reason for Visit:</span>
+                    <span class="info-value" th:text="${reasonForReferral}">Reason</span>
+                </div>
+            </div>
+
+            <!-- Virtual Appointment Instructions -->
+            <div th:if="${consultationMode == 'VIRTUAL'}" class="important-notice">
+                <h4 style="margin: 0 0 10px 0; color: #856404">💻 Virtual Appointment Instructions</h4>
+                <ul style="margin: 0; color: #856404">
+                    <li>You will receive a video call link 15 minutes before your appointment</li>
+                    <li>Ensure you have a stable internet connection and a working camera/microphone</li>
+                    <li>Join the virtual waiting room 5-10 minutes early</li>
+                    <li>Have your MyTelmed account and any relevant medical documents ready</li>
+                </ul>
+            </div>
+
+            <!-- Physical Appointment Instructions -->
+            <div th:if="${consultationMode == 'PHYSICAL'}" class="important-notice">
+                <h4 style="margin: 0 0 10px 0; color: #856404">🏥 Physical Appointment Instructions</h4>
+                <ul style="margin: 0; color: #856404">
+                    <li>Please arrive 15-20 minutes before your scheduled appointment time</li>
+                    <li>Bring a valid government-issued ID and your MyTelmed patient card</li>
+                    <li>Bring any relevant medical records, test results, or current medications</li>
+                    <li>Contact the facility if you need to reschedule or cancel your appointment</li>
+                </ul>
+            </div>
+
+            <div class="action-buttons">
+                <a th:href="${uiHost + '/patient/appointment/' + appointmentId}" class="btn btn-primary">
+                    View Appointment Details
+                </a>
+                <a
+                    th:if="${consultationMode == 'VIRTUAL'}"
+                    th:href="${uiHost + '/patient/appointment/' + appointmentId}"
+                    class="btn btn-success"
+                >
+                    Prepare for Virtual Visit
+                </a>
+                <a th:href="${uiHost + '/patient/referrals'}" class="btn"> View All Referrals </a>
+            </div>
+
+            <p>
+                <strong>Important Reminders:</strong>
+            </p>
+            <ul>
+                <li>If you need to cancel or reschedule, please do so at least 24 hours in advance</li>
+                <li>Prepare any questions you want to ask during your specialist consultation</li>
+                <li>Follow any pre-appointment instructions provided by the specialist</li>
+                <li>Contact our support team if you experience any technical issues (virtual appointments)</li>
+            </ul>
+
+            <p>
+                This appointment is part of your referral care plan under the Malaysian public healthcare telemedicine
+                program. The specialist consultation will help ensure you receive the specialized medical attention you need.
+            </p>
+
+            <p>
+                Best regards,<br />
+                MyTelmed Medical Team<br />
+                Malaysian Public Healthcare Telemedicine Services
+            </p>
+
+            <div class="footer">
+                <p>This appointment confirmation is generated electronically and is part of your official medical record.</p>
+                <p>&copy; 2025 MyTelmed. All rights reserved.</p>
+                <p>
+                    <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
+                    <a th:href="${uiHost + '/terms'}">Terms of Service</a> |
+                    <a th:href="${uiHost + '/patient/support'}">Medical Support</a>
+                </p>
+            </div>
+        </div>
+    </body>
+</html>

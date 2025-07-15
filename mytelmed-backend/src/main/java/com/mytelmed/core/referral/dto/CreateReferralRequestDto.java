@@ -36,7 +36,7 @@ public record CreateReferralRequestDto(
         String vitalSigns,
 
         @NotBlank(message = "Expiry date is required")
-        @Pattern(regexp = "^\\d{2}-\\d{2}-\\d{4}$", message = "Expiry date must be in the format dd-MM-yyyy")
+        @Pattern(regexp = "^\\d{2}/\\d{2}/\\d{4}$", message = "Expiry date must be in the format dd/MM/yyyy")
         String expiryDate,
 
         String notes

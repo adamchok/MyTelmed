@@ -118,7 +118,7 @@ const ReferralCard: React.FC<ReferralCardProps> = ({ referral, onViewDetails }) 
 
     // Format dates for better display
     const formatDate = (dateString: string) => {
-        return dayjs(dateString).format("MMM DD, YYYY");
+        return dayjs(Number(dateString) * 1000).format("MMM DD, YYYY");
     };
 
     // Calculate days remaining for active referrals

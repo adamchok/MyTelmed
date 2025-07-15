@@ -4,6 +4,8 @@ import RegistrationReducer from "./registration-reducer";
 import ProfileReducer from "./profile-reducer";
 import AppointmentBookingReducer from "./appointment-booking-reducer";
 import referralCreationReducer from "./referral-creation-reducer";
+import prescriptionCreationReducer from "./prescription-creation-reducer";
+import deliveryFlowReducer from "./delivery-flow-reducer";
 
 const rootReducer = combineReducers({
     authenticationReducer: AuthenticationReducer,
@@ -11,6 +13,8 @@ const rootReducer = combineReducers({
     profile: ProfileReducer,
     appointmentBooking: AppointmentBookingReducer,
     referralCreation: referralCreationReducer,
+    prescriptionCreation: prescriptionCreationReducer,
+    deliveryFlow: deliveryFlowReducer,
 });
 
 export default rootReducer;

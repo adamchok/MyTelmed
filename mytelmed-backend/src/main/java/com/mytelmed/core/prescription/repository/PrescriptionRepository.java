@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-
 @Repository
 public interface PrescriptionRepository extends JpaRepository<Prescription, UUID> {
 
@@ -30,6 +29,8 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, UUID
 
     Page<Prescription> findByFacilityId(UUID facilityId, Pageable pageable);
 
+    Page<Prescription> findByFacilityIdAndStatus(UUID facilityId, PrescriptionStatus status, Pageable pageable);
+
     Page<Prescription> findByPharmacistId(UUID pharmacistId, Pageable pageable);
 
     Page<Prescription> findByStatus(PrescriptionStatus status, Pageable pageable);
@@ -39,7 +40,7 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, UUID
 
     @Query("SELECT p FROM Prescription p WHERE p.facility.id = :facilityId AND p.prescriptionNumber = :prescriptionNumber")
     Optional<Prescription> findByFacilityIdAndPrescriptionNumber(@Param("facilityId") UUID facilityId,
-                                                                 @Param("prescriptionNumber") String prescriptionNumber);
+            @Param("prescriptionNumber") String prescriptionNumber);
 
     boolean existsByAppointmentId(UUID appointmentId);
 }

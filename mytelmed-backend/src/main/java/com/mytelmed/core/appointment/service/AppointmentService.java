@@ -5,6 +5,7 @@ import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constant.appointment.AppointmentStatus;
 import com.mytelmed.common.constant.appointment.ConsultationMode;
 import com.mytelmed.common.constant.family.FamilyPermissionType;
+import com.mytelmed.common.constant.referral.ReferralStatus;
 import com.mytelmed.common.event.appointment.model.AppointmentBookedEvent;
 import com.mytelmed.common.event.appointment.model.AppointmentCancelledEvent;
 import com.mytelmed.core.appointment.dto.AddAppointmentDocumentRequestDto;
@@ -25,6 +26,8 @@ import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.patient.service.PatientService;
 import com.mytelmed.core.payment.repository.BillRepository;
 import com.mytelmed.core.payment.service.PaymentRefundService;
+import com.mytelmed.core.referral.entity.Referral;
+import com.mytelmed.core.referral.repository.ReferralRepository;
 import com.mytelmed.core.timeslot.entity.TimeSlot;
 import com.mytelmed.core.timeslot.service.TimeSlotService;
 import com.mytelmed.core.videocall.entity.VideoCall;
@@ -41,7 +44,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 
 /**
  * Service for managing appointments in Malaysian public healthcare
@@ -64,20 +66,22 @@ public class AppointmentService {
     private final AppointmentStateMachine appointmentStateMachine;
     private final PaymentRefundService paymentRefundService;
     private final FamilyMemberPermissionService familyMemberPermissionService;
+    private final ReferralRepository referralRepository;
 
     public AppointmentService(AppointmentRepository appointmentRepository,
-                              AppointmentDocumentRepository appointmentDocumentRepository,
-                              TimeSlotService timeSlotService,
-                              PatientService patientService,
-                              DoctorService doctorService,
-                              DocumentService documentService,
-                              ChatService chatService,
-                              ApplicationEventPublisher eventPublisher,
-                              VideoCallRepository videoCallRepository,
-                              BillRepository billRepository,
-                              AppointmentStateMachine appointmentStateMachine,
-                              PaymentRefundService paymentRefundService,
-                              FamilyMemberPermissionService familyMemberPermissionService) {
+            AppointmentDocumentRepository appointmentDocumentRepository,
+            TimeSlotService timeSlotService,
+            PatientService patientService,
+            DoctorService doctorService,
+            DocumentService documentService,
+            ChatService chatService,
+            ApplicationEventPublisher eventPublisher,
+            VideoCallRepository videoCallRepository,
+            BillRepository billRepository,
+            AppointmentStateMachine appointmentStateMachine,
+            PaymentRefundService paymentRefundService,
+            FamilyMemberPermissionService familyMemberPermissionService,
+            ReferralRepository referralRepository) {
         this.appointmentRepository = appointmentRepository;
         this.appointmentDocumentRepository = appointmentDocumentRepository;
         this.timeSlotService = timeSlotService;
@@ -91,6 +95,7 @@ public class AppointmentService {
         this.appointmentStateMachine = appointmentStateMachine;
         this.paymentRefundService = paymentRefundService;
         this.familyMemberPermissionService = familyMemberPermissionService;
+        this.referralRepository = referralRepository;
     }
 
     @Transactional(readOnly = true)
@@ -123,20 +128,24 @@ public class AppointmentService {
                 List<Appointment> allAppointments = new ArrayList<>();
                 for (UUID patientId : authorizedPatientIds) {
                     // Verify the account has VIEW_APPOINTMENT permission for each patient
-                    if (familyMemberPermissionService.hasPermission(account, patientId, FamilyPermissionType.VIEW_APPOINTMENTS)) {
-                        Page<Appointment> patientAppointments = appointmentRepository.findByPatientIdOrderByTimeSlotStartTimeDesc(patientId, Pageable.unpaged());
+                    if (familyMemberPermissionService.hasPermission(account, patientId,
+                            FamilyPermissionType.VIEW_APPOINTMENTS)) {
+                        Page<Appointment> patientAppointments = appointmentRepository
+                                .findByPatientIdOrderByTimeSlotStartTimeDesc(patientId, Pageable.unpaged());
                         allAppointments.addAll(patientAppointments.getContent());
                     }
                 }
 
                 // Sort appointments by time slot start time (most recent first)
-                allAppointments.sort((a1, a2) -> a2.getTimeSlot().getStartTime().compareTo(a1.getTimeSlot().getStartTime()));
+                allAppointments
+                        .sort((a1, a2) -> a2.getTimeSlot().getStartTime().compareTo(a1.getTimeSlot().getStartTime()));
 
                 // Apply pagination manually
                 int start = (int) pageable.getOffset();
                 int end = Math.min(start + pageable.getPageSize(), allAppointments.size());
-                List<Appointment> paginatedAppointments = start < allAppointments.size() ?
-                        allAppointments.subList(start, end) : new ArrayList<>();
+                List<Appointment> paginatedAppointments = start < allAppointments.size()
+                        ? allAppointments.subList(start, end)
+                        : new ArrayList<>();
 
                 return new PageImpl<>(paginatedAppointments, pageable, allAppointments.size());
             }
@@ -165,14 +174,17 @@ public class AppointmentService {
                 List<Appointment> allAppointments = new ArrayList<>();
                 for (UUID patientId : authorizedPatientIds) {
                     // Verify the account has VIEW_APPOINTMENT permission for each patient
-                    if (familyMemberPermissionService.hasPermission(account, patientId, FamilyPermissionType.VIEW_APPOINTMENTS)) {
-                        List<Appointment> patientAppointments = appointmentRepository.findByPatientIdOrderByTimeSlotStartTimeDesc(patientId);
+                    if (familyMemberPermissionService.hasPermission(account, patientId,
+                            FamilyPermissionType.VIEW_APPOINTMENTS)) {
+                        List<Appointment> patientAppointments = appointmentRepository
+                                .findByPatientIdOrderByTimeSlotStartTimeDesc(patientId);
                         allAppointments.addAll(patientAppointments);
                     }
                 }
 
                 // Sort appointments by time slot start time (most recent first)
-                allAppointments.sort((a1, a2) -> a2.getTimeSlot().getStartTime().compareTo(a1.getTimeSlot().getStartTime()));
+                allAppointments
+                        .sort((a1, a2) -> a2.getTimeSlot().getStartTime().compareTo(a1.getTimeSlot().getStartTime()));
 
                 return allAppointments;
             }
@@ -505,6 +517,10 @@ public class AppointmentService {
             // Save appointment
             appointmentRepository.save(appointment);
 
+            // Update referral status back to ACCEPTED if appointment was associated with a
+            // referral
+            updateReferralStatusOnCancellation(appointment);
+
             // Publish cancellation event to trigger email notifications
             publishAppointmentCancelledEvent(appointment);
 
@@ -667,6 +683,30 @@ public class AppointmentService {
         }
     }
 
+    /**
+     * Updates referral status back to ACCEPTED when an associated appointment is
+     * cancelled.
+     * This allows the referral to be rescheduled with a new appointment.
+     */
+    private void updateReferralStatusOnCancellation(Appointment appointment) {
+        try {
+            Referral referral = appointment.getReferral();
+            if (referral != null && referral.getStatus() == ReferralStatus.SCHEDULED) {
+                referral.setStatus(ReferralStatus.ACCEPTED);
+                referral.setScheduledAppointment(null);
+                referralRepository.save(referral);
+
+                log.info(
+                        "Updated referral status from SCHEDULED to ACCEPTED for referral {} due to appointment cancellation",
+                        referral.getId());
+            }
+        } catch (Exception e) {
+            log.error("Failed to update referral status for cancelled appointment {}: {}",
+                    appointment.getId(), e.getMessage());
+            // Don't throw exception as appointment cancellation should still proceed
+        }
+    }
+
     private void publishAppointmentCancelledEvent(Appointment appointment) {
         try {
             AppointmentCancelledEvent event = AppointmentCancelledEvent.builder()
@@ -710,8 +750,8 @@ public class AppointmentService {
     }
 
     private void attachDocumentsToAppointment(Appointment appointment,
-                                              List<AddAppointmentDocumentRequestDto> requestList,
-                                              Account requestingAccount) throws AppException {
+            List<AddAppointmentDocumentRequestDto> requestList,
+            Account requestingAccount) throws AppException {
         requestList.forEach(request -> {
             try {
                 // Find the document
@@ -752,8 +792,8 @@ public class AppointmentService {
     }
 
     private void updateAppointmentDocuments(Appointment appointment,
-                                            List<AddAppointmentDocumentRequestDto> requestList,
-                                            Account requestingAccount)
+            List<AddAppointmentDocumentRequestDto> requestList,
+            Account requestingAccount)
             throws AppException {
         // Remove existing documents
         appointmentDocumentRepository.deleteByAppointmentId(appointment.getId());
@@ -772,7 +812,8 @@ public class AppointmentService {
                     }
 
                     // Validate the requesting account has attach permission for this document
-                    if (!familyMemberPermissionService.hasPermission(requestingAccount, appointment.getPatient().getId(),
+                    if (!familyMemberPermissionService.hasPermission(requestingAccount,
+                            appointment.getPatient().getId(),
                             FamilyPermissionType.VIEW_MEDICAL_RECORDS)) {
                         log.warn("Account {} does not have attach permission for patient {} documents",
                                 requestingAccount.getId(), appointment.getPatient().getId());

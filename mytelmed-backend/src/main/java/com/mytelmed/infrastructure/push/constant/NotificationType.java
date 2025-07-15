@@ -2,7 +2,6 @@ package com.mytelmed.infrastructure.push.constant;
 
 import lombok.Getter;
 
-
 /**
  * Push notification types for Malaysian public healthcare telemedicine system.
  * Supports both PHYSICAL and VIRTUAL appointment notifications.
@@ -28,7 +27,12 @@ public enum NotificationType {
     DELIVERY_READY_FOR_PICKUP(NotificationFamily.DELIVERY),
     DELIVERY_CANCELLED(NotificationFamily.DELIVERY),
     DELIVERY_COMPLETED(NotificationFamily.DELIVERY),
-    DELIVERY_OUT(NotificationFamily.DELIVERY);
+    DELIVERY_OUT(NotificationFamily.DELIVERY),
+
+    REFERRAL_CREATED(NotificationFamily.REFERRAL),
+    REFERRAL_ACCEPTED(NotificationFamily.REFERRAL),
+    REFERRAL_REJECTED(NotificationFamily.REFERRAL),
+    REFERRAL_SCHEDULED(NotificationFamily.REFERRAL);
 
     private final NotificationFamily family;
 

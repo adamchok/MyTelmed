@@ -80,9 +80,7 @@ const DeliveryApi = {
     /**
      * Patient chooses home delivery method (Patient only)
      */
-    chooseHomeDelivery(
-        request: ChooseHomeDeliveryRequestDto
-    ): Promise<AxiosResponse<ApiResponse<MedicationDeliveryDto>>> {
+    chooseHomeDelivery(request: ChooseHomeDeliveryRequestDto): Promise<AxiosResponse<ApiResponse<MedicationDeliveryDto>>> {
         return repository.post<ApiResponse<MedicationDeliveryDto>>(`${RESOURCE}/choose-home-delivery`, request);
     },
 
@@ -101,10 +99,24 @@ const DeliveryApi = {
     },
 
     /**
+     * Pharmacist marks pickup delivery as ready for pickup (Pharmacist only)
+     */
+    markReadyForPickup(deliveryId: string): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.put<ApiResponse<void>>(`${RESOURCE}/${deliveryId}/mark-ready-for-pickup`);
+    },
+
+    /**
      * Pharmacist marks delivery as out for delivery (Pharmacist only)
      */
     markOutForDelivery(request: MarkOutForDeliveryRequestDto): Promise<AxiosResponse<ApiResponse<void>>> {
         return repository.put<ApiResponse<void>>(`${RESOURCE}/mark-out-for-delivery`, request);
+    },
+
+    /**
+     * Pharmacist marks pickup delivery as delivered (Pharmacist only)
+     */
+    markAsDelivered(deliveryId: string): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.put<ApiResponse<void>>(`${RESOURCE}/${deliveryId}/mark-delivered`);
     },
 
     /**

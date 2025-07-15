@@ -92,6 +92,7 @@ const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = ({
             footer={null}
             width={800}
             className="prescription-detail-modal"
+            centered
         >
             <div className="space-y-6">
                 {/* Header Information */}
@@ -291,7 +292,7 @@ const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = ({
                             <Space direction="vertical" size={1}>
                                 <Text className="text-sm text-gray-600">Created</Text>
                                 <Text className="font-medium">
-                                    {dayjs(prescription.createdAt).format('MMM D, YYYY [at] h:mm A')}
+                                    {dayjs(Number(prescription.createdAt) * 1000).format('MMM D, YYYY [at] h:mm A')}
                                 </Text>
                             </Space>
                         </Col>
@@ -299,7 +300,7 @@ const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = ({
                             <Space direction="vertical" size={1}>
                                 <Text className="text-sm text-gray-600">Last Updated</Text>
                                 <Text className="font-medium">
-                                    {dayjs(prescription.updatedAt).format('MMM D, YYYY [at] h:mm A')}
+                                    {dayjs(Number(prescription.updatedAt) * 1000).format('MMM D, YYYY [at] h:mm A')}
                                 </Text>
                             </Space>
                         </Col>
@@ -307,12 +308,12 @@ const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = ({
                             <Space direction="vertical" size={1}>
                                 <Text className="text-sm text-gray-600">Expires</Text>
                                 <Text className={`font-medium ${(() => {
-                                    if (dayjs(prescription.expiryDate).isBefore(dayjs())) return 'text-red-600';
-                                    if (dayjs(prescription.expiryDate).diff(dayjs(), 'days') < 7) return 'text-orange-600';
+                                    if (dayjs(Number(prescription.expiryDate) * 1000).isBefore(dayjs())) return 'text-red-600';
+                                    if (dayjs(Number(prescription.expiryDate) * 1000).diff(dayjs(), 'days') < 7) return 'text-orange-600';
                                     return 'text-green-600';
                                 })()}`}>
-                                    {dayjs(prescription.expiryDate).format('MMM D, YYYY')}
-                                    {dayjs(prescription.expiryDate).isBefore(dayjs()) && ' (Expired)'}
+                                    {dayjs(Number(prescription.expiryDate) * 1000).format('MMM D, YYYY')}
+                                    {dayjs(Number(prescription.expiryDate) * 1000).isBefore(dayjs()) && ' (Expired)'}
                                 </Text>
                             </Space>
                         </Col>

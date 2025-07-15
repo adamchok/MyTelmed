@@ -8,13 +8,11 @@ import com.mytelmed.common.constant.payment.BillType;
 import com.mytelmed.common.constant.payment.BillingStatus;
 import com.mytelmed.common.constant.payment.PaymentMode;
 import com.mytelmed.common.event.payment.model.BillGeneratedEvent;
-import com.mytelmed.common.event.payment.model.PaymentCompletedEvent;
 import com.mytelmed.core.appointment.entity.Appointment;
 import com.mytelmed.core.appointment.service.AppointmentService;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.family.service.FamilyMemberPermissionService;
 import com.mytelmed.core.patient.entity.Patient;
-import com.mytelmed.core.patient.service.PatientService;
 import com.mytelmed.core.payment.dto.PaymentIntentResponseDto;
 import com.mytelmed.core.payment.entity.Bill;
 import com.mytelmed.core.payment.entity.PaymentTransaction;
@@ -44,14 +42,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-
+import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 
 @Slf4j
 @Service
 public class PaymentService {
     private final BillRepository billRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
-    private final PatientService patientService;
     private final AppointmentService appointmentService;
     private final PrescriptionService prescriptionService;
     private final FamilyMemberPermissionService familyPermissionService;
@@ -67,15 +66,13 @@ public class PaymentService {
     private BigDecimal deliveryFee;
 
     public PaymentService(BillRepository billRepository,
-                          PaymentTransactionRepository paymentTransactionRepository,
-                          PatientService patientService,
-                          AppointmentService appointmentService,
-                          PrescriptionService prescriptionService,
-                          FamilyMemberPermissionService familyPermissionService,
-                          ApplicationEventPublisher eventPublisher) {
+            PaymentTransactionRepository paymentTransactionRepository,
+            AppointmentService appointmentService,
+            PrescriptionService prescriptionService,
+            FamilyMemberPermissionService familyPermissionService,
+            ApplicationEventPublisher eventPublisher) {
         this.billRepository = billRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
-        this.patientService = patientService;
         this.appointmentService = appointmentService;
         this.prescriptionService = prescriptionService;
         this.familyPermissionService = familyPermissionService;
@@ -131,14 +128,15 @@ public class PaymentService {
             Optional<Bill> existingBill = billRepository.findByAppointmentId(appointmentId);
             if (existingBill.isPresent()) {
                 bill = existingBill.get();
-                
+
                 // If bill is already paid, prevent duplicate payment
                 if (bill.getBillingStatus() == BillingStatus.PAID) {
                     throw new AppException("Payment for this appointment has already been completed");
                 }
-                
+
                 // If bill is unpaid, we can reuse it for retry
-                log.info("Reusing existing unpaid bill {} for appointment {} retry", bill.getBillNumber(), appointmentId);
+                log.info("Reusing existing unpaid bill {} for appointment {} retry", bill.getBillNumber(),
+                        appointmentId);
             } else {
                 // Create new bill
                 bill = createBill(patient, BillType.CONSULTATION, consultationFee,
@@ -183,7 +181,8 @@ public class PaymentService {
             throw new AppException("Not authorized to pay for this prescription");
         }
 
-        // Verify the account has BOOK_APPOINTMENT permission for this specific patient (required for payment)
+        // Verify the account has BOOK_APPOINTMENT permission for this specific patient
+        // (required for payment)
         if (!familyPermissionService.hasPermission(account, prescriptionPatientId,
                 FamilyPermissionType.MANAGE_BILLING)) {
             throw new AppException("Insufficient permissions to make payment for prescriptions");
@@ -197,14 +196,15 @@ public class PaymentService {
             Optional<Bill> existingBill = billRepository.findByPrescriptionId(prescriptionId);
             if (existingBill.isPresent()) {
                 bill = existingBill.get();
-                
+
                 // If bill is already paid, prevent duplicate payment
                 if (bill.getBillingStatus() == BillingStatus.PAID) {
                     throw new AppException("Payment for this prescription has already been completed");
                 }
-                
+
                 // If bill is unpaid, we can reuse it for retry
-                log.info("Reusing existing unpaid bill {} for prescription {} retry", bill.getBillNumber(), prescriptionId);
+                log.info("Reusing existing unpaid bill {} for prescription {} retry", bill.getBillNumber(),
+                        prescriptionId);
             } else {
                 // Create new bill for standardized delivery fee (RM 10)
                 bill = createBill(patient, BillType.MEDICATION, deliveryFee,
@@ -284,7 +284,8 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Bill> getPatientBills(Account account, Pageable pageable) {
+    public Page<Bill> getPatientBills(Account account, Pageable pageable, String patientId, String billType,
+            String billingStatus, String searchQuery, String startDate, String endDate) {
         // Get all patient IDs this account is authorized to access
         List<UUID> authorizedPatientIds = familyPermissionService.getAuthorizedPatientIds(account);
         if (authorizedPatientIds.isEmpty()) {
@@ -293,20 +294,104 @@ public class PaymentService {
 
         // Get bills for all authorized patients
         List<Bill> allBills = new ArrayList<>();
-        for (UUID patientId : authorizedPatientIds) {
-            Page<Bill> patientBills = billRepository.findByPatientId(patientId, Pageable.unpaged());
+
+        // Filter by specific patient if provided
+        if (patientId != null && !patientId.isEmpty() && !patientId.equals("all")) {
+            UUID specificPatientId = UUID.fromString(patientId);
+            if (!authorizedPatientIds.contains(specificPatientId)) {
+                throw new AppException("Account is not authorized to view bills for this patient");
+            }
+            Page<Bill> patientBills = billRepository.findByPatientId(specificPatientId, Pageable.unpaged());
             allBills.addAll(patientBills.getContent());
+        } else {
+            // Get bills for all authorized patients
+            for (UUID authorizedPatientId : authorizedPatientIds) {
+                Page<Bill> patientBills = billRepository.findByPatientId(authorizedPatientId, Pageable.unpaged());
+                allBills.addAll(patientBills.getContent());
+            }
         }
 
-        // Sort bills by creation date (most recent first)
-        allBills.sort((b1, b2) -> b2.getBilledAt().compareTo(b1.getBilledAt()));
+        // Apply filters
+        List<Bill> filteredBills = allBills.stream()
+                .filter(bill -> {
+                    // Filter by bill type
+                    if (billType != null && !billType.isEmpty() && !billType.equals("ALL")) {
+                        if (!bill.getBillType().name().equals(billType)) {
+                            return false;
+                        }
+                    }
+
+                    // Filter by billing status
+                    if (billingStatus != null && !billingStatus.isEmpty() && !billingStatus.equals("ALL")) {
+                        if (!bill.getBillingStatus().name().equals(billingStatus)) {
+                            return false;
+                        }
+                    }
+
+                    // Filter by search query (bill number or description)
+                    if (searchQuery != null && !searchQuery.isEmpty()) {
+                        String query = searchQuery.toLowerCase();
+                        if (!bill.getBillNumber().toLowerCase().contains(query) &&
+                                !bill.getDescription().toLowerCase().contains(query)) {
+                            return false;
+                        }
+                    }
+
+                    // Filter by date range
+                    if (startDate != null && !startDate.isEmpty() && endDate != null && !endDate.isEmpty()) {
+                        try {
+                            LocalDate start = LocalDate.parse(startDate);
+                            LocalDate end = LocalDate.parse(endDate);
+                            LocalDate billDate = bill.getBilledAt().atOffset(ZoneOffset.UTC).toLocalDate();
+                            if (billDate.isBefore(start) || billDate.isAfter(end)) {
+                                return false;
+                            }
+                        } catch (Exception e) {
+                            log.warn("Invalid date format in filter: startDate={}, endDate={}", startDate, endDate);
+                        }
+                    }
+
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+        // Apply sorting
+        String sortBy = pageable.getSort().iterator().hasNext() ? pageable.getSort().iterator().next().getProperty()
+                : "createdAt";
+        boolean isDescending = pageable.getSort().iterator().hasNext()
+                ? pageable.getSort().iterator().next().getDirection().isDescending()
+                : true;
+
+        filteredBills.sort((b1, b2) -> {
+            int comparison = 0;
+            switch (sortBy) {
+                case "createdAt":
+                    comparison = b1.getCreatedAt().compareTo(b2.getCreatedAt());
+                    break;
+                case "billedAt":
+                    comparison = b1.getBilledAt().compareTo(b2.getBilledAt());
+                    break;
+                case "amount":
+                    comparison = b1.getAmount().compareTo(b2.getAmount());
+                    break;
+                default:
+                    comparison = b1.getCreatedAt().compareTo(b2.getCreatedAt());
+            }
+            return isDescending ? -comparison : comparison;
+        });
 
         // Apply pagination manually
         int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), allBills.size());
-        List<Bill> paginatedBills = start < allBills.size() ? allBills.subList(start, end) : new ArrayList<>();
+        int end = Math.min(start + pageable.getPageSize(), filteredBills.size());
+        List<Bill> paginatedBills = start < filteredBills.size() ? filteredBills.subList(start, end)
+                : new ArrayList<>();
 
-        return new PageImpl<>(paginatedBills, pageable, allBills.size());
+        return new PageImpl<>(paginatedBills, pageable, filteredBills.size());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Bill> getPatientBills(Account account, Pageable pageable) {
+        return getPatientBills(account, pageable, null, null, null, null, null, null);
     }
 
     @Transactional(readOnly = true)
@@ -317,10 +402,11 @@ public class PaymentService {
             throw new AppException("Account is not authorized to view transactions for any patient");
         }
 
-        // Get transactions for all authorized patients
         List<PaymentTransaction> allTransactions = new ArrayList<>();
+        // Get transactions for all authorized patients
         for (UUID patientId : authorizedPatientIds) {
-            Page<PaymentTransaction> patientTransactions = paymentTransactionRepository.findByPatientId(patientId, Pageable.unpaged());
+            Page<PaymentTransaction> patientTransactions = paymentTransactionRepository.findByPatientId(patientId,
+                    Pageable.unpaged());
             allTransactions.addAll(patientTransactions.getContent());
         }
 
@@ -330,14 +416,15 @@ public class PaymentService {
         // Apply pagination manually
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), allTransactions.size());
-        List<PaymentTransaction> paginatedTransactions = start < allTransactions.size() ?
-                allTransactions.subList(start, end) : new ArrayList<>();
+        List<PaymentTransaction> paginatedTransactions = start < allTransactions.size()
+                ? allTransactions.subList(start, end)
+                : new ArrayList<>();
 
         return new PageImpl<>(paginatedTransactions, pageable, allTransactions.size());
     }
 
     private Bill createBill(Patient patient, BillType billType, BigDecimal amount,
-                            String description, Appointment appointment, Prescription prescription) {
+            String description, Appointment appointment, Prescription prescription) {
         String billNumber = generateBillNumber(billType);
 
         Bill bill = Bill.builder()
@@ -382,7 +469,8 @@ public class PaymentService {
                 .setAutomaticPaymentMethods(
                         PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
                                 .setEnabled(true)
-                                .setAllowRedirects(PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
+                                .setAllowRedirects(
+                                        PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
                                 .build())
                 .build();
 
@@ -431,15 +519,18 @@ public class PaymentService {
         bill.setPaymentMode(PaymentMode.CARD);
         bill.setStripePaymentIntentId(paymentIntent.getId());
         bill.setStripeChargeId(paymentIntent.getLatestCharge());
+
+        // Retrieve receipt URL from Stripe Charge
+        try {
+            com.stripe.Stripe.apiKey = stripeSecretKey;
+            com.stripe.model.Charge charge = com.stripe.model.Charge.retrieve(paymentIntent.getLatestCharge());
+            bill.setReceiptUrl(charge.getReceiptUrl()); // Store encrypted receipt URL
+        } catch (Exception e) {
+            log.warn("Failed to retrieve receipt URL for charge: {}", paymentIntent.getLatestCharge(), e);
+        }
+
         bill.setPaidAt(Instant.now());
         billRepository.save(bill);
-
-        // Publish payment completed event for receipt email
-        PaymentCompletedEvent paymentEvent = PaymentCompletedEvent.builder()
-                .bill(bill)
-                .transaction(transaction)
-                .build();
-        eventPublisher.publishEvent(paymentEvent);
 
         log.info("Payment completed successfully for bill: {} with transaction: {}",
                 bill.getBillNumber(), transaction.getTransactionNumber());

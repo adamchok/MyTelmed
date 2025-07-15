@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
     Card,
     Tabs,
@@ -22,15 +23,14 @@ import {
 import PrescriptionApi from "@/app/api/prescription";
 import { PrescriptionDto } from "@/app/api/prescription/props";
 import MyPrescriptionsTab from "./components/MyPrescriptionsTab";
-import CreatePrescriptionModal from "./components/CreatePrescriptionModal";
 
 const { Title } = Typography;
 
 export default function DoctorPrescriptionPage() {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState("my-prescriptions");
     const [loading, setLoading] = useState(true);
     const [prescriptions, setPrescriptions] = useState<PrescriptionDto[]>([]);
-    const [showCreateModal, setShowCreateModal] = useState(false);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     // Statistics
@@ -90,12 +90,6 @@ export default function DoctorPrescriptionPage() {
         setRefreshTrigger(prev => prev + 1);
     };
 
-    const handleCreateSuccess = () => {
-        setShowCreateModal(false);
-        handleRefresh();
-        message.success("Prescription created successfully");
-    };
-
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-[400px]">
@@ -119,11 +113,12 @@ export default function DoctorPrescriptionPage() {
                 <Button
                     type="primary"
                     icon={<Plus className="w-4 h-4" />}
-                    onClick={() => setShowCreateModal(true)}
+                    onClick={() => router.push("/doctor/prescription/create")}
                     size="middle"
-                    className="bg-blue-600 hover:bg-blue-700 border-blue-600 w-full sm:w-auto"
+                    className="bg-green-600 hover:bg-green-700 border-green-600 w-full sm:w-auto"
+                    style={{ backgroundColor: "#059669" }}
                 >
-                    New Prescription
+                    Create Prescription
                 </Button>
             </div>
 
@@ -199,13 +194,6 @@ export default function DoctorPrescriptionPage() {
                     ]}
                 />
             </Card>
-
-            {/* Create Prescription Modal */}
-            <CreatePrescriptionModal
-                visible={showCreateModal}
-                onCancel={() => setShowCreateModal(false)}
-                onSuccess={handleCreateSuccess}
-            />
         </div>
     );
 }

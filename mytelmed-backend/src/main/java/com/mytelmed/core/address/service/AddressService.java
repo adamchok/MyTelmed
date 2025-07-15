@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 public class AddressService {
@@ -67,7 +66,9 @@ public class AddressService {
             Patient patient = patientService.findPatientByAccountId(accountId);
 
             Address address = Address.builder()
-                    .address(request.address().trim())
+                    .addressName(request.addressName())
+                    .address1(request.address1().trim())
+                    .address2(request.address2().trim())
                     .postcode(request.postcode().trim())
                     .city(request.city().trim())
                     .state(request.state().trim())
@@ -91,7 +92,9 @@ public class AddressService {
         try {
             Address existingAddress = findAddressById(addressId);
 
-            existingAddress.setAddress(request.address());
+            existingAddress.setAddressName(request.addressName());
+            existingAddress.setAddress1(request.address1().trim());
+            existingAddress.setAddress2(request.address2().trim());
             existingAddress.setPostcode(request.postcode());
             existingAddress.setCity(request.city());
             existingAddress.setState(request.state());

@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/address")
@@ -48,7 +47,8 @@ public class AddressController {
 
     @GetMapping
     @PreAuthorize("hasRole('PATIENT')")
-    public ResponseEntity<ApiResponse<List<AddressDto>>> getAddressesByPatientAccount(@AuthenticationPrincipal Account account) {
+    public ResponseEntity<ApiResponse<List<AddressDto>>> getAddressesByPatientAccount(
+            @AuthenticationPrincipal Account account) {
         log.info("Received request to get all addresses for patient with ID: {}", account.getId());
         List<Address> addressList = addressService.findAddressListByPatientAccountId(account.getId());
 
@@ -76,8 +76,7 @@ public class AddressController {
     @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<Void>> createAddressByAccount(
             @Valid @RequestBody RequestAddressDto request,
-            @AuthenticationPrincipal Account account
-    ) {
+            @AuthenticationPrincipal Account account) {
         log.info("Received request to create address for patient with account ID: {}", account.getId());
         addressService.createAddressByAccountId(account.getId(), request);
         return ResponseEntity.ok(ApiResponse.success("Address created successfully"));
@@ -87,8 +86,7 @@ public class AddressController {
     @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<Void>> updateAddressById(
             @PathVariable UUID addressId,
-            @Valid @RequestBody RequestAddressDto request
-    ) {
+            @Valid @RequestBody RequestAddressDto request) {
         log.info("Received request to update address with ID: {}", addressId);
         addressService.updateAddressById(addressId, request);
         return ResponseEntity.ok(ApiResponse.success("Address updated successfully"));

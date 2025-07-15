@@ -19,6 +19,7 @@ import com.mytelmed.core.delivery.entity.MedicationDelivery;
 import com.mytelmed.core.delivery.repository.MedicationDeliveryRepository;
 import com.mytelmed.core.delivery.strategy.DeliveryHandler;
 import com.mytelmed.core.delivery.strategy.impl.HomeDeliveryHandler;
+import com.mytelmed.core.delivery.strategy.impl.PickupDeliveryHandler;
 import com.mytelmed.core.family.service.FamilyMemberPermissionService;
 import com.mytelmed.core.payment.service.PaymentRefundService;
 import com.mytelmed.core.pharmacist.entity.Pharmacist;
@@ -37,7 +38,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 
 /**
  * Service for managing medication delivery operations in Malaysian public
@@ -59,12 +59,12 @@ public class MedicationDeliveryService {
     private final PaymentRefundService paymentRefundService;
 
     public MedicationDeliveryService(MedicationDeliveryRepository deliveryRepository,
-                                     AddressService addressService,
-                                     PharmacistService pharmacistService,
-                                     ApplicationEventPublisher applicationEventPublisher,
-                                     List<DeliveryHandler> deliveryHandlers, PrescriptionService prescriptionService,
-                                     FamilyMemberPermissionService familyMemberPermissionService,
-                                     PaymentRefundService paymentRefundService) {
+            AddressService addressService,
+            PharmacistService pharmacistService,
+            ApplicationEventPublisher applicationEventPublisher,
+            List<DeliveryHandler> deliveryHandlers, PrescriptionService prescriptionService,
+            FamilyMemberPermissionService familyMemberPermissionService,
+            PaymentRefundService paymentRefundService) {
         this.deliveryRepository = deliveryRepository;
         this.addressService = addressService;
         this.pharmacistService = pharmacistService;
@@ -217,9 +217,75 @@ public class MedicationDeliveryService {
         log.info("Delivery {} processed by pharmacist", deliveryId);
     }
 
+    /**
+     * Marks pickup delivery as ready for pickup by patient
+     */
+    @Transactional
+    public void markReadyForPickup(UUID deliveryId, Account pharmacistAccount) {
+        log.info("Marking pickup delivery {} as ready for pickup", deliveryId);
+
+        Pharmacist pharmacist = pharmacistService.findByAccount(pharmacistAccount);
+        MedicationDelivery delivery = findById(deliveryId);
+
+        // Verify pharmacist facility matches prescription facility
+        if (!delivery.getPrescription().getFacility().getId().equals(pharmacist.getFacility().getId())) {
+            throw new AppException("Not authorized to mark this delivery as ready for pickup");
+        }
+
+        if (delivery.getDeliveryMethod() != DeliveryMethod.PICKUP) {
+            throw new AppException("Only pickup deliveries can be marked as ready for pickup");
+        }
+
+        PickupDeliveryHandler pickupHandler = (PickupDeliveryHandler) getDeliveryHandler(DeliveryMethod.PICKUP);
+        pickupHandler.markReadyForPickup(delivery);
+
+        deliveryRepository.save(delivery);
+
+        // Publish ready for pickup event
+        DeliveryReadyForPickupEvent readyEvent = new DeliveryReadyForPickupEvent(delivery);
+        applicationEventPublisher.publishEvent(readyEvent);
+
+        log.info("Pickup delivery {} marked as ready for pickup", deliveryId);
+    }
+
+    /**
+     * Pharmacist marks pickup delivery as delivered (completed)
+     */
+    @Transactional
+    public void markAsDeliveredByPharmacist(UUID deliveryId, Account pharmacistAccount) {
+        log.info("Pharmacist marking pickup delivery {} as delivered", deliveryId);
+
+        Pharmacist pharmacist = pharmacistService.findByAccount(pharmacistAccount);
+        MedicationDelivery delivery = findById(deliveryId);
+
+        // Verify pharmacist facility matches prescription facility
+        if (!delivery.getPrescription().getFacility().getId().equals(pharmacist.getFacility().getId())) {
+            throw new AppException("Not authorized to mark this delivery as delivered");
+        }
+
+        if (delivery.getDeliveryMethod() != DeliveryMethod.PICKUP) {
+            throw new AppException("Only pickup deliveries can be marked as delivered by pharmacist");
+        }
+
+        if (delivery.getStatus() != DeliveryStatus.READY_FOR_PICKUP) {
+            throw new AppException("Pickup delivery must be in READY_FOR_PICKUP status to mark as delivered");
+        }
+
+        PickupDeliveryHandler pickupHandler = (PickupDeliveryHandler) getDeliveryHandler(DeliveryMethod.PICKUP);
+        pickupHandler.completeDelivery(delivery);
+
+        deliveryRepository.save(delivery);
+
+        // Publish delivery completed event
+        DeliveryCompletedEvent event = new DeliveryCompletedEvent(delivery);
+        applicationEventPublisher.publishEvent(event);
+
+        log.info("Pickup delivery {} marked as delivered by pharmacist", deliveryId);
+    }
+
     @Transactional
     public void markOutForDelivery(UUID deliveryId, Account pharmacistAccount, String courierName,
-                                   String trackingReference, String contactPhone) {
+            String trackingReference, String contactPhone) {
         log.info("Marking delivery {} as out for delivery", deliveryId);
 
         Pharmacist pharmacist = pharmacistService.findByAccount(pharmacistAccount);
@@ -265,7 +331,8 @@ public class MedicationDeliveryService {
         }
 
         // Verify the account has prescription management permission (minimum required)
-        if (!familyMemberPermissionService.hasPermission(account, patientId, FamilyPermissionType.MANAGE_PRESCRIPTIONS)) {
+        if (!familyMemberPermissionService.hasPermission(account, patientId,
+                FamilyPermissionType.MANAGE_PRESCRIPTIONS)) {
             throw new AppException("Insufficient permissions to complete deliveries");
         }
 
@@ -304,13 +371,13 @@ public class MedicationDeliveryService {
         }
 
         // Handle auto-refund for home deliveries that have been paid
-        if (delivery.getDeliveryMethod() == DeliveryMethod.HOME_DELIVERY && 
-            delivery.getStatus() == DeliveryStatus.PAID) {
+        if (delivery.getDeliveryMethod() == DeliveryMethod.HOME_DELIVERY &&
+                delivery.getStatus() == DeliveryStatus.PAID) {
             try {
                 UUID prescriptionId = delivery.getPrescription().getId();
                 // Use the prescription ID to find the bill for refund processing
-                paymentRefundService.processPrescriptionRefund(prescriptionId, 
-                    "Home delivery cancelled by pharmacist: " + reason);
+                paymentRefundService.processPrescriptionRefund(prescriptionId,
+                        "Home delivery cancelled by pharmacist: " + reason);
                 log.info("Auto-refund processed for cancelled home delivery: {}", deliveryId);
             } catch (Exception e) {
                 log.error("Failed to process auto-refund for cancelled home delivery: {}", deliveryId, e);
@@ -348,8 +415,10 @@ public class MedicationDeliveryService {
             throw new AppException("Not authorized to cancel this delivery");
         }
 
-        // Verify the account has billing management permission (required for cancellation with refund)
-        if (!familyMemberPermissionService.hasPermission(patientAccount, patientId, FamilyPermissionType.MANAGE_BILLING)) {
+        // Verify the account has billing management permission (required for
+        // cancellation with refund)
+        if (!familyMemberPermissionService.hasPermission(patientAccount, patientId,
+                FamilyPermissionType.MANAGE_BILLING)) {
             throw new AppException("Insufficient permissions to cancel delivery");
         }
 
@@ -359,9 +428,9 @@ public class MedicationDeliveryService {
         }
 
         // Patient cannot cancel once pharmacist starts processing (PREPARING status)
-        if (delivery.getStatus() == DeliveryStatus.PREPARING || 
-            delivery.getStatus() == DeliveryStatus.OUT_FOR_DELIVERY ||
-            delivery.getStatus() == DeliveryStatus.DELIVERED) {
+        if (delivery.getStatus() == DeliveryStatus.PREPARING ||
+                delivery.getStatus() == DeliveryStatus.OUT_FOR_DELIVERY ||
+                delivery.getStatus() == DeliveryStatus.DELIVERED) {
             throw new AppException("Cannot cancel delivery once pharmacist has started processing");
         }
 
@@ -370,8 +439,8 @@ public class MedicationDeliveryService {
             try {
                 UUID prescriptionId = delivery.getPrescription().getId();
                 // Use the prescription ID to find the bill for refund processing
-                paymentRefundService.processPrescriptionRefund(prescriptionId, 
-                    "Home delivery cancelled by patient: " + reason);
+                paymentRefundService.processPrescriptionRefund(prescriptionId,
+                        "Home delivery cancelled by patient: " + reason);
                 log.info("Auto-refund processed for patient cancelled home delivery: {}", deliveryId);
             } catch (Exception e) {
                 log.error("Failed to process auto-refund for patient cancelled home delivery: {}", deliveryId, e);
@@ -404,7 +473,8 @@ public class MedicationDeliveryService {
             }
 
             // Verify the account has billing management permission
-            if (!familyMemberPermissionService.hasPermission(patientAccount, patientId, FamilyPermissionType.MANAGE_BILLING)) {
+            if (!familyMemberPermissionService.hasPermission(patientAccount, patientId,
+                    FamilyPermissionType.MANAGE_BILLING)) {
                 return false;
             }
 
@@ -414,14 +484,10 @@ public class MedicationDeliveryService {
             }
 
             // Patient cannot cancel once pharmacist starts processing (PREPARING status)
-            if (delivery.getStatus() == DeliveryStatus.PREPARING || 
-                delivery.getStatus() == DeliveryStatus.OUT_FOR_DELIVERY ||
-                delivery.getStatus() == DeliveryStatus.DELIVERED ||
-                delivery.getStatus() == DeliveryStatus.CANCELLED) {
-                return false;
-            }
-
-            return true;
+            return delivery.getStatus() != DeliveryStatus.PREPARING &&
+                    delivery.getStatus() != DeliveryStatus.OUT_FOR_DELIVERY &&
+                    delivery.getStatus() != DeliveryStatus.DELIVERED &&
+                    delivery.getStatus() != DeliveryStatus.CANCELLED;
         } catch (Exception e) {
             log.error("Error checking if delivery is cancellable by patient: {}", deliveryId, e);
             return false;
@@ -440,12 +506,8 @@ public class MedicationDeliveryService {
             }
 
             // Pharmacists cannot cancel already delivered or cancelled deliveries
-            if (delivery.getStatus() == DeliveryStatus.DELIVERED ||
-                delivery.getStatus() == DeliveryStatus.CANCELLED) {
-                return false;
-            }
-
-            return true;
+            return delivery.getStatus() != DeliveryStatus.DELIVERED &&
+                    delivery.getStatus() != DeliveryStatus.CANCELLED;
         } catch (Exception e) {
             log.error("Error checking if delivery is cancellable by pharmacist: {}", deliveryId, e);
             return false;
@@ -455,7 +517,7 @@ public class MedicationDeliveryService {
     // Private helper methods
 
     private MedicationDelivery initializeDelivery(UUID prescriptionId, Account patientAccount,
-                                                  DeliveryMethod deliveryMethod, Address deliveryAddress) throws AppException {
+            DeliveryMethod deliveryMethod, Address deliveryAddress) throws AppException {
         Prescription prescription = prescriptionService.findById(prescriptionId);
 
         if (!prescription.getPatient().getAccount().getId().equals(patientAccount.getId())) {
@@ -470,7 +532,7 @@ public class MedicationDeliveryService {
         MedicationDelivery delivery = handler.initializeDelivery(prescription);
 
         if (deliveryAddress != null) {
-            delivery.setDeliveryAddress(deliveryAddress.getAddress());
+            delivery.setDeliveryAddress(deliveryAddress.getAddress1() + ", " + deliveryAddress.getAddress2());
             delivery.setDeliveryCity(deliveryAddress.getCity());
             delivery.setDeliveryState(deliveryAddress.getState());
             delivery.setDeliveryPostcode(delivery.getDeliveryPostcode());

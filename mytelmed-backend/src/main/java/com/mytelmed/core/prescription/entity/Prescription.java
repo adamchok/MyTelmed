@@ -6,6 +6,7 @@ import com.mytelmed.core.doctor.entity.Doctor;
 import com.mytelmed.core.facility.entity.Facility;
 import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.pharmacist.entity.Pharmacist;
+import com.mytelmed.core.delivery.entity.MedicationDelivery;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,6 +18,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -84,6 +86,9 @@ public class Prescription {
     @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<PrescriptionItem> prescriptionItems = new ArrayList<>();
+
+    @OneToOne(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
+    private MedicationDelivery medicationDelivery;
 
     @Column(name = "expiry_date", nullable = false)
     private Instant expiryDate;

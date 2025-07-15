@@ -51,16 +51,34 @@ public class PickupDeliveryHandler implements DeliveryHandler {
         log.info("Pickup delivery {} moved to PREPARING status", delivery.getId());
     }
 
+    /**
+     * Marks pickup delivery as ready for pickup by patient
+     */
+    public void markReadyForPickup(MedicationDelivery delivery) {
+        log.info("Marking pickup delivery as ready for pickup: {}", delivery.getId());
+
+        if (delivery.getStatus() != DeliveryStatus.PREPARING) {
+            throw new AppException(
+                    "Pickup delivery must be in PREPARING status to mark as ready, current: " + delivery.getStatus());
+        }
+
+        delivery.setStatus(DeliveryStatus.READY_FOR_PICKUP);
+        delivery.setPickupDate(Instant.now()); // Set when ready for pickup
+        delivery.setDeliveryNotes("Medication is ready for pickup at the pharmacy");
+
+        log.info("Pickup delivery {} marked as ready for pickup", delivery.getId());
+    }
+
     @Override
     public void completeDelivery(MedicationDelivery delivery) {
         log.info("Completing pickup delivery: {}", delivery.getId());
 
-        if (delivery.getStatus() != DeliveryStatus.PREPARING) {
+        if (delivery.getStatus() != DeliveryStatus.READY_FOR_PICKUP) {
             throw new AppException(
-                    "Pickup delivery must be in PREPARING status to complete, current: " + delivery.getStatus());
+                    "Pickup delivery must be in READY_FOR_PICKUP status to complete, current: " + delivery.getStatus());
         }
 
-        delivery.setPickupDate(Instant.now());
+        delivery.setActualDeliveryDate(Instant.now()); // Set actual delivery date when completed
         delivery.setStatus(DeliveryStatus.DELIVERED); // Use DELIVERED status for consistency
         delivery.setDeliveryNotes("Medication successfully picked up by patient from pharmacy");
 
@@ -85,6 +103,22 @@ public class PickupDeliveryHandler implements DeliveryHandler {
     @Override
     public boolean canProcess(MedicationDelivery delivery) {
         return delivery.getDeliveryMethod() == DeliveryMethod.PICKUP &&
-                delivery.getStatus() == DeliveryStatus.PAID;
+                (delivery.getStatus() == DeliveryStatus.PAID || delivery.getStatus() == DeliveryStatus.PREPARING);
+    }
+
+    /**
+     * Checks if pickup delivery can be marked as ready for pickup
+     */
+    public boolean canMarkReadyForPickup(MedicationDelivery delivery) {
+        return delivery.getDeliveryMethod() == DeliveryMethod.PICKUP &&
+                delivery.getStatus() == DeliveryStatus.PREPARING;
+    }
+
+    /**
+     * Checks if pickup delivery can be completed (marked as delivered)
+     */
+    public boolean canComplete(MedicationDelivery delivery) {
+        return delivery.getDeliveryMethod() == DeliveryMethod.PICKUP &&
+                delivery.getStatus() == DeliveryStatus.READY_FOR_PICKUP;
     }
 }

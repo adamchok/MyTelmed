@@ -5,29 +5,43 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>MyTelmed - Account Created</title>
         <style>
+            /* Base Styles */
             body {
                 font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
                 line-height: 1.6;
                 color: #333333;
                 max-width: 600px;
                 margin: 0 auto;
-                padding: 20px;
+                padding: 10px;
                 background-color: #f8f9fa;
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+                box-sizing: border-box;
             }
 
             .container {
                 background-color: #ffffff;
                 border-radius: 10px;
-                padding: 30px;
+                padding: 25px;
                 box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                width: 100%;
+                box-sizing: border-box;
             }
 
             .header {
                 text-align: center;
                 justify-content: center;
                 border-bottom: 3px solid #28a745;
-                padding-bottom: 20px;
-                margin-bottom: 30px;
+                padding-bottom: 15px;
+                margin-bottom: 25px;
+            }
+
+            .header h2 {
+                color: #495057;
+                margin: 0;
+                font-size: 24px;
+                font-weight: 600;
+                line-height: 1.3;
             }
 
             .logo {
@@ -48,19 +62,34 @@
 
             .credentials-item {
                 font-family: monospace;
-                margin-bottom: 8px;
+                margin-bottom: 12px;
+                padding: 8px 0;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 10px;
             }
 
             .credentials-label {
                 font-weight: bold;
                 color: #17a2b8;
                 display: inline-block;
-                width: 100px;
+                min-width: 100px;
+                flex-shrink: 0;
+            }
+
+            .credentials-value {
+                font-family: monospace;
+                background-color: #e9ecef;
+                padding: 4px 8px;
+                border-radius: 4px;
+                word-break: break-all;
+                flex: 1;
             }
 
             .action-buttons {
                 text-align: center;
-                margin: 30px 0;
+                margin: 25px 0;
             }
 
             .btn {
@@ -72,6 +101,7 @@
                 text-decoration: none;
                 border-radius: 5px;
                 font-weight: bold;
+                transition: background-color 0.3s ease;
             }
 
             .btn:hover {
@@ -86,38 +116,194 @@
                 margin: 20px 0;
             }
 
+            .security-note strong {
+                color: #856404;
+            }
+
+            .content-text {
+                font-size: 16px;
+                line-height: 1.6;
+                margin-bottom: 16px;
+            }
+
             .footer {
                 border-top: 1px solid #dee2e6;
-                padding-top: 20px;
-                margin-top: 30px;
+                padding-top: 15px;
+                margin-top: 25px;
                 text-align: center;
                 color: #6c757d;
                 font-size: 14px;
+            }
+
+            .footer p {
+                margin: 8px 0;
+            }
+
+            .footer a {
+                color: #007bff;
+                text-decoration: none;
+            }
+
+            .footer a:hover {
+                text-decoration: underline;
+            }
+
+            /* Tablet Styles (600px - 768px) */
+            @media screen and (max-width: 768px) and (min-width: 600px) {
+                body {
+                    padding: 15px;
+                }
+
+                .container {
+                    padding: 20px;
+                }
+
+                .header h2 {
+                    font-size: 22px;
+                }
+
+                .credentials-label {
+                    min-width: 90px;
+                }
+
+                .btn {
+                    padding: 10px 20px;
+                    margin: 5px;
+                }
+            }
+
+            /* Mobile Styles (< 600px) */
+            @media screen and (max-width: 599px) {
+                body {
+                    padding: 5px;
+                    max-width: 100%;
+                }
+
+                .container {
+                    padding: 15px;
+                    border-radius: 8px;
+                }
+
+                .header {
+                    padding-bottom: 12px;
+                    margin-bottom: 20px;
+                }
+
+                .header h2 {
+                    font-size: 20px;
+                    line-height: 1.2;
+                }
+
+                .credentials-box {
+                    padding: 15px;
+                    margin: 15px 0;
+                }
+
+                .credentials-item {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 6px;
+                    margin-bottom: 16px;
+                    padding: 6px 0;
+                }
+
+                .credentials-label {
+                    min-width: auto;
+                    font-size: 14px;
+                }
+
+                .credentials-value {
+                    width: 100%;
+                    font-size: 14px;
+                    padding: 6px 10px;
+                }
+
+                .security-note {
+                    padding: 12px;
+                    margin: 15px 0;
+                    font-size: 14px;
+                }
+
+                .action-buttons {
+                    margin: 20px 0;
+                }
+
+                .btn {
+                    display: block;
+                    width: 100%;
+                    margin: 10px 0;
+                    padding: 12px;
+                    box-sizing: border-box;
+                }
+
+                .content-text {
+                    font-size: 14px;
+                    line-height: 1.5;
+                    margin-bottom: 14px;
+                }
+
+                .footer {
+                    padding-top: 12px;
+                    margin-top: 20px;
+                    font-size: 12px;
+                }
+
+                .footer p {
+                    margin: 6px 0;
+                }
+            }
+
+            /* Extra Small Mobile (< 400px) */
+            @media screen and (max-width: 399px) {
+                .container {
+                    padding: 12px;
+                }
+
+                .header h2 {
+                    font-size: 18px;
+                }
+
+                .credentials-value {
+                    font-size: 13px;
+                }
+
+                .content-text {
+                    font-size: 13px;
+                }
+            }
+
+            /* High DPI Displays */
+            @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+                .container {
+                    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+                }
             }
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <h2 style="color: #495057; margin: 0">Your Account Has Been Created Successfully</h2>
+                <h2>Your Account Has Been Created Successfully</h2>
             </div>
 
-            <p>Dear <strong th:text="${name}">User</strong>,</p>
+            <p class="content-text">Dear <strong th:text="${name}">User</strong>,</p>
 
-            <p>An administrator has created your MyTelmed staff account. You can now log in using the credentials below:</p>
+            <p class="content-text">
+                An administrator has created your MyTelmed staff account. You can now log in using the credentials below:
+            </p>
 
             <div class="credentials-box">
                 <div class="credentials-item">
                     <span class="credentials-label">Username:</span>
-                    <span th:text="${username}">Username</span>
+                    <span class="credentials-value" th:text="${username}">Username</span>
                 </div>
                 <div class="credentials-item">
                     <span class="credentials-label">Password:</span>
-                    <span th:text="${password}">Password</span>
+                    <span class="credentials-value" th:text="${password}">Password</span>
                 </div>
             </div>
 
-            <p>Please log in to the platform and change your password as soon as possible.</p>
+            <p class="content-text">Please log in to the platform and change your password as soon as possible.</p>
 
             <div class="action-buttons">
                 <a th:href="${uiHost + '/login'}" class="btn"> Login to Your Account </a>
@@ -127,9 +313,9 @@
                 <strong>Security Note:</strong> For your security, please change your password immediately after logging in.
             </div>
 
-            <p>If you have any questions or need assistance, please contact our support team.</p>
+            <p class="content-text">If you have any questions or need assistance, please contact our support team.</p>
 
-            <p>
+            <p class="content-text">
                 Best regards,<br />
                 The MyTelmed Team
             </p>

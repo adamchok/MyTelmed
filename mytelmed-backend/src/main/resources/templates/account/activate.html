@@ -1,134 +1,361 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>MyTelmed - Account Activated</title>
-    <style>
-        body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MyTelmed - Account Activated</title>
+        <style>
+            /* Base Styles */
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 10px;
+                background-color: #f8f9fa;
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+                box-sizing: border-box;
+            }
 
-        .container {
-            background-color: #ffffff;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
+            .container {
+                background-color: #ffffff;
+                border-radius: 10px;
+                padding: 25px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                width: 100%;
+                box-sizing: border-box;
+            }
 
-        .header {
-            text-align: center;
-            justify-content: center;
-            border-bottom: 3px solid #28a745;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
+            .header {
+                text-align: center;
+                justify-content: center;
+                border-bottom: 3px solid #28a745;
+                padding-bottom: 15px;
+                margin-bottom: 25px;
+            }
 
-        .activation-highlight {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-        }
+            .header h2 {
+                color: #495057;
+                margin: 0;
+                font-size: 24px;
+                font-weight: 600;
+                line-height: 1.3;
+            }
 
-        .activation-highlight .status {
-            font-size: 18px;
-            font-weight: bold;
-            color: #155724;
-            margin-bottom: 5px;
-        }
+            .logo {
+                width: 192px;
+                height: auto;
+                max-width: 100%;
+                display: block;
+                margin: 0 auto;
+            }
 
-        .action-buttons {
-            text-align: center;
-            margin: 30px 0;
-        }
+            .activation-status {
+                background-color: #d4edda;
+                border: 1px solid #c3e6cb;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+                text-align: center;
+            }
 
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            margin: 0 10px;
-            background-color: #007bff;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-        }
+            .activation-status .status-icon {
+                font-size: 48px;
+                color: #28a745;
+                margin-bottom: 10px;
+                display: block;
+            }
 
-        .btn:hover {
-            background-color: #0056b3;
-        }
+            .activation-status h3 {
+                color: #155724;
+                margin: 0 0 10px 0;
+                font-size: 20px;
+            }
 
-        .footer {
-            border-top: 1px solid #dee2e6;
-            padding-top: 20px;
-            margin-top: 30px;
-            text-align: center;
-            color: #6c757d;
-            font-size: 14px;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <h2 style="color: #495057; margin: 0">
-            Your Account Has Been Activated
-        </h2>
-    </div>
+            .activation-status p {
+                margin: 0;
+                color: #155724;
+                font-size: 16px;
+            }
 
-    <p>Dear <strong th:text="${name}">User</strong>,</p>
+            .account-details {
+                background-color: #f8f9fa;
+                border-left: 4px solid #28a745;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 5px;
+            }
 
-    <p>
-        Great news! Your MyTelmed account has been successfully activated. You
-        can now access all the features and services available on our platform.
-    </p>
+            .account-details h4 {
+                margin: 0 0 15px 0;
+                color: #28a745;
+                font-size: 18px;
+            }
 
-    <div class="activation-highlight">
-        <div class="status">✅ Account Status: Active</div>
-        <p style="margin: 5px 0 0 0; color: #155724">
-            Your account is now fully functional and ready to use.
-        </p>
-    </div>
+            .account-details div {
+                margin-bottom: 8px;
+                line-height: 1.5;
+            }
 
-    <p>You can now:</p>
-    <ul>
-        <li>Log in to your account</li>
-        <li>Access all platform features</li>
-        <li>Manage your profile and settings</li>
-        <li>Use all available services</li>
-    </ul>
+            .action-buttons {
+                text-align: center;
+                margin: 25px 0;
+            }
 
-    <div class="action-buttons">
-        <a th:href="${uiHost + '/login'}" class="btn">
-            Login to Your Account
-        </a>
-    </div>
+            .btn {
+                display: inline-block;
+                padding: 12px 24px;
+                margin: 0 10px;
+                background-color: #007bff;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+                transition: background-color 0.3s ease;
+            }
 
-    <p>
-        If you have any questions or need assistance, please contact our support
-        team.
-    </p>
+            .btn:hover {
+                background-color: #0056b3;
+            }
 
-    <p>
-        Best regards,<br/>
-        The MyTelmed Team
-    </p>
+            .btn-success {
+                background-color: #28a745;
+            }
 
-    <div class="footer">
-        <p>This is an automated message, please do not reply to this email.</p>
-        <p>&copy; 2025 MyTelmed. All rights reserved.</p>
-        <p>
-            <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
-            <a th:href="${uiHost + '/terms'}">Terms of Service</a>
-        </p>
-    </div>
-</div>
-</body>
+            .btn-success:hover {
+                background-color: #1e7e34;
+            }
+
+            .content-text {
+                font-size: 16px;
+                line-height: 1.6;
+                margin-bottom: 16px;
+            }
+
+            .footer {
+                border-top: 1px solid #dee2e6;
+                padding-top: 15px;
+                margin-top: 25px;
+                text-align: center;
+                color: #6c757d;
+                font-size: 14px;
+            }
+
+            .footer p {
+                margin: 8px 0;
+            }
+
+            .footer a {
+                color: #007bff;
+                text-decoration: none;
+            }
+
+            .footer a:hover {
+                text-decoration: underline;
+            }
+
+            /* Tablet Styles (600px - 768px) */
+            @media screen and (max-width: 768px) and (min-width: 600px) {
+                body {
+                    padding: 15px;
+                }
+
+                .container {
+                    padding: 20px;
+                }
+
+                .header h2 {
+                    font-size: 22px;
+                }
+
+                .activation-status .status-icon {
+                    font-size: 42px;
+                }
+
+                .activation-status h3 {
+                    font-size: 18px;
+                }
+
+                .btn {
+                    padding: 10px 20px;
+                    margin: 5px;
+                }
+            }
+
+            /* Mobile Styles (< 600px) */
+            @media screen and (max-width: 599px) {
+                body {
+                    padding: 5px;
+                    max-width: 100%;
+                }
+
+                .container {
+                    padding: 15px;
+                    border-radius: 8px;
+                }
+
+                .header {
+                    padding-bottom: 12px;
+                    margin-bottom: 20px;
+                }
+
+                .header h2 {
+                    font-size: 20px;
+                    line-height: 1.2;
+                }
+
+                .activation-status {
+                    padding: 15px;
+                    margin: 15px 0;
+                }
+
+                .activation-status .status-icon {
+                    font-size: 36px;
+                }
+
+                .activation-status h3 {
+                    font-size: 16px;
+                }
+
+                .activation-status p {
+                    font-size: 14px;
+                }
+
+                .account-details {
+                    padding: 15px;
+                    margin: 15px 0;
+                }
+
+                .account-details h4 {
+                    font-size: 16px;
+                    margin-bottom: 12px;
+                }
+
+                .account-details div {
+                    font-size: 14px;
+                    margin-bottom: 6px;
+                }
+
+                .action-buttons {
+                    margin: 20px 0;
+                }
+
+                .btn {
+                    display: block;
+                    width: 100%;
+                    margin: 10px 0;
+                    padding: 12px;
+                    box-sizing: border-box;
+                }
+
+                .content-text {
+                    font-size: 14px;
+                    line-height: 1.5;
+                    margin-bottom: 14px;
+                }
+
+                .footer {
+                    padding-top: 12px;
+                    margin-top: 20px;
+                    font-size: 12px;
+                }
+
+                .footer p {
+                    margin: 6px 0;
+                }
+            }
+
+            /* Extra Small Mobile (< 400px) */
+            @media screen and (max-width: 399px) {
+                .container {
+                    padding: 12px;
+                }
+
+                .header h2 {
+                    font-size: 18px;
+                }
+
+                .activation-status .status-icon {
+                    font-size: 32px;
+                }
+
+                .content-text {
+                    font-size: 13px;
+                }
+            }
+
+            /* High DPI Displays */
+            @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+                .container {
+                    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2>Account Successfully Activated</h2>
+            </div>
+
+            <div class="activation-status">
+                <div class="status-icon">✅</div>
+                <h3>Your Account is Now Active!</h3>
+                <p>Your MyTelmed account has been successfully activated and is ready to use.</p>
+            </div>
+
+            <p class="content-text">Dear <strong th:text="${name}">User</strong>,</p>
+
+            <p class="content-text">
+                Congratulations! Your MyTelmed account has been successfully activated. You now have full access to our
+                platform services.
+            </p>
+
+            <div class="account-details">
+                <h4>Account Information</h4>
+                <div>
+                    <strong>Account Type:</strong>
+                    <span th:text="${role}">Staff</span>
+                </div>
+                <div>
+                    <strong>Username:</strong>
+                    <span th:text="${username}">Username</span>
+                </div>
+                <div>
+                    <strong>Email:</strong>
+                    <span th:text="${email}">Email</span>
+                </div>
+                <div>
+                    <strong>Activation Date:</strong>
+                    <span th:text="${#temporals.format(activationDate, 'dd/MM/yyyy HH:mm')}">Date</span>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <a th:href="${uiHost + '/login'}" class="btn btn-success"> Login to Your Account </a>
+            </div>
+
+            <p class="content-text">
+                You can now log in to the platform using your credentials and start using all available features.
+            </p>
+
+            <p class="content-text">If you have any questions or need assistance, please contact our support team.</p>
+
+            <p class="content-text">
+                Best regards,<br />
+                The MyTelmed Team
+            </p>
+
+            <div class="footer">
+                <p>This is an automated message, please do not reply to this email.</p>
+                <p>&copy; 2025 MyTelmed. All rights reserved.</p>
+                <p>
+                    <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
+                    <a th:href="${uiHost + '/terms'}">Terms of Service</a>
+                </p>
+            </div>
+        </div>
+    </body>
 </html>

@@ -65,6 +65,7 @@ export interface BillDto {
     appointmentId?: string;
     prescriptionId?: string;
     description: string;
+    receiptUrl?: string;
     billedAt: string;
     paidAt?: string;
     cancelledAt?: string;

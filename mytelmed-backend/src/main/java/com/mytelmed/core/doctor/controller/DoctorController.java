@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -51,10 +52,22 @@ public class DoctorController {
             @RequestParam Integer page,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize
     ) {
-        log.info("Received request to get all doctors with page: {} and page size: {}", page, pageSize);
+        log.info("Received request to get doctors with page: {} and page size: {}", page, pageSize);
 
         Page<Doctor> paginatedDoctor = doctorService.findAll(page, pageSize);
         Page<DoctorDto> paginatedDoctorDto = paginatedDoctor.map(doctor -> doctorMapper.toDto(doctor, awsS3Service));
+        return ResponseEntity.ok(ApiResponse.success(paginatedDoctorDto));
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PATIENT', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<List<DoctorDto>>> getAllDoctors() {
+        log.info("Received request to get all doctors");
+
+        List<Doctor> paginatedDoctor = doctorService.findAll();
+        List<DoctorDto> paginatedDoctorDto = paginatedDoctor.stream()
+                .map(doctor -> doctorMapper.toDto(doctor, awsS3Service))
+                .toList();
         return ResponseEntity.ok(ApiResponse.success(paginatedDoctorDto));
     }
 

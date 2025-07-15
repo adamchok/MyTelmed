@@ -8,6 +8,9 @@ import com.mytelmed.common.constant.family.FamilyPermissionType;
 import com.mytelmed.common.constant.referral.ReferralStatus;
 import com.mytelmed.common.constant.referral.ReferralType;
 import com.mytelmed.common.event.referral.model.ReferralCreatedEvent;
+import com.mytelmed.common.event.referral.model.ReferralAcceptedEvent;
+import com.mytelmed.common.event.referral.model.ReferralRejectedEvent;
+import com.mytelmed.common.event.referral.model.ReferralScheduledEvent;
 import com.mytelmed.common.utils.DateTimeUtil;
 import com.mytelmed.core.appointment.entity.Appointment;
 import com.mytelmed.core.appointment.repository.AppointmentRepository;
@@ -36,7 +39,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 public class ReferralService {
@@ -47,15 +49,16 @@ public class ReferralService {
     private final TimeSlotService timeSlotService;
     private final FamilyMemberPermissionService familyPermissionService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public ReferralService(ReferralRepository referralRepository,
-                           PatientService patientService,
-                           DoctorService doctorService,
-                           AppointmentService appointmentService,
-                           AppointmentRepository appointmentRepository,
-                           TimeSlotService timeSlotService,
-                           FamilyMemberPermissionService familyPermissionService,
-                           ApplicationEventPublisher eventPublisher) {
+            PatientService patientService,
+            DoctorService doctorService,
+            AppointmentService appointmentService,
+            AppointmentRepository appointmentRepository,
+            TimeSlotService timeSlotService,
+            FamilyMemberPermissionService familyPermissionService,
+            ApplicationEventPublisher eventPublisher, ApplicationEventPublisher applicationEventPublisher) {
         this.referralRepository = referralRepository;
         this.patientService = patientService;
         this.doctorService = doctorService;
@@ -63,6 +66,7 @@ public class ReferralService {
         this.timeSlotService = timeSlotService;
         this.familyPermissionService = familyPermissionService;
         this.eventPublisher = eventPublisher;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -246,6 +250,10 @@ public class ReferralService {
         }
 
         referralRepository.save(referral);
+
+        // Publish events for status changes that need notifications
+        publishReferralStatusChangeEvent(referral, request.status());
+
         log.info("Referral status updated successfully: {} -> {}", referralId, request.status());
     }
 
@@ -299,6 +307,13 @@ public class ReferralService {
             referral.setStatus(ReferralStatus.SCHEDULED);
             referral.setScheduledAppointment(savedAppointment);
             referralRepository.save(referral);
+
+            // Publish referral scheduled event
+            ReferralScheduledEvent scheduledEvent = ReferralScheduledEvent.builder()
+                    .referral(referral)
+                    .appointment(savedAppointment)
+                    .build();
+            eventPublisher.publishEvent(scheduledEvent);
 
             log.info("Appointment scheduled successfully for referral: {} with appointment: {}",
                     referralId, savedAppointment.getId());
@@ -368,6 +383,39 @@ public class ReferralService {
 
         if (!isValidTransition) {
             throw new InvalidInputException("Invalid status transition from " + currentStatus + " to " + newStatus);
+        }
+    }
+
+    /**
+     * Publishes events for referral status changes that require notifications
+     */
+    private void publishReferralStatusChangeEvent(Referral referral, ReferralStatus newStatus) {
+        try {
+            switch (newStatus) {
+                case ACCEPTED -> {
+                    ReferralAcceptedEvent acceptedEvent = ReferralAcceptedEvent.builder()
+                            .referral(referral)
+                            .build();
+                    eventPublisher.publishEvent(acceptedEvent);
+                    log.debug("Published ReferralAcceptedEvent for referral: {}", referral.getId());
+                }
+                case REJECTED -> {
+                    ReferralRejectedEvent rejectedEvent = ReferralRejectedEvent.builder()
+                            .referral(referral)
+                            .build();
+                    eventPublisher.publishEvent(rejectedEvent);
+                    log.debug("Published ReferralRejectedEvent for referral: {}", referral.getId());
+                }
+                // SCHEDULED events are published in scheduleAppointment method
+                // COMPLETED and CANCELLED events don't currently need notifications
+                default -> {
+                    log.debug("No notification event published for referral status: {}", newStatus);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to publish referral status change event for referral: {} with status: {}",
+                    referral.getId(), newStatus, e);
+            // Don't throw exception as the status update should still proceed
         }
     }
 

@@ -73,6 +73,7 @@ public class AwsS3Service {
      */
     public String generatePresignedDocumentUrl(String key) throws S3Exception {
         return generatePresignedUrl(key, FileType.DOCUMENT);
+
     }
 
     /**
@@ -244,6 +245,7 @@ public class AwsS3Service {
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                     .bucket(bucket)
                     .key(key)
+                    .responseContentDisposition("inline")
                     .build();
 
             GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()

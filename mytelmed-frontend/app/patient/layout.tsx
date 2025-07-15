@@ -69,7 +69,7 @@ const navItems = [
     {
         key: "/patient/prescriptions",
         icon: <Pill className="w-5 h-5" />,
-        label: <Link href="/patient/prescriptions">Prescriptions</Link>,
+        label: <Link href="/patient/prescription">Prescriptions</Link>,
     },
     {
         key: "/patient/billing",

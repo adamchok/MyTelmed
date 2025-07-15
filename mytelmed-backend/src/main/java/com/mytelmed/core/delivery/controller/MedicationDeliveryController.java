@@ -42,7 +42,7 @@ public class MedicationDeliveryController {
     private final MedicationDeliveryMapper deliveryMapper;
 
     public MedicationDeliveryController(MedicationDeliveryService deliveryService,
-                                        MedicationDeliveryMapper deliveryMapper) {
+            MedicationDeliveryMapper deliveryMapper) {
         this.deliveryService = deliveryService;
         this.deliveryMapper = deliveryMapper;
     }
@@ -66,7 +66,8 @@ public class MedicationDeliveryController {
      */
     @GetMapping("/prescription/{prescriptionId}")
     @PreAuthorize("hasAnyRole('PATIENT', 'PHARMACIST')")
-    public ResponseEntity<ApiResponse<MedicationDeliveryDto>> getDeliveryByPrescriptionId(@PathVariable UUID prescriptionId) {
+    public ResponseEntity<ApiResponse<MedicationDeliveryDto>> getDeliveryByPrescriptionId(
+            @PathVariable UUID prescriptionId) {
         log.info("Getting delivery by prescription ID: {}", prescriptionId);
 
         MedicationDelivery delivery = deliveryService.findByPrescriptionId(prescriptionId);
@@ -83,8 +84,7 @@ public class MedicationDeliveryController {
     public ResponseEntity<ApiResponse<Page<MedicationDeliveryDto>>> getDeliveriesByPatient(
             @PathVariable UUID patientId,
             @RequestParam("page") Integer page,
-            @RequestParam(value = "size", defaultValue = "10") Integer size
-    ) {
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
         log.info("Getting deliveries for patient: {}", patientId);
 
         Page<MedicationDelivery> deliveries = deliveryService.findByPatientId(patientId, page, size);
@@ -100,8 +100,7 @@ public class MedicationDeliveryController {
     public ResponseEntity<ApiResponse<Page<MedicationDeliveryDto>>> getDeliveriesByPatientAccount(
             @RequestParam("page") Integer page,
             @RequestParam(value = "size", defaultValue = "10") Integer size,
-            @AuthenticationPrincipal Account account
-    ) {
+            @AuthenticationPrincipal Account account) {
         log.info("Getting deliveries for patient with account ID: {}", account.getId());
 
         Page<MedicationDelivery> deliveryList = deliveryService.findByPatientAccount(account, page, size);
@@ -192,6 +191,21 @@ public class MedicationDeliveryController {
     }
 
     /**
+     * Pharmacist marks pickup delivery as ready for pickup
+     */
+    @PutMapping("/{deliveryId}/mark-ready-for-pickup")
+    @PreAuthorize("hasRole('PHARMACIST')")
+    public ResponseEntity<ApiResponse<Void>> markReadyForPickup(
+            @PathVariable UUID deliveryId,
+            @AuthenticationPrincipal Account account) {
+        log.info("Marking pickup delivery {} as ready for pickup", deliveryId);
+
+        deliveryService.markReadyForPickup(deliveryId, account);
+
+        return ResponseEntity.ok(ApiResponse.success("Pickup delivery marked as ready for pickup"));
+    }
+
+    /**
      * Pharmacist marks delivery as out for delivery
      */
     @PutMapping("/mark-out-for-delivery")
@@ -212,18 +226,33 @@ public class MedicationDeliveryController {
     }
 
     /**
-     * Patient or pharmacist marks delivery as completed
+     * Patient marks delivery as completed
      */
     @PutMapping("/{deliveryId}/complete")
     @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<Void>> markAsCompleted(
             @PathVariable UUID deliveryId,
             @AuthenticationPrincipal Account account) {
-        log.info("Marking delivery {} as completed", deliveryId);
+        log.info("Patient marking delivery {} as completed", deliveryId);
 
         deliveryService.markAsCompleted(deliveryId, account);
 
         return ResponseEntity.ok(ApiResponse.success("Delivery marked as completed"));
+    }
+
+    /**
+     * Pharmacist marks pickup delivery as delivered (completed)
+     */
+    @PutMapping("/{deliveryId}/mark-delivered")
+    @PreAuthorize("hasRole('PHARMACIST')")
+    public ResponseEntity<ApiResponse<Void>> markAsDelivered(
+            @PathVariable UUID deliveryId,
+            @AuthenticationPrincipal Account account) {
+        log.info("Pharmacist marking pickup delivery {} as delivered", deliveryId);
+
+        deliveryService.markAsDeliveredByPharmacist(deliveryId, account);
+
+        return ResponseEntity.ok(ApiResponse.success("Pickup delivery marked as delivered"));
     }
 
     /**

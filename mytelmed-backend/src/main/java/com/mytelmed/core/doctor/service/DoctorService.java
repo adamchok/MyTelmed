@@ -9,8 +9,8 @@ import com.mytelmed.common.event.account.model.AccountDeactivatedEvent;
 import com.mytelmed.common.event.account.model.AccountPasswordResetEvent;
 import com.mytelmed.common.event.image.ImageDeletedEvent;
 import com.mytelmed.common.utils.DateTimeUtil;
-import com.mytelmed.common.utils.PasswordGenerator;
 import com.mytelmed.common.utils.HashUtil;
+import com.mytelmed.common.utils.PasswordGenerator;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.doctor.dto.CreateDoctorRequestDto;
@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -65,6 +66,18 @@ public class DoctorService {
         } catch (Exception e) {
             log.error("Failed to fetch all paginated doctors with page {} and page size {}", page, pageSize, e);
             throw new AppException("Failed to fetch all paginated doctors");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<Doctor> findAll() {
+        log.debug("Finding all doctors");
+
+        try {
+            return doctorRepository.findAll();
+        } catch (Exception e) {
+            log.error("Failed to fetch all paginated doctors", e);
+            throw new AppException("Failed to fetch all doctors");
         }
     }
 

@@ -22,6 +22,11 @@ public enum DeliveryStatus {
   PREPARING,
 
   /**
+   * Medication is ready for pickup by patient
+   */
+  READY_FOR_PICKUP,
+
+  /**
    * Medication handed over to delivery service
    */
   OUT_FOR_DELIVERY,

@@ -20,7 +20,6 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState<number>(0);
-    const [iframeKey, setIframeKey] = useState<number>(0);
 
     // Reset iframe states when document changes
     useEffect(() => {
@@ -28,7 +27,6 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
             setLoading(true);
             setError(null);
             setRetryCount(0);
-            setIframeKey((prev) => prev + 1);
         }
     }, [document?.id, document?.documentUrl]);
 
@@ -41,26 +39,10 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
 
     if (!document) return null;
 
-    const handleLoad = () => {
-        setLoading(false);
-        setError(null);
-    };
-
-    const handleError = () => {
-        setLoading(false);
-
-        if (retryCount === 0) {
-            setError("Document failed to load. This might be due to URL expiry or browser security restrictions.");
-        } else {
-            setError("Unable to display document in browser. Please download the document to view it.");
-        }
-    };
-
     const handleRetry = () => {
         setRetryCount((prev) => prev + 1);
         setLoading(true);
         setError(null);
-        setIframeKey((prev) => prev + 1);
     };
 
     const toggleFullscreen = () => {
@@ -215,13 +197,9 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
                 ) : (
                     <div className="h-full">
                         <iframe
-                            key={iframeKey}
                             src={document.documentUrl}
                             className="w-full h-full border-0"
                             title={document.documentName}
-                            onLoad={handleLoad}
-                            onError={handleError}
-                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads allow-top-navigation"
                         />
                     </div>
                 )}

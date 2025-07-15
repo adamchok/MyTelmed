@@ -13,6 +13,8 @@ import lombok.Builder;
  */
 @Builder
 public record PaymentCompletedEvent(
-    @NotNull(message = "Bill is required") Bill bill,
-    @NotNull(message = "Payment transaction is required") PaymentTransaction transaction) {
+        @NotNull(message = "Bill is required") Bill bill,
+        @NotNull(message = "Payment transaction is required") PaymentTransaction transaction,
+        String receiptUrl
+) {
 }

@@ -14,7 +14,6 @@ import {
     Spin,
     Alert,
     Divider,
-    List,
     Tooltip,
     Badge,
     message,
@@ -46,7 +45,6 @@ import {
 import { RefreshCw, Maximize2, Minimize2, X } from "lucide-react";
 
 import dayjs from "dayjs";
-import { parseLocalDateTime } from "../../../utils/DateUtils";
 
 // Import API services
 import AppointmentApi from "../../../api/appointment";
@@ -200,10 +198,8 @@ export default function AppointmentDetails() {
     const [previewModal, setPreviewModal] = useState(false);
     const [selectedDocument, setSelectedDocument] = useState<AppointmentDocumentDto | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [documentLoading, setDocumentLoading] = useState<boolean>(true);
     const [documentError, setDocumentError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState<number>(0);
-    const [iframeKey, setIframeKey] = useState<number>(0);
 
     // State for update appointment modal
     const [updateModal, setUpdateModal] = useState(false);
@@ -232,18 +228,78 @@ export default function AppointmentDetails() {
     // Convert document type enum to display name
     const getDocumentTypeDisplayName = (documentType: string) => {
         switch (documentType) {
-            case "LAB_REPORT":
-                return "Lab Report";
-            case "MEDICAL_RECORD":
-                return "Medical Record";
             case "PRESCRIPTION":
                 return "Prescription";
+            case "LAB_REPORT":
+                return "Lab Report";
+            case "RADIOLOGY_REPORT":
+                return "Radiology Report";
+            case "DISCHARGE_SUMMARY":
+                return "Discharge Summary";
+            case "OPERATIVE_REPORT":
+                return "Operative Report";
+            case "CONSULTATION_NOTE":
+                return "Consultation Note";
+            case "PROGRESS_NOTE":
+                return "Progress Note";
+            case "PATHOLOGY_REPORT":
+                return "Pathology Report";
+            case "IMMUNIZATION_RECORD":
+                return "Immunization Record";
+            case "REFERRAL_LETTER":
+                return "Referral Letter";
+            case "MEDICAL_CERTIFICATE":
+                return "Medical Certificate";
+            case "HISTORY_AND_PHYSICAL":
+                return "History and Physical";
+            case "EMERGENCY_ROOM_REPORT":
+                return "Emergency Room Report";
+            case "ANESTHESIA_RECORD":
+                return "Anesthesia Record";
+            case "INPATIENT_SUMMARY":
+                return "Inpatient Summary";
+            case "OUTPATIENT_SUMMARY":
+                return "Outpatient Summary";
+            case "NURSING_NOTE":
+                return "Nursing Note";
+            case "MENTAL_HEALTH_NOTE":
+                return "Mental Health Note";
+            case "MEDICAL_IMAGING":
+                return "Medical Imaging";
+            case "CLINICAL_TRIAL_DOCUMENT":
+                return "Clinical Trial Document";
+            case "TREATMENT_PLAN":
+                return "Treatment Plan";
+            case "DIAGNOSTIC_REPORT":
+                return "Diagnostic Report";
+            case "VITAL_SIGNS_RECORD":
+                return "Vital Signs Record";
+            case "ALLERGY_RECORD":
+                return "Allergy Record";
+            case "MEDICAL_RECORD":
+                return "Medical Record";
             case "IMAGING":
                 return "Imaging";
             case "OTHER":
                 return "Other";
             default:
                 return documentType;
+        }
+    };
+
+    // Convert language enum to display name
+    const getLanguageDisplayName = (language: string) => {
+        switch (language.toLowerCase()) {
+            case "english":
+                return "English";
+            case "mandarin":
+                return "Mandarin";
+            case "malay":
+                return "Bahasa Melayu";
+            case "tamil":
+                return "Tamil";
+            default:
+                return language;
         }
     };
 
@@ -268,28 +324,9 @@ export default function AppointmentDetails() {
         }
     };
 
-    // Document viewer functions
-    const handleDocumentLoad = () => {
-        setDocumentLoading(false);
-        setDocumentError(null);
-    };
-
-    const handleDocumentError = () => {
-        setDocumentLoading(false);
-        if (retryCount === 0) {
-            setDocumentError(
-                "Document failed to load. This might be due to URL expiry or browser security restrictions."
-            );
-        } else {
-            setDocumentError("Unable to display document in browser. Please try refreshing the page.");
-        }
-    };
-
     const handleDocumentRetry = () => {
         setRetryCount((prev) => prev + 1);
-        setDocumentLoading(true);
         setDocumentError(null);
-        setIframeKey((prev) => prev + 1);
     };
 
     const toggleFullscreen = () => {
@@ -309,10 +346,8 @@ export default function AppointmentDetails() {
     // Reset document states when selected document changes
     useEffect(() => {
         if (selectedDocument?.documentUrl) {
-            setDocumentLoading(true);
             setDocumentError(null);
             setRetryCount(0);
-            setIframeKey((prev) => prev + 1);
         }
     }, [selectedDocument?.id, selectedDocument?.documentUrl]);
 
@@ -340,15 +375,6 @@ export default function AppointmentDetails() {
                 className="relative border rounded bg-gray-50"
                 style={{ height: isFullscreen ? "calc(100vh - 120px)" : "500px" }}
             >
-                {documentLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10">
-                        <Spin size="large" />
-                        <div className="ml-3">
-                            <Text className="text-sm text-gray-600">Loading document...</Text>
-                        </div>
-                    </div>
-                )}
-
                 {documentError || !isValidUrl ? (
                     <div className="flex items-center justify-center h-full p-4">
                         <Alert
@@ -385,13 +411,9 @@ export default function AppointmentDetails() {
                 ) : (
                     <div className="h-full">
                         <iframe
-                            key={iframeKey}
                             src={selectedDocument.documentUrl}
                             className="w-full h-full border-0"
                             title={selectedDocument.documentName}
-                            onLoad={handleDocumentLoad}
-                            onError={handleDocumentError}
-                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads allow-top-navigation"
                         />
                     </div>
                 )}
@@ -660,7 +682,7 @@ export default function AppointmentDetails() {
         canManageBilling(appointment.patient.id);
 
     return (
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-4">
             {/* Header */}
             <div className="mb-6">
                 <Button
@@ -702,7 +724,7 @@ export default function AppointmentDetails() {
                                 icon={<CheckCircleOutlined />}
                                 onClick={handlePayNow}
                                 className="bg-green-600 border-green-600 hover:bg-green-700"
-                                size="large"
+                                size="middle"
                             >
                                 Pay Now - RM 2.00
                             </Button>
@@ -758,7 +780,7 @@ export default function AppointmentDetails() {
                             </div>
                         }
                     >
-                        <div className="flex items-center space-x-4 mb-4">
+                        <div className="flex flex-col sm:flex-row items-center space-x-4 mb-4">
                             <Avatar
                                 size={80}
                                 src={appointment.doctor.profileImageUrl}
@@ -769,7 +791,7 @@ export default function AppointmentDetails() {
                                 <Title level={3} className="mb-1 mt-0">
                                     Dr. {appointment.doctor.name}
                                 </Title>
-                                <div className="flex items-center space-x-4 mt-2">
+                                <div className="flex flex-col justify-center sm:flex-row sm:justify-normal items-center space-x-4 mt-2">
                                     <Tooltip title="Email">
                                         <div className="flex items-center text-gray-600">
                                             <MailOutlined className="mr-1" />
@@ -787,7 +809,6 @@ export default function AppointmentDetails() {
                         </div>
 
                         <Divider />
-
                         <Row gutter={[16, 16]}>
                             <Col span={12}>
                                 <Text strong>Gender: </Text>
@@ -795,11 +816,7 @@ export default function AppointmentDetails() {
                             </Col>
                             <Col span={12}>
                                 <Text strong>Date of Birth: </Text>
-                                <Text>
-                                    {appointment.doctor.dateOfBirth
-                                        ? parseLocalDateTime(appointment.doctor.dateOfBirth).format("MMM DD, YYYY")
-                                        : "N/A"}
-                                </Text>
+                                <Text>{appointment.doctor.dateOfBirth}</Text>
                             </Col>
                             <Col span={12}>
                                 <Text strong>Specialities: </Text>
@@ -813,7 +830,7 @@ export default function AppointmentDetails() {
                                 <Text strong>Languages: </Text>
                                 <Text>
                                     {appointment.doctor.languageList && appointment.doctor.languageList.length > 0
-                                        ? appointment.doctor.languageList.join(", ")
+                                        ? appointment.doctor.languageList.map(getLanguageDisplayName).join(", ")
                                         : "English"}
                                 </Text>
                             </Col>
@@ -1043,120 +1060,162 @@ export default function AppointmentDetails() {
                     {/* Attached Documents */}
                     <Card
                         title={
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center">
-                                    <FileOutlined className="mr-2 text-blue-600" />
-                                    Attached Documents
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Badge count={appointment.attachedDocuments.length} color="blue" />
-                                    {appointment.attachedDocuments.length > 1 && !comparisonMode && (
-                                        <Button
-                                            type="text"
-                                            size="small"
-                                            icon={<EyeOutlined />}
-                                            onClick={handleToggleComparisonMode}
-                                            className="text-blue-600"
-                                        >
-                                            Compare
-                                        </Button>
-                                    )}
-                                    {comparisonMode && (
-                                        <div className="flex items-center gap-1">
-                                            <Button
-                                                type="primary"
-                                                size="small"
-                                                icon={<EyeOutlined />}
-                                                onClick={handleStartComparison}
-                                                disabled={selectedForComparison.length < 2}
-                                            >
-                                                Compare ({selectedForComparison.length})
-                                            </Button>
-                                            {selectedForComparison.length > 0 && (
+                            <div className="flex flex-col gap-2">
+                                {/* Title Row */}
+                                <div className="flex flex-col 3xl:flex-row 3xl:items-center 3xl:justify-between gap-2 py-3">
+                                    <div className="flex items-center gap-2">
+                                        <FileOutlined className="text-blue-600 text-base sm:text-lg" />
+                                        <span className="text-base sm:text-sm font-semibold text-gray-800">Attached Documents</span>
+                                        <Badge
+                                            count={appointment.attachedDocuments.length}
+                                            color="blue"
+                                            className="ml-1"
+                                        />
+                                    </div>
+
+                                    {/* Action Buttons - Stack vertically on mobile */}
+                                    {appointment.attachedDocuments.length > 1 && (
+                                        <div className="flex flex-col xl:flex-row gap-2 sm:gap-1">
+                                            {!comparisonMode ? (
                                                 <Button
                                                     type="text"
                                                     size="small"
-                                                    icon={<CloseCircleOutlined />}
-                                                    onClick={handleClearAllComparison}
+                                                    icon={<EyeOutlined />}
+                                                    onClick={handleToggleComparisonMode}
+                                                    className="text-blue-600 hover:text-blue-800 text-sm font-medium justify-start sm:justify-center"
                                                 >
-                                                    Clear
+                                                    Compare
                                                 </Button>
+                                            ) : (
+                                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-1">
+                                                    <Button
+                                                        type="primary"
+                                                        size="small"
+                                                        icon={<EyeOutlined />}
+                                                        onClick={handleStartComparison}
+                                                        disabled={selectedForComparison.length < 2}
+                                                        className="text-sm font-medium"
+                                                    >
+                                                        Compare ({selectedForComparison.length})
+                                                    </Button>
+                                                    <div className="flex gap-1">
+                                                        {selectedForComparison.length > 0 && (
+                                                            <Button
+                                                                type="text"
+                                                                size="small"
+                                                                icon={<CloseCircleOutlined />}
+                                                                onClick={handleClearAllComparison}
+                                                                className="text-sm"
+                                                            >
+                                                                Clear All
+                                                            </Button>
+                                                        )}
+                                                        <Button
+                                                            type="text"
+                                                            size="small"
+                                                            danger
+                                                            icon={<CloseCircleOutlined />}
+                                                            onClick={handleExitComparisonMode}
+                                                            className="text-sm"
+                                                        >
+                                                            Exit Mode
+                                                        </Button>
+                                                    </div>
+                                                </div>
                                             )}
-                                            <Button
-                                                type="text"
-                                                size="small"
-                                                danger
-                                                icon={<CloseCircleOutlined />}
-                                                onClick={handleExitComparisonMode}
-                                            >
-                                                Exit
-                                            </Button>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         }
+                        className="shadow-sm"
                     >
                         {comparisonMode && appointment.attachedDocuments.length > 1 && (
                             <Alert
-                                message="Document Comparison Mode"
-                                description={`Select 2-4 documents to compare them side by side. Currently selected: ${selectedForComparison.length}/4`}
+                                message={
+                                    <div className="flex flex-col gap-2">
+                                        <span className="text-sm font-semibold text-blue-800">
+                                            Document Comparison Mode
+                                        </span>
+                                        <span className="text-xs text-blue-600 font-medium">
+                                            {selectedForComparison.length}/4 selected
+                                        </span>
+                                    </div>
+                                }
+                                description={
+                                    <div className="mt-2">
+                                        <p className="text-sm text-gray-600 mb-3">
+                                            Select 2-4 documents to compare them side by side.
+                                            <span className="block sm:inline"> Use checkboxes or tap document cards to select.</span>
+                                        </p>
+                                        <div className="flex flex-col gap-2">
+                                            {selectedForComparison.length > 0 && (
+                                                <Button
+                                                    size="small"
+                                                    onClick={handleClearAllComparison}
+                                                    className="text-sm justify-start sm:justify-center"
+                                                >
+                                                    Clear All Selections
+                                                </Button>
+                                            )}
+                                            {selectedForComparison.length >= 2 && (
+                                                <Button
+                                                    size="small"
+                                                    type="primary"
+                                                    onClick={handleStartComparison}
+                                                    className="text-sm justify-start sm:justify-center"
+                                                >
+                                                    Start Comparison Now
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                }
                                 type="info"
                                 showIcon
                                 className="mb-4"
-                                action={
-                                    <div className="flex gap-2">
-                                        {selectedForComparison.length > 0 && (
-                                            <Button size="small" onClick={handleClearAllComparison}>
-                                                Clear All
-                                            </Button>
-                                        )}
-                                        {selectedForComparison.length >= 2 && (
-                                            <Button size="small" type="primary" onClick={handleStartComparison}>
-                                                Compare Now
-                                            </Button>
-                                        )}
-                                    </div>
-                                }
                             />
                         )}
 
                         {appointment.attachedDocuments.length === 0 ? (
-                            <div className="text-center py-6">
-                                <FileOutlined className="text-4xl text-gray-300 mb-2" />
-                                <div>
-                                    <Text className="text-gray-500">No documents attached</Text>
+                            <div className="text-center py-8 sm:py-12">
+                                <FileOutlined className="text-sm text-gray-300 mb-3" />
+                                <div className="space-y-1">
+                                    <Text className="text-gray-500 text-sm block">No documents attached</Text>
+                                    <Text className="text-gray-400 text-xs block">Documents will appear here when added to the appointment</Text>
                                 </div>
                             </div>
                         ) : (
-                            <List
-                                dataSource={appointment.attachedDocuments}
-                                renderItem={(docItem) => {
+                            <div className="space-y-4">
+                                {appointment.attachedDocuments.map((docItem) => {
                                     const isSelected = selectedForComparison.some((d) => d.id === docItem.id);
 
                                     return (
-                                        <List.Item className="px-0">
-                                            <Card
-                                                size="small"
-                                                className={`w-full hover:shadow-md transition-shadow ${
-                                                    comparisonMode ? "cursor-pointer" : ""
-                                                } ${isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200"}`}
-                                                styles={{ body: { padding: "12px" } }}
-                                                onClick={() => {
-                                                    if (comparisonMode) {
-                                                        if (isSelected) {
-                                                            handleRemoveFromComparison(docItem);
-                                                        } else {
-                                                            handleAddToComparison(docItem);
-                                                        }
+                                        <Card
+                                            key={docItem.id}
+                                            size="small"
+                                            className={`w-full hover:shadow-md transition-all duration-200 ${comparisonMode ? "cursor-pointer hover:bg-gray-50" : ""
+                                                } ${isSelected
+                                                    ? "border-blue-500 bg-blue-50 shadow-md"
+                                                    : "border-gray-200 hover:border-gray-300"
+                                                }`}
+                                            styles={{ body: { padding: "16px" } }}
+                                            onClick={() => {
+                                                if (comparisonMode) {
+                                                    if (isSelected) {
+                                                        handleRemoveFromComparison(docItem);
+                                                    } else {
+                                                        handleAddToComparison(docItem);
                                                     }
-                                                }}
-                                            >
-                                                <div className="space-y-3">
-                                                    {/* Document Header */}
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="flex items-center space-x-2 flex-1 min-w-0">
-                                                            {comparisonMode && (
+                                                }
+                                            }}
+                                        >
+                                            <div className="flex flex-col space-y-3">
+                                                {/* Document Header */}
+                                                <div className="flex items-start gap-3">
+                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                        {comparisonMode && (
+                                                            <div className="flex-shrink-0">
                                                                 <Checkbox
                                                                     checked={isSelected}
                                                                     onChange={(e) => {
@@ -1167,114 +1226,117 @@ export default function AppointmentDetails() {
                                                                             handleAddToComparison(docItem);
                                                                         }
                                                                     }}
+                                                                    className="text-base"
                                                                 />
-                                                            )}
-                                                            <div className="text-xl flex-shrink-0">
-                                                                {getFileIcon("pdf")}
                                                             </div>
-                                                            <div className="min-w-0 flex-1">
-                                                                <Tooltip title={docItem.documentName}>
-                                                                    <Text strong className="block truncate text-sm">
-                                                                        {docItem.documentName}
-                                                                    </Text>
-                                                                </Tooltip>
-                                                                <div className="flex items-center space-x-2 text-xs text-gray-500">
-                                                                    <span>
-                                                                        {getDocumentTypeDisplayName(
-                                                                            docItem.documentType
-                                                                        )}
-                                                                    </span>
-                                                                    <span>•</span>
-                                                                    <span>PDF</span>
-                                                                    <span>•</span>
-                                                                    <span>{formatFileSize(docItem.documentSize)}</span>
+                                                        )}
+                                                        <div className="min-w-0 flex-1">
+                                                            <Tooltip title={docItem.documentName} placement="topLeft">
+                                                                <Text strong className="block truncate text-base leading-snug mb-1">
+                                                                    {getFileIcon("pdf")} {docItem.documentName}
+                                                                </Text>
+                                                            </Tooltip>
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                                                                    <Tag color="blue" className="text-xs font-medium">
+                                                                        {getDocumentTypeDisplayName(docItem.documentType)}
+                                                                    </Tag>
+                                                                    <span className="text-gray-500">PDF</span>
+                                                                    <span className="text-gray-500">•</span>
+                                                                    <span className="text-gray-500">{formatFileSize(docItem.documentSize)}</span>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-center space-x-1 flex-shrink-0">
-                                                            <Tooltip title="View Document">
-                                                                <Button
-                                                                    type="text"
-                                                                    size="small"
-                                                                    icon={<EyeOutlined />}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleDocumentView(docItem);
-                                                                    }}
-                                                                    className="text-blue-600 hover:text-blue-800"
-                                                                />
-                                                            </Tooltip>
-                                                        </div>
                                                     </div>
-
-                                                    {/* Document Metadata */}
-                                                    <div className="pt-2 border-t border-gray-100">
-                                                        <div className="flex items-center justify-between text-xs">
-                                                            <span className="text-gray-500">
-                                                                {parseTimestamp(docItem.createdAt).format(
-                                                                    "MMM DD, YYYY"
-                                                                )}
-                                                            </span>
-                                                        </div>
-
-                                                        {docItem.notes && (
-                                                            <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                                                                <Text className="text-gray-700">
-                                                                    <strong>Note:</strong> {docItem.notes}
-                                                                </Text>
-                                                            </div>
-                                                        )}
+                                                    <div className="flex-shrink-0">
+                                                        <Tooltip title="View Document">
+                                                            <Button
+                                                                type="text"
+                                                                size="large"
+                                                                icon={<EyeOutlined />}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDocumentView(docItem);
+                                                                }}
+                                                                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 h-10 w-10 flex items-center justify-center rounded-lg"
+                                                            />
+                                                        </Tooltip>
                                                     </div>
                                                 </div>
-                                            </Card>
-                                        </List.Item>
+
+                                                {/* Document Metadata */}
+                                                <div className="pt-3 border-t border-gray-100">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                                            <span className="text-xs text-gray-600 font-medium">
+                                                                Uploaded: {parseTimestamp(docItem.createdAt).format("MMM DD, YYYY")}
+                                                            </span>
+                                                            <span className="text-xs text-gray-400">
+                                                                {parseTimestamp(docItem.createdAt).format("h:mm A")}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {docItem.notes && (
+                                                        <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                                            <Text className="text-green-800 text-xs leading-relaxed">
+                                                                <span className="font-semibold">Note:</span> {docItem.notes}
+                                                            </Text>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Card>
                                     );
-                                }}
-                            />
+                                })}
+                            </div>
                         )}
                     </Card>
                 </Col>
-            </Row>
+            </Row >
 
             {/* Document Preview Modal */}
-            <Modal
+            < Modal
                 title={
-                    <div className="flex items-center justify-between">
+                    < div className="flex items-center justify-between" >
                         <div className="flex items-center">
                             <EyeOutlined className="mr-2" />
                             Document Preview
                         </div>
-                        {selectedDocument && (
-                            <div className="flex items-center gap-2">
-                                {documentError && retryCount < 2 && (
+                        {
+                            selectedDocument && (
+                                <div className="flex items-center gap-2">
+                                    {documentError && retryCount < 2 && (
+                                        <Button
+                                            size="small"
+                                            icon={<RefreshCw className="w-4 h-4" />}
+                                            onClick={handleDocumentRetry}
+                                            title="Retry Loading"
+                                        >
+                                            Retry
+                                        </Button>
+                                    )}
                                     <Button
                                         size="small"
-                                        icon={<RefreshCw className="w-4 h-4" />}
-                                        onClick={handleDocumentRetry}
-                                        title="Retry Loading"
+                                        icon={<Maximize2 className="w-4 h-4" />}
+                                        onClick={toggleFullscreen}
+                                        title="View Fullscreen"
                                     >
-                                        Retry
+                                        Fullscreen
                                     </Button>
-                                )}
-                                <Button
-                                    size="small"
-                                    icon={<Maximize2 className="w-4 h-4" />}
-                                    onClick={toggleFullscreen}
-                                    title="View Fullscreen"
-                                >
-                                    Fullscreen
-                                </Button>
-                            </div>
-                        )}
-                    </div>
+                                </div>
+                            )
+                        }
+                    </div >
                 }
                 open={previewModal}
                 onCancel={() => setPreviewModal(false)}
-                footer={[
-                    <Button key="close" onClick={() => setPreviewModal(false)}>
-                        Close
-                    </Button>,
-                ]}
+                footer={
+                    [
+                        <Button key="close" onClick={() => setPreviewModal(false)}>
+                            Close
+                        </Button>,
+                    ]}
                 width="80vw"
                 style={{ maxWidth: "1200px" }}
                 centered
@@ -1323,86 +1385,88 @@ export default function AppointmentDetails() {
                         </div>
                     </div>
                 )}
-            </Modal>
+            </Modal >
 
             {/* Fullscreen Document Modal */}
-            {isFullscreen && selectedDocument && (
-                <Modal
-                    title={null}
-                    open={true}
-                    onCancel={() => setIsFullscreen(false)}
-                    footer={null}
-                    width="100vw"
-                    style={{
-                        maxWidth: "none",
-                        margin: 0,
-                        padding: 0,
-                        top: 0,
-                        left: 0,
-                        height: "100vh",
-                    }}
-                    styles={{
-                        body: {
+            {
+                isFullscreen && selectedDocument && (
+                    <Modal
+                        title={null}
+                        open={true}
+                        onCancel={() => setIsFullscreen(false)}
+                        footer={null}
+                        width="100vw"
+                        style={{
+                            maxWidth: "none",
+                            margin: 0,
                             padding: 0,
+                            top: 0,
+                            left: 0,
                             height: "100vh",
-                            display: "flex",
-                            flexDirection: "column",
-                        },
-                        content: {
-                            height: "100vh",
-                            display: "flex",
-                            flexDirection: "column",
-                        },
-                        mask: {
-                            backgroundColor: "rgba(0, 0, 0, 0.8)",
-                        },
-                    }}
-                    centered={false}
-                    destroyOnHidden={true}
-                    maskClosable={true}
-                    keyboard={true}
-                    zIndex={1100}
-                    getContainer={false}
-                >
-                    <div className="h-full flex flex-col bg-white">
-                        {/* Fullscreen Header */}
-                        <div className="flex items-center justify-between p-4 border-b bg-white">
-                            <div className="flex items-center gap-3">
-                                <FileOutlined className="w-6 h-6 text-blue-500" />
-                                <div>
-                                    <Title level={4} className="m-0">
-                                        {selectedDocument.documentName}
-                                    </Title>
-                                    <Tag color="blue" className="text-sm mt-1">
-                                        {getDocumentTypeDisplayName(selectedDocument.documentType)}
-                                    </Tag>
+                        }}
+                        styles={{
+                            body: {
+                                padding: 0,
+                                height: "100vh",
+                                display: "flex",
+                                flexDirection: "column",
+                            },
+                            content: {
+                                height: "100vh",
+                                display: "flex",
+                                flexDirection: "column",
+                            },
+                            mask: {
+                                backgroundColor: "rgba(0, 0, 0, 0.8)",
+                            },
+                        }}
+                        centered={false}
+                        destroyOnHidden={true}
+                        maskClosable={true}
+                        keyboard={true}
+                        zIndex={1100}
+                        getContainer={false}
+                    >
+                        <div className="h-full flex flex-col bg-white">
+                            {/* Fullscreen Header */}
+                            <div className="flex items-center justify-between p-4 border-b bg-white">
+                                <div className="flex items-center gap-3">
+                                    <FileOutlined className="w-6 h-6 text-blue-500" />
+                                    <div>
+                                        <Title level={4} className="m-0">
+                                            {selectedDocument.documentName}
+                                        </Title>
+                                        <Tag color="blue" className="text-sm mt-1">
+                                            {getDocumentTypeDisplayName(selectedDocument.documentType)}
+                                        </Tag>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {documentError && retryCount < 2 && (
+                                        <Button
+                                            icon={<RefreshCw className="w-4 h-4" />}
+                                            onClick={handleDocumentRetry}
+                                            title="Retry Loading"
+                                        >
+                                            Retry
+                                        </Button>
+                                    )}
+                                    <Button
+                                        icon={<Minimize2 className="w-4 h-4" />}
+                                        onClick={() => setIsFullscreen(false)}
+                                        title="Exit Fullscreen"
+                                    >
+                                        Exit Fullscreen
+                                    </Button>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                {documentError && retryCount < 2 && (
-                                    <Button
-                                        icon={<RefreshCw className="w-4 h-4" />}
-                                        onClick={handleDocumentRetry}
-                                        title="Retry Loading"
-                                    >
-                                        Retry
-                                    </Button>
-                                )}
-                                <Button
-                                    icon={<Minimize2 className="w-4 h-4" />}
-                                    onClick={() => setIsFullscreen(false)}
-                                    title="Exit Fullscreen"
-                                >
-                                    Exit Fullscreen
-                                </Button>
-                            </div>
-                        </div>
 
-                        {/* Fullscreen Document Viewer */}
-                        <div className="flex-1 p-4">{renderDocumentViewer()}</div>
-                    </div>
-                </Modal>
-            )}
+                            {/* Fullscreen Document Viewer */}
+                            <div className="flex-1 p-4">{renderDocumentViewer()}</div>
+                        </div>
+                    </Modal>
+                )
+            }
 
             {/* Document Comparison Modal */}
             <Modal
@@ -1465,15 +1529,14 @@ export default function AppointmentDetails() {
                     {/* Document Grid */}
                     <div className="flex-1 p-4">
                         <div
-                            className={`grid ${
-                                selectedForComparison.length === 1
-                                    ? "grid-cols-1"
-                                    : selectedForComparison.length === 2
+                            className={`grid ${selectedForComparison.length === 1
+                                ? "grid-cols-1"
+                                : selectedForComparison.length === 2
                                     ? "grid-cols-2"
                                     : selectedForComparison.length === 3
-                                    ? "grid-cols-3"
-                                    : "grid-cols-2"
-                            } ${selectedForComparison.length <= 2 ? "grid-rows-1" : "grid-rows-2"} gap-4 h-full`}
+                                        ? "grid-cols-3"
+                                        : "grid-cols-2"
+                                } ${selectedForComparison.length <= 2 ? "grid-rows-1" : "grid-rows-2"} gap-4 h-full`}
                         >
                             {selectedForComparison.map((docItem) => (
                                 <Card
@@ -1523,7 +1586,6 @@ export default function AppointmentDetails() {
                                                     src={docItem.documentUrl}
                                                     className="w-full h-full border-0"
                                                     title={docItem.documentName}
-                                                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads allow-top-navigation"
                                                 />
                                             </div>
                                         ) : (
@@ -1838,14 +1900,16 @@ export default function AppointmentDetails() {
             </Modal>
 
             {/* Payment Modal */}
-            {appointment && (
-                <PaymentModal
-                    visible={paymentModal}
-                    onClose={() => setPaymentModal(false)}
-                    appointment={appointment}
-                    onPaymentSuccess={handlePaymentSuccess}
-                />
-            )}
-        </div>
+            {
+                appointment && (
+                    <PaymentModal
+                        visible={paymentModal}
+                        onClose={() => setPaymentModal(false)}
+                        context={{ type: "appointment", data: appointment }}
+                        onPaymentSuccess={handlePaymentSuccess}
+                    />
+                )
+            }
+        </div >
     );
 }

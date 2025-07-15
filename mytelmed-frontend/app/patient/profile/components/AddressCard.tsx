@@ -1,4 +1,4 @@
-import { Card, Button, Tag, Space, Typography } from "antd";
+import { Card, Button, Space, Typography } from "antd";
 import { MapPin, Edit, Trash2, Home, Building } from "lucide-react";
 import { AddressDto } from "@/app/api/address/props";
 
@@ -6,13 +6,12 @@ const { Text } = Typography;
 
 interface AddressCardProps {
     address: AddressDto;
-    isDefault?: boolean;
     onEdit: (address: AddressDto) => void;
     onDelete: (addressId: string) => void;
     isDeleting?: boolean;
 }
 
-const AddressCard = ({ address, isDefault = false, onEdit, onDelete, isDeleting }: AddressCardProps) => {
+const AddressCard = ({ address, onEdit, onDelete, isDeleting }: AddressCardProps) => {
     return (
         <Card
             className="shadow-md border-gray-200 hover:shadow-lg transition-shadow duration-200"
@@ -25,18 +24,26 @@ const AddressCard = ({ address, isDefault = false, onEdit, onDelete, isDeleting 
             <div className="flex items-start justify-between">
                 <div className="flex-1">
                     <div className="flex items-center mb-2">
-                        <MapPin className="w-4 h-4 text-blue-500 mr-2" />
+                        <Home className="w-4 h-4 text-blue-500 mr-2" />
                         <Text strong className="text-sm sm:text-base text-gray-800">
-                            {address.address}
+                            {address.addressName}
                         </Text>
-                        {isDefault && (
-                            <Tag color="blue" className="ml-2 text-xs">
-                                Default
-                            </Tag>
-                        )}
                     </div>
 
                     <div className="space-y-1">
+                        <div className="flex items-start">
+                            <MapPin className="w-3 h-3 text-gray-500 mr-2 mt-0.5" />
+                            <div className="flex-1">
+                                <Text className="text-xs sm:text-sm text-gray-600 block">
+                                    {address.address1}
+                                </Text>
+                                {address.address2 && (
+                                    <Text className="text-xs sm:text-sm text-gray-600 block">
+                                        {address.address2}
+                                    </Text>
+                                )}
+                            </div>
+                        </div>
                         <div className="flex items-center">
                             <Building className="w-3 h-3 text-gray-500 mr-2" />
                             <Text className="text-xs sm:text-sm text-gray-600">
@@ -44,7 +51,7 @@ const AddressCard = ({ address, isDefault = false, onEdit, onDelete, isDeleting 
                             </Text>
                         </div>
                         <div className="flex items-center">
-                            <Home className="w-3 h-3 text-gray-500 mr-2" />
+                            <MapPin className="w-3 h-3 text-gray-500 mr-2" />
                             <Text className="text-xs sm:text-sm text-gray-600">{address.postcode}</Text>
                         </div>
                     </div>

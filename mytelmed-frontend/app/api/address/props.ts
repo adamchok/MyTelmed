@@ -1,13 +1,17 @@
 export interface AddressDto {
     id: string;
-    address: string;
+    addressName: string;
+    address1: string;
+    address2?: string;
     postcode: string;
     city: string;
     state: string;
 }
 
 export interface RequestAddressDto {
-    address: string;
+    addressName: string;
+    address1: string;
+    address2?: string;
     postcode: string;
     city: string;
     state: string;

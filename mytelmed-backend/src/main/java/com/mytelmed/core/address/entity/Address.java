@@ -21,7 +21,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 import java.util.UUID;
 
-
 @Data
 @Builder
 @AllArgsConstructor
@@ -34,8 +33,16 @@ public class Address {
     private UUID id;
 
     @Convert(converter = EncryptionConverter.class)
-    @Column(name = "address", length = 300, nullable = false)
-    private String address;
+    @Column(name = "address_name", length = 100, nullable = false)
+    private String addressName;
+
+    @Convert(converter = EncryptionConverter.class)
+    @Column(name = "address1", length = 300, nullable = false)
+    private String address1;
+
+    @Convert(converter = EncryptionConverter.class)
+    @Column(name = "address2", length = 300)
+    private String address2;
 
     @Convert(converter = EncryptionConverter.class)
     @Column(name = "postcode", nullable = false)

@@ -45,7 +45,6 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
     const [facilities, setFacilities] = useState<Facility[]>([]);
     const [loading, setLoading] = useState(false);
     const [facilitiesLoading, setFacilitiesLoading] = useState(false);
-    const [currentDoctor, setCurrentDoctor] = useState<Doctor | null>(null);
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1);
@@ -94,20 +93,22 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
             setLoading(true);
 
             const responseProfile = await DoctorApi.getDoctorProfile();
+            let currentDoctorData = null;
             if (responseProfile.data.isSuccess && responseProfile.data.data) {
-                setCurrentDoctor(responseProfile.data.data);
+                currentDoctorData = responseProfile.data.data;
             }
 
             const response = await DoctorApi.getDoctors(currentPage - 1, pageSize);
             if (response.data.isSuccess && response.data.data) {
                 const doctorsData = response.data.data.content || [];
-                const totalElements = response.data.data.totalElements || 0;
 
                 // Apply client-side filters to the paginated results
                 let filtered = [...doctorsData];
 
-                // Filter current doctor
-                filtered = filtered.filter((doctor) => doctor.id !== currentDoctor?.id);
+                // Filter current doctor using the fresh API response
+                if (currentDoctorData) {
+                    filtered = filtered.filter((doctor) => doctor.id !== currentDoctorData.id);
+                }
 
                 // Search filter
                 if (searchTerm.trim()) {
@@ -130,7 +131,7 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
                 }
 
                 setDoctors(filtered);
-                setTotalDoctors(totalElements);
+                setTotalDoctors(filtered.length);
             }
         } catch {
             message.error("Failed to load doctors");
@@ -164,9 +165,23 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
 
     const loadAllDoctorsForFilters = async () => {
         try {
-            const response = await DoctorApi.getDoctors(0, 1000); // Load a large number for filters
+            // Get current doctor profile
+            const responseProfile = await DoctorApi.getDoctorProfile();
+            let currentDoctorData = null;
+            if (responseProfile.data.isSuccess && responseProfile.data.data) {
+                currentDoctorData = responseProfile.data.data;
+            }
+
+            const response = await DoctorApi.getAllDoctors(); // Load a large number for filters
             if (response.data.isSuccess && response.data.data) {
-                setAllDoctorsForFilters(response.data.data.content || []);
+                let allDoctors = response.data.data || [];
+
+                // Filter out current doctor from the filter options too
+                if (currentDoctorData) {
+                    allDoctors = allDoctors.filter((doctor) => doctor.id !== currentDoctorData.id);
+                }
+
+                setAllDoctorsForFilters(allDoctors);
             }
         } catch {
             // Silently fail - filters will just be empty
@@ -224,11 +239,10 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
                         <Col key={doctor.id} xs={24} sm={12} lg={8} xl={6}>
                             <Card
                                 hoverable
-                                className={`cursor-pointer transition-all border-2 h-full ${
-                                    selectedDoctorId === doctor.id
-                                        ? "border-green-500 bg-green-50 shadow-md"
-                                        : "border-gray-200 hover:border-green-300 hover:shadow-md"
-                                }`}
+                                className={`cursor-pointer transition-all border-2 h-full ${selectedDoctorId === doctor.id
+                                    ? "border-green-500 bg-green-50 shadow-md"
+                                    : "border-gray-200 hover:border-green-300 hover:shadow-md"
+                                    }`}
                                 onClick={() => handleDoctorSelect(doctor)}
                                 size="small"
                             >

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MyTelmed - Referral Update Required</title>
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333333;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f8f9fa;
+            }
+
+            .container {
+                background-color: #ffffff;
+                border-radius: 10px;
+                padding: 30px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
+
+            .header {
+                text-align: center;
+                justify-content: center;
+                border-bottom: 3px solid #ffc107;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+            }
+
+            .logo {
+                width: 192px;
+                height: auto;
+                max-width: 100%;
+                display: block;
+                margin: 0 auto;
+            }
+
+            .rejection-status {
+                background-color: #fff3cd;
+                border: 1px solid #ffc107;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+                text-align: center;
+            }
+
+            .rejection-status .status-icon {
+                font-size: 48px;
+                color: #856404;
+                margin-bottom: 10px;
+            }
+
+            .rejection-status h3 {
+                color: #856404;
+                margin: 0 0 10px 0;
+            }
+
+            .referral-details {
+                background-color: #fff8e1;
+                border-left: 4px solid #ffc107;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 5px;
+            }
+
+            .referral-number {
+                font-size: 18px;
+                font-weight: bold;
+                color: #856404;
+                margin-bottom: 10px;
+            }
+
+            .rejected-badge {
+                background-color: #ffc107;
+                color: #212529;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: bold;
+                display: inline-block;
+                margin-bottom: 15px;
+            }
+
+            .doctor-info {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+            }
+
+            .info-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 10px;
+                padding: 8px 0;
+                border-bottom: 1px solid #e9ecef;
+            }
+
+            .info-label {
+                font-weight: bold;
+                color: #495057;
+                flex: 0 0 40%;
+            }
+
+            .info-value {
+                color: #212529;
+                text-align: right;
+                flex: 1;
+                word-break: break-word;
+            }
+
+            .rejection-reason {
+                background-color: #f8d7da;
+                border: 1px solid #f5c6cb;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+            }
+
+            .next-steps {
+                background-color: #cce7ff;
+                border: 1px solid #007bff;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+            }
+
+            .action-buttons {
+                text-align: center;
+                margin: 30px 0;
+            }
+
+            .btn {
+                display: inline-block;
+                padding: 12px 24px;
+                margin: 10px;
+                border-radius: 5px;
+                text-decoration: none;
+                font-weight: bold;
+                transition: background-color 0.3s;
+                border: 2px solid transparent;
+            }
+
+            .btn-primary {
+                background-color: #007bff;
+                color: white;
+                border-color: #007bff;
+            }
+
+            .btn-primary:hover {
+                background-color: #0056b3;
+                border-color: #0056b3;
+            }
+
+            .btn-warning {
+                background-color: #ffc107;
+                color: #212529;
+                border-color: #ffc107;
+            }
+
+            .btn-warning:hover {
+                background-color: #e0a800;
+                border-color: #e0a800;
+            }
+
+            .btn {
+                background-color: #6c757d;
+                color: white;
+                border-color: #6c757d;
+            }
+
+            .btn:hover {
+                background-color: #545b62;
+                border-color: #545b62;
+            }
+
+            .important-notice {
+                background-color: #d1ecf1;
+                border: 1px solid #bee5eb;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+            }
+
+            .footer {
+                text-align: center;
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid #dee2e6;
+                font-size: 12px;
+                color: #6c757d;
+            }
+
+            .footer a {
+                color: #007bff;
+                text-decoration: none;
+            }
+
+            .footer a:hover {
+                text-decoration: underline;
+            }
+
+            @media (max-width: 600px) {
+                .info-row {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+
+                .info-value {
+                    text-align: left;
+                    margin-top: 5px;
+                }
+
+                .btn {
+                    display: block;
+                    margin: 10px 0;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2 style="color: #495057; margin: 10px 0 0 0">Referral Update Required</h2>
+            </div>
+
+            <div class="rejection-status">
+                <div class="status-icon">⚠️</div>
+                <h3>Your Referral Requires Attention</h3>
+                <p style="margin: 0; color: #856404">
+                    The specialist is unable to proceed with your referral at this time. Please review the information below
+                    and contact your referring doctor for alternative options.
+                </p>
+            </div>
+
+            <div class="referral-details">
+                <div class="referral-number">Referral #<span th:text="${referralNumber}">REF-001</span></div>
+
+                <div class="rejected-badge">
+                    ⚠️ Updated on <span th:text="${#temporals.format(rejectedAt, 'dd MMM yyyy')}">Date</span>
+                </div>
+
+                <h4 style="margin: 15px 0 10px 0; color: #856404">Referral Information</h4>
+
+                <div class="info-row">
+                    <span class="info-label">Patient Name:</span>
+                    <span class="info-value" th:text="${patientName}">Patient Name</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Referral Type:</span>
+                    <span
+                        class="info-value"
+                        th:text="${referralType == 'INTERNAL' ? 'Internal Specialist' : 'External Specialist'}"
+                        >Type</span
+                    >
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Status Updated:</span>
+                    <span class="info-value" th:text="${#temporals.format(rejectedAt, 'EEEE, dd MMMM yyyy HH:mm')}"
+                        >Date</span
+                    >
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Reason for Referral:</span>
+                    <span class="info-value" th:text="${reasonForReferral}">Reason</span>
+                </div>
+            </div>
+
+            <div class="doctor-info">
+                <h4 style="margin: 0 0 15px 0; color: #495057">Referring Doctor</h4>
+
+                <div class="info-row">
+                    <span class="info-label">Doctor Name:</span>
+                    <span class="info-value" th:text="${referringDoctorName}">Dr. Name</span>
+                </div>
+            </div>
+
+            <!-- Rejection Reason (if provided) -->
+            <div th:if="${rejectionReason}" class="rejection-reason">
+                <h4 style="margin: 0 0 15px 0; color: #721c24">💬 Specialist Feedback</h4>
+                <p th:text="${rejectionReason}" style="margin: 0; color: #721c24; white-space: pre-line">
+                    Rejection reason details
+                </p>
+            </div>
+
+            <!-- Specialist Information (if internal referral) -->
+            <div th:if="${referralType == 'INTERNAL' and referredDoctorName}" class="doctor-info">
+                <h4 style="margin: 0 0 15px 0; color: #856404">Specialist Details</h4>
+
+                <div class="info-row">
+                    <span class="info-label">Specialist Name:</span>
+                    <span class="info-value" th:text="${referredDoctorName}">Dr. Specialist</span>
+                </div>
+
+                <div class="info-row" th:if="${referredDoctorSpeciality}">
+                    <span class="info-label">Speciality:</span>
+                    <span class="info-value" th:text="${referredDoctorSpeciality}">Speciality</span>
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="next-steps">
+                <h4 style="margin: 0 0 15px 0; color: #0066cc">📋 What to Do Next</h4>
+                <ol style="margin: 0; color: #0066cc; padding-left: 20px">
+                    <li>
+                        <strong>Contact Your Referring Doctor:</strong> Discuss alternative referral options or additional
+                        specialist recommendations
+                    </li>
+                    <li>
+                        <strong>Review Clinical Information:</strong> Your doctor may need to provide additional medical
+                        information or clarification
+                    </li>
+                    <li>
+                        <strong>Explore Other Specialists:</strong> There may be other qualified specialists available for
+                        your condition
+                    </li>
+                    <li>
+                        <strong>Follow Up Promptly:</strong> Don't delay in seeking alternative specialist care for your
+                        medical condition
+                    </li>
+                    <li><strong>Keep Documentation:</strong> Save this referral information for your medical records</li>
+                </ol>
+            </div>
+
+            <div class="action-buttons">
+                <a th:href="${uiHost + '/patient/referrals'}" class="btn btn-primary"> View All Referrals </a>
+                <a th:href="${uiHost + '/patient/support'}" class="btn btn-warning"> Contact Support </a>
+                <a th:href="${uiHost + '/patient/appointments'}" class="btn"> Book General Appointment </a>
+            </div>
+
+            <!-- Important Information -->
+            <div class="important-notice">
+                <h4 style="margin: 0 0 10px 0; color: #0c5460">📌 Important Reminders</h4>
+                <ul style="margin: 0; color: #0c5460">
+                    <li>
+                        <strong>Don't Wait:</strong> Contact your referring doctor as soon as possible to discuss next steps
+                    </li>
+                    <li>
+                        <strong>Medical Care Continuity:</strong> This update doesn't affect your ongoing care with your
+                        primary doctor
+                    </li>
+                    <li><strong>Alternative Options:</strong> There are often multiple pathways to specialist care</li>
+                    <li>
+                        <strong>Questions Welcome:</strong> Contact our support team if you need help understanding your
+                        options
+                    </li>
+                    <li><strong>Stay Informed:</strong> Keep checking your MyTelmed portal for updates on new referrals</li>
+                </ul>
+            </div>
+
+            <!-- Clinical Information (if available) -->
+            <div th:if="${clinicalSummary or currentMedications or allergies or investigationsDone}" class="doctor-info">
+                <h4 style="margin: 0 0 15px 0; color: #495057">Original Clinical Information</h4>
+
+                <div th:if="${clinicalSummary}">
+                    <strong>Clinical Summary:</strong>
+                    <p th:text="${clinicalSummary}" style="margin: 5px 0 15px 0; white-space: pre-line">Clinical Summary</p>
+                </div>
+
+                <div th:if="${currentMedications}">
+                    <strong>Current Medications:</strong>
+                    <p th:text="${currentMedications}" style="margin: 5px 0 15px 0; white-space: pre-line">Medications</p>
+                </div>
+
+                <div th:if="${allergies}">
+                    <strong>Known Allergies:</strong>
+                    <p th:text="${allergies}" style="margin: 5px 0 15px 0; white-space: pre-line">Allergies</p>
+                </div>
+
+                <div th:if="${investigationsDone}">
+                    <strong>Investigations Done:</strong>
+                    <p th:text="${investigationsDone}" style="margin: 5px 0 0 0; white-space: pre-line">Investigations</p>
+                </div>
+            </div>
+
+            <p>
+                <strong>Please don't be discouraged.</strong> Sometimes referrals need adjustments due to specialist
+                availability, additional information requirements, or other clinical considerations. Your referring doctor
+                will work with you to find the best path forward for your specialized medical care.
+            </p>
+
+            <p>
+                This is part of ensuring you receive the most appropriate and timely specialist care under the Malaysian
+                public healthcare telemedicine program. Your health and well-being remain our top priority.
+            </p>
+
+            <p>
+                Best regards,<br />
+                MyTelmed Medical Team<br />
+                Malaysian Public Healthcare Telemedicine Services
+            </p>
+
+            <div class="footer">
+                <p>
+                    This referral status notification is generated electronically and is part of your official medical
+                    record.
+                </p>
+                <p>&copy; 2025 MyTelmed. All rights reserved.</p>
+                <p>
+                    <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
+                    <a th:href="${uiHost + '/terms'}">Terms of Service</a> |
+                    <a th:href="${uiHost + '/patient/support'}">Medical Support</a>
+                </p>
+            </div>
+        </div>
+    </body>
+</html>

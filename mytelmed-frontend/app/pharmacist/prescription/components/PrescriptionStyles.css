@@ -1,0 +1,401 @@
+/* Prescription Management Styles - Purple Theme */
+
+/* Modal enhancements */
+.prescription-detail-modal .ant-modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.prescription-detail-modal .ant-modal-header {
+    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+    border-bottom: none;
+}
+
+.prescription-detail-modal .ant-modal-title {
+    color: white;
+    font-weight: 600;
+}
+
+/* Card hover effects */
+.prescription-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.prescription-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(147, 51, 234, 0.15);
+    border-color: #c4b5fd;
+}
+
+/* Status tag improvements */
+.status-tag-created {
+    background: #fef3c7;
+    color: #d97706;
+    border: 1px solid #fcd34d;
+}
+
+.status-tag-ready-processing {
+    background: #dbeafe;
+    color: #2563eb;
+    border: 1px solid #93c5fd;
+}
+
+.status-tag-processing {
+    background: #f3e8ff;
+    color: #9333ea;
+    border: 1px solid #c4b5fd;
+}
+
+.status-tag-ready {
+    background: #dcfce7;
+    color: #16a34a;
+    border: 1px solid #86efac;
+}
+
+.status-tag-expired {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fca5a5;
+}
+
+.status-tag-cancelled {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
+/* Action button styling */
+.action-button-primary {
+    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.action-button-primary:hover {
+    background: linear-gradient(135deg, #7c3aed 0%, #6b21a8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(147, 51, 234, 0.4);
+}
+
+.action-button-success {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.action-button-success:hover {
+    background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+}
+
+/* Filter section styling */
+.filter-section {
+    background: #fafafa;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.filter-section .ant-select-selector {
+    border-radius: 8px;
+    border-color: #d1d5db;
+    transition: all 0.3s ease;
+}
+
+.filter-section .ant-select-selector:hover {
+    border-color: #9333ea;
+}
+
+.filter-section .ant-select-focused .ant-select-selector {
+    border-color: #9333ea;
+    box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.2);
+}
+
+.filter-section .ant-input {
+    border-radius: 8px;
+    border-color: #d1d5db;
+    transition: all 0.3s ease;
+}
+
+.filter-section .ant-input:hover {
+    border-color: #9333ea;
+}
+
+.filter-section .ant-input:focus {
+    border-color: #9333ea;
+    box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.2);
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .prescription-card {
+        margin-bottom: 12px;
+    }
+
+    .filter-section {
+        padding: 16px;
+    }
+
+    .filter-section .ant-col {
+        margin-bottom: 16px;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .action-buttons .ant-btn {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    .prescription-detail-modal .ant-modal {
+        margin: 16px;
+        width: calc(100vw - 32px) !important;
+    }
+
+    .medication-table .ant-table-tbody > tr > td {
+        padding: 8px 4px;
+        font-size: 12px;
+    }
+
+    .medication-table .ant-table-thead > tr > th {
+        padding: 8px 4px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .prescription-card {
+        padding: 12px;
+    }
+
+    .prescription-detail-modal .ant-descriptions-item-label {
+        font-size: 12px;
+    }
+
+    .prescription-detail-modal .ant-descriptions-item-content {
+        font-size: 12px;
+    }
+
+    .filter-section {
+        padding: 12px;
+    }
+
+    .status-badges {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .courier-modal .ant-form-item-label {
+        font-size: 13px;
+    }
+}
+
+/* Loading states */
+.prescription-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    color: #6b7280;
+}
+
+.prescription-loading .ant-spin-dot {
+    color: #9333ea;
+}
+
+/* Empty states */
+.prescription-empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: #6b7280;
+}
+
+.prescription-empty .ant-empty-image {
+    margin-bottom: 16px;
+}
+
+/* Medication items styling */
+.medication-item {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+}
+
+.medication-item:hover {
+    border-color: #c4b5fd;
+    background: #faf5ff;
+}
+
+.medication-item .medication-name {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.medication-item .medication-details {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+.medication-item .medication-instructions {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 8px;
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+/* Delivery info styling */
+.delivery-info-card {
+    background: linear-gradient(135deg, #ede9fe 0%, #f3f4f6 100%);
+    border: 1px solid #c4b5fd;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.delivery-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Courier tracking styling */
+.tracking-info {
+    background: #f0f9ff;
+    border: 1px solid #0ea5e9;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: "Courier New", monospace;
+}
+
+.tracking-number {
+    font-weight: 600;
+    color: #0369a1;
+    font-size: 16px;
+    letter-spacing: 1px;
+}
+
+/* Alert improvements */
+.prescription-alert {
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.prescription-alert.ant-alert-info {
+    background: #f0f9ff;
+    border-color: #0ea5e9;
+}
+
+.prescription-alert.ant-alert-warning {
+    background: #fffbeb;
+    border-color: #f59e0b;
+}
+
+.prescription-alert.ant-alert-error {
+    background: #fef2f2;
+    border-color: #ef4444;
+}
+
+/* Quick action dropdown */
+.quick-actions-dropdown .ant-dropdown-menu {
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e5e7eb;
+}
+
+.quick-actions-dropdown .ant-dropdown-menu-item {
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.quick-actions-dropdown .ant-dropdown-menu-item:hover {
+    background: #f3e8ff;
+    color: #9333ea;
+}
+
+/* Badge styling */
+.medication-count-badge {
+    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+    box-shadow: 0 2px 4px rgba(147, 51, 234, 0.3);
+}
+
+/* Text utilities */
+.text-purple-600 {
+    color: #9333ea;
+}
+
+.text-purple-700 {
+    color: #7c3aed;
+}
+
+.text-purple-800 {
+    color: #6b21a8;
+}
+
+.bg-purple-50 {
+    background-color: #faf5ff;
+}
+
+.bg-purple-100 {
+    background-color: #f3e8ff;
+}
+
+.border-purple-200 {
+    border-color: #e9d5ff;
+}
+
+.border-purple-300 {
+    border-color: #c4b5fd;
+}
+
+/* Animation utilities */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 30px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
