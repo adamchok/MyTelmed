@@ -10,6 +10,14 @@ import java.util.UUID;
 @Repository
 public interface PatientRepository extends JpaRepository<Patient, UUID> {
     Optional<Patient> findByHashedEmail(String hashedEmail);
+
     Optional<Patient> findByHashedNric(String hashedNric);
+
     Optional<Patient> findByAccountId(UUID accountId);
+
+    boolean existsByHashedEmail(String hashedEmail);
+
+    boolean existsByHashedNric(String hashedNric);
+
+    boolean existsByHashedPhone(String hashedPhone);
 }

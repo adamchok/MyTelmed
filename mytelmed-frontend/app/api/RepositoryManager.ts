@@ -120,7 +120,7 @@ repository.interceptors.response.use(
             data: response.data,
         });
 
-        return Promise.reject(new Error(error.message || "Request failed"));
+        return response;
     }
 );
 

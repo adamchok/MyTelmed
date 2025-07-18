@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Typography, Row, Col, Card, Button, List, Tag, Empty, Alert, Modal, message, Tabs, Badge } from "antd";
-import { Users, UserPlus, Mail, Shield, Check, X, ChevronRight } from "lucide-react";
+import { Users, UserPlus, Mail, Shield, Check, X } from "lucide-react";
 import { FamilyMemberApi, FamilyMemberPermissionApi } from "@/app/api/family";
 import { FamilyMember, CreateFamilyMemberRequest, UpdateFamilyPermissionsRequest } from "@/app/api/family/props";
 import FamilyMemberForm from "./components/FamilyMemberForm";
@@ -58,7 +58,7 @@ const FamilyAccessPage = () => {
 
             // Fetch accessible patients (where current user is a family member)
             const patientsResponse = await FamilyMemberApi.getPatientsByMemberAccount();
-            const accessiblePatients = patientsResponse.data.data || [];
+            const accessiblePatients = patientsResponse.data.data?.filter((fam: FamilyMember) => !fam.pending) || [];
 
             setFamilyData({
                 familyMembers,
@@ -392,15 +392,6 @@ const FamilyAccessPage = () => {
                                             dataSource={familyData.accessiblePatients}
                                             renderItem={(patient) => (
                                                 <List.Item
-                                                    actions={[
-                                                        <Button
-                                                            key="view"
-                                                            type="link"
-                                                            icon={<ChevronRight className="w-4 h-4" />}
-                                                        >
-                                                            View Access
-                                                        </Button>,
-                                                    ]}
                                                     className="border-b border-gray-100 last:border-b-0"
                                                 >
                                                     <List.Item.Meta
@@ -451,6 +442,7 @@ const FamilyAccessPage = () => {
                 footer={null}
                 width={600}
                 destroyOnHidden={true}
+                centered
             >
                 <FamilyMemberForm onSubmit={handleInviteFamilyMember} onCancel={() => setIsAddModalVisible(false)} />
             </Modal>
@@ -466,6 +458,7 @@ const FamilyAccessPage = () => {
                 footer={null}
                 width={600}
                 destroyOnHidden={true}
+                centered
             >
                 {selectedMember && (
                     <PermissionsModal

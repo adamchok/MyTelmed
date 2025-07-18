@@ -15,7 +15,6 @@ import {
     Alert,
     Divider,
     Tooltip,
-    Badge,
     message,
     Modal,
     Form,
@@ -62,6 +61,7 @@ import { Document } from "@/app/api/document/props";
 // Import Payment components and hooks
 import PaymentModal from "@/app/components/PaymentModal/PaymentModal";
 import { useFamilyPermissions } from "@/app/hooks/useFamilyPermissions";
+import TranscriptionSummary from "@/app/components/TranscriptionSummary/TranscriptionSummary";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -112,6 +112,11 @@ export default function AppointmentDetails() {
     useEffect(() => {
         loadAppointmentDetails();
     }, [appointmentId]);
+
+    // Scroll to top when page loads
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     // Get status color
     const getStatusColor = (status: AppointmentStatus): string => {
@@ -615,7 +620,7 @@ export default function AppointmentDetails() {
     // Render loading state
     if (loading) {
         return (
-            <div className="bg-gray-50 p-4 mx-8">
+            <div className="p-4 mx-8">
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center py-16">
                         <Spin size="large" />
@@ -689,20 +694,20 @@ export default function AppointmentDetails() {
                     type="text"
                     icon={<LeftOutlined />}
                     onClick={() => router.push("/patient/appointment")}
-                    className="mb-4"
+                    className="mb-4 px-0"
                 >
                     Back to Appointments
                 </Button>
 
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
-                        <Title level={2} className="text-blue-900 mb-2">
+                        <Title level={2} className="text-blue-900 mb-2 mt-0">
                             <CalendarOutlined className="mr-2" />
                             Appointment Details
                         </Title>
                         <Text className="text-gray-600">View your appointment information and attached documents</Text>
                     </div>
-                    <div className="flex items-center space-x-3">
+                    <div className="flex flex-wrap gap-3 items-center space-x-3">
                         <Tag
                             color={getStatusColor(appointment.status as AppointmentStatus)}
                             icon={getStatusIcon(appointment.status as AppointmentStatus)}
@@ -748,7 +753,7 @@ export default function AppointmentDetails() {
                                 onClick={openUpdateModal}
                                 className="bg-blue-600 border-blue-600 hover:bg-blue-700"
                             >
-                                Edit Appointment
+                                Edit
                             </Button>
                         )}
 
@@ -760,7 +765,7 @@ export default function AppointmentDetails() {
                                 onClick={handleCancelAppointment}
                                 className="bg-red-600 border-red-600 hover:bg-red-700"
                             >
-                                Cancel Appointment
+                                Cancel
                             </Button>
                         )}
                     </div>
@@ -974,11 +979,13 @@ export default function AppointmentDetails() {
                     {appointment.status === "PENDING_PAYMENT" && appointment.consultationMode === "VIRTUAL" && (
                         <Card className="mb-6 border-l-4 border-l-yellow-500 bg-yellow-50">
                             <div className="flex items-start space-x-3">
-                                <ExclamationCircleOutlined className="text-yellow-600 mt-1 text-xl" />
                                 <div className="flex-1">
-                                    <Title level={4} className="text-yellow-800 mb-2">
-                                        Payment Required
-                                    </Title>
+                                    <div className="flex mb-2 gap-3">
+                                        <ExclamationCircleOutlined className="text-yellow-600 text-xl" />
+                                        <Title level={4} className="text-yellow-800 my-0">
+                                            Payment Required
+                                        </Title>
+                                    </div>
                                     <Text className="text-yellow-700 block mb-3">
                                         This virtual consultation requires payment of <strong>RM 2.00</strong> before
                                         the appointment can be confirmed. Please complete your payment to secure your
@@ -1057,20 +1064,24 @@ export default function AppointmentDetails() {
                         )}
                     </Card>
 
+                    {/* AI Transcription Summary */}
+                    {appointment.consultationMode === "VIRTUAL" && (
+                        <TranscriptionSummary
+                            transcriptionSummary={appointment.transcriptionSummary}
+                            userType="patient"
+                            appointmentId={appointment.id}
+                        />
+                    )}
+
                     {/* Attached Documents */}
                     <Card
                         title={
                             <div className="flex flex-col gap-2">
                                 {/* Title Row */}
-                                <div className="flex flex-col 3xl:flex-row 3xl:items-center 3xl:justify-between gap-2 py-3">
+                                <div className="flex flex-col 3xl:flex-row 3xl:items-center 3xl:justify-between gap-2 py-4">
                                     <div className="flex items-center gap-2">
                                         <FileOutlined className="text-blue-600 text-base sm:text-lg" />
                                         <span className="text-base sm:text-sm font-semibold text-gray-800">Attached Documents</span>
-                                        <Badge
-                                            count={appointment.attachedDocuments.length}
-                                            color="blue"
-                                            className="ml-1"
-                                        />
                                     </div>
 
                                     {/* Action Buttons - Stack vertically on mobile */}
@@ -1082,12 +1093,12 @@ export default function AppointmentDetails() {
                                                     size="small"
                                                     icon={<EyeOutlined />}
                                                     onClick={handleToggleComparisonMode}
-                                                    className="text-blue-600 hover:text-blue-800 text-sm font-medium justify-start sm:justify-center"
+                                                    className="text-blue-600 hover:text-blue-800 text-sm font-medium justify-start"
                                                 >
                                                     Compare
                                                 </Button>
                                             ) : (
-                                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-1">
+                                                <div className="flex flex-col xl:flex-row gap-2 xl:gap-3 flex-wrap">
                                                     <Button
                                                         type="primary"
                                                         size="small"
@@ -1098,29 +1109,27 @@ export default function AppointmentDetails() {
                                                     >
                                                         Compare ({selectedForComparison.length})
                                                     </Button>
-                                                    <div className="flex gap-1">
-                                                        {selectedForComparison.length > 0 && (
-                                                            <Button
-                                                                type="text"
-                                                                size="small"
-                                                                icon={<CloseCircleOutlined />}
-                                                                onClick={handleClearAllComparison}
-                                                                className="text-sm"
-                                                            >
-                                                                Clear All
-                                                            </Button>
-                                                        )}
+                                                    {selectedForComparison.length > 0 && (
                                                         <Button
                                                             type="text"
                                                             size="small"
-                                                            danger
                                                             icon={<CloseCircleOutlined />}
-                                                            onClick={handleExitComparisonMode}
+                                                            onClick={handleClearAllComparison}
                                                             className="text-sm"
                                                         >
-                                                            Exit Mode
+                                                            Clear All
                                                         </Button>
-                                                    </div>
+                                                    )}
+                                                    <Button
+                                                        type="default"
+                                                        size="small"
+                                                        danger
+                                                        icon={<CloseCircleOutlined />}
+                                                        onClick={handleExitComparisonMode}
+                                                        className="text-sm"
+                                                    >
+                                                        Exit Mode
+                                                    </Button>
                                                 </div>
                                             )}
                                         </div>
@@ -1145,34 +1154,21 @@ export default function AppointmentDetails() {
                                 description={
                                     <div className="mt-2">
                                         <p className="text-sm text-gray-600 mb-3">
-                                            Select 2-4 documents to compare them side by side.
-                                            <span className="block sm:inline"> Use checkboxes or tap document cards to select.</span>
+                                            Select 2-4 documents to compare them side by side. Use checkboxes or tap document cards to select.
                                         </p>
-                                        <div className="flex flex-col gap-2">
-                                            {selectedForComparison.length > 0 && (
-                                                <Button
-                                                    size="small"
-                                                    onClick={handleClearAllComparison}
-                                                    className="text-sm justify-start sm:justify-center"
-                                                >
-                                                    Clear All Selections
-                                                </Button>
-                                            )}
-                                            {selectedForComparison.length >= 2 && (
-                                                <Button
-                                                    size="small"
-                                                    type="primary"
-                                                    onClick={handleStartComparison}
-                                                    className="text-sm justify-start sm:justify-center"
-                                                >
-                                                    Start Comparison Now
-                                                </Button>
-                                            )}
-                                        </div>
+                                        {selectedForComparison.length >= 2 && (
+                                            <Button
+                                                size="small"
+                                                type="primary"
+                                                onClick={handleStartComparison}
+                                                className="text-sm justify-start sm:justify-center w-full"
+                                            >
+                                                Compare Now
+                                            </Button>
+                                        )}
                                     </div>
                                 }
                                 type="info"
-                                showIcon
                                 className="mb-4"
                             />
                         )}
@@ -1321,9 +1317,7 @@ export default function AppointmentDetails() {
                                         icon={<Maximize2 className="w-4 h-4" />}
                                         onClick={toggleFullscreen}
                                         title="View Fullscreen"
-                                    >
-                                        Fullscreen
-                                    </Button>
+                                    />
                                 </div>
                             )
                         }
@@ -1340,26 +1334,18 @@ export default function AppointmentDetails() {
                 width="80vw"
                 style={{ maxWidth: "1200px" }}
                 centered
+                destroyOnHidden={true}
+                closable={false}
             >
                 {selectedDocument && (
                     <div className="space-y-4">
                         {/* Document Metadata */}
-                        <div className="p-4 bg-gray-50 rounded-lg border">
-                            <div className="flex items-center justify-between mb-3">
-                                <Title level={4} className="mb-0">
+                        <div className="pt-2 rounded-lg border">
+                            <div className="flex flex-col xl:flex-row justify-between mb-3 gap-2">
+                                <Title level={4} className="mb-0 mt-0">
                                     {selectedDocument.documentName}
                                 </Title>
-                                <div className="flex items-center space-x-2">
-                                    <Tag color="blue">{getDocumentTypeDisplayName(selectedDocument.documentType)}</Tag>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
-                                <span>Size: {formatFileSize(selectedDocument.documentSize)}</span>
-                                <span>•</span>
-                                <span>
-                                    Uploaded: {parseTimestamp(selectedDocument.createdAt).format("MMM DD, YYYY")}
-                                </span>
+                                <Tag color="blue">{getDocumentTypeDisplayName(selectedDocument.documentType)}</Tag>
                             </div>
 
                             {selectedDocument.notes && (
@@ -1454,10 +1440,7 @@ export default function AppointmentDetails() {
                                     <Button
                                         icon={<Minimize2 className="w-4 h-4" />}
                                         onClick={() => setIsFullscreen(false)}
-                                        title="Exit Fullscreen"
-                                    >
-                                        Exit Fullscreen
-                                    </Button>
+                                    />
                                 </div>
                             </div>
 

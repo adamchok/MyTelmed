@@ -23,7 +23,6 @@ import {
     FileText,
     Search,
     Filter,
-    RefreshCw,
     X,
     Pill,
     TrendingUp,
@@ -145,8 +144,6 @@ const PrescriptionListingPage = () => {
             setIsLoading(false);
         }
     };
-
-
 
     // Load prescriptions on component mount and when dependencies change
     useEffect(() => {
@@ -322,39 +319,28 @@ const PrescriptionListingPage = () => {
                 </Row>
 
                 {/* Action Buttons */}
-                <Row gutter={[16, 16]} align="middle" className="pt-2">
-                    <Col flex="auto">
-                        <Space>
-                            {getActiveFiltersCount() > 0 && (
+                {getActiveFiltersCount() > 0 && (
+                    <Row gutter={[16, 16]} align="middle" className="pt-2">
+                        <Col flex="auto">
+                            <Space>
                                 <Tag color="blue" className="px-3 py-1">
                                     <Filter className="w-3 h-3 mr-1" />
                                     {getActiveFiltersCount()} filter{getActiveFiltersCount() > 1 ? 's' : ''} active
                                 </Tag>
-                            )}
-                        </Space>
-                    </Col>
-
-                    <Col>
-                        <Space>
-                            {getActiveFiltersCount() > 0 && (
+                            </Space>
+                        </Col>
+                        <Col>
+                            <Space>
                                 <Button
                                     icon={<X className="w-4 h-4" />}
                                     onClick={handleClearFilters}
                                 >
                                     Clear
                                 </Button>
-                            )}
-
-                            <Button
-                                icon={<RefreshCw className="w-4 h-4" />}
-                                onClick={handleRefresh}
-                                loading={isLoading}
-                            >
-                                Refresh
-                            </Button>
-                        </Space>
-                    </Col>
-                </Row>
+                            </Space>
+                        </Col>
+                    </Row>
+                )}
             </div>
         </Card>
     );

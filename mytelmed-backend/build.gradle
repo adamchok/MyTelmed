@@ -56,6 +56,7 @@ dependencies {
     implementation 'software.amazon.awssdk:s3'
     implementation 'software.amazon.awssdk:dynamodb'
     implementation 'software.amazon.awssdk:dynamodb-enhanced'
+    implementation 'software.amazon.awssdk:bedrockruntime'
 
     // MapStruct
     implementation "org.mapstruct:mapstruct:${mapstructVersion}"
@@ -78,10 +79,10 @@ dependencies {
     // Lombok - must be before MapStruct processor
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    
+
     // MapStruct processor - must be after Lombok
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
-    
+
     // Lombok + MapStruct binding
     annotationProcessor "org.projectlombok:lombok-mapstruct-binding:0.2.0"
 

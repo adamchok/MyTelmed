@@ -16,6 +16,8 @@ import {
     Row,
     Col,
     Image,
+    Alert,
+    message,
 } from "antd";
 import {
     EditOutlined,
@@ -631,7 +633,7 @@ const UserManagementComponent: React.FC<UserManagementComponentProps> = ({
     return (
         <div>
             <div className="mb-6">
-                <Title level={2} className="mb-2">
+                <Title level={2} className="mb-2 mt-0">
                     User Management
                 </Title>
             </div>
@@ -676,18 +678,13 @@ const UserManagementComponent: React.FC<UserManagementComponentProps> = ({
                     width={activeTab === "doctor" ? 900 : 600}
                 >
                     <div className="space-y-4">
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                            <div className="flex items-start space-x-3">
-                                <InfoCircleOutlined className="text-blue-500 mt-1" />
-                                <div>
-                                    <p className="text-sm font-medium text-blue-800 mb-1">Account Setup Information</p>
-                                    <p className="text-sm text-blue-600">
-                                        A temporary password will be generated and sent to the provided email address.
-                                        The user will be required to change their password on first login.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                        <Alert
+                            message="Account Setup Information"
+                            description="A temporary password will be generated and sent to the provided email address. The user will be required to change their password on first login."
+                            type="info"
+                            showIcon
+                            className="mb-6"
+                        />
 
                         {activeTab === "doctor" ? (
                             <Row gutter={[16, 0]}>
@@ -747,16 +744,23 @@ const UserManagementComponent: React.FC<UserManagementComponentProps> = ({
                         <Upload
                             accept="image/*"
                             beforeUpload={(file) => {
+                                const isLt10MB = file.size / 1024 / 1024 < 10;
+                                if (!isLt10MB) {
+                                    message.error('Image must be smaller than 10MB!');
+                                    return Upload.LIST_IGNORE;
+                                }
+
                                 onImageUpload(file);
-                                return false;
+                                return false; // prevent default upload
                             }}
-                            showUploadList={false}
+                            showUploadList={true}
+                            maxCount={1}
                         >
                             <Button
                                 size="large"
                                 block
                                 loading={imageUploadLoading}
-                                className="h-32 border-2 border-dashed border-gray-300 hover:border-blue-500"
+                                className="h-32 border-2 border-dashed border-gray-300 hover:border-orange-500 hover:text-orange-600"
                             >
                                 <div className="flex flex-col items-center justify-center">
                                     <CameraOutlined className="text-3xl text-gray-400 mb-2" />

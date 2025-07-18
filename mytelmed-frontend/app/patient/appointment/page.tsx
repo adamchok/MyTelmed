@@ -230,9 +230,6 @@ export default function PatientAppointments() {
             case "upcoming":
                 matchesTab = appointmentDate.isAfter(now);
                 break;
-            case "past":
-                matchesTab = appointmentDate.isBefore(now, "day");
-                break;
             case "pending":
                 matchesTab = appointment.status === "PENDING";
                 break;
@@ -336,6 +333,8 @@ export default function PatientAppointments() {
             (apt) => parseLocalDateTime(apt.appointmentDateTime).isSame(today, "day") && apt.status === "COMPLETED"
         );
 
+        const pendingPaymentAppointments = allAppointments.filter((apt) => apt.status === "PENDING_PAYMENT");
+
         const confirmedAppointments = allAppointments.filter((apt) => apt.status === "CONFIRMED");
         const readyForCallAppointments = allAppointments.filter((apt) => apt.status === "READY_FOR_CALL");
         const inProgressAppointments = allAppointments.filter((apt) => apt.status === "IN_PROGRESS");
@@ -348,6 +347,7 @@ export default function PatientAppointments() {
             today: todayAppointments.length,
             upcoming: upcomingAppointments.length,
             pending: pendingAppointments.length,
+            pendingPayment: pendingPaymentAppointments.length,
             confirmed: confirmedAppointments.length,
             readyForCall: readyForCallAppointments.length,
             inProgress: inProgressAppointments.length,
@@ -370,6 +370,7 @@ export default function PatientAppointments() {
 
         if (dayAppointments.length === 0) return null;
 
+        const pendingPaymentCount = dayAppointments.filter((apt) => apt.status === "PENDING_PAYMENT").length;
         const pendingCount = dayAppointments.filter((apt) => apt.status === "PENDING").length;
         const confirmedCount = dayAppointments.filter((apt) => apt.status === "CONFIRMED").length;
         const readyForCallCount = dayAppointments.filter((apt) => apt.status === "READY_FOR_CALL").length;
@@ -381,6 +382,13 @@ export default function PatientAppointments() {
 
         return (
             <div className="space-y-1">
+                {pendingPaymentCount > 0 && (
+                    <Badge
+                        count={pendingPaymentCount}
+                        style={{ backgroundColor: "#faad14", fontSize: "10px" }}
+                        title={`${pendingPaymentCount} pending payment appointments`}
+                    />
+                )}
                 {pendingCount > 0 && (
                     <Badge
                         count={pendingCount}
@@ -483,7 +491,7 @@ export default function PatientAppointments() {
                         <Statistic
                             title="Today's Appointments"
                             value={stats.today}
-                            prefix={<Calendar className="text-blue-600" />}
+                            prefix={<Calendar className="text-blue-600 w-5 h-5" />}
                         />
                     </Card>
                 </Col>
@@ -492,7 +500,7 @@ export default function PatientAppointments() {
                         <Statistic
                             title="Upcoming"
                             value={stats.upcoming}
-                            prefix={<Clock className="text-green-600" />}
+                            prefix={<Clock className="text-green-600 w-5 h-5" />}
                         />
                     </Card>
                 </Col>
@@ -501,7 +509,7 @@ export default function PatientAppointments() {
                         <Statistic
                             title="Pending"
                             value={stats.pending}
-                            prefix={<AlertTriangle className="text-yellow-600" />}
+                            prefix={<AlertTriangle className="text-yellow-600 w-5 h-5" />}
                         />
                     </Card>
                 </Col>
@@ -510,7 +518,7 @@ export default function PatientAppointments() {
                         <Statistic
                             title="Completed Today"
                             value={stats.completedToday}
-                            prefix={<CheckCircle className="text-orange-600" />}
+                            prefix={<CheckCircle className="text-orange-600 w-5 h-5" />}
                         />
                     </Card>
                 </Col>
@@ -574,7 +582,11 @@ export default function PatientAppointments() {
                             <Text strong className="text-sm text-gray-700 mb-3 block">
                                 Appointment Status Legend
                             </Text>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg">
+                                    <Badge count={1} style={{ backgroundColor: "#faad14", fontSize: "10px" }} />
+                                    <Text className="text-sm font-medium">Payment</Text>
+                                </div>
                                 <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg">
                                     <Badge count={1} style={{ backgroundColor: "#faad14", fontSize: "10px" }} />
                                     <Text className="text-sm font-medium">Pending</Text>
@@ -597,7 +609,11 @@ export default function PatientAppointments() {
                                 </div>
                                 <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg">
                                     <Badge count={1} style={{ backgroundColor: "#f5222d", fontSize: "10px" }} />
-                                    <Text className="text-sm font-medium">Cancelled/No Show</Text>
+                                    <Text className="text-sm font-medium">Cancelled</Text>
+                                </div>
+                                <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg">
+                                    <Badge count={1} style={{ backgroundColor: "#f5222d", fontSize: "10px" }} />
+                                    <Text className="text-sm font-medium">No Show</Text>
                                 </div>
                             </div>
                         </div>
@@ -856,21 +872,8 @@ export default function PatientAppointments() {
                                 children: null,
                             },
                             {
-                                key: "today",
-                                label: `Today (${stats.today})`,
-                                children: null,
-                            },
-                            {
-                                key: "upcoming",
-                                label: `Upcoming (${stats.upcoming})`,
-                                children: null,
-                            },
-                            {
-                                key: "past",
-                                label: `Past (${allAppointments.filter((apt) =>
-                                    parseLocalDateTime(apt.appointmentDateTime).isBefore(dayjs(), "day")
-                                ).length
-                                    })`,
+                                key: "pending_payment",
+                                label: `Pending Payment (${stats.pendingPayment})`,
                                 children: null,
                             },
                             {

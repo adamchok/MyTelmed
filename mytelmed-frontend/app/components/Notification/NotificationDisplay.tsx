@@ -29,7 +29,6 @@ export const NotificationDisplay: React.FC = () => {
     const [api, contextHolder] = notification.useNotification();
 
     useEffect(() => {
-        // Listen for push notifications when app is in foreground
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker.addEventListener("message", (event) => {
                 if (event.data.type === "PUSH_NOTIFICATION_RECEIVED") {
@@ -38,17 +37,6 @@ export const NotificationDisplay: React.FC = () => {
                 }
             });
         }
-
-        // Listen for focus events to check for missed notifications
-        const handleFocus = () => {
-            checkForMissedNotifications();
-        };
-
-        window.addEventListener("focus", handleFocus);
-
-        return () => {
-            window.removeEventListener("focus", handleFocus);
-        };
     }, [api]);
 
     const showInAppNotification = (notification: NotificationMessage) => {
@@ -68,12 +56,6 @@ export const NotificationDisplay: React.FC = () => {
                 cursor: notification.data?.url ? "pointer" : "default",
             },
         });
-    };
-
-    const checkForMissedNotifications = () => {
-        // This could be extended to check for notifications that arrived while the app was not focused
-        // For now, we'll just log that we're checking
-        console.log("Checking for missed notifications...");
     };
 
     return <>{contextHolder}</>;

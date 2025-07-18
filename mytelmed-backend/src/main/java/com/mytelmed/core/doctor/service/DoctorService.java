@@ -182,6 +182,15 @@ public class DoctorService {
         // Validate date of birth
         LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
 
+        // Validate existing doctor details
+        if (doctorRepository.existsDoctorByHashedNric(HashUtil.sha256(request.nric()))) {
+            throw new InvalidInputException("Doctor with this NRIC already exists");
+        } else if (doctorRepository.existsDoctorByHashedEmail(HashUtil.sha256(request.email()))) {
+            throw new InvalidInputException("Doctor with this email already exists");
+        } else if (doctorRepository.existsDoctorByHashedPhone(HashUtil.sha256(request.phone()))) {
+            throw new InvalidInputException("Doctor with this phone number already exists");
+        }
+
         try {
             // Create a doctor
             Doctor doctor = Doctor.builder()
@@ -218,6 +227,14 @@ public class DoctorService {
         // Validate date of birth
         LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
 
+        if (!doctor.getHashedEmail().equals(HashUtil.sha256(request.email())) &&
+                doctorRepository.existsDoctorByHashedEmail(HashUtil.sha256(request.email()))) {
+            throw new InvalidInputException("Doctor with this email already exists");
+        } else if (!doctor.getHashedPhone().equals(HashUtil.sha256(request.phone())) &&
+                doctorRepository.existsDoctorByHashedPhone(HashUtil.sha256(request.phone()))) {
+            throw new InvalidInputException("Doctor with this phone number already exists");
+        }
+
         try {
             // Update doctor profile
             doctor.setName(request.name());
@@ -247,11 +264,25 @@ public class DoctorService {
         // Find facility by ID
         Facility facility = facilityService.findFacilityById(request.facilityId());
 
-        try {
-            LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
+        // Parse date of birth
+        LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
 
+        // Validate existing doctor details
+        if (!doctor.getHashedNric().equals(HashUtil.sha256(request.nric())) &&
+                doctorRepository.existsDoctorByHashedNric(HashUtil.sha256(request.nric()))) {
+            throw new InvalidInputException("Doctor with this NRIC already exists");
+        } else if (!doctor.getHashedEmail().equals(HashUtil.sha256(request.email())) &&
+                doctorRepository.existsDoctorByHashedEmail(HashUtil.sha256(request.email()))) {
+            throw new InvalidInputException("Doctor with this email already exists");
+        } else if (!doctor.getHashedPhone().equals(HashUtil.sha256(request.phone())) &&
+                doctorRepository.existsDoctorByHashedPhone(HashUtil.sha256(request.phone()))) {
+            throw new InvalidInputException("Doctor with this phone number already exists");
+        }
+
+        try {
             // Update doctor
             doctor.setName(request.name());
+            doctor.setNric(request.nric());
             doctor.setEmail(request.email());
             doctor.setPhone(request.phone());
             doctor.setDateOfBirth(dateOfBirth);

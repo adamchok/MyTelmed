@@ -200,7 +200,7 @@ export default function KnowledgeHubPageComponent({
         if (loading) {
             return (
                 <div className="flex justify-center items-center py-20">
-                    <Spin size="large" tip="Loading knowledge content..." />
+                    <Spin size="large" tip="Loading knowledge hub..." />
                 </div>
             );
         }

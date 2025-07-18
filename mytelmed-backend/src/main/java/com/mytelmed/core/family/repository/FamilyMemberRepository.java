@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.UUID;
 
-
 @Repository
 public interface FamilyMemberRepository extends JpaRepository<FamilyMember, UUID> {
     List<FamilyMember> findAllByPatientId(UUID patientId);
@@ -20,7 +19,10 @@ public interface FamilyMemberRepository extends JpaRepository<FamilyMember, UUID
     List<FamilyMember> findByMemberAccountId(@Param("accountId") UUID accountId);
 
     @Query("SELECT fm FROM FamilyMember fm WHERE fm.memberAccount.id = :accountId AND fm.patient.id = :patientId")
-    List<FamilyMember> findByMemberAccountIdAndPatientId(@Param("accountId") UUID accountId, @Param("patientId") UUID patientId);
+    List<FamilyMember> findByMemberAccountIdAndPatientId(@Param("accountId") UUID accountId,
+            @Param("patientId") UUID patientId);
 
     List<FamilyMember> findAllByHashedNricAndPendingTrue(String hashedNric);
+
+    List<FamilyMember> findByPatientIdAndCanManageBillingTrueAndPendingFalse(UUID patientId);
 }

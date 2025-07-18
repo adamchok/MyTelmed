@@ -16,8 +16,8 @@ const VideoCallApi = {
     },
 
     /**
-     * Create Stream call and get video call data (Doctor and Patient)
-     * Creates a video call session and returns the video call information
+     * Get or create Stream call and get video call data (Doctor and Patient)
+     * Returns existing video call data or creates if not available (fallback)
      */
     createStreamCallAndGetVideoCall(appointmentId: string): Promise<AxiosResponse<ApiResponse<VideoCallDto>>> {
         return repository.post<ApiResponse<VideoCallDto>>(`${RESOURCE}/stream/call`, appointmentId);

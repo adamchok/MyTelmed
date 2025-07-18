@@ -52,9 +52,9 @@ const navItems = [
         label: <Link href="/patient/chat">Chat</Link>,
     },
     {
-        key: "/patient/medical-records",
+        key: "/patient/documents",
         icon: <FileText className="w-5 h-5" />,
-        label: <Link href="/patient/medical-records">Medical Records</Link>,
+        label: <Link href="/patient/documents">Documents</Link>,
     },
     {
         key: "/patient/referrals",
@@ -276,7 +276,7 @@ export default function PatientLayout({ children }: Readonly<{ children: React.R
                     </Space>
                 </Header>
                 {/* Main content area as a card */}
-                <Content className="p-8 bg-white min-h-screen overflow-y-auto">{children}</Content>
+                <Content className="p-8 bg-white overflow-y-auto">{children}</Content>
             </Layout>
         </Layout>
     );

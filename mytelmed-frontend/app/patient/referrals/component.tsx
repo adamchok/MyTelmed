@@ -136,12 +136,12 @@ const ReferralsComponent: React.FC<ReferralsComponentProps> = ({
     const hasActiveFilters = () => {
         return Boolean(
             searchQuery ||
-                filters.status ||
-                filters.dateRange ||
-                filters.doctorName ||
-                filters.specialty ||
-                filters.priority ||
-                filters.referralType
+            filters.status ||
+            filters.dateRange ||
+            filters.doctorName ||
+            filters.specialty ||
+            filters.priority ||
+            filters.referralType
         );
     };
 
@@ -451,9 +451,9 @@ const ReferralsComponent: React.FC<ReferralsComponentProps> = ({
                                         value={
                                             filters.dateRange
                                                 ? ([
-                                                      filters.dateRange[0] ? dayjs(filters.dateRange[0]) : null,
-                                                      filters.dateRange[1] ? dayjs(filters.dateRange[1]) : null,
-                                                  ] as any)
+                                                    filters.dateRange[0] ? dayjs(filters.dateRange[0]) : null,
+                                                    filters.dateRange[1] ? dayjs(filters.dateRange[1]) : null,
+                                                ] as any)
                                                 : null
                                         }
                                         placeholder={["Start Date", "End Date"]}

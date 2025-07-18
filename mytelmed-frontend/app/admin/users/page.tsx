@@ -153,8 +153,6 @@ const UserManagement = () => {
 
             const responseData = response.data;
 
-            console.log("Response data:", responseData);
-
             if (responseData.isSuccess) {
                 message.success(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} created successfully`);
                 setCreateModalVisible(false);

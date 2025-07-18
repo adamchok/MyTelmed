@@ -366,7 +366,7 @@ export default function AppointmentDetailsStep() {
                             {/* Upload New Document */}
                             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                                 <Upload
-                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    accept=".pdf"
                                     showUploadList={false}
                                     beforeUpload={(file) => {
                                         handleFileUpload(file);

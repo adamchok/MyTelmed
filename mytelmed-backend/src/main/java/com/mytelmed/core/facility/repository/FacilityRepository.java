@@ -8,4 +8,9 @@ import java.util.UUID;
 
 @Repository
 public interface FacilityRepository extends JpaRepository<Facility, UUID> {
+    boolean existsFacilitiesByAddress(String address);
+
+    boolean existsFacilityByName(String name);
+
+    boolean existsFacilityByTelephone(String telephone);
 }

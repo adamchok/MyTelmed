@@ -1,6 +1,7 @@
 package com.mytelmed.core.facility.service;
 
 import com.mytelmed.common.advice.AppException;
+import com.mytelmed.common.advice.exception.InvalidInputException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constant.file.ImageType;
 import com.mytelmed.core.facility.dto.CreateFacilityRequestDto;
@@ -73,6 +74,14 @@ public class FacilityService {
     public void createFacility(CreateFacilityRequestDto request) throws AppException {
         log.debug("Creating facility with name: {}", request.name());
 
+        if (facilityRepository.existsFacilitiesByAddress(request.address())) {
+            throw new InvalidInputException("Facility with this address already exists");
+        } else if (facilityRepository.existsFacilityByName(request.name())) {
+            throw new InvalidInputException("Facility with this name already exists");
+        } else if (facilityRepository.existsFacilityByTelephone(request.telephone())) {
+            throw new InvalidInputException("Facility with this telephone already exists");
+        }
+
         try {
             // Map request DTO to entity
             Facility facility = facilityMapper.toEntity(request);
@@ -90,6 +99,14 @@ public class FacilityService {
     @Transactional
     public void updateFacility(UUID facilityId, UpdateFacilityRequestDto request) throws AppException {
         log.debug("Updating facility with ID: {}", facilityId);
+
+        if (facilityRepository.existsFacilitiesByAddress(request.address())) {
+            throw new InvalidInputException("Facility with this address already exists");
+        } else if (facilityRepository.existsFacilityByName(request.name())) {
+            throw new InvalidInputException("Facility with this name already exists");
+        } else if (facilityRepository.existsFacilityByTelephone(request.telephone())) {
+            throw new InvalidInputException("Facility with this telephone already exists");
+        }
 
         try {
             // Find existing facility

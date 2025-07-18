@@ -1,6 +1,7 @@
 package com.mytelmed.infrastructure.aws.config;
 
 import com.mytelmed.core.article.entity.Article;
+import com.mytelmed.core.transcription.entity.TranscriptionSummary;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,21 +15,23 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
-
 @Configuration
 public class AwsConfig {
     private final String articleTableName;
+    private final String transcriptionTableName;
     private final Region region;
     private final StaticCredentialsProvider credentialsProvider;
 
     public AwsConfig(@Value("${aws.accessKey}") String accessKey,
-                     @Value("${aws.secretKey}") String secretKey,
-                     @Value("${aws.region}") String region,
-                     @Value("${aws.dynamodb.article.table-name}") String articleTableName) {
+            @Value("${aws.secretKey}") String secretKey,
+            @Value("${aws.region}") String region,
+            @Value("${aws.dynamodb.article.table-name}") String articleTableName,
+            @Value("${aws.dynamodb.transcription.table-name}") String transcriptionTableName) {
         this.credentialsProvider = StaticCredentialsProvider.create(
                 AwsBasicCredentials.create(accessKey, secretKey));
         this.region = Region.of(region);
         this.articleTableName = articleTableName;
+        this.transcriptionTableName = transcriptionTableName;
     }
 
     @Bean
@@ -65,5 +68,10 @@ public class AwsConfig {
     @Bean
     public DynamoDbTable<Article> articleTable(DynamoDbEnhancedClient enhancedClient) {
         return enhancedClient.table(articleTableName, TableSchema.fromBean(Article.class));
+    }
+
+    @Bean
+    public DynamoDbTable<TranscriptionSummary> transcriptionTable(DynamoDbEnhancedClient enhancedClient) {
+        return enhancedClient.table(transcriptionTableName, TableSchema.fromBean(TranscriptionSummary.class));
     }
 }

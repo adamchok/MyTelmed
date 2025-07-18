@@ -195,8 +195,6 @@ export default function ScheduleAppointmentPage() {
         }
     };
 
-
-
     const handleSelectTimeSlot = (slot: TimeSlotDto) => {
         setSelectedTimeSlot(slot);
     };
@@ -543,4 +541,4 @@ export default function ScheduleAppointmentPage() {
             )}
         </div>
     );
-} 
+}

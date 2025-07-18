@@ -4,5 +4,6 @@ public enum NotificationFamily {
     APPOINTMENT,
     PRESCRIPTION,
     DELIVERY,
-    REFERRAL
+    REFERRAL,
+    PAYMENT
 }

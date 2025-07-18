@@ -10,8 +10,6 @@ import java.util.UUID;
 
 @Repository
 public interface AdminRepository extends JpaRepository<Admin, UUID> {
-    boolean existsAdminByAccountUsername(String accountUsername);
-
     Optional<Admin> findByAccount(Account account);
     
     Optional<Admin> findByAccountId(UUID accountId);
@@ -19,4 +17,10 @@ public interface AdminRepository extends JpaRepository<Admin, UUID> {
     Optional<Admin> findByHashedNric(String hashedNric);
     
     Optional<Admin> findByHashedEmail(String hashedEmail);
+
+    boolean existsAdminByHashedPhone(String hashedPhone);
+
+    boolean existsAdminByHashedEmail(String hashedEmail);
+
+    boolean existsAdminByHashedNric(String nric);
 }

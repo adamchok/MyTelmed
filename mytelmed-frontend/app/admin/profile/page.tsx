@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
     Card,
@@ -42,11 +42,10 @@ const AdminProfileDetailsPage = () => {
     const [avatarModalVisible, setAvatarModalVisible] = useState(false);
     const [uploading, setUploading] = useState(false);
 
-    const loadProfile = async () => {
+    const loadProfile = useCallback(async () => {
         setLoading(true);
         try {
             const response = await AdminApi.getProfile();
-            console.log(response.data);
             if (response.data.isSuccess && response.data.data) {
                 const profileData = response.data.data;
                 setProfile(profileData);
@@ -55,15 +54,18 @@ const AdminProfileDetailsPage = () => {
                 profileForm.setFieldsValue({
                     name: profileData.name,
                     email: profileData.email,
-                    phone: profileData.phone || "", // Add phone field
+                    phone: profileData.phone,
                 });
+            } else {
+                console.log("Failed to load admin profile: ", response.data.message);
+                message.error("Failed to load profile");
             }
         } catch {
             message.error("Failed to load profile");
         } finally {
             setLoading(false);
         }
-    };
+    }, [profileForm]);
 
     const handleUpdateProfile = async () => {
         setUpdating(true);
@@ -107,7 +109,7 @@ const AdminProfileDetailsPage = () => {
 
     useEffect(() => {
         loadProfile();
-    }, []);
+    }, [loadProfile]);
 
     return (
         <div>
@@ -207,7 +209,7 @@ const AdminProfileDetailsPage = () => {
                                         rules={[
                                             { required: true, message: "Please enter your phone number" },
                                             {
-                                                pattern: /^0[0-46-9]-?[0-9]{7,8}$/,
+                                                pattern: /^0[0-46-9]-?\d{7,8}$/,
                                                 message: "Please enter a valid Malaysian phone number",
                                             },
                                         ]}
@@ -307,7 +309,7 @@ const AdminProfileDetailsPage = () => {
                                     size="small"
                                     type="primary"
                                     icon={<SettingOutlined />}
-                                    onClick={() => router.push("/admin/profile/account")}
+                                    onClick={() => router.push("/admin/account")}
                                 >
                                     Manage
                                 </Button>

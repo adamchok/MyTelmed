@@ -14,16 +14,16 @@ interface FamilyMemberFormProps {
 }
 
 const relationshipOptions = [
-    { value: "spouse", label: "Spouse" },
-    { value: "parent", label: "Parent" },
-    { value: "child", label: "Child" },
-    { value: "sibling", label: "Sibling" },
-    { value: "grandparent", label: "Grandparent" },
-    { value: "grandchild", label: "Grandchild" },
-    { value: "relative", label: "Other Relative" },
-    { value: "caregiver", label: "Caregiver" },
-    { value: "friend", label: "Friend" },
-    { value: "other", label: "Other" },
+    { value: "Spouse", label: "Spouse" },
+    { value: "Parent", label: "Parent" },
+    { value: "Child", label: "Child" },
+    { value: "Sibling", label: "Sibling" },
+    { value: "Grandparent", label: "Grandparent" },
+    { value: "Grandchild", label: "Grandchild" },
+    { value: "Relative", label: "Other Relative" },
+    { value: "Caregiver", label: "Caregiver" },
+    { value: "Friend", label: "Friend" },
+    { value: "Other", label: "Other" },
 ];
 
 const FamilyMemberForm: React.FC<FamilyMemberFormProps> = ({ onSubmit, onCancel }) => {

@@ -54,6 +54,11 @@ export default function BookAppointmentPage() {
         dispatch(resetBookingState());
     }, [dispatch]);
 
+    useEffect(() => {
+        // Auto scroll to top when step changes
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentStep]);
+
     const handleBackToAppointments = () => {
         dispatch(resetBookingState());
         router.push("/patient/appointment");

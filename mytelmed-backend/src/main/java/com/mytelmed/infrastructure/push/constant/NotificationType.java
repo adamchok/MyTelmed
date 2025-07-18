@@ -32,7 +32,9 @@ public enum NotificationType {
     REFERRAL_CREATED(NotificationFamily.REFERRAL),
     REFERRAL_ACCEPTED(NotificationFamily.REFERRAL),
     REFERRAL_REJECTED(NotificationFamily.REFERRAL),
-    REFERRAL_SCHEDULED(NotificationFamily.REFERRAL);
+    REFERRAL_SCHEDULED(NotificationFamily.REFERRAL),
+
+    REFUND_SUCCESS(NotificationFamily.PAYMENT);
 
     private final NotificationFamily family;
 

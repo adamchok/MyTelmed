@@ -175,10 +175,6 @@ const ReferralDetailModal: React.FC<ReferralDetailModalProps> = ({ referral, isV
         }
     };
 
-    const handleBookAppointment = () => {
-        router.push(`/patient/appointment/book`);
-    };
-
     return (
         <Modal
             open={isVisible}
@@ -196,16 +192,6 @@ const ReferralDetailModal: React.FC<ReferralDetailModalProps> = ({ referral, isV
                 <Button key="close" onClick={onClose}>
                     Close
                 </Button>,
-                referral.status === ReferralStatus.ACCEPTED && !referral.scheduledAppointment && (
-                    <Button
-                        key="book"
-                        type="primary"
-                        icon={<Calendar className="w-3 h-3" />}
-                        onClick={handleBookAppointment}
-                    >
-                        Book Appointment
-                    </Button>
-                ),
                 referral.status === ReferralStatus.SCHEDULED && referral.scheduledAppointment && (
                     <Button
                         key="appointment"

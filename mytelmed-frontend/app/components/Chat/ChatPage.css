@@ -1,19 +1,8 @@
-/* Chat Container Styles */
 .chat-container {
     display: flex;
     height: calc(100vh - 64px - 32px - 32px);
-    overflow: hidden;
-    background-color: #f0f2f5;
 }
 
-.stream-chat-container {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    position: relative;
-}
-
-/* Stream Chat Overrides */
 .str-chat {
     height: 100%;
     width: 100%;
@@ -21,17 +10,18 @@
         "Helvetica Neue", sans-serif;
 }
 
-/* Channel List Styling */
 .str-chat__channel-list {
-    width: 30%;
-    min-width: 280px;
-    max-width: 420px;
-    background-color: #ffffff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    position: fixed;
+    z-index: 1;
+    width: 0;
     flex-shrink: 0;
-    overflow: auto;
-    border-right: 1px solid #e0e0e0;
-    position: relative;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+    transition: width 0.3s ease-out;
+}
+
+.str-chat__channel-list--open {
+    width: 65%;
+    position: fixed;
 }
 
 .str-chat__channel-list-messenger {
@@ -55,7 +45,6 @@
     cursor: pointer;
 }
 
-/* Channel & Messages Styling */
 .str-chat__channel {
     flex: 1;
     background-color: #f0f2f5;
@@ -74,13 +63,11 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-/* Message Input Styling */
 .str-chat__messaging-input {
     background-color: #f0f2f5;
     border-top: 1px solid #e0e0e0;
 }
 
-/* Message List Styling */
 .str-chat__list {
     background-color: #ffffff;
 }
@@ -94,7 +81,6 @@
     margin-bottom: 8px;
 }
 
-/* Message Styling */
 .str-chat__message-simple {
     margin: 8px 16px;
 }
@@ -118,26 +104,6 @@
     display: none;
 }
 
-/* Responsive Design */
-@media screen and (max-width: 768px) {
-    .str-chat__channel-list {
-        width: 100%;
-        max-width: none;
-        position: absolute;
-        z-index: 10;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease-out;
-    }
-
-    .str-chat__channel-list--open {
-        transform: translateX(0);
-    }
-}
-
-/* Message Input Enhancements */
 .str-chat__messaging-input .messaging-input__button {
     color: #00a9bc;
 }
@@ -146,4 +112,40 @@
     border-radius: 20px;
     border: 1px solid #e0e0e0;
     padding: 10px 16px;
+}
+
+.str-chat__channel-header .str-chat__header-hamburger {
+    width: 20px;
+    height: 20px;
+    padding: var(--xxs-p);
+    margin-left: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+}
+
+.str-chat__channel-header .str-chat__header-hamburger--:hover {
+    svg path {
+        fill: var(--primary-color);
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .str-chat__channel-list {
+        width: 20%;
+        position: initial;
+        z-index: 0;
+    }
+    .str-chat__channel-header .str-chat__header-hamburger {
+        display: none;
+    }
+}
+
+@media screen and (min-width: 1024px) {
+    .str-chat__channel-header .str-chat__header-hamburger {
+        display: none;
+    }
 }

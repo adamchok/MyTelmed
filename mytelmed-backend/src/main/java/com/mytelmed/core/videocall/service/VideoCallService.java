@@ -22,12 +22,13 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-
 /**
  * Service for managing video calls in Malaysian public healthcare telemedicine.
- * Only supports VIRTUAL appointments - PHYSICAL appointments do not use video calls.
+ * Only supports VIRTUAL appointments - PHYSICAL appointments do not use video
+ * calls.
  * <p>
- * Features automatic appointment completion when all participants leave the call via:
+ * Features automatic appointment completion when all participants leave the
+ * call via:
  * 1. Stream webhook events (primary method)
  * 2. Stream API participant count check (fallback method)
  * 3. Manual endVideoCall method (legacy method)
@@ -42,10 +43,10 @@ public class VideoCallService {
     private final FamilyMemberPermissionService familyPermissionService;
 
     public VideoCallService(VideoCallRepository videoCallRepository,
-                            AppointmentService appointmentService,
-                            AppointmentRepository appointmentRepository,
-                            StreamService streamService,
-                            FamilyMemberPermissionService familyPermissionService) {
+            AppointmentService appointmentService,
+            AppointmentRepository appointmentRepository,
+            StreamService streamService,
+            FamilyMemberPermissionService familyPermissionService) {
         this.videoCallRepository = videoCallRepository;
         this.appointmentService = appointmentService;
         this.appointmentRepository = appointmentRepository;
@@ -81,7 +82,7 @@ public class VideoCallService {
 
     @Transactional
     public VideoCall createStreamCallAndGetVideoCall(UUID appointmentId, Account account) throws AppException {
-        log.debug("Creating video call for appointment: {}", appointmentId);
+        log.debug("Getting video call for appointment: {}", appointmentId);
 
         // Find appointment
         Appointment appointment = appointmentService.findById(appointmentId);
@@ -92,21 +93,30 @@ public class VideoCallService {
                     appointment.getConsultationMode() + " appointment.");
         }
 
+        // Validate user has permission to access the call
+        validateUserCanCreateCall(appointment, account);
+
         // Find video call
         VideoCall videoCall = findByAppointmentId(appointmentId);
 
-        // Check if Stream call is created, if yes, then return video call
-        if (videoCall.getIsActive()) {
-            log.warn("Video call already exists for appointment: {}", appointmentId);
+        // Check if Stream call is already created (should be from appointment booking)
+        if (videoCall.getIsActive() && videoCall.getStreamCallId() != null) {
+            log.info("Found existing video call for appointment: {} with Stream call ID: {}",
+                    appointmentId, videoCall.getStreamCallId());
+
+            // Update appointment status to IN_PROGRESS if not already
+            if (appointment.getStatus() != AppointmentStatus.IN_PROGRESS) {
+                appointment.setStatus(AppointmentStatus.IN_PROGRESS);
+                appointmentRepository.save(appointment);
+                log.info("Updated appointment status to IN_PROGRESS for appointment: {}", appointmentId);
+            }
+
             return videoCall;
         }
 
-        // TODO: Uncomment for production
-        // Validate appointment status and timing
-//        validateAppointmentForVideoCall(appointment);
-
-        // Validate user has permission to create the call
-        validateUserCanCreateCall(appointment, account);
+        // Fallback: Create Stream call if not created during booking (legacy support)
+        log.warn("Video call not properly initialized during booking for appointment: {}. Creating now...",
+                appointmentId);
 
         try {
             // Create Stream call using the existing StreamService
@@ -124,7 +134,7 @@ public class VideoCallService {
             appointment.setStatus(AppointmentStatus.IN_PROGRESS);
             appointmentRepository.save(appointment);
 
-            log.info("Successfully created video call for virtual appointment: {} with Stream call ID: {}",
+            log.info("Created fallback Stream call for virtual appointment: {} with Stream call ID: {}",
                     appointmentId, callResponse.getId());
 
             return videoCall;
@@ -156,14 +166,15 @@ public class VideoCallService {
         validateUserCanJoinCall(appointment, account);
 
         // TODO: Undo for production
-//        validateCallTiming(appointment);
+        // validateCallTiming(appointment);
 
         // Determine user role and get appropriate info
         UserCallInfo userCallInfo = getUserCallInfo(appointment, account);
 
         try {
-            // Check if VideoCall exists; if not, create one
+            // Get VideoCall (should already exist from appointment booking)
             VideoCall videoCall = videoCallRepository.findByAppointmentId(appointmentId).orElseGet(() -> {
+                log.warn("VideoCall not found for appointment {}. Creating fallback placeholder...", appointmentId);
                 VideoCall newCall = VideoCall.builder()
                         .appointment(appointment)
                         .isActive(false)
@@ -273,25 +284,28 @@ public class VideoCallService {
                 log.info("Provider left video call for appointment: {}", appointmentId);
             }
 
-//            // Determine if meeting should end
-//            boolean shouldEndMeeting = shouldEndMeeting(videoCall, appointment, userCallInfo);
-//
-//            if (shouldEndMeeting && videoCall.getMeetingEndedAt() == null) {
-//                // Update video call
-//                videoCall.setMeetingEndedAt(Instant.now());
-//                videoCall.setIsActive(false);
-//
-//                // Complete the appointment
-//                appointment.setStatus(AppointmentStatus.COMPLETED);
-//                appointment.setCompletedAt(Instant.now());
-//                appointmentRepository.save(appointment);
-//
-//                log.info("Successfully ended video call for virtual appointment: {}", appointmentId);
-//            } else if (!shouldEndMeeting) {
-//                // As a fallback, check with Stream API if all participants have actually left
-//                // This helps catch cases where webhook events might be missed
-//                checkStreamCallParticipantsAndCompleteIfEmpty(videoCall, appointment);
-//            }
+            // // Determine if meeting should end
+            // boolean shouldEndMeeting = shouldEndMeeting(videoCall, appointment,
+            // userCallInfo);
+            //
+            // if (shouldEndMeeting && videoCall.getMeetingEndedAt() == null) {
+            // // Update video call
+            // videoCall.setMeetingEndedAt(Instant.now());
+            // videoCall.setIsActive(false);
+            //
+            // // Complete the appointment
+            // appointment.setStatus(AppointmentStatus.COMPLETED);
+            // appointment.setCompletedAt(Instant.now());
+            // appointmentRepository.save(appointment);
+            //
+            // log.info("Successfully ended video call for virtual appointment: {}",
+            // appointmentId);
+            // } else if (!shouldEndMeeting) {
+            // // As a fallback, check with Stream API if all participants have actually
+            // left
+            // // This helps catch cases where webhook events might be missed
+            // checkStreamCallParticipantsAndCompleteIfEmpty(videoCall, appointment);
+            // }
 
             // Save video call
             videoCallRepository.save(videoCall);
@@ -302,8 +316,10 @@ public class VideoCallService {
     }
 
     /**
-     * Manually checks if a video call has no participants and completes the appointment if so.
-     * This is useful for testing or manual intervention when webhooks might not be working.
+     * Manually checks if a video call has no participants and completes the
+     * appointment if so.
+     * This is useful for testing or manual intervention when webhooks might not be
+     * working.
      *
      * @param appointmentId The appointment ID to check
      * @return true if the appointment was completed, false otherwise
@@ -337,7 +353,8 @@ public class VideoCallService {
                 checkStreamCallParticipantsAndCompleteIfEmpty(videoCall, appointment);
                 return true;
             } else {
-                log.debug("Manual check found {} participants still in call for appointment {}", participantCount, appointmentId);
+                log.debug("Manual check found {} participants still in call for appointment {}", participantCount,
+                        appointmentId);
                 return false;
             }
         } catch (Exception e) {
@@ -386,10 +403,12 @@ public class VideoCallService {
                     return;
                 }
 
-                // Check if account is a family member with video call permission (MANAGE_APPOINTMENTS)
+                // Check if account is a family member with video call permission
+                // (MANAGE_APPOINTMENTS)
                 if (!familyPermissionService.hasPermission(account, appointment.getPatient().getId(),
                         FamilyPermissionType.MANAGE_APPOINTMENTS)) {
-                    throw new AppException("You are not authorized to join this video call. You need appointment management permissions.");
+                    throw new AppException(
+                            "You are not authorized to join this video call. You need appointment management permissions.");
                 }
             }
             case DOCTOR -> {
@@ -402,7 +421,8 @@ public class VideoCallService {
     }
 
     private void validateUserCanCreateCall(Appointment appointment, Account account) throws AppException {
-        log.debug("Validating if account {} can create video call for appointment {}", account.getId(), appointment.getId());
+        log.debug("Validating if account {} can create video call for appointment {}", account.getId(),
+                appointment.getId());
 
         switch (account.getPermission().getType()) {
             case PATIENT -> {
@@ -414,7 +434,8 @@ public class VideoCallService {
                 // Family members need MANAGE_APPOINTMENTS permission to create calls
                 if (!familyPermissionService.hasPermission(account, appointment.getPatient().getId(),
                         FamilyPermissionType.MANAGE_APPOINTMENTS)) {
-                    throw new AppException("You don't have permission to start this video call. Contact the patient or request appointment management permissions.");
+                    throw new AppException(
+                            "You don't have permission to start this video call. Contact the patient or request appointment management permissions.");
                 }
             }
             case DOCTOR -> {
@@ -425,7 +446,8 @@ public class VideoCallService {
             default -> throw new AppException("You are not authorized to start this video call");
         }
 
-        log.debug("Account {} is authorized to create video call for appointment {}", account.getId(), appointment.getId());
+        log.debug("Account {} is authorized to create video call for appointment {}", account.getId(),
+                appointment.getId());
     }
 
     /**
@@ -475,8 +497,9 @@ public class VideoCallService {
                 appointment.setStatus(AppointmentStatus.COMPLETED);
                 appointment.setCompletedAt(Instant.now());
                 String completionNote = "Automatically completed - Stream API confirmed all participants left";
-                appointment.setDoctorNotes(appointment.getDoctorNotes() != null ?
-                        appointment.getDoctorNotes() + "\n\n" + completionNote : completionNote);
+                appointment.setDoctorNotes(
+                        appointment.getDoctorNotes() != null ? appointment.getDoctorNotes() + "\n\n" + completionNote
+                                : completionNote);
                 appointmentRepository.save(appointment);
 
                 log.info("Successfully auto-completed appointment {} via Stream API fallback", appointment.getId());
@@ -527,7 +550,8 @@ public class VideoCallService {
                                     familyMember.getName() + " (Family)",
                                     true, // Still on patient side
                                     false)) // isPrimaryPatient = false
-                            .orElseThrow(() -> new AppException("Family member not found or not authorized for this appointment"));
+                            .orElseThrow(() -> new AppException(
+                                    "Family member not found or not authorized for this appointment"));
                 }
             }
             case DOCTOR -> {

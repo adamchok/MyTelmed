@@ -45,7 +45,7 @@ interface VideoCallManagerProps {
     onCallEnd: () => void;
 }
 
-export default function VideoCallManager({ appointment, onCallEnd }: VideoCallManagerProps) {
+export default function VideoCallManager({ appointment, onCallEnd }: Readonly<VideoCallManagerProps>) {
     const client = useStreamVideoClient();
     const [meetingInfo, setMeetingInfo] = useState<VideoCallDto | null>(null);
     const [call, setCall] = useState<Call | undefined>(undefined);
@@ -79,11 +79,21 @@ export default function VideoCallManager({ appointment, onCallEnd }: VideoCallMa
                 });
             }, 200);
 
-            const response = await VideoCallApi.createStreamCallAndGetVideoCall(appointment.id);
-            const meetingData = response.data.data;
+            // First try to get existing video call data
+            const response = await VideoCallApi.getVideoCallByAppointmentId(appointment.id);
+            let meetingData = response.data.data;
 
-            if (!meetingData) {
-                throw new Error("Failed to get or create video call");
+            if (!meetingData?.streamCallId || !meetingData?.streamCallType) {
+                // Fallback: Try to create/initialize video call if not properly set up
+                console.warn("Video call not properly initialized, attempting to create...");
+                const fallbackResponse = await VideoCallApi.createStreamCallAndGetVideoCall(appointment.id);
+                const fallbackData = fallbackResponse.data.data;
+
+                if (!fallbackData?.streamCallId) {
+                    throw new Error("Failed to get or create video call");
+                }
+
+                meetingData = fallbackData;
             }
 
             setMeetingInfo(meetingData);
@@ -160,6 +170,17 @@ export default function VideoCallManager({ appointment, onCallEnd }: VideoCallMa
             month: "long",
             day: "numeric",
         });
+    };
+
+    const getStatusDescription = (status: string) => {
+        switch (status) {
+            case "COMPLETED":
+                return "This appointment has been completed. Thank you for using DiaConnect!";
+            case "CANCELLED":
+                return "This appointment has been cancelled. Please book a new appointment if needed.";
+            default:
+                return "Video call is not available for this appointment at this time. Please contact support if you need assistance.";
+        }
     };
 
     useEffect(() => {
@@ -419,20 +440,12 @@ export default function VideoCallManager({ appointment, onCallEnd }: VideoCallMa
                                         <Alert
                                             type="info"
                                             message="Video Call Not Available"
-                                            description={
-                                                appointment.status === "PENDING"
-                                                    ? "Please wait for your appointment to be confirmed by the healthcare provider."
-                                                    : appointment.status === "COMPLETED"
-                                                    ? "This appointment has been completed. Thank you for using DiaConnect!"
-                                                    : appointment.status === "CANCELLED"
-                                                    ? "This appointment has been cancelled. Please book a new appointment if needed."
-                                                    : "Video call is not available for this appointment at this time. Please contact support if you need assistance."
-                                            }
+                                            description={getStatusDescription(appointment.status)}
                                             showIcon
                                             className="text-left"
                                             action={
                                                 appointment.status === "COMPLETED" ||
-                                                appointment.status === "CANCELLED" ? (
+                                                    appointment.status === "CANCELLED" ? (
                                                     <Button size="small" onClick={onCallEnd}>
                                                         Back to Appointments
                                                     </Button>

@@ -80,6 +80,9 @@ public class Patient {
     @Column(name = "phone", nullable = false, unique = true)
     private String phone;
 
+    @Column(name = "hashed_phone", nullable = false, unique = true, length = 64)
+    private String hashedPhone;
+
     @Column(name = "dob", nullable = false)
     private LocalDate dateOfBirth;
 
@@ -117,5 +120,6 @@ public class Patient {
     protected void beforeSave() {
         if (email != null) hashedEmail = HashUtil.sha256(email);
         if (nric != null) hashedNric = HashUtil.sha256(nric);
+        if (phone != null) hashedPhone = HashUtil.sha256(phone);
     }
 }

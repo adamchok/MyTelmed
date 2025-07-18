@@ -34,7 +34,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,8 +45,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
 
 @Slf4j
 @Service
@@ -264,8 +264,17 @@ public class PaymentService {
             if ("succeeded".equals(paymentIntent.getStatus())) {
                 processSuccessfulPayment(transaction, paymentIntent);
             } else if ("requires_action".equals(paymentIntent.getStatus())) {
-                // Handle 3D Secure or other authentication
-                transaction.setStatus(PaymentTransaction.TransactionStatus.PENDING);
+                // Update transaction
+                transaction.setStripeChargeId(paymentIntent.getLatestCharge());
+                paymentTransactionRepository.save(transaction);
+
+                // Update bill
+                Bill bill = transaction.getBill();
+                bill.setPaymentMode(PaymentMode.CARD);
+                bill.setStripePaymentIntentId(paymentIntent.getId());
+                bill.setStripeChargeId(paymentIntent.getLatestCharge());
+                billRepository.save(bill);
+
                 paymentTransactionRepository.save(transaction);
             }
 
@@ -358,25 +367,14 @@ public class PaymentService {
         // Apply sorting
         String sortBy = pageable.getSort().iterator().hasNext() ? pageable.getSort().iterator().next().getProperty()
                 : "createdAt";
-        boolean isDescending = pageable.getSort().iterator().hasNext()
-                ? pageable.getSort().iterator().next().getDirection().isDescending()
-                : true;
+        boolean isDescending = !pageable.getSort().iterator().hasNext() || pageable.getSort().iterator().next().getDirection().isDescending();
 
         filteredBills.sort((b1, b2) -> {
-            int comparison = 0;
-            switch (sortBy) {
-                case "createdAt":
-                    comparison = b1.getCreatedAt().compareTo(b2.getCreatedAt());
-                    break;
-                case "billedAt":
-                    comparison = b1.getBilledAt().compareTo(b2.getBilledAt());
-                    break;
-                case "amount":
-                    comparison = b1.getAmount().compareTo(b2.getAmount());
-                    break;
-                default:
-                    comparison = b1.getCreatedAt().compareTo(b2.getCreatedAt());
-            }
+            int comparison = switch (sortBy) {
+                case "billedAt" -> b1.getBilledAt().compareTo(b2.getBilledAt());
+                case "amount" -> b1.getAmount().compareTo(b2.getAmount());
+                default -> b1.getCreatedAt().compareTo(b2.getCreatedAt());
+            };
             return isDescending ? -comparison : comparison;
         });
 
@@ -508,26 +506,15 @@ public class PaymentService {
 
     private void processSuccessfulPayment(PaymentTransaction transaction, PaymentIntent paymentIntent) {
         // Update transaction
-        transaction.setStatus(PaymentTransaction.TransactionStatus.COMPLETED);
         transaction.setStripeChargeId(paymentIntent.getLatestCharge());
         transaction.setProcessedAt(Instant.now());
         paymentTransactionRepository.save(transaction);
 
         // Update bill
         Bill bill = transaction.getBill();
-        bill.setBillingStatus(BillingStatus.PAID);
         bill.setPaymentMode(PaymentMode.CARD);
         bill.setStripePaymentIntentId(paymentIntent.getId());
         bill.setStripeChargeId(paymentIntent.getLatestCharge());
-
-        // Retrieve receipt URL from Stripe Charge
-        try {
-            com.stripe.Stripe.apiKey = stripeSecretKey;
-            com.stripe.model.Charge charge = com.stripe.model.Charge.retrieve(paymentIntent.getLatestCharge());
-            bill.setReceiptUrl(charge.getReceiptUrl()); // Store encrypted receipt URL
-        } catch (Exception e) {
-            log.warn("Failed to retrieve receipt URL for charge: {}", paymentIntent.getLatestCharge(), e);
-        }
 
         bill.setPaidAt(Instant.now());
         billRepository.save(bill);

@@ -24,7 +24,6 @@
 
             .header {
                 text-align: center;
-                justify-content: center;
                 border-bottom: 3px solid #28a745;
                 padding-bottom: 20px;
                 margin-bottom: 30px;
@@ -58,6 +57,7 @@
                 display: flex;
                 margin-bottom: 12px;
                 align-items: center;
+                flex-wrap: wrap;
             }
 
             .detail-label {
@@ -71,12 +71,16 @@
                 flex: 1;
             }
 
-            .important-info {
-                background-color: #d1ecf1;
-                border: 1px solid #bee5eb;
+            .important-info,
+            .delivery-method-info {
                 border-radius: 8px;
                 padding: 15px;
                 margin: 20px 0;
+            }
+
+            .important-info {
+                background-color: #d1ecf1;
+                border: 1px solid #bee5eb;
             }
 
             .important-info h4 {
@@ -87,9 +91,6 @@
             .delivery-method-info {
                 background-color: #fff3cd;
                 border: 1px solid #ffeaa7;
-                border-radius: 8px;
-                padding: 15px;
-                margin: 20px 0;
             }
 
             .delivery-method-info h4 {
@@ -100,18 +101,26 @@
             .action-buttons {
                 text-align: center;
                 margin: 30px 0;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
             }
 
             .btn {
-                display: inline-block;
+                display: block;
+                width: 100%;
+                max-width: 300px;
+                margin: 0 auto;
                 padding: 12px 24px;
-                margin: 0 10px;
                 background-color: #007bff;
                 color: #ffffff;
                 text-decoration: none;
                 border-radius: 5px;
                 font-weight: bold;
+                box-sizing: border-box;
+                text-align: center;
             }
+
 
             .btn:hover {
                 background-color: #0056b3;
@@ -141,7 +150,33 @@
             a:hover {
                 text-decoration: underline;
             }
+
+            @media screen and (max-width: 600px) {
+                body {
+                    padding: 10px;
+                }
+
+                .container {
+                    padding: 20px;
+                }
+
+                .detail-row {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+
+                .detail-label {
+                    min-width: auto;
+                    margin-bottom: 5px;
+                }
+
+                .action-buttons .btn {
+                    width: 100%;
+                    margin: 10px 0;
+                }
+            }
         </style>
+
     </head>
     <body>
         <div class="container">
@@ -226,7 +261,6 @@
                 <a th:href="${uiHost + '/patient/prescription/' + prescriptionNumber}" class="btn btn-success">
                     View Prescription Details
                 </a>
-                <a th:href="${uiHost + '/patient/delivery'}" class="btn"> Track Delivery </a>
             </div>
 
             <div class="footer">

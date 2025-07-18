@@ -39,6 +39,7 @@ public enum EmailType {
     // Billing and payment notifications
     BILL_GENERATED(EmailFamily.PAYMENT),
     PAYMENT_RECEIPT(EmailFamily.PAYMENT),
+    REFUND_SUCCESS(EmailFamily.PAYMENT),
 
     // Referral notifications
     REFERRAL_CREATED(EmailFamily.REFERRAL),

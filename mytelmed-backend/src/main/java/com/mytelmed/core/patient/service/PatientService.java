@@ -125,13 +125,25 @@ public class PatientService {
     }
 
     @Transactional
-    public void createPatient(CreatePatientRequestDto request) {
+    public void createPatient(CreatePatientRequestDto request) throws AppException {
         log.debug("Received request to create patient with request: {}", request);
 
-        try {
-            LocalDate dateOfBirth = parseAndValidateDateOfBirth(request.dateOfBirth());
-            Account account = accountService.createPatientAccount(request.nric(), request.password(), request.name());
+        // Parse date of birth
+        LocalDate dateOfBirth = parseAndValidateDateOfBirth(request.dateOfBirth());
 
+        // Validate exisitng patient details
+        if (patientRepository.existsByHashedNric(HashUtil.sha256(request.nric()))) {
+            throw new InvalidInputException("This NRIC is already in use");
+        } else if (patientRepository.existsByHashedEmail(HashUtil.sha256(request.email()))) {
+            throw new InvalidInputException("This email is already in use");
+        } else if (patientRepository.existsByHashedPhone(HashUtil.sha256(request.phone()))) {
+            throw new InvalidInputException("This phone number is already in use");
+        }
+
+        // Create patient account
+        Account account = accountService.createPatientAccount(request.nric(), request.password(), request.name());
+
+        try {
             Patient patient = buildPatient(request, dateOfBirth, account);
             patientRepository.save(patient);
 
@@ -147,10 +159,23 @@ public class PatientService {
     @Transactional
     public void updatePatientProfileByAccountId(UUID accountId, UpdatePatientProfileRequestDto request) throws AppException {
         log.debug("Received request to update patient profile with request: {}", request);
-        try {
-            Patient patient = findPatientByAccountId(accountId);
-            LocalDate dateOfBirth = parseAndValidateDateOfBirth(request.dateOfBirth());
 
+        // Find patient by account ID
+        Patient patient = findPatientByAccountId(accountId);
+
+        // Validate date of birth
+        LocalDate dateOfBirth = parseAndValidateDateOfBirth(request.dateOfBirth());
+
+        // Validate existing doctor details
+        if (!patient.getHashedEmail().equals(HashUtil.sha256(request.email())) &&
+                patientRepository.existsByHashedEmail(HashUtil.sha256(request.email()))) {
+            throw new InvalidInputException("This email already in use");
+        } else if (!patient.getHashedPhone().equals(HashUtil.sha256(request.phone())) &&
+                patientRepository.existsByHashedPhone(HashUtil.sha256(request.phone()))) {
+            throw new InvalidInputException("This phone number is in use");
+        }
+
+        try {
             updatePatientDetails(patient, request, dateOfBirth);
             patientRepository.save(patient);
 

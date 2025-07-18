@@ -1,6 +1,7 @@
 import { Patient } from "../patient/props";
 import { Doctor } from "../doctor/props";
 import { ConsultationMode, AppointmentStatus, DocumentType, AppointmentDocumentDto, SearchOptions } from "../props";
+import { TranscriptionSummaryDto } from "../transcription/props";
 
 // Re-export commonly used enums for convenience
 export { ConsultationMode, AppointmentStatus, DocumentType };
@@ -27,6 +28,7 @@ export interface AppointmentDto {
     cancelledBy?: string;
     completedAt?: string;
     attachedDocuments: AppointmentDocumentDto[];
+    transcriptionSummary?: TranscriptionSummaryDto; // AI-generated transcription summary
     hasAttachedDocuments: boolean; // Added: convenience field for UI
     createdAt: string;
     updatedAt: string;

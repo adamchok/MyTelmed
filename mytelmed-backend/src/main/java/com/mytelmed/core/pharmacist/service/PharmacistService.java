@@ -10,8 +10,8 @@ import com.mytelmed.common.event.account.model.AccountDeactivatedEvent;
 import com.mytelmed.common.event.account.model.AccountPasswordResetEvent;
 import com.mytelmed.common.event.image.ImageDeletedEvent;
 import com.mytelmed.common.utils.DateTimeUtil;
-import com.mytelmed.common.utils.PasswordGenerator;
 import com.mytelmed.common.utils.HashUtil;
+import com.mytelmed.common.utils.PasswordGenerator;
 import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.auth.service.AccountService;
 import com.mytelmed.core.facility.entity.Facility;
@@ -159,7 +159,7 @@ public class PharmacistService {
     }
 
     @Transactional
-    public void create(CreatePharmacistRequestDto request) throws UsernameAlreadyExistException {
+    public void create(CreatePharmacistRequestDto request) throws AppException {
         log.debug("Creating pharmacist account: {}", request.email());
 
         // Create a pharmacist account
@@ -168,9 +168,20 @@ public class PharmacistService {
         // Find facility by ID
         Facility facility = facilityService.findFacilityById(request.facilityId());
 
-        try {
-            LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
+        // Parse local date of birth
+        LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
 
+
+        // Validate with existing pharmacists
+        if (pharmacistRepository.existsPharmacistByHashedEmail(HashUtil.sha256(request.email()))) {
+            throw new InvalidInputException("Pharmacist with this email already exists");
+        } else if (pharmacistRepository.existsPharmacistByHashedNric(HashUtil.sha256(request.nric()))) {
+            throw new InvalidInputException("Pharmacist with this NRIC already exists");
+        } else if (pharmacistRepository.existsPharmacistByHashedPhone(HashUtil.sha256(request.phone()))) {
+            throw new InvalidInputException("Pharmacist with this phone number already exists");
+        }
+
+        try {
             // Create a pharmacist
             Pharmacist pharmacist = Pharmacist.builder()
                     .name(request.name())
@@ -206,10 +217,23 @@ public class PharmacistService {
         // Verify date of birth
         LocalDate dateOfBirth = parseDateOfBirth(request.dateOfBirth());
 
+        // Validate existing pharmacist details
+        if (!pharmacist.getHashedEmail().equals(HashUtil.sha256(request.email())) &&
+                pharmacistRepository.existsPharmacistByHashedEmail(HashUtil.sha256(request.email()))) {
+            throw new InvalidInputException("Pharmacist with this email already exists");
+        } else if (!pharmacist.getHashedNric().equals(HashUtil.sha256(request.nric())) &&
+                pharmacistRepository.existsPharmacistByHashedNric(HashUtil.sha256(request.nric()))) {
+            throw new InvalidInputException("Pharmacist with this NRIC already exists");
+        } else if (!pharmacist.getHashedPhone().equals(HashUtil.sha256(request.phone())) &&
+                pharmacistRepository.existsPharmacistByHashedPhone(HashUtil.sha256(request.phone()))) {
+            throw new InvalidInputException("Pharmacist with this phone number already exists");
+        }
+
         try {
             // Update pharmacist
             pharmacist.setName(request.name());
             pharmacist.setEmail(request.email());
+            pharmacist.setNric(request.nric());
             pharmacist.setPhone(request.phone());
             pharmacist.setDateOfBirth(dateOfBirth);
             pharmacist.setGender(request.gender());
@@ -231,6 +255,15 @@ public class PharmacistService {
 
         // Find pharmacist by account
         Pharmacist pharmacist = findByAccount(account);
+
+        // Validate existing pharmacist details
+        if (!pharmacist.getHashedEmail().equals(HashUtil.sha256(request.email())) &&
+                pharmacistRepository.existsPharmacistByHashedEmail(HashUtil.sha256(request.email()))) {
+            throw new InvalidInputException("This email is already in use");
+        } else if (!pharmacist.getHashedPhone().equals(HashUtil.sha256(request.phone())) &&
+                pharmacistRepository.existsPharmacistByHashedPhone(HashUtil.sha256(request.phone()))) {
+            throw new InvalidInputException("This phone number already in use");
+        }
 
         try {
             // Update pharmacist profile

@@ -37,22 +37,12 @@ const AccessModal: React.FC<AccessModalProps> = ({
             const values = await form.validateFields();
             setIsLoading(true);
 
-            console.log("Form values:", values); // Debug log
-            console.log("Document object:", document); // Debug log
-            console.log("Document ID:", document?.id); // Debug log
-
-            // Ensure we have a valid expiry date
-            if (!values.expiryDate) {
-                message.error("Please select an expiry date");
-                return;
-            }
-
             // Ensure boolean values are properly typed and not null/undefined
             const canView = values.canView === true;
             const canAttach = values.canAttach === true;
 
             // Format date as ISO string (DD/MM/YYYY)
-            const expiryDateString = values.expiryDate.format("DD/MM/YYYY");
+            const expiryDateString = values.expiryDate ? values.expiryDate.format("DD/MM/YYYY") : null;
 
             const request: UpdateAccessRequest = {
                 canView,
@@ -165,6 +155,7 @@ const AccessModal: React.FC<AccessModalProps> = ({
             ]}
             width={600}
             centered
+            destroyOnHidden={true}
         >
             <div className="py-2">
                 <div className="mb-4">
@@ -222,12 +213,11 @@ const AccessModal: React.FC<AccessModalProps> = ({
 
                         <Card className="w-full shadow-sm">
                             <div>
-                                <h3 className="text-md font-medium mb-3">Access Expiry Date</h3>
+                                <h3 className="text-md font-medium mb-3">Access Expiry Date (Optional)</h3>
                                 <p className="text-sm text-gray-500 mb-3">Set when access permissions should expire</p>
                                 <Form.Item
                                     name="expiryDate"
                                     rules={[
-                                        { required: true, message: "Please select an expiry date" },
                                         {
                                             validator: (_, value) => {
                                                 if (!value) return Promise.resolve();

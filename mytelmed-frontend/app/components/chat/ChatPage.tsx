@@ -49,6 +49,7 @@ const ChatPage = () => {
                             },
                         },
                     }}
+                    setActiveChannelOnMount={true}
                 />
                 <Channel>
                     <Window>

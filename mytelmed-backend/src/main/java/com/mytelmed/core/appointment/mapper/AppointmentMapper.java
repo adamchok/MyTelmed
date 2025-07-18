@@ -5,6 +5,8 @@ import com.mytelmed.core.appointment.entity.Appointment;
 import com.mytelmed.core.doctor.mapper.DoctorMapper;
 import com.mytelmed.core.doctor.service.DoctorService;
 import com.mytelmed.core.patient.mapper.PatientMapper;
+import com.mytelmed.core.transcription.mapper.TranscriptionSummaryMapper;
+import com.mytelmed.core.transcription.service.TranscriptionService;
 import com.mytelmed.infrastructure.aws.service.AwsS3Service;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -21,6 +23,8 @@ public abstract class AppointmentMapper {
     protected AppointmentDocumentMapper appointmentDocumentMapper;
     protected DoctorMapper doctorMapper;
     protected DoctorService doctorService;
+    protected TranscriptionService transcriptionService;
+    protected TranscriptionSummaryMapper transcriptionSummaryMapper;
 
     @Autowired
     public void setPatientMapper(PatientMapper patientMapper) {
@@ -42,6 +46,16 @@ public abstract class AppointmentMapper {
         this.doctorService = doctorService;
     }
 
+    @Autowired
+    public void setTranscriptionService(TranscriptionService transcriptionService) {
+        this.transcriptionService = transcriptionService;
+    }
+
+    @Autowired
+    public void setTranscriptionSummaryMapper(TranscriptionSummaryMapper transcriptionSummaryMapper) {
+        this.transcriptionSummaryMapper = transcriptionSummaryMapper;
+    }
+
     @Mapping(target = "id", expression = "java(appointment.getId().toString())")
     @Mapping(target = "patient", expression = "java(patientMapper.toDto(appointment.getPatient(), awsS3Service))")
     @Mapping(target = "doctor", expression = "java(doctorMapper.toDto(appointment.getDoctor(), awsS3Service))")
@@ -51,5 +65,6 @@ public abstract class AppointmentMapper {
     @Mapping(target = "consultationMode", source = "appointment.consultationMode")
     @Mapping(target = "doctorNotes", source = "appointment.doctorNotes")
     @Mapping(target = "attachedDocuments", expression = "java(appointment.getAppointmentDocuments().stream().map(doc -> appointmentDocumentMapper.toDto(doc, awsS3Service)).collect(java.util.stream.Collectors.toList()))")
+    @Mapping(target = "transcriptionSummary", expression = "java(transcriptionService.getTranscriptionSummary(appointment.getId()).map(transcriptionSummaryMapper::toDto).orElse(null))")
     public abstract AppointmentDto toDto(Appointment appointment, AwsS3Service awsS3Service);
 }

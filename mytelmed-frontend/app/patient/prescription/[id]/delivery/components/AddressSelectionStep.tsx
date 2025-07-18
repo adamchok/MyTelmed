@@ -270,12 +270,13 @@ export default function AddressSelectionStep() {
                         onClick={handlePrevious}
                         icon={<ArrowLeft className="w-4 h-4" />}
                         className="border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-700"
+                        size="middle"
                     >
                         Previous
                     </Button>
                     <Button
                         type="primary"
-                        size="large"
+                        size="middle"
                         onClick={handleNext}
                         disabled={!selectedAddress || loadingAddresses}
                         icon={<ArrowRight className="w-4 h-4" />}
@@ -296,6 +297,7 @@ export default function AddressSelectionStep() {
                 }}
                 footer={null}
                 width={600}
+                centered
             >
                 <Form
                     form={form}

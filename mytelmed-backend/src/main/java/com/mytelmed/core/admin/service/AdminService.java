@@ -153,8 +153,16 @@ public class AdminService {
     }
 
     @Transactional
-    public void create(CreateAdminRequestDto request) throws UsernameAlreadyExistException {
+    public void create(CreateAdminRequestDto request) throws UsernameAlreadyExistException, InvalidInputException {
         log.debug("Creating admin account: {}", request.email());
+
+        if (adminRepository.existsAdminByHashedEmail(request.email())) {
+            throw new InvalidInputException("Admin with this email already exists");
+        } else if (adminRepository.existsAdminByHashedNric(request.nric())) {
+            throw new InvalidInputException("Admin with this NRIC already exists");
+        } else if (adminRepository.existsAdminByHashedPhone(HashUtil.sha256(request.phone()))) {
+            throw new InvalidInputException("Admin with this phone number already exists");
+        }
 
         // Create an admin account
         Account account = accountService.createAdminAccount(request.email(), request.name());
@@ -186,6 +194,18 @@ public class AdminService {
         // Find admin by ID
         Admin admin = findById(adminId);
 
+        // Validate existing doctor details
+        if (!admin.getHashedNric().equals(HashUtil.sha256(request.nric())) &&
+                adminRepository.existsAdminByHashedNric(HashUtil.sha256(request.nric()))) {
+            throw new InvalidInputException("Admin with this NRIC already exists");
+        } else if (!admin.getHashedEmail().equals(HashUtil.sha256(request.email())) &&
+                adminRepository.existsAdminByHashedEmail(HashUtil.sha256(request.email()))) {
+            throw new InvalidInputException("Admin with this email already exists");
+        } else if (!admin.getHashedPhone().equals(HashUtil.sha256(request.phone())) &&
+                adminRepository.existsAdminByHashedPhone(HashUtil.sha256(request.phone()))) {
+            throw new InvalidInputException("Admin with this phone number already exists");
+        }
+
         try {
             // Update admin
             admin.setNric(request.nric());
@@ -209,6 +229,15 @@ public class AdminService {
 
         // Find admin by account
         Admin admin = findByAccount(account);
+
+        // Validate existing doctor details
+        if (!admin.getHashedEmail().equals(HashUtil.sha256(request.email())) &&
+                adminRepository.existsAdminByHashedEmail(HashUtil.sha256(request.email()))) {
+            throw new InvalidInputException("This email is already in use");
+        } else if (!admin.getHashedPhone().equals(HashUtil.sha256(request.phone())) &&
+                adminRepository.existsAdminByHashedPhone(HashUtil.sha256(request.phone()))) {
+            throw new InvalidInputException("This phone number is already in use");
+        }
 
         try {
             // Update admin profile

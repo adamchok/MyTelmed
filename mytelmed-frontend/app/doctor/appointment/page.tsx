@@ -170,10 +170,7 @@ export default function DoctorAppointments() {
                 matchesTab = appointmentDate.isSame(now, "day");
                 break;
             case "upcoming":
-                matchesTab = appointmentDate.isAfter(now);
-                break;
-            case "past":
-                matchesTab = appointmentDate.isBefore(now, "day");
+                matchesTab = appointmentDate.isAfter(now) && appointment.status !== "COMPLETED" && appointment.status !== "CANCELLED" && appointment.status !== "NO_SHOW";
                 break;
             case "pending":
                 matchesTab = appointment.status === "PENDING";

@@ -102,39 +102,39 @@ function DataTable<T extends Record<string, any>>({
         })),
         ...(actions.length > 0
             ? [
-                  {
-                      title: "Actions",
-                      key: "actions",
-                      width: actionColumnWidth === "auto" ? undefined : actionColumnWidth,
-                      render: (_: any, record: T) => (
-                          <Space size="small">
-                              {actions.map((action, index) => {
-                                  const button = (
-                                      <Button
-                                          key={index}
-                                          type={action.type || "default"}
-                                          size={actionButtonSize}
-                                          danger={action.danger}
-                                          icon={action.icon}
-                                          disabled={action.disabled ? action.disabled(record) : false}
-                                          onClick={() => action.onClick(record)}
-                                      >
-                                          {action.showLabel === false ? undefined : action.label}
-                                      </Button>
-                                  );
+                {
+                    title: "Actions",
+                    key: "actions",
+                    width: actionColumnWidth === "auto" ? undefined : actionColumnWidth,
+                    render: (_: any, record: T) => (
+                        <Space size="small">
+                            {actions.map((action, index) => {
+                                const button = (
+                                    <Button
+                                        key={index}
+                                        type={action.type || "default"}
+                                        size={actionButtonSize}
+                                        danger={action.danger}
+                                        icon={action.icon}
+                                        disabled={action.disabled ? action.disabled(record) : false}
+                                        onClick={() => action.onClick(record)}
+                                    >
+                                        {action.showLabel === false ? undefined : action.label}
+                                    </Button>
+                                );
 
-                                  return action.tooltip ? (
-                                      <Tooltip key={index} title={action.tooltip}>
-                                          {button}
-                                      </Tooltip>
-                                  ) : (
-                                      button
-                                  );
-                              })}
-                          </Space>
-                      ),
-                  },
-              ]
+                                return action.tooltip ? (
+                                    <Tooltip key={index} title={action.tooltip}>
+                                        {button}
+                                    </Tooltip>
+                                ) : (
+                                    button
+                                );
+                            })}
+                        </Space>
+                    ),
+                },
+            ]
             : []),
     ];
 

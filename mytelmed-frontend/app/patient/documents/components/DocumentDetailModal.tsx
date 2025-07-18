@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Modal, Typography, Descriptions, Tag, Button, Divider, Alert, Spin } from "antd";
+import { Modal, Typography, Descriptions, Tag, Button, Divider, Alert } from "antd";
 import { FileText, Lock, Calendar, Maximize2, Minimize2, RefreshCw } from "lucide-react";
 import { DocumentDetailModalProps } from "../props";
 import { DocumentType } from "@/app/api/props";
@@ -17,14 +17,12 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
     isViewingOwnDocuments,
 }) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState<number>(0);
 
     // Reset iframe states when document changes
     useEffect(() => {
         if (document?.documentUrl) {
-            setLoading(true);
             setError(null);
             setRetryCount(0);
         }
@@ -41,7 +39,6 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
 
     const handleRetry = () => {
         setRetryCount((prev) => prev + 1);
-        setLoading(true);
         setError(null);
     };
 
@@ -152,17 +149,8 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
         return (
             <div
                 className="relative border rounded bg-gray-50"
-                style={{ height: isFullscreen ? "calc(100vh - 120px)" : "400px" }}
+                style={{ height: isFullscreen ? "calc(100vh - 160px)" : "400px" }}
             >
-                {loading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10">
-                        <Spin size="large" />
-                        <div className="ml-3">
-                            <Text className="text-sm text-gray-600">Loading document...</Text>
-                        </div>
-                    </div>
-                )}
-
                 {error || !isValidUrl ? (
                     <div className="flex items-center justify-center h-full p-4">
                         <Alert
@@ -195,13 +183,11 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
                         />
                     </div>
                 ) : (
-                    <div className="h-full">
-                        <iframe
-                            src={document.documentUrl}
-                            className="w-full h-full border-0"
-                            title={document.documentName}
-                        />
-                    </div>
+                    <iframe
+                        src={document.documentUrl}
+                        className="w-full h-full"
+                        title={document.documentName}
+                    />
                 )}
             </div>
         );
@@ -216,40 +202,14 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
                 onCancel={() => setIsFullscreen(false)}
                 footer={null}
                 width="100vw"
-                style={{
-                    maxWidth: "none",
-                    margin: 0,
-                    padding: 0,
-                    top: 0,
-                    left: 0,
-                    height: "100vh",
-                }}
-                styles={{
-                    body: {
-                        padding: 0,
-                        height: "100vh",
-                        display: "flex",
-                        flexDirection: "column",
-                    },
-                    content: {
-                        height: "100vh",
-                        display: "flex",
-                        flexDirection: "column",
-                    },
-                    mask: {
-                        backgroundColor: "rgba(0, 0, 0, 0.8)",
-                    },
-                }}
-                centered={false}
+                height="100vh"
+                centered={true}
                 destroyOnHidden={true}
-                maskClosable={true}
-                keyboard={true}
-                zIndex={1100}
-                getContainer={false}
+                closable={false}
             >
-                <div className="h-full flex flex-col bg-white">
+                <div className="flex flex-col bg-white">
                     {/* Fullscreen Header */}
-                    <div className="flex items-center justify-between p-4 border-b bg-white">
+                    <div className="flex flex-col sm:flex-row gap-3 justify-between p-4 border-b bg-white">
                         <div className="flex items-center gap-3">
                             <FileText className="w-6 h-6 text-blue-500" />
                             <div>
@@ -261,7 +221,7 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
                                 </Tag>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div>
                             {error && retryCount < 2 && (
                                 <Button
                                     icon={<RefreshCw className="w-4 h-4" />}
@@ -282,7 +242,7 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
                     </div>
 
                     {/* Fullscreen Document Viewer */}
-                    <div className="flex-1 p-4">{renderDocumentViewer()}</div>
+                    {renderDocumentViewer()}
                 </div>
             </Modal>
         );
@@ -307,6 +267,7 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
                     Close
                 </Button>,
             ]}
+            centered
         >
             <div className="py-2">
                 {/* Header with Document Name and Type */}

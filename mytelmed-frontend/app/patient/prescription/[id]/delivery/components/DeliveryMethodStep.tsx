@@ -90,22 +90,22 @@ export default function DeliveryMethodStep() {
     }) => (
         <Card
             className={`cursor-pointer transition-all duration-200 h-full ${selectedMethod === option
-                ? 'border-green-500 shadow-lg bg-green-50'
-                : 'border-gray-200 hover:border-green-300 hover:shadow-md'
+                ? 'border-blue-500 shadow-lg bg-blue-50'
+                : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
                 }`}
             onClick={() => handleMethodChange(option)}
         >
             <div className="text-center space-y-4">
                 {/* Icon */}
-                <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center ${selectedMethod === option ? 'bg-green-100' : 'bg-gray-100'
+                <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center ${selectedMethod === option ? 'bg-blue-100' : 'bg-gray-100'
                     }`}>
                     {React.cloneElement(icon as React.ReactElement, {
-                        className: `w-8 h-8 ${selectedMethod === option ? 'text-green-600' : 'text-gray-600'}`
+                        className: `w-8 h-8 ${selectedMethod === option ? 'text-blue-600' : 'text-gray-600'}`
                     })}
                 </div>
 
                 {/* Title */}
-                <Title level={4} className={`mb-2 ${selectedMethod === option ? 'text-green-800' : 'text-gray-800'
+                <Title level={4} className={`mb-2 ${selectedMethod === option ? 'text-blue-800' : 'text-gray-800'
                     }`}>
                     {title}
                 </Title>
@@ -119,7 +119,7 @@ export default function DeliveryMethodStep() {
                 <div className="space-y-2">
                     {features.map((feature, index) => (
                         <div key={index} className="flex items-center space-x-2 text-sm text-gray-700">
-                            <div className={`w-2 h-2 rounded-full ${selectedMethod === option ? 'bg-green-500' : 'bg-gray-400'
+                            <div className={`w-2 h-2 rounded-full ${selectedMethod === option ? 'bg-blue-500' : 'bg-gray-400'
                                 }`} />
                             <span>{feature}</span>
                         </div>
@@ -129,7 +129,7 @@ export default function DeliveryMethodStep() {
                 {/* Highlight */}
                 {highlight && (
                     <div className={`mt-4 p-2 rounded-lg text-sm font-medium ${selectedMethod === option
-                        ? 'bg-green-100 text-green-800'
+                        ? 'bg-blue-100 text-blue-800'
                         : 'bg-blue-100 text-blue-800'
                         }`}>
                         {highlight}
@@ -142,7 +142,7 @@ export default function DeliveryMethodStep() {
                         checked={selectedMethod === option}
                         onChange={() => handleMethodChange(option)}
                     >
-                        <span className={selectedMethod === option ? 'text-green-700 font-medium' : 'text-gray-700'}>
+                        <span className={selectedMethod === option ? 'text-blue-700 font-medium' : 'text-gray-700'}>
                             Select this option
                         </span>
                     </Radio>
@@ -248,7 +248,7 @@ export default function DeliveryMethodStep() {
                         loading={creatingDelivery}
                         disabled={!selectedMethod}
                         icon={<ArrowRight className="w-4 h-4" />}
-                        className="bg-green-600 border-green-600 hover:bg-green-700"
+                        className="bg-blue-600 border-blue-600 hover:bg-blue-700"
                     >
                         {selectedMethod === DeliveryMethodOption.PICKUP
                             ? (creatingDelivery ? "Confirming Pickup..." : "Confirm Pickup")

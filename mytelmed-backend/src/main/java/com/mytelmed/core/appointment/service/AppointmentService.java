@@ -32,6 +32,8 @@ import com.mytelmed.core.timeslot.entity.TimeSlot;
 import com.mytelmed.core.timeslot.service.TimeSlotService;
 import com.mytelmed.core.videocall.entity.VideoCall;
 import com.mytelmed.core.videocall.repository.VideoCallRepository;
+import com.mytelmed.infrastructure.stream.service.StreamService;
+import io.getstream.models.CallResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -67,6 +69,7 @@ public class AppointmentService {
     private final PaymentRefundService paymentRefundService;
     private final FamilyMemberPermissionService familyMemberPermissionService;
     private final ReferralRepository referralRepository;
+    private final StreamService streamService;
 
     public AppointmentService(AppointmentRepository appointmentRepository,
             AppointmentDocumentRepository appointmentDocumentRepository,
@@ -81,7 +84,7 @@ public class AppointmentService {
             AppointmentStateMachine appointmentStateMachine,
             PaymentRefundService paymentRefundService,
             FamilyMemberPermissionService familyMemberPermissionService,
-            ReferralRepository referralRepository) {
+            ReferralRepository referralRepository, StreamService streamService) {
         this.appointmentRepository = appointmentRepository;
         this.appointmentDocumentRepository = appointmentDocumentRepository;
         this.timeSlotService = timeSlotService;
@@ -96,6 +99,7 @@ public class AppointmentService {
         this.paymentRefundService = paymentRefundService;
         this.familyMemberPermissionService = familyMemberPermissionService;
         this.referralRepository = referralRepository;
+        this.streamService = streamService;
     }
 
     @Transactional(readOnly = true)
@@ -261,14 +265,36 @@ public class AppointmentService {
             // Save appointment
             appointment = appointmentRepository.save(appointment);
 
-            // Create video call placeholder for VIRTUAL appointments only
+            // Create video call and Stream call for VIRTUAL appointments only
             if (appointment.requiresVideoCall()) {
-                VideoCall videoCall = VideoCall.builder()
-                        .appointment(appointment)
-                        .isActive(false)
-                        .build();
-                videoCallRepository.save(videoCall);
-                log.info("Created video call placeholder for virtual appointment: {}", appointment.getId());
+                try {
+                    // Create Stream call using StreamService
+                    CallResponse callResponse = streamService.createCall(appointment,
+                            account.getId().toString());
+
+                    // Create video call with Stream call information
+                    VideoCall videoCall = VideoCall.builder()
+                            .appointment(appointment)
+                            .streamCallId(callResponse.getId())
+                            .streamCallType(callResponse.getType())
+                            .isActive(true)
+                            .build();
+                    videoCallRepository.save(videoCall);
+
+                    log.info("Created video call and Stream call for virtual appointment: {} with Stream call ID: {}",
+                            appointment.getId(), callResponse.getId());
+                } catch (Exception streamEx) {
+                    log.error("Failed to create Stream call for virtual appointment: {}", appointment.getId(),
+                            streamEx);
+                    // Create placeholder video call without Stream call as fallback
+                    VideoCall videoCall = VideoCall.builder()
+                            .appointment(appointment)
+                            .isActive(false)
+                            .build();
+                    videoCallRepository.save(videoCall);
+                    log.warn("Created video call placeholder without Stream call for appointment: {}",
+                            appointment.getId());
+                }
             }
 
             // Attach document to appointment if any (with permission validation)

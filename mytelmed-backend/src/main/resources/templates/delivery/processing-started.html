@@ -58,29 +58,25 @@
                 <p class="info">Your medication is now being processed by the pharmacist!</p>
 
                 <p>
-                    Prescription <strong th:text="${prescriptionNumber}">PR-123456</strong> is currently being prepared
-                    at <strong th:text="${facilityName}">Healthcare Facility</strong>.
+                    Prescription <strong th:text="${prescriptionNumber}">PR-123456</strong> is currently being prepared at
+                    <strong th:text="${facilityName}">Healthcare Facility</strong>.
                 </p>
 
                 <p><strong>Delivery Method:</strong> <span th:text="${deliveryMethod}">Home Delivery</span></p>
 
                 <div th:if="${deliveryMethod == 'HOME_DELIVERY'}">
                     <p>
-                        Once your medication is ready, it will be dispatched for home delivery. You will receive
-                        tracking information when it's out for delivery.
+                        Once your medication is ready, it will be dispatched for home delivery. You will receive tracking
+                        information when it's out for delivery.
                     </p>
                 </div>
 
                 <div th:if="${deliveryMethod == 'PICKUP'}">
                     <p>
-                        Once your medication is ready, you will receive a notification that it's available for pickup at
-                        the facility.
+                        Once your medication is ready, you will receive a notification that it's available for pickup at the
+                        facility.
                     </p>
                 </div>
-
-                <p>
-                    <a th:href="${uiHost}/patient/medical-records" class="button">View Medical Records</a>
-                </p>
 
                 <p>Thank you for your patience.</p>
 

@@ -11,13 +11,10 @@ import io.getstream.models.CallResponse;
 import io.getstream.models.ChannelInput;
 import io.getstream.models.ChannelMember;
 import io.getstream.models.ChannelResponse;
-import io.getstream.models.CreateExternalStorageRequest;
 import io.getstream.models.GetCallResponse;
 import io.getstream.models.GetOrCreateCallRequest;
 import io.getstream.models.GetOrCreateChannelRequest;
 import io.getstream.models.MemberRequest;
-import io.getstream.models.S3Request;
-import io.getstream.models.UpdateCallTypeRequest;
 import io.getstream.models.UpdateUsersRequest;
 import io.getstream.models.UserRequest;
 import io.getstream.models.framework.StreamResponse;
@@ -244,34 +241,6 @@ public class StreamService {
         } catch (Exception e) {
             log.error("Unexpected error getting participant count for call {}: {}", callId, e.getMessage());
             return 0;
-        }
-    }
-
-    public void createRecordingS3Storage() throws StreamException {
-        try {
-            client.checkExternalStorage(externalStorageName).execute();
-        } catch (StreamException e) {
-            S3Request s3Request = S3Request.builder()
-                    .s3Region(awsRegion)
-                    .s3APIKey(awsAccessKey)
-                    .s3Secret(awsSecret)
-                    .build();
-
-            CreateExternalStorageRequest externalStorageRequest = CreateExternalStorageRequest.builder()
-                    .bucket(bucketName)
-                    .name(externalStorageName)
-                    .storageType("s3")
-                    .path("/recording")
-                    .awsS3(s3Request)
-                    .build();
-
-            client.createExternalStorage(externalStorageRequest).execute();
-
-            UpdateCallTypeRequest updateCallTypeRequest = UpdateCallTypeRequest.builder()
-                    .externalStorage(externalStorageName)
-                    .build();
-
-            client.video().updateCallType("development", updateCallTypeRequest).execute();
         }
     }
 }

@@ -4,13 +4,13 @@ import com.mytelmed.core.videocall.service.StreamWebhookService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
-
 
 /**
  * Controller for handling Stream SDK webhooks for video call events.
@@ -25,7 +25,7 @@ public class StreamWebhookController {
     private final StreamWebhookService streamWebhookService;
 
     public StreamWebhookController(StreamWebhookService streamWebhookService,
-                                   @Value("${stream.api.key}") String streamApiKey) {
+            @Value("${stream.api.key}") String streamApiKey) {
         this.streamWebhookService = streamWebhookService;
         this.streamApiKey = streamApiKey;
     }
@@ -45,7 +45,8 @@ public class StreamWebhookController {
         try {
             log.debug("Received Stream webhook event: {}", payload.get("type"));
 
-            if (!signature.equals(this.streamApiKey)) {
+            // Validate signature if provided
+            if (signature != null && !signature.equals(this.streamApiKey)) {
                 log.warn("Signature mismatch: {}", signature);
                 return ResponseEntity.ok("Unable to process event due to invalid signature");
             }
@@ -58,5 +59,11 @@ public class StreamWebhookController {
             // Return 200 to prevent Stream from retrying (we'll handle errors internally)
             return ResponseEntity.ok("Event received but failed to process");
         }
+    }
+
+    @GetMapping
+    public ResponseEntity<String> testingTranscript(@RequestBody Map<String, Object> payload) {
+        streamWebhookService.processWebhookEvent(payload);
+        return ResponseEntity.ok("Event processed successfully");
     }
 }

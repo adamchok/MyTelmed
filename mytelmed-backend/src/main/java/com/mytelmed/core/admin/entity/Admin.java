@@ -63,6 +63,9 @@ public class Admin {
     @Column(name = "phone", nullable = false, unique = true)
     private String phone;
 
+    @Column(name = "hashed_phone", nullable = false, unique = true, length = 64)
+    private String hashedPhone;
+
     @OneToOne
     @JoinColumn(name = "image_id")
     private Image profileImage;
@@ -80,5 +83,6 @@ public class Admin {
     protected void beforeSave() {
         if (email != null) hashedEmail = HashUtil.sha256(email);
         if (nric != null) hashedNric = HashUtil.sha256(nric);
+        if (phone != null) hashedPhone = HashUtil.sha256(phone);
     }
 }

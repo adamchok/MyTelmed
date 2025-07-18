@@ -84,7 +84,7 @@ const TutorialManagement = () => {
 
     useEffect(() => {
         loadTutorials();
-    }, [pagination.pageSize, pagination.current]);
+    }, [pagination.current, pagination.pageSize]);
 
     // Filter and search effect
     useEffect(() => {

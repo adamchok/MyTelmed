@@ -1,0 +1,18 @@
+.custom-patient-menu .ant-menu-item-selected,
+.custom-patient-menu .ant-menu-item-active,
+.custom-patient-menu .ant-menu-item:hover {
+    background-color: #e3f0ff !important;
+}
+
+.custom-patient-menu .ant-menu-item-selected > .ant-menu-title-content,
+.custom-patient-menu .ant-menu-item-active > .ant-menu-title-content,
+.custom-patient-menu .ant-menu-item:hover > .ant-menu-title-content,
+.custom-patient-menu .ant-menu-item-selected .ant-menu-item-icon,
+.custom-patient-menu .ant-menu-item-active .ant-menu-item-icon,
+.custom-patient-menu .ant-menu-item:hover .ant-menu-item-icon {
+    color: #c2410c !important;
+}
+
+.custom-patient-menu .ant-menu-item {
+    color: #fff !important;
+}

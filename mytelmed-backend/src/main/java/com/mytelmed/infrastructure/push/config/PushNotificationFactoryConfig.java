@@ -3,6 +3,7 @@ package com.mytelmed.infrastructure.push.config;
 import com.mytelmed.infrastructure.push.factory.AbstractPushNotificationFactory;
 import com.mytelmed.infrastructure.push.factory.appointment.AppointmentPushNotificationFactory;
 import com.mytelmed.infrastructure.push.factory.delivery.DeliveryPushNotificationFactory;
+import com.mytelmed.infrastructure.push.factory.payment.PaymentPushNotificationFactory;
 import com.mytelmed.infrastructure.push.factory.prescription.PrescriptionPushNotificationFactory;
 import com.mytelmed.infrastructure.push.strategy.PushNotificationStrategy;
 import lombok.extern.slf4j.Slf4j;
@@ -14,18 +15,19 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-
 @Slf4j
 @Configuration
 public class PushNotificationFactoryConfig {
     @Bean
-    public AppointmentPushNotificationFactory appointmentPushNotificationFactory(List<PushNotificationStrategy> strategies) {
+    public AppointmentPushNotificationFactory appointmentPushNotificationFactory(
+            List<PushNotificationStrategy> strategies) {
         log.info("Registering AppointmentPushNotificationFactory with {} total strategies", strategies.size());
         return new AppointmentPushNotificationFactory(strategies);
     }
 
     @Bean
-    public PrescriptionPushNotificationFactory prescriptionPushNotificationFactory(List<PushNotificationStrategy> strategies) {
+    public PrescriptionPushNotificationFactory prescriptionPushNotificationFactory(
+            List<PushNotificationStrategy> strategies) {
         log.info("Registering PrescriptionPushNotificationFactory with {} total strategies", strategies.size());
         return new PrescriptionPushNotificationFactory(strategies);
     }
@@ -37,8 +39,15 @@ public class PushNotificationFactoryConfig {
     }
 
     @Bean
+    public PaymentPushNotificationFactory paymentPushNotificationFactory(List<PushNotificationStrategy> strategies) {
+        log.info("Registering PaymentPushNotificationFactory with {} total strategies", strategies.size());
+        return new PaymentPushNotificationFactory(strategies);
+    }
+
+    @Bean
     @Primary
-    public Map<String, AbstractPushNotificationFactory> pushFactoryRegistry(List<AbstractPushNotificationFactory> factories) {
+    public Map<String, AbstractPushNotificationFactory> pushFactoryRegistry(
+            List<AbstractPushNotificationFactory> factories) {
         Map<String, AbstractPushNotificationFactory> registry = factories.stream()
                 .collect(Collectors.toMap(
                         factory -> factory.getClass().getSimpleName(),

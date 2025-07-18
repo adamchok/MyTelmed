@@ -26,14 +26,14 @@ import {
     CheckCircle,
     Package,
     Truck,
-    CreditCard
+    CreditCard,
+    ArrowLeft
 } from "lucide-react";
 
 import PrescriptionApi from "@/app/api/prescription";
 import { PrescriptionDto, PrescriptionStatus } from "@/app/api/prescription/props";
 import PaymentModal from "@/app/components/PaymentModal/PaymentModal";
 import dayjs from "dayjs";
-import BackButton from "@/app/components/BackButton/BackButton";
 import MedicationCard from "../components/MedicationCard";
 
 const { Title, Text } = Typography;
@@ -77,6 +77,10 @@ const PrescriptionDetailPage = () => {
             fetchPrescriptionDetails();
         }
     }, [prescriptionId]);
+
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
 
     // Handle delivery flow navigation
     const handleChooseDeliveryMethod = () => {
@@ -205,7 +209,14 @@ const PrescriptionDetailPage = () => {
     if (error || !prescription) {
         return (
             <div className="container mx-auto px-4 py-6">
-                <BackButton backLink="/patient/prescription" />
+                <Button
+                    type="text"
+                    icon={<ArrowLeft className="w-4 h-4" />}
+                    onClick={() => router.push("/patient/prescription")}
+                    className="mb-4 px-0"
+                >
+                    Back to Prescriptions
+                </Button>
                 <Alert
                     message="Error Loading Prescription"
                     description={error || "Prescription not found"}
@@ -227,8 +238,15 @@ const PrescriptionDetailPage = () => {
     const isActionRequired = prescription.status === PrescriptionStatus.CREATED && !delivery;
 
     return (
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-            <BackButton backLink="/patient/prescription" />
+        <div className="container mx-auto">
+            <Button
+                type="text"
+                icon={<ArrowLeft className="w-4 h-4" />}
+                onClick={() => router.push("/patient/prescription")}
+                className="px-0"
+            >
+                Back to Prescriptions
+            </Button>
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6">
                 <div className="mb-3 sm:mb-0">
