@@ -151,6 +151,8 @@ export default function TimeSlotSelectionStep() {
     };
 
     const handlePrevious = () => {
+        // Clear selected time slot when going back to doctor selection
+        dispatch(setSelectedTimeSlot(null));
         dispatch(previousStep());
     };
 
@@ -214,7 +216,7 @@ export default function TimeSlotSelectionStep() {
                 <div className="flex items-center space-x-4">
                     <Avatar src={selectedDoctor?.profileImageUrl} icon={<User className="w-6 h-6" />} size={50} />
                     <div>
-                        <Title level={4} className="mb-1">
+                        <Title level={4} className="mb-1 mt-0">
                             Dr. {selectedDoctor?.name}
                         </Title>
                         <Text className="text-gray-600">{selectedDoctor?.facility.name}</Text>
@@ -298,11 +300,10 @@ export default function TimeSlotSelectionStep() {
                                 <Card
                                     hoverable
                                     size="small"
-                                    className={`cursor-pointer transition-all duration-200 ${
-                                        selectedTimeSlot?.id === slot.id
-                                            ? "border-blue-500 bg-blue-50"
-                                            : "border-gray-200 hover:border-blue-300"
-                                    } ${isTimeSlotPast(slot.startTime) ? "opacity-50 cursor-not-allowed" : ""}`}
+                                    className={`cursor-pointer transition-all duration-200 ${selectedTimeSlot?.id === slot.id
+                                        ? "border-blue-500 bg-blue-50"
+                                        : "border-gray-200 hover:border-blue-300"
+                                        } ${isTimeSlotPast(slot.startTime) ? "opacity-50 cursor-not-allowed" : ""}`}
                                     onClick={() => !isTimeSlotPast(slot.startTime) && handleSelectTimeSlot(slot)}
                                 >
                                     <div className="text-center space-y-2">
@@ -328,40 +329,44 @@ export default function TimeSlotSelectionStep() {
                 )}
             </Card>
 
-            {/* Selected Time Slot Info */}
-            {selectedTimeSlot && (
-                <Card className="shadow-lg border-l-4 border-l-green-500">
-                    <div className="flex items-center justify-between">
+            {/* Navigation & Selected Time Slot Info */}
+            <Card className="shadow-lg border-l-4 border-l-blue-500">
+                <div className={`flex flex-col md:flex-row gap-3 items-center ${selectedTimeSlot ? 'justify-between' : 'justify-end'}`}>
+                    {selectedTimeSlot && (
                         <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2">
-                                <Clock className="w-5 h-5 text-green-600" />
+                            <div className="flex flex-col gap-2 md:flex-row items-center space-x-2">
+                                <Clock className="w-8 h-8 text-blue-600" />
                                 <div>
-                                    <Text className="font-medium">
-                                        Selected Time: {formatTime(selectedTimeSlot.startTime)}
+                                    <Title level={4} className="mb-0 mt-0">
+                                        {dayjs(selectedTimeSlot.startTime).format('dddd, MMMM D, YYYY')}
+                                    </Title>
+                                    <Text className="text-blue-700 font-semibold text-base">
+                                        {formatTime(selectedTimeSlot.startTime)}
                                     </Text>
-                                    <br />
-                                    <Text className="text-gray-600 text-sm">
+                                    <Text className="text-gray-600 text-sm block">
                                         {selectedTimeSlot.durationMinutes} minutes • {selectedTimeSlot.consultationMode}
                                     </Text>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex space-x-2">
-                            <Button onClick={handlePrevious} icon={<ArrowLeft className="w-4 h-4" />}>
-                                Previous
-                            </Button>
+                    )}
+                    <div className="flex space-x-2">
+                        <Button onClick={handlePrevious} icon={<ArrowLeft className="w-4 h-4" />}>
+                            Previous
+                        </Button>
+                        {selectedTimeSlot && (
                             <Button
                                 type="primary"
-                                size="large"
+                                size="middle"
                                 onClick={handleNext}
-                                icon={<ArrowRight className="w-4 h-4" />}
                             >
-                                Next: Add Details
+                                <ArrowRight className="w-4 h-4" />
+                                Add Details
                             </Button>
-                        </div>
+                        )}
                     </div>
-                </Card>
-            )}
+                </div>
+            </Card>
         </div>
     );
 }

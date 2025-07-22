@@ -154,11 +154,10 @@ const MeetingSetup = ({ setIsSetupComplete }: MeetingSetupProps) => {
                   size="large"
                   icon={<VideoCameraOutlined />}
                   onClick={() => setIsCameraOn(!isCameraOn)}
-                  className={`shadow-lg ${
-                    !isCameraOn
-                      ? "bg-red-500 border-red-500 text-white hover:bg-red-600"
-                      : ""
-                  }`}
+                  className={`shadow-lg ${!isCameraOn
+                    ? "bg-red-500 border-red-500 text-white hover:bg-red-600"
+                    : ""
+                    }`}
                 />
               </Tooltip>
 
@@ -171,11 +170,10 @@ const MeetingSetup = ({ setIsSetupComplete }: MeetingSetupProps) => {
                   size="large"
                   icon={<AudioOutlined />}
                   onClick={() => setIsMicOn(!isMicOn)}
-                  className={`shadow-lg ${
-                    !isMicOn
-                      ? "bg-red-500 border-red-500 text-white hover:bg-red-600"
-                      : ""
-                  }`}
+                  className={`shadow-lg ${!isMicOn
+                    ? "bg-red-500 border-red-500 text-white hover:bg-red-600"
+                    : ""
+                    }`}
                 />
               </Tooltip>
 
@@ -320,7 +318,7 @@ const MeetingSetup = ({ setIsSetupComplete }: MeetingSetupProps) => {
         {/* Join Button */}
         <Button
           type="primary"
-          size="large"
+          size="middle"
           block
           loading={isJoining}
           onClick={handleJoinMeeting}

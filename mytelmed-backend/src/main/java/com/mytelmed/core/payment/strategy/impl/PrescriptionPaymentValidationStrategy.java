@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-
 /**
  * Payment validation strategy for prescriptions/deliveries.
  * Handles business rules specific to medication delivery payments.
@@ -33,9 +32,9 @@ public class PrescriptionPaymentValidationStrategy implements PaymentValidationS
     private final BigDecimal deliveryFee;
 
     public PrescriptionPaymentValidationStrategy(PrescriptionService prescriptionService,
-                                                 MedicationDeliveryRepository deliveryRepository,
-                                                 FamilyMemberPermissionService familyPermissionService,
-                                                 @Value("${mytelmed.prescription.delivery.fee}") BigDecimal deliveryFee) {
+            MedicationDeliveryRepository deliveryRepository,
+            FamilyMemberPermissionService familyPermissionService,
+            @Value("${mytelmed.prescription.delivery.fee}") BigDecimal deliveryFee) {
         this.prescriptionService = prescriptionService;
         this.deliveryRepository = deliveryRepository;
         this.familyPermissionService = familyPermissionService;
@@ -46,11 +45,13 @@ public class PrescriptionPaymentValidationStrategy implements PaymentValidationS
     public boolean isPaymentRequired(UUID prescriptionId) throws AppException {
         log.debug("Checking payment requirement for prescription: {}", prescriptionId);
 
-        // Check if there's a delivery associated with this prescription
-        Optional<MedicationDelivery> deliveryOpt = deliveryRepository.findByPrescriptionId(prescriptionId);
+        // Check if there's an active delivery associated with this prescription
+        // (OneToMany relationship)
+        Optional<MedicationDelivery> deliveryOpt = deliveryRepository
+                .findLatestNonCancelledByPrescriptionId(prescriptionId);
 
         if (deliveryOpt.isEmpty()) {
-            log.debug("No delivery found for prescription {}, payment not required", prescriptionId);
+            log.debug("No active delivery found for prescription {}, payment not required", prescriptionId);
             return false;
         }
 
@@ -82,7 +83,8 @@ public class PrescriptionPaymentValidationStrategy implements PaymentValidationS
 
         // Check if the prescription belongs to one of the authorized patients
         if (!authorizedPatientIds.contains(patientId)) {
-            log.debug("Account {} not authorized for patient {} (prescription belongs to patient not in authorized list)",
+            log.debug(
+                    "Account {} not authorized for patient {} (prescription belongs to patient not in authorized list)",
                     account.getId(), patientId);
             return false;
         }

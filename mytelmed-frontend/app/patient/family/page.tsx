@@ -85,10 +85,16 @@ const FamilyAccessPage = () => {
     // Handle invite family member
     const handleInviteFamilyMember = async (request: CreateFamilyMemberRequest) => {
         try {
-            await FamilyMemberApi.inviteFamilyMember(request);
-            message.success("Family member invited successfully");
-            setIsAddModalVisible(false);
-            fetchFamilyData();
+            const response = await FamilyMemberApi.inviteFamilyMember(request);
+            const responseData = response.data;
+
+            if (responseData.isSuccess) {
+                message.success("Family member invited successfully");
+                setIsAddModalVisible(false);
+                fetchFamilyData();
+            } else {
+                message.error(responseData.message);
+            }
         } catch (err: any) {
             message.error(err.response?.data?.message || "Failed to invite family member");
         }
@@ -97,9 +103,15 @@ const FamilyAccessPage = () => {
     // Handle delete family member
     const handleDeleteFamilyMember = async (memberId: string) => {
         try {
-            await FamilyMemberApi.deleteFamilyMember(memberId);
-            message.success("Family member removed successfully");
-            fetchFamilyData();
+            const response = await FamilyMemberApi.deleteFamilyMember(memberId);
+            const responseData = response.data;
+
+            if (responseData.isSuccess) {
+                message.success("Family member removed successfully");
+                fetchFamilyData();
+            } else {
+                message.error(responseData.message);
+            }
         } catch (err: any) {
             message.error(err.response?.data?.message || "Failed to remove family member");
         }
@@ -108,11 +120,17 @@ const FamilyAccessPage = () => {
     // Handle update permissions
     const handleUpdatePermissions = async (memberId: string, permissions: UpdateFamilyPermissionsRequest) => {
         try {
-            await FamilyMemberPermissionApi.updatePermissions(memberId, permissions);
-            message.success("Permissions updated successfully");
-            setIsPermissionsModalVisible(false);
-            setSelectedMember(null);
-            fetchFamilyData();
+            const response = await FamilyMemberPermissionApi.updatePermissions(memberId, permissions);
+            const responseData = response.data;
+
+            if (responseData.isSuccess) {
+                message.success("Permissions updated successfully");
+                setIsPermissionsModalVisible(false);
+                setSelectedMember(null);
+                fetchFamilyData();
+            } else {
+                message.error(responseData.message);
+            }
         } catch (err: any) {
             message.error(err.response?.data?.message || "Failed to update permissions");
         }
@@ -121,9 +139,15 @@ const FamilyAccessPage = () => {
     // Handle confirm invitation
     const handleConfirmInvitation = async (memberId: string) => {
         try {
-            await FamilyMemberApi.confirmFamilyMember(memberId);
-            message.success("Invitation confirmed successfully");
-            fetchFamilyData();
+            const response = await FamilyMemberApi.confirmFamilyMember(memberId);
+            const responseData = response.data;
+
+            if (responseData.isSuccess) {
+                message.success("Invitation confirmed successfully");
+                fetchFamilyData();
+            } else {
+                message.error(responseData.message);
+            }
         } catch (err: any) {
             message.error(err.response?.data?.message || "Failed to confirm invitation");
         }
@@ -132,9 +156,15 @@ const FamilyAccessPage = () => {
     // Handle decline invitation
     const handleDeclineInvitation = async (memberId: string) => {
         try {
-            await FamilyMemberApi.deleteFamilyMember(memberId);
-            message.success("Invitation declined");
-            fetchFamilyData();
+            const response = await FamilyMemberApi.deleteFamilyMember(memberId);
+            const responseData = response.data;
+
+            if (responseData.isSuccess) {
+                message.success("Invitation declined");
+                fetchFamilyData();
+            } else {
+                message.error(responseData.message);
+            }
         } catch (err: any) {
             message.error(err.response?.data?.message || "Failed to decline invitation");
         }
@@ -177,7 +207,7 @@ const FamilyAccessPage = () => {
     }
 
     return (
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto">
             {/* Header */}
             <div className="mb-8">
                 <Title level={2} className="text-gray-800 mb-2 mt-0 text-xl md:text-3xl">
@@ -310,57 +340,55 @@ const FamilyAccessPage = () => {
                                     </div>
 
                                     {familyData.pendingInvitations.length > 0 ? (
-                                        <List
-                                            itemLayout="horizontal"
-                                            dataSource={familyData.pendingInvitations}
-                                            renderItem={(invitation) => (
-                                                <List.Item
-                                                    actions={[
-                                                        <Button
-                                                            key="accept"
-                                                            type="primary"
-                                                            icon={<Check className="w-4 h-4" />}
-                                                            onClick={() => handleConfirmInvitation(invitation.id)}
-                                                        >
-                                                            Accept
-                                                        </Button>,
-                                                        <Button
-                                                            key="decline"
-                                                            danger
-                                                            icon={<X className="w-4 h-4" />}
-                                                            onClick={() => handleDeclineInvitation(invitation.id)}
-                                                        >
-                                                            Decline
-                                                        </Button>,
-                                                    ]}
-                                                    className="border-b border-gray-100 last:border-b-0"
+                                        <div className="space-y-4">
+                                            {familyData.pendingInvitations.map((invitation) => (
+                                                <Card
+                                                    key={invitation.id}
+                                                    className="shadow-sm hover:shadow-md transition-shadow"
                                                 >
-                                                    <List.Item.Meta
-                                                        title={
-                                                            <div className="flex items-center">
-                                                                <Text strong className="text-gray-800">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                                                                <Text strong className="text-sm sm:text-base text-gray-800 truncate" title={invitation.patient?.name || "Unknown Patient"}>
                                                                     {invitation.patient?.name || "Unknown Patient"}
                                                                 </Text>
-                                                                <Tag color="orange" className="ml-2">
+                                                                <Tag color="orange" className="text-xs self-start sm:self-center">
                                                                     Pending
                                                                 </Tag>
                                                             </div>
-                                                        }
-                                                        description={
-                                                            <div>
-                                                                <Text className="text-gray-600">
+                                                            <div className="space-y-1">
+                                                                <Text className="text-gray-600 text-xs sm:text-sm block">
                                                                     Invited as: {invitation.relationship}
                                                                 </Text>
-                                                                <br />
-                                                                <Text className="text-gray-500 text-sm">
+                                                                <Text className="text-gray-500 text-xs block truncate" title={invitation.patient?.email}>
                                                                     {invitation.patient?.email}
                                                                 </Text>
                                                             </div>
-                                                        }
-                                                    />
-                                                </List.Item>
-                                            )}
-                                        />
+                                                        </div>
+                                                        <div className="flex flex-row sm:flex-col lg:flex-row gap-2">
+                                                            <Button
+                                                                type="primary"
+                                                                icon={<Check className="w-3 h-3 sm:w-4 sm:h-4" />}
+                                                                onClick={() => handleConfirmInvitation(invitation.id)}
+                                                                className="flex-1 sm:flex-none text-sm"
+                                                                size="middle"
+                                                            >
+                                                                Accept
+                                                            </Button>
+                                                            <Button
+                                                                danger
+                                                                icon={<X className="w-3 h-3 sm:w-4 sm:h-4" />}
+                                                                onClick={() => handleDeclineInvitation(invitation.id)}
+                                                                className="flex-1 sm:flex-none text-sm"
+                                                                size="middle"
+                                                            >
+                                                                Decline
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </Card>
+                                            ))}
+                                        </div>
                                     ) : (
                                         <Empty
                                             image={Empty.PRESENTED_IMAGE_SIMPLE}

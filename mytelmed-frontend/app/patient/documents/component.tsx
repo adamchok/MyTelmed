@@ -226,7 +226,7 @@ const MedicalRecordsComponent: React.FC<MedicalRecordsComponentProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-4">
             <div>
                 <Title level={2} className="my-0 text-blue-900 text-xl sm:text-2xl lg:text-3xl">
-                    Medical Records
+                    Appointment Documents
                 </Title>
                 <Text className="text-gray-600 text-sm sm:text-base">
                     {getSelectedPatientName() === "You"
@@ -367,7 +367,7 @@ const MedicalRecordsComponent: React.FC<MedicalRecordsComponentProps> = ({
                             </Text>
                             <span className="text-red-500 mr-2">*</span>
                             <Tooltip
-                                title="You can only view documents for family members who have granted you 'View Medical Records' permission."
+                                title="You can only view documents for family members who have granted you 'View Appointment Documents' permission."
                                 placement="top"
                             >
                                 <Info className="text-blue-500 cursor-help w-4 h-4" />

@@ -222,11 +222,10 @@ export default function DoctorSelectionStep() {
                                 <Col xs={24} md={12} lg={8} key={doctor.id}>
                                     <Card
                                         hoverable
-                                        className={`cursor-pointer transition-all duration-200 ${
-                                            selectedDoctor?.id === doctor.id
-                                                ? "border-blue-500 bg-blue-50"
-                                                : "border-gray-200 hover:border-blue-300"
-                                        }`}
+                                        className={`cursor-pointer transition-all duration-200 ${selectedDoctor?.id === doctor.id
+                                            ? "border-blue-500 bg-blue-50"
+                                            : "border-gray-200 hover:border-blue-300"
+                                            }`}
                                         onClick={() => handleSelectDoctor(doctor)}
                                     >
                                         <div className="flex flex-col items-center text-center space-y-3">
@@ -237,7 +236,7 @@ export default function DoctorSelectionStep() {
                                                 className="border-2 border-blue-100"
                                             />
                                             <div>
-                                                <Title level={4} className="mb-1">
+                                                <Title level={4} className="mb-1 mt-0">
                                                     {doctor.name}
                                                 </Title>
                                                 <Text className="text-gray-600 text-sm">{doctor.facility.name}</Text>
@@ -285,15 +284,15 @@ export default function DoctorSelectionStep() {
             {/* Selected Doctor Info */}
             {selectedDoctor && (
                 <Card className="shadow-lg border-l-4 border-l-blue-500">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
+                    <div className="flex flex-col gap-4 sm:flex-row items-center justify-between">
+                        <div className="flex flex-col gap-2 sm:flex-row items-center space-x-4">
                             <Avatar
                                 src={selectedDoctor.profileImageUrl}
                                 icon={<User className="w-6 h-6" />}
                                 size={60}
                             />
                             <div>
-                                <Title level={4} className="mb-1">
+                                <Title level={4} className="mb-1 mt-0">
                                     Selected: Dr. {selectedDoctor.name}
                                 </Title>
                                 <Text className="text-gray-600">{selectedDoctor.facility.name}</Text>
@@ -301,11 +300,11 @@ export default function DoctorSelectionStep() {
                         </div>
                         <Button
                             type="primary"
-                            size="large"
+                            size="middle"
                             onClick={handleNext}
-                            icon={<ArrowRight className="w-4 h-4" />}
                         >
-                            Next: Choose Time
+                            <ArrowRight className="w-4 h-4" />
+                            Choose Time
                         </Button>
                     </div>
                 </Card>

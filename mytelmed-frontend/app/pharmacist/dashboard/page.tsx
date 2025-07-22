@@ -9,7 +9,6 @@ import {
     Button,
     Space,
     Alert,
-    Progress,
     Table,
     Tag,
     Statistic,
@@ -25,7 +24,6 @@ import {
     TrendingUp,
     FileText,
     Truck,
-    BarChart3,
     ArrowRight
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -315,7 +313,7 @@ export default function PharmacistDashboard() {
     }
 
     return (
-        <div className="p-4 mx-auto min-h-screen">
+        <div className="container mx-auto">
             {/* Header */}
             <div className="mb-6">
                 <Title level={2} className="mb-2 mt-0">
@@ -428,13 +426,6 @@ export default function PharmacistDashboard() {
                             >
                                 View All Prescriptions
                             </Button>
-                            <Button
-                                block
-                                icon={<BarChart3 />}
-                                onClick={() => message.info('Analytics feature coming soon!')}
-                            >
-                                View Analytics
-                            </Button>
                         </Space>
                     </Card>
                 </Col>
@@ -483,58 +474,7 @@ export default function PharmacistDashboard() {
 
             {/* Performance Overview */}
             <Row gutter={[24, 24]} className="mt-6">
-                <Col xs={24} lg={12}>
-                    <Card
-                        title={
-                            <span className="flex items-center">
-                                <BarChart3 className="mr-2 text-purple-600" />
-                                Processing Performance
-                            </span>
-                        }
-                        className="shadow-lg"
-                    >
-                        <div className="space-y-4">
-                            <div>
-                                <div className="flex justify-between mb-2">
-                                    <Text>Prescription Processing Rate</Text>
-                                    <Text strong>
-                                        {stats.totalPrescriptions > 0
-                                            ? Math.round(((stats.totalPrescriptions - stats.pendingProcessing) / stats.totalPrescriptions) * 100)
-                                            : 0
-                                        }%
-                                    </Text>
-                                </div>
-                                <Progress
-                                    percent={stats.totalPrescriptions > 0
-                                        ? Math.round(((stats.totalPrescriptions - stats.pendingProcessing) / stats.totalPrescriptions) * 100)
-                                        : 0
-                                    }
-                                    strokeColor="#52c41a"
-                                />
-                            </div>
-                            <div>
-                                <div className="flex justify-between mb-2">
-                                    <Text>Delivery Completion Rate</Text>
-                                    <Text strong>
-                                        {stats.totalDeliveries > 0
-                                            ? Math.round(((stats.totalDeliveries - stats.outForDelivery) / stats.totalDeliveries) * 100)
-                                            : 0
-                                        }%
-                                    </Text>
-                                </div>
-                                <Progress
-                                    percent={stats.totalDeliveries > 0
-                                        ? Math.round(((stats.totalDeliveries - stats.outForDelivery) / stats.totalDeliveries) * 100)
-                                        : 0
-                                    }
-                                    strokeColor="#1890ff"
-                                />
-                            </div>
-                        </div>
-                    </Card>
-                </Col>
-
-                <Col xs={24} lg={12}>
+                <Col xs={24} lg={24}>
                     <Card
                         title={
                             <span className="flex items-center">

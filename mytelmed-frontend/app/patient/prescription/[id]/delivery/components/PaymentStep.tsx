@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Card, Button, Typography, Alert, Spin, message, Row, Col } from "antd";
 import { CreditCard, ArrowLeft, Shield, Clock, MapPin } from "lucide-react";
@@ -13,7 +13,6 @@ import {
     previousStep
 } from "@/lib/reducers/delivery-flow-reducer";
 import DeliveryApi from "@/app/api/delivery";
-import PrescriptionApi from "@/app/api/prescription";
 import PaymentModal from "@/app/components/PaymentModal/PaymentModal";
 
 const { Title, Text } = Typography;
@@ -35,18 +34,46 @@ export default function PaymentStep() {
     const [paymentModalVisible, setPaymentModalVisible] = useState(false);
     const [deliveryCreated, setDeliveryCreated] = useState(false);
 
+    // Use ref to prevent duplicate API calls during React re-renders
+    const deliveryCreationInProgress = useRef(false);
+
     // Create delivery when component mounts
     useEffect(() => {
-        if (!deliveryCreated && !delivery && prescription && selectedAddress) {
+        const shouldCreateDelivery = !deliveryCreated &&
+            !delivery &&
+            prescription?.id &&
+            selectedAddress?.id &&
+            !deliveryCreationInProgress.current;
+
+        if (shouldCreateDelivery) {
+            console.log("[PaymentStep] Creating home delivery for prescription:", prescription?.id);
             createHomeDelivery();
         }
-    }, [deliveryCreated, delivery, prescription, selectedAddress]);
+    }, [deliveryCreated, delivery, prescription?.id, selectedAddress?.id]);
+
+    // Reset delivery creation flag when component unmounts or delivery is created
+    useEffect(() => {
+        return () => {
+            deliveryCreationInProgress.current = false;
+        };
+    }, []);
+
+    // Reset flag when delivery is successfully created
+    useEffect(() => {
+        if (delivery) {
+            deliveryCreationInProgress.current = false;
+        }
+    }, [delivery]);
 
     const createHomeDelivery = async () => {
-        if (!prescription || !selectedAddress) {
-            message.error("Missing required information");
+        if (!prescription || !selectedAddress || deliveryCreationInProgress.current) {
+            console.log("[PaymentStep] Skipping delivery creation - already in progress or missing data");
             return;
         }
+
+        console.log("[PaymentStep] Starting delivery creation API call");
+        // Prevent duplicate calls
+        deliveryCreationInProgress.current = true;
 
         try {
             dispatch(setCreatingDelivery(true));
@@ -61,9 +88,6 @@ export default function PaymentStep() {
                 dispatch(setDelivery(response.data.data));
                 setDeliveryCreated(true);
 
-                // Mark prescription as ready for processing
-                await PrescriptionApi.markAsReadyForProcessing(prescription.id);
-
                 message.success("Delivery details saved successfully!");
             } else {
                 throw new Error("Failed to create delivery");
@@ -71,6 +95,8 @@ export default function PaymentStep() {
         } catch (err: any) {
             const errorMessage = err.response?.data?.message || err.message || "Failed to create delivery";
             message.error(errorMessage);
+            // Reset flag on error so user can retry if needed
+            deliveryCreationInProgress.current = false;
         } finally {
             dispatch(setCreatingDelivery(false));
         }
@@ -311,4 +337,4 @@ export default function PaymentStep() {
             )}
         </div>
     );
-} 
+}

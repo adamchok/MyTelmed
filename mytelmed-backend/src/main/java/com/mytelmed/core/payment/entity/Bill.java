@@ -131,7 +131,7 @@ public class Bill {
      * Checks if this bill is eligible for a full refund
      */
     public boolean isEligibleForFullRefund() {
-        return billingStatus == BillingStatus.PAID
+        return billingStatus == BillingStatus.PAID // Must be paid (not refunded, cancelled, or unpaid)
                 && (refundStatus == null || refundStatus == RefundStatus.NOT_REFUNDED)
                 && refundAmount.compareTo(BigDecimal.ZERO) == 0;
     }
@@ -148,7 +148,7 @@ public class Bill {
      * Gets the remaining refundable amount
      */
     public BigDecimal getRefundableAmount() {
-        if (billingStatus != BillingStatus.PAID) {
+        if (billingStatus != BillingStatus.PAID || billingStatus == BillingStatus.REFUNDED) {
             return BigDecimal.ZERO;
         }
         return amount.subtract(refundAmount);

@@ -23,9 +23,35 @@ import java.util.UUID;
 public interface MedicationDeliveryRepository extends JpaRepository<MedicationDelivery, UUID> {
 
     /**
-     * Find delivery by prescription ID
+     * Find delivery by prescription ID (returns first found - for backward
+     * compatibility)
      */
     Optional<MedicationDelivery> findByPrescriptionId(UUID prescriptionId);
+
+    /**
+     * Find all deliveries by prescription ID ordered by creation date (newest
+     * first)
+     */
+    @Query("SELECT md FROM MedicationDelivery md WHERE md.prescription.id = :prescriptionId ORDER BY md.createdAt DESC")
+    List<MedicationDelivery> findAllByPrescriptionIdOrderByCreatedAtDesc(@Param("prescriptionId") UUID prescriptionId);
+
+    /**
+     * Find the latest delivery by prescription ID
+     */
+    @Query("SELECT md FROM MedicationDelivery md WHERE md.prescription.id = :prescriptionId ORDER BY md.createdAt DESC LIMIT 1")
+    Optional<MedicationDelivery> findLatestByPrescriptionId(@Param("prescriptionId") UUID prescriptionId);
+
+    /**
+     * Find the latest non-cancelled delivery by prescription ID
+     */
+    @Query("SELECT md FROM MedicationDelivery md WHERE md.prescription.id = :prescriptionId AND md.status != 'CANCELLED' ORDER BY md.createdAt DESC LIMIT 1")
+    Optional<MedicationDelivery> findLatestNonCancelledByPrescriptionId(@Param("prescriptionId") UUID prescriptionId);
+
+    /**
+     * Check if any non-cancelled delivery exists for prescription
+     */
+    @Query("SELECT COUNT(md) > 0 FROM MedicationDelivery md WHERE md.prescription.id = :prescriptionId AND md.status != 'CANCELLED'")
+    boolean existsNonCancelledByPrescriptionId(@Param("prescriptionId") UUID prescriptionId);
 
     /**
      * Find deliveries by patient ID
@@ -33,7 +59,7 @@ public interface MedicationDeliveryRepository extends JpaRepository<MedicationDe
     @Query("SELECT md FROM MedicationDelivery md WHERE md.prescription.patient.id = :patientId")
     Page<MedicationDelivery> findByPatientId(@Param("patientId") UUID patientId, Pageable pageable);
 
-    Page<MedicationDelivery> findByPrescriptionPatientAccount(Account prescriptionPatientAccount,  Pageable pageable);
+    Page<MedicationDelivery> findByPrescriptionPatientAccount(Account prescriptionPatientAccount, Pageable pageable);
 
     /**
      * Find deliveries by facility ID
@@ -61,21 +87,21 @@ public interface MedicationDeliveryRepository extends JpaRepository<MedicationDe
      * Find deliveries by status and delivery method
      */
     Page<MedicationDelivery> findByStatusAndDeliveryMethod(DeliveryStatus status, DeliveryMethod deliveryMethod,
-                                                           Pageable pageable);
+            Pageable pageable);
 
     /**
      * Find deliveries that are overdue (past estimated delivery date)
      */
     @Query("SELECT md FROM MedicationDelivery md WHERE md.status = :status AND md.estimatedDeliveryDate < :currentTime")
     List<MedicationDelivery> findOverdueDeliveries(@Param("status") DeliveryStatus status,
-                                                   @Param("currentTime") Instant currentTime);
+            @Param("currentTime") Instant currentTime);
 
     /**
      * Find deliveries for facility and status
      */
     @Query("SELECT md FROM MedicationDelivery md WHERE md.prescription.facility.id = :facilityId AND md.status = :status")
     Page<MedicationDelivery> findByFacilityIdAndStatus(@Param("facilityId") UUID facilityId,
-                                                       @Param("status") DeliveryStatus status, Pageable pageable);
+            @Param("status") DeliveryStatus status, Pageable pageable);
 
     /**
      * Check if delivery exists for prescription

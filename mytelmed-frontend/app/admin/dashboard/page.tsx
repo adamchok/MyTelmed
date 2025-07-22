@@ -126,12 +126,12 @@ const AdminDashboard = () => {
             <Row gutter={[16, 16]} className="mb-6">
                 <Col span={24}>
                     <Card
-                        title={<Title level={4} className="mb-0">Quick Actions</Title>}
+                        title={<Title level={4} className="my-0">Quick Actions</Title>}
                         loading={loading}
                     >
-                        <Row gutter={[16, 16]}>
+                        <Row gutter={[16, 16]} justify="center">
                             {quickActions.map((action) => (
-                                <Col xs={24} sm={12} md={6} key={action.title}>
+                                <Col xs={24} sm={12} md={8} key={action.title}>
                                     <Link href={action.href} className="no-underline">
                                         <Card
                                             hoverable

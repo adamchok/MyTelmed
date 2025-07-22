@@ -5,6 +5,7 @@ import com.mytelmed.common.advice.exception.ResourceNotFoundException;
 import com.mytelmed.common.constant.delivery.DeliveryMethod;
 import com.mytelmed.common.constant.delivery.DeliveryStatus;
 import com.mytelmed.common.constant.family.FamilyPermissionType;
+import com.mytelmed.common.constant.prescription.PrescriptionStatus;
 import com.mytelmed.common.event.delivery.model.DeliveryCancelledEvent;
 import com.mytelmed.common.event.delivery.model.DeliveryCompletedEvent;
 import com.mytelmed.common.event.delivery.model.DeliveryCreatedEvent;
@@ -35,6 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -91,11 +93,31 @@ public class MedicationDeliveryService {
     public MedicationDelivery findByPrescriptionId(UUID prescriptionId) {
         log.info("Finding delivery by prescription ID: {}", prescriptionId);
 
-        return deliveryRepository.findByPrescriptionId(prescriptionId)
+        // Return the latest delivery for backward compatibility (OneToMany
+        // relationship)
+        return deliveryRepository.findLatestByPrescriptionId(prescriptionId)
                 .orElseThrow(() -> {
                     log.warn("Delivery not found for prescription ID: {}", prescriptionId);
                     return new ResourceNotFoundException("Delivery not found for prescription");
                 });
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<MedicationDelivery> findLatestByPrescriptionId(UUID prescriptionId) {
+        log.info("Finding latest delivery by prescription ID: {}", prescriptionId);
+        return deliveryRepository.findLatestByPrescriptionId(prescriptionId);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<MedicationDelivery> findLatestNonCancelledByPrescriptionId(UUID prescriptionId) {
+        log.info("Finding latest non-cancelled delivery by prescription ID: {}", prescriptionId);
+        return deliveryRepository.findLatestNonCancelledByPrescriptionId(prescriptionId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MedicationDelivery> findAllByPrescriptionId(UUID prescriptionId) {
+        log.info("Finding all deliveries by prescription ID: {}", prescriptionId);
+        return deliveryRepository.findAllByPrescriptionIdOrderByCreatedAtDesc(prescriptionId);
     }
 
     @Transactional(readOnly = true)
@@ -388,13 +410,18 @@ public class MedicationDeliveryService {
         DeliveryHandler handler = getDeliveryHandler(delivery.getDeliveryMethod());
         handler.cancelDelivery(delivery, reason);
 
+        // Reset prescription status back to CREATED so patient can choose new delivery
+        // method
+        Prescription prescription = delivery.getPrescription();
+        prescription.setStatus(PrescriptionStatus.CREATED);
         deliveryRepository.save(delivery);
 
         // Publish delivery cancelled event
         DeliveryCancelledEvent event = new DeliveryCancelledEvent(delivery, reason);
         applicationEventPublisher.publishEvent(event);
 
-        log.info("Delivery {} cancelled by pharmacist", deliveryId);
+        log.info("Delivery {} cancelled by pharmacist, prescription {} reset to CREATED status",
+                deliveryId, prescription.getId());
     }
 
     @Transactional
@@ -451,13 +478,18 @@ public class MedicationDeliveryService {
         DeliveryHandler handler = getDeliveryHandler(delivery.getDeliveryMethod());
         handler.cancelDelivery(delivery, reason);
 
+        // Reset prescription status back to CREATED so patient can choose new delivery
+        // method
+        Prescription prescription = delivery.getPrescription();
+        prescription.setStatus(PrescriptionStatus.CREATED);
         deliveryRepository.save(delivery);
 
         // Publish delivery cancelled event
         DeliveryCancelledEvent event = new DeliveryCancelledEvent(delivery, reason);
         applicationEventPublisher.publishEvent(event);
 
-        log.info("Delivery {} cancelled by patient", deliveryId);
+        log.info("Delivery {} cancelled by patient, prescription {} reset to CREATED status",
+                deliveryId, prescription.getId());
     }
 
     @Transactional(readOnly = true)
@@ -524,8 +556,9 @@ public class MedicationDeliveryService {
             throw new AppException("Action not authorized: Prescription does not belong to patient.");
         }
 
-        if (deliveryRepository.existsByPrescriptionId(prescriptionId)) {
-            throw new AppException("Delivery already exists for this prescription.");
+        // Check if any non-cancelled delivery already exists for this prescription
+        if (deliveryRepository.existsNonCancelledByPrescriptionId(prescriptionId)) {
+            throw new AppException("An active delivery already exists for this prescription.");
         }
 
         DeliveryHandler handler = getDeliveryHandler(deliveryMethod);

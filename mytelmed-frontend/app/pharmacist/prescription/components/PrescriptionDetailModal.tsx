@@ -25,7 +25,6 @@ import {
     Package,
     Play,
     CheckCircle,
-    XCircle,
     Truck,
     AlertTriangle
 } from "lucide-react";
@@ -86,25 +85,6 @@ export default function PrescriptionDetailModal({
             onClose();
         } catch (error: any) {
             message.error(error.response?.data?.message || 'Failed to mark as ready');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleCancelDelivery = async () => {
-        const delivery = prescription?.delivery;
-        if (!delivery) return;
-
-        try {
-            setLoading(true);
-            await DeliveryApi.cancelDeliveryByPharmacist({
-                deliveryId: delivery.id,
-                reason: 'Cancelled by pharmacist during prescription processing'
-            });
-            message.success('Delivery cancelled successfully');
-            onStatusUpdate();
-        } catch (error: any) {
-            message.error(error.response?.data?.message || 'Failed to cancel delivery');
         } finally {
             setLoading(false);
         }
@@ -189,6 +169,8 @@ export default function PrescriptionDetailModal({
     const getDeliveryStatusColor = (status: DeliveryStatus) => {
         switch (status) {
             case DeliveryStatus.PENDING_PAYMENT:
+                return "orange";
+            case DeliveryStatus.PENDING_PICKUP:
                 return "orange";
             case DeliveryStatus.PAID:
                 return "blue";
@@ -276,9 +258,6 @@ export default function PrescriptionDetailModal({
     const delivery = prescription?.delivery;
     const canStartProcessing = prescription?.status === PrescriptionStatus.READY_FOR_PROCESSING;
     const canMarkReady = prescription?.status === PrescriptionStatus.PROCESSING;
-    const canCancelDelivery = delivery &&
-        (delivery.status === DeliveryStatus.PENDING_PAYMENT || delivery.status === DeliveryStatus.PAID) &&
-        prescription?.status !== PrescriptionStatus.READY;
     const canMarkOutForDelivery = delivery &&
         delivery.status === DeliveryStatus.PREPARING &&
         delivery.deliveryMethod !== "PICKUP" &&
@@ -546,24 +525,6 @@ export default function PrescriptionDetailModal({
                                     Mark as Delivered
                                 </Button>
                             )}
-
-                            {canCancelDelivery && (
-                                <Popconfirm
-                                    title="Cancel Delivery"
-                                    description="Are you sure you want to cancel this delivery? The patient will be notified."
-                                    onConfirm={handleCancelDelivery}
-                                    okText="Yes, Cancel"
-                                    cancelText="No"
-                                >
-                                    <Button
-                                        danger
-                                        icon={<XCircle className="w-4 h-4" />}
-                                        loading={loading}
-                                    >
-                                        Cancel Delivery
-                                    </Button>
-                                </Popconfirm>
-                            )}
                         </div>
                     </Card>
                 </div>
@@ -577,4 +538,4 @@ export default function PrescriptionDetailModal({
             />
         </>
     );
-} 
+}

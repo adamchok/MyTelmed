@@ -248,10 +248,10 @@ const AccessModal: React.FC<AccessModalProps> = ({
                         Important Notes:
                     </Text>
                     <ul className="text-sm text-gray-600 space-y-1">
-                        <li>• Family members need &quot;View Medical Records&quot; permission to access documents</li>
-                        <li>• Expired access will automatically prevent document viewing and downloading</li>
-                        <li>• You can revoke all access immediately using the &quot;Revoke All Access&quot; button</li>
-                        <li>• Changes take effect immediately after saving</li>
+                        <li>Family members need &quot;View Documents&quot; permission to access documents</li>
+                        <li>Expired access will automatically prevent document viewing and downloading</li>
+                        <li>You can revoke all access immediately using the &quot;Revoke All Access&quot; button</li>
+                        <li>Changes take effect immediately after saving</li>
                     </ul>
                 </div>
             </div>

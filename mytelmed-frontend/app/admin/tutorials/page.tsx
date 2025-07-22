@@ -555,6 +555,7 @@ const TutorialManagement = () => {
                 loading={createLoading}
                 form={createForm}
                 width={600}
+                centered={true}
             >
                 <Form.Item
                     label="Title"
@@ -600,6 +601,7 @@ const TutorialManagement = () => {
                 loading={editLoading}
                 form={editForm}
                 width={600}
+                centered={true}
             >
                 <Form.Item
                     label="Title"
@@ -657,6 +659,7 @@ const TutorialManagement = () => {
                 ]}
                 width={900}
                 destroyOnHidden={true}
+                centered={true}
             >
                 {selectedTutorial && (
                     <div className="space-y-4">
@@ -752,6 +755,7 @@ const TutorialManagement = () => {
                 }}
                 footer={null}
                 width={500}
+                centered={true}
             >
                 <div className="space-y-4">
                     <div>
@@ -790,6 +794,7 @@ const TutorialManagement = () => {
                 }}
                 footer={null}
                 width={500}
+                centered={true}
             >
                 <div className="space-y-4">
                     <div>
@@ -802,9 +807,7 @@ const TutorialManagement = () => {
                             <Image
                                 src={selectedTutorial.thumbnailUrl}
                                 alt="Current thumbnail"
-                                width={200}
-                                height={112}
-                                className="object-cover rounded border"
+                                className="rounded border"
                             />
                         </div>
                     )}
@@ -818,7 +821,7 @@ const TutorialManagement = () => {
 
                     {thumbnailUploadProgress === 0 && (
                         <Upload beforeUpload={handleThumbnailUpload} accept="image/*" showUploadList={false}>
-                            <Button icon={<PictureOutlined />} size="large" block>
+                            <Button icon={<PictureOutlined />} size="large" className="mt-6">
                                 Select Thumbnail Image
                             </Button>
                         </Upload>

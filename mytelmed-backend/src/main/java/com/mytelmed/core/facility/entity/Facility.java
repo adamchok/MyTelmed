@@ -21,7 +21,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 import java.util.UUID;
 
-
 @Data
 @Builder
 @AllArgsConstructor
@@ -39,7 +38,7 @@ public class Facility {
     @Column(name = "telephone", nullable = false, unique = true)
     private String telephone;
 
-    @Column(name = "address", nullable = false, unique = true)
+    @Column(name = "address", nullable = false, unique = true, columnDefinition = "TEXT")
     private String address;
 
     @Column(name = "city", nullable = false)

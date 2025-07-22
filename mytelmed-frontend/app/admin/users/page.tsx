@@ -308,6 +308,9 @@ const UserManagement = () => {
                         case "pharmacist":
                             response = await PharmacistApi.activatePharmacist(userId);
                             break;
+                        case "patient":
+                            response = await PatientApi.activatePatient(userId);
+                            break;
                     }
 
                     if (!response) {
@@ -349,6 +352,9 @@ const UserManagement = () => {
                             break;
                         case "pharmacist":
                             response = await PharmacistApi.deactivatePharmacist(userId);
+                            break;
+                        case "patient":
+                            response = await PatientApi.deactivatePatient(userId);
                             break;
                     }
 

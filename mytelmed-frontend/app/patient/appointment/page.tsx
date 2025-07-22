@@ -470,11 +470,11 @@ export default function PatientAppointments() {
     };
 
     return (
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto">
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 space-y-4 sm:space-y-0">
                 <div>
-                    <Title level={2} className="text-blue-900 mb-2">
+                    <Title level={2} className="text-blue-900 mb-2 mt-0">
                         <Calendar className="mr-2" />
                         My Appointments
                     </Title>
@@ -724,7 +724,7 @@ export default function PatientAppointments() {
                                                         icon={<Plus />}
                                                         className="bg-blue-600 border-blue-600"
                                                     >
-                                                        Book Your First Appointment
+                                                        Book Appointment
                                                     </Button>
                                                 </Link>
                                             </Empty>
@@ -861,56 +861,63 @@ export default function PatientAppointments() {
 
             {/* Table View */}
             {viewMode === "table" && (
-                <Card>
-                    <Tabs
-                        activeKey={activeTab}
-                        onChange={setActiveTab}
-                        items={[
-                            {
-                                key: "all",
-                                label: `All (${stats.total})`,
-                                children: null,
-                            },
-                            {
-                                key: "pending_payment",
-                                label: `Pending Payment (${stats.pendingPayment})`,
-                                children: null,
-                            },
-                            {
-                                key: "pending",
-                                label: `Pending (${stats.pending})`,
-                                children: null,
-                            },
-                            {
-                                key: "confirmed",
-                                label: `Confirmed (${stats.confirmed})`,
-                                children: null,
-                            },
-                            {
-                                key: "ready",
-                                label: `Ready (${stats.readyForCall})`,
-                                children: null,
-                            },
-                            {
-                                key: "in_progress",
-                                label: `In Progress (${stats.inProgress})`,
-                                children: null,
-                            },
-                            {
-                                key: "completed",
-                                label: `Completed (${allAppointments.filter((apt) => apt.status === "COMPLETED").length
-                                    })`,
-                                children: null,
-                            },
-                            {
-                                key: "cancelled",
-                                label: `Cancelled (${stats.cancelled})`,
-                                children: null,
-                            },
-                        ]}
-                    />
+                <Card styles={{
+                    body: {
+                        padding: "12px"
+                    }
+                }}>
+                    {!isMobile && (
+                        <Tabs
+                            activeKey={activeTab}
+                            onChange={setActiveTab}
+                            items={[
+                                {
+                                    key: "all",
+                                    label: `All (${stats.total})`,
+                                    children: null,
+                                },
+                                {
+                                    key: "pending_payment",
+                                    label: `Pending Payment (${stats.pendingPayment})`,
+                                    children: null,
+                                },
+                                {
+                                    key: "pending",
+                                    label: `Pending (${stats.pending})`,
+                                    children: null,
+                                },
+                                {
+                                    key: "confirmed",
+                                    label: `Confirmed (${stats.confirmed})`,
+                                    children: null,
+                                },
+                                {
+                                    key: "ready",
+                                    label: `Ready (${stats.readyForCall})`,
+                                    children: null,
+                                },
+                                {
+                                    key: "in_progress",
+                                    label: `In Progress (${stats.inProgress})`,
+                                    children: null,
+                                },
+                                {
+                                    key: "completed",
+                                    label: `Completed (${allAppointments.filter((apt) => apt.status === "COMPLETED").length
+                                        })`,
+                                    children: null,
+                                },
+                                {
+                                    key: "cancelled",
+                                    label: `Cancelled (${stats.cancelled})`,
+                                    children: null,
+                                },
+                            ]}
+                            className="mx-2"
+                        />
+                    )}
 
-                    <div className="mt-4">
+                    <div>
                         {(() => {
                             if (loading) {
                                 return (
@@ -923,15 +930,6 @@ export default function PatientAppointments() {
                             if (filteredAppointments.length === 0) {
                                 return (
                                     <Empty description="No appointments found" image={Empty.PRESENTED_IMAGE_SIMPLE}>
-                                        <Link href="/patient/appointment/book">
-                                            <Button
-                                                type="primary"
-                                                icon={<Plus />}
-                                                className="bg-blue-600 border-blue-600"
-                                            >
-                                                Book Your First Appointment
-                                            </Button>
-                                        </Link>
                                     </Empty>
                                 );
                             }

@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
+import java.util.List;
 
 /**
  * REST controller for medication delivery operations in Malaysian public
@@ -74,6 +75,37 @@ public class MedicationDeliveryController {
         MedicationDeliveryDto deliveryDto = deliveryMapper.toDto(delivery);
 
         return ResponseEntity.ok(ApiResponse.success(deliveryDto));
+    }
+
+    /**
+     * Get all deliveries for a prescription (supports OneToMany relationship)
+     */
+    @GetMapping("/prescription/{prescriptionId}/all")
+    @PreAuthorize("hasAnyRole('PATIENT', 'PHARMACIST')")
+    public ResponseEntity<ApiResponse<List<MedicationDeliveryDto>>> getAllDeliveriesByPrescriptionId(
+            @PathVariable UUID prescriptionId) {
+        log.info("Getting all deliveries by prescription ID: {}", prescriptionId);
+
+        List<MedicationDelivery> deliveries = deliveryService.findAllByPrescriptionId(prescriptionId);
+        List<MedicationDeliveryDto> deliveryDtos = deliveries.stream()
+                .map(deliveryMapper::toDto)
+                .collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(ApiResponse.success(deliveryDtos));
+    }
+
+    /**
+     * Get latest delivery for a prescription
+     */
+    @GetMapping("/prescription/{prescriptionId}/latest")
+    @PreAuthorize("hasAnyRole('PATIENT', 'PHARMACIST')")
+    public ResponseEntity<ApiResponse<MedicationDeliveryDto>> getLatestDeliveryByPrescriptionId(
+            @PathVariable UUID prescriptionId) {
+        log.info("Getting latest delivery by prescription ID: {}", prescriptionId);
+
+        return deliveryService.findLatestByPrescriptionId(prescriptionId)
+                .map(delivery -> ResponseEntity.ok(ApiResponse.success(deliveryMapper.toDto(delivery))))
+                .orElse(ResponseEntity.ok(ApiResponse.success((MedicationDeliveryDto) null)));
     }
 
     /**

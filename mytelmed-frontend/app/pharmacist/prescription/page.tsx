@@ -161,7 +161,7 @@ export default function PharmacistPrescriptionPage() {
 
         // Add delivery-related actions for READY prescriptions
         if (prescription.status === PrescriptionStatus.READY && delivery) {
-            if (delivery.status === DeliveryStatus.PAID) {
+            if (delivery.status === DeliveryStatus.PAID || delivery.status === DeliveryStatus.PENDING_PICKUP) {
                 actions.push({
                     key: 'process-delivery',
                     label: 'Process Delivery',

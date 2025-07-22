@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-
 /**
  * Comprehensive service for handling payment refunds in Malaysian public
  * healthcare telemedicine.
@@ -69,7 +68,7 @@ public class PaymentRefundService {
      * confirmation.
      */
     @Transactional
-    @Retryable(retryFor = {StripeException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
+    @Retryable(retryFor = { StripeException.class }, maxAttempts = 3, backoff = @Backoff(delay = 1000))
     public RefundResult processAppointmentCancellationRefund(
             UUID appointmentId,
             String cancellationReason,
@@ -115,7 +114,8 @@ public class PaymentRefundService {
                 updateBillForRefund(bill, refundResult.getRefund(), cancellationReason);
                 updateTransactionForRefund(transaction, refundResult.getRefund(), cancellationReason);
 
-                // Note: RefundCompletedEvent will be published via webhook when Stripe confirms the refund
+                // Note: RefundCompletedEvent will be published via webhook when Stripe confirms
+                // the refund
 
                 log.info("Successfully processed refund for appointment: {} with Stripe refund ID: {}",
                         appointmentId, refundResult.getRefund().getId());
@@ -140,7 +140,7 @@ public class PaymentRefundService {
      * This method is called by the scheduler service for unpaid appointments.
      */
     @Transactional
-    @Retryable(retryFor = {StripeException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
+    @Retryable(retryFor = { StripeException.class }, maxAttempts = 3, backoff = @Backoff(delay = 1000))
     public RefundResult processAutomaticRefund(UUID appointmentId, String systemReason) throws AppException {
         log.info("Processing automatic refund for appointment: {} due to: {}", appointmentId, systemReason);
 
@@ -183,7 +183,8 @@ public class PaymentRefundService {
                 updateBillForRefund(bill, refundResult.getRefund(), systemReason);
                 updateTransactionForRefund(transaction, refundResult.getRefund(), systemReason);
 
-                // Note: RefundCompletedEvent will be published via webhook when Stripe confirms the refund
+                // Note: RefundCompletedEvent will be published via webhook when Stripe confirms
+                // the refund
 
                 log.info("Successfully processed automatic refund for appointment: {} with Stripe refund ID: {}",
                         appointmentId, refundResult.getRefund().getId());
@@ -201,10 +202,11 @@ public class PaymentRefundService {
 
     /**
      * Processes automatic refund for prescription/delivery cancellation.
-     * This method is called when a prescription delivery is cancelled and needs refund.
+     * This method is called when a prescription delivery is cancelled and needs
+     * refund.
      */
     @Transactional
-    @Retryable(retryFor = {StripeException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
+    @Retryable(retryFor = { StripeException.class }, maxAttempts = 3, backoff = @Backoff(delay = 1000))
     public RefundResult processPrescriptionRefund(UUID prescriptionId, String cancellationReason) throws AppException {
         log.info("Processing prescription refund for prescription: {} due to: {}", prescriptionId, cancellationReason);
 
@@ -252,7 +254,8 @@ public class PaymentRefundService {
                 updateBillForRefund(bill, refundResult.getRefund(), cancellationReason);
                 updateTransactionForRefund(transaction, refundResult.getRefund(), cancellationReason);
 
-                // Note: RefundCompletedEvent will be published via webhook when Stripe confirms the refund
+                // Note: RefundCompletedEvent will be published via webhook when Stripe confirms
+                // the refund
 
                 log.info("Successfully processed prescription refund for prescription: {} with Stripe refund ID: {}",
                         prescriptionId, refundResult.getRefund().getId());
@@ -296,7 +299,8 @@ public class PaymentRefundService {
         }
 
         Bill bill = billOpt.get();
-        // Get the completed transaction for refund status (only successful payments can be refunded)
+        // Get the completed transaction for refund status (only successful payments can
+        // be refunded)
         Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository.findByBillIdAndStatus(
                 bill.getId(), PaymentTransaction.TransactionStatus.COMPLETED);
 
@@ -329,6 +333,17 @@ public class PaymentRefundService {
             return false;
         }
 
+        // Check if there's actually a paid bill to refund
+        Optional<Bill> billOpt = billRepository.findByAppointmentId(appointment.getId());
+        if (billOpt.isEmpty() || billOpt.get().getBillingStatus() != BillingStatus.PAID) {
+            return false; // No bill or unpaid bill - nothing to refund
+        }
+
+        Bill bill = billOpt.get();
+        if (!bill.isEligibleForFullRefund()) {
+            return false; // Bill not eligible for refund (already refunded, etc.)
+        }
+
         // Check refund policy timing (e.g., 24 hours before appointment)
         LocalDateTime appointmentTime = appointment.getTimeSlot().getStartTime();
         LocalDateTime now = LocalDateTime.now();
@@ -352,7 +367,8 @@ public class PaymentRefundService {
         }
 
         Bill bill = billOpt.get();
-        // Get the completed transaction for refund status (only successful payments can be refunded)
+        // Get the completed transaction for refund status (only successful payments can
+        // be refunded)
         Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository.findByBillIdAndStatus(
                 bill.getId(), PaymentTransaction.TransactionStatus.COMPLETED);
 
@@ -430,6 +446,7 @@ public class PaymentRefundService {
     }
 
     private void updateBillForRefund(Bill bill, Refund stripeRefund, String reason) {
+        bill.setBillingStatus(BillingStatus.REFUNDED); // Update main billing status
         bill.setRefundStatus(Bill.RefundStatus.REFUNDED);
         bill.setRefundAmount(BigDecimal.valueOf(stripeRefund.getAmount() / 100.0));
         bill.setStripeRefundId(stripeRefund.getId());
@@ -480,7 +497,7 @@ public class PaymentRefundService {
     }
 
     private Map<String, String> generateAutomaticRefundMetadata(Bill bill, PaymentTransaction transaction,
-                                                                String reason) {
+            String reason) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("bill_id", bill.getId().toString());
         metadata.put("bill_number", bill.getBillNumber());
@@ -498,7 +515,7 @@ public class PaymentRefundService {
     }
 
     private Map<String, String> generatePrescriptionRefundMetadata(Bill bill, PaymentTransaction transaction,
-                                                                   String reason) {
+            String reason) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("bill_id", bill.getId().toString());
         metadata.put("bill_number", bill.getBillNumber());
@@ -523,7 +540,7 @@ public class PaymentRefundService {
             case REFUND_FAILED -> "Refund failed - please contact support";
             case PARTIAL_REFUND -> "Partial refund completed";
             case NOT_REFUNDED ->
-                    bill.isEligibleForFullRefund() ? "Eligible for full refund" : "Not eligible for refund";
+                bill.isEligibleForFullRefund() ? "Eligible for full refund" : "Not eligible for refund";
             default -> "Unknown refund status";
         };
     }
@@ -539,11 +556,10 @@ public class PaymentRefundService {
             case REFUND_FAILED -> "Refund failed - please contact support";
             case PARTIAL_REFUND -> "Partial refund completed";
             case NOT_REFUNDED ->
-                    bill.isEligibleForFullRefund() ? "Eligible for full refund" : "Not eligible for refund";
+                bill.isEligibleForFullRefund() ? "Eligible for full refund" : "Not eligible for refund";
             default -> "Unknown refund status";
         };
     }
-
 
     private void publishRefundFailedEvent(Bill bill, PaymentTransaction transaction, String errorMessage) {
         try {

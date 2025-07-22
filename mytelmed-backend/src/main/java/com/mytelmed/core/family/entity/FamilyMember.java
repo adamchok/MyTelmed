@@ -24,7 +24,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 import java.util.UUID;
 
-
 @Data
 @Builder
 @NoArgsConstructor
@@ -105,6 +104,7 @@ public class FamilyMember {
     @PrePersist
     @PreUpdate
     protected void beforeSave() {
-        if (nric != null) hashedNric = HashUtil.sha256(nric);
+        if (nric != null)
+            hashedNric = HashUtil.sha256(nric);
     }
 }

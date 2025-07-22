@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 public class FamilyMemberService {
@@ -35,8 +34,9 @@ public class FamilyMemberService {
     private final ApplicationEventPublisher applicationEventPublisher;
 
     public FamilyMemberService(FamilyMemberRepository familyMemberRepository, PatientService patientService,
-                               AccountService accountService,
-                               @Value("${application.frontend.url}") String frontendUrl, ApplicationEventPublisher applicationEventPublisher) {
+            AccountService accountService,
+            @Value("${application.frontend.url}") String frontendUrl,
+            ApplicationEventPublisher applicationEventPublisher) {
         this.familyMemberRepository = familyMemberRepository;
         this.patientService = patientService;
         this.accountService = accountService;
@@ -100,7 +100,8 @@ public class FamilyMemberService {
             try {
                 memberAccount = accountService.getAccountByUsername(request.nric());
             } catch (Exception e) {
-                log.debug("No existing account found for NRIC: {}, family member will be invited without account", request.nric());
+                log.debug("No existing account found for NRIC: {}, family member will be invited without account",
+                        request.nric());
             }
 
             FamilyMember familyMember = FamilyMember.builder()

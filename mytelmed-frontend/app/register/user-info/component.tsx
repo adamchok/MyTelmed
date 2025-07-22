@@ -102,6 +102,7 @@ const UserInfoPageComponent = ({ form, onFinish, userInfo, handleCancel }: UserI
                                 <Input
                                     placeholder="Enter your NRIC"
                                     className="h-10 sm:h-12 rounded-lg sm:rounded-xl border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors text-sm sm:text-base"
+                                    max={12}
                                 />
                             </Form.Item>
 
@@ -135,6 +136,7 @@ const UserInfoPageComponent = ({ form, onFinish, userInfo, handleCancel }: UserI
                                 <Input
                                     placeholder="Enter your NRIC's Serial Number"
                                     className="h-10 sm:h-12 rounded-lg sm:rounded-xl border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors text-sm sm:text-base"
+                                    max={10}
                                 />
                             </Form.Item>
                         </div>
@@ -157,8 +159,8 @@ const UserInfoPageComponent = ({ form, onFinish, userInfo, handleCancel }: UserI
                             rules={[
                                 { required: true, message: "Please enter your phone number" },
                                 {
-                                    pattern: /^01[0-46-9]\d{7,8}$/,
-                                    message: "Please enter a valid Malaysian phone number (10 digits without hyphens)",
+                                    pattern: /^01[0-46-9]\d{7}$/,
+                                    message: "Please enter a valid Malaysian phone number (exactly 10 digits without hyphens)",
                                 },
                             ]}
                             normalize={(value) => {
@@ -170,6 +172,7 @@ const UserInfoPageComponent = ({ form, onFinish, userInfo, handleCancel }: UserI
                                 placeholder="Enter your phone number"
                                 prefix={<span className="text-gray-500 font-medium text-xs sm:text-sm">+6</span>}
                                 className="h-10 sm:h-12 rounded-lg sm:rounded-xl border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors text-sm sm:text-base"
+                                max={10}
                             />
                         </Form.Item>
 

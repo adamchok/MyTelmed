@@ -13,7 +13,6 @@ import com.mytelmed.core.payment.entity.Bill;
 import com.mytelmed.core.payment.entity.PaymentTransaction;
 import com.mytelmed.core.payment.repository.BillRepository;
 import com.mytelmed.core.payment.repository.PaymentTransactionRepository;
-import com.mytelmed.core.payment.service.PaymentRefundService;
 import com.mytelmed.core.timeslot.service.TimeSlotService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -48,7 +47,6 @@ public class AppointmentSchedulerService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final TimeSlotService timeSlotService;
     private final ApplicationEventPublisher eventPublisher;
-    private final PaymentRefundService paymentRefundService;
     private final AppointmentStateMachine appointmentStateMachine;
 
     public AppointmentSchedulerService(
@@ -57,14 +55,12 @@ public class AppointmentSchedulerService {
             PaymentTransactionRepository paymentTransactionRepository,
             TimeSlotService timeSlotService,
             ApplicationEventPublisher eventPublisher,
-            PaymentRefundService paymentRefundService,
             AppointmentStateMachine appointmentStateMachine) {
         this.appointmentRepository = appointmentRepository;
         this.billRepository = billRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.timeSlotService = timeSlotService;
         this.eventPublisher = eventPublisher;
-        this.paymentRefundService = paymentRefundService;
         this.appointmentStateMachine = appointmentStateMachine;
     }
 
@@ -400,6 +396,7 @@ public class AppointmentSchedulerService {
      * Emergency scheduler that runs every 5 minutes for critical tasks.
      * Handles urgent appointment status transitions and system health checks.
      */
+    @Transactional
     @Scheduled(cron = "0 */5 * * * *") // Every 5 minutes
     @Async("schedulerExecutor")
     public void processEmergencyAppointmentTasks() {

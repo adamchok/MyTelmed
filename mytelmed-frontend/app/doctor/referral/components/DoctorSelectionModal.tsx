@@ -334,8 +334,7 @@ const DoctorSelectionModal: React.FC<DoctorSelectionModalProps> = ({
                     Cancel
                 </Button>,
             ]}
-            className="top-4"
-            style={{ zIndex: 1001 }} // Higher z-index to overlay create referral modal
+            centered={true}
         >
             <div className="space-y-6">
                 {/* Filters */}

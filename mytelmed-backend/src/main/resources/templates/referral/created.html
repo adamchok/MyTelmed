@@ -338,7 +338,10 @@
             </div>
 
             <!-- Additional Clinical Information -->
-            <div th:if="${currentMedications or allergies or investigationsDone}" class="clinical-summary">
+            <div
+                th:if="${currentMedications != null or allergies != null or investigationsDone != null}"
+                class="clinical-summary"
+            >
                 <h4 style="margin: 0 0 15px 0; color: #495057">Additional Clinical Information</h4>
 
                 <div th:if="${currentMedications}">
@@ -413,8 +416,7 @@
                 <p>&copy; 2025 MyTelmed. All rights reserved.</p>
                 <p>
                     <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
-                    <a th:href="${uiHost + '/terms'}">Terms of Service</a> |
-                    <a th:href="${uiHost + '/patient/support'}">Medical Support</a>
+                    <a th:href="${uiHost + '/terms'}">Terms of Service</a>
                 </p>
             </div>
         </div>

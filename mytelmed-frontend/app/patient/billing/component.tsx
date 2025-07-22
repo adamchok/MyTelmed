@@ -22,7 +22,6 @@ import {
 import {
     Search,
     Filter,
-    RefreshCw,
     X,
     CreditCard,
     TrendingUp,
@@ -280,16 +279,6 @@ const BillingComponent: React.FC<BillingComponentProps> = ({
                                     </Button>
                                 </Tooltip>
                             )}
-
-                            <Tooltip title="Refresh">
-                                <Button
-                                    icon={<RefreshCw className="w-4 h-4" />}
-                                    onClick={onRefresh}
-                                    loading={isLoading}
-                                >
-                                    Refresh
-                                </Button>
-                            </Tooltip>
                         </Space>
                     </Col>
                 </Row>

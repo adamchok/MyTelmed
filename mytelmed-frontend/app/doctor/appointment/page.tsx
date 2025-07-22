@@ -162,16 +162,8 @@ export default function DoctorAppointments() {
 
         // Tab filter
         let matchesTab = true;
-        const appointmentDate = parseLocalDateTime(appointment.appointmentDateTime);
-        const now = dayjs();
 
         switch (activeTab) {
-            case "today":
-                matchesTab = appointmentDate.isSame(now, "day");
-                break;
-            case "upcoming":
-                matchesTab = appointmentDate.isAfter(now) && appointment.status !== "COMPLETED" && appointment.status !== "CANCELLED" && appointment.status !== "NO_SHOW";
-                break;
             case "pending":
                 matchesTab = appointment.status === "PENDING";
                 break;
@@ -214,7 +206,7 @@ export default function DoctorAppointments() {
             case "IN_PROGRESS":
                 return "blue";
             case "COMPLETED":
-                return "green"; // Changed from "success" to "green"
+                return "green";
             case "CANCELLED":
                 return "error";
             case "NO_SHOW":
@@ -393,7 +385,7 @@ export default function DoctorAppointments() {
     };
 
     return (
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto">
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 space-y-4 sm:space-y-0">
                 <div>
@@ -747,24 +739,6 @@ export default function DoctorAppointments() {
                                 children: null,
                             },
                             {
-                                key: "today",
-                                label: `Today (${stats.today})`,
-                                children: null,
-                            },
-                            {
-                                key: "upcoming",
-                                label: `Upcoming (${stats.upcoming})`,
-                                children: null,
-                            },
-                            {
-                                key: "past",
-                                label: `Past (${allAppointments.filter((apt) =>
-                                    parseLocalDateTime(apt.appointmentDateTime).isBefore(dayjs(), "day")
-                                ).length
-                                    })`,
-                                children: null,
-                            },
-                            {
                                 key: "pending",
                                 label: `Pending (${stats.pending})`,
                                 children: null,
@@ -796,9 +770,10 @@ export default function DoctorAppointments() {
                                 children: null,
                             },
                         ]}
+                        className="mx-4"
                     />
 
-                    <div className="mt-4">
+                    <div className="mt-0">
                         {(() => {
                             if (loading) {
                                 return (
@@ -810,17 +785,7 @@ export default function DoctorAppointments() {
 
                             if (filteredAppointments.length === 0) {
                                 return (
-                                    <Empty description="No appointments found" image={Empty.PRESENTED_IMAGE_SIMPLE}>
-                                        <Link href="/doctor/time-slot">
-                                            <Button
-                                                type="primary"
-                                                icon={<Plus />}
-                                                className="bg-green-600 border-green-600"
-                                            >
-                                                Manage Your Time Slots
-                                            </Button>
-                                        </Link>
-                                    </Empty>
+                                    <Empty description="No appointments found" image={Empty.PRESENTED_IMAGE_SIMPLE} />
                                 );
                             }
 
@@ -867,7 +832,8 @@ export default function DoctorAppointments() {
                         })()}
                     </div>
                 </Card>
-            )}
+            )
+            }
 
             {/* Cancel Appointment Modal */}
             <Modal
@@ -942,6 +908,6 @@ export default function DoctorAppointments() {
                     </div>
                 )}
             </Modal>
-        </div>
+        </div >
     );
 }

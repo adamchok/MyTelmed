@@ -15,7 +15,7 @@ const { Panel } = Collapse;
 
 interface TranscriptionSummaryProps {
     transcriptionSummary?: TranscriptionSummaryDto | null;
-    userType: "patient" | "doctor" | "admin";
+    userType: "patient" | "doctor";
     loading?: boolean;
     appointmentId: string;
 }

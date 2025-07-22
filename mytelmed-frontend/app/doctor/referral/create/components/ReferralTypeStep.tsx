@@ -97,7 +97,7 @@ export default function ReferralTypeStep() {
 
     return (
         <div className="space-y-6">
-            <Title level={4}>Referral Type & Recipient</Title>
+            <Title level={4} className="my-0">Referral Type & Recipient</Title>
             <Form form={form} layout="vertical" initialValues={formData}>
                 <Form.Item label="Referral Type" required>
                     <Radio.Group value={referralType} onChange={handleReferralTypeChange} className="w-full">

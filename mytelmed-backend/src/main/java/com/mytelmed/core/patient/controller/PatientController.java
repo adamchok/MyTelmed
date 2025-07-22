@@ -112,7 +112,7 @@ public class PatientController {
 
     @PostMapping("/activate/{patientId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> activatePharmacistById(@PathVariable UUID patientId) {
+    public ResponseEntity<ApiResponse<Void>> activatePatientById(@PathVariable UUID patientId) {
         log.info("Received request to activate patient with ID: {}", patientId);
 
         patientService.activatePatientById(patientId);
@@ -121,7 +121,7 @@ public class PatientController {
 
     @PostMapping("/deactivate/{patientId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> deactivatePharmacistById(@PathVariable UUID patientId) {
+    public ResponseEntity<ApiResponse<Void>> deactivatePatientById(@PathVariable UUID patientId) {
         log.info("Received request to deactivate patient with ID: {}", patientId);
 
         patientService.deactivatePatientById(patientId);
@@ -130,7 +130,7 @@ public class PatientController {
 
     @PostMapping("/reset/password/{patientId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> resetPharmacistAccountPassword(@PathVariable UUID patientId) {
+    public ResponseEntity<ApiResponse<Void>> resetPatientAccountPassword(@PathVariable UUID patientId) {
         log.info("Received request to reset patient account password for patient with ID: {}", patientId);
 
         patientService.resetPatientAccountPasswordById(patientId);

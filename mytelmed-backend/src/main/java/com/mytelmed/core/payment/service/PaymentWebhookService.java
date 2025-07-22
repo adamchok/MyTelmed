@@ -79,40 +79,46 @@ public class PaymentWebhookService {
      */
     private void handleChargeSucceeded(Event event) throws AppException {
         Charge charge = extractCharge(event);
-        log.info("Processing successful charge: {}", charge.getId());
+        String chargeId = charge.getId();
+        String paymentIntentId = charge.getPaymentIntent();
 
-        // Find the transaction by charge ID
-        Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository
-                .findByStripeChargeId(charge.getId());
+        log.info("Processing successful Stripe charge: {}", chargeId);
+
+        // Try finding transaction by charge ID
+        Optional<PaymentTransaction> transactionOpt = paymentTransactionRepository.findByStripeChargeId(chargeId);
 
         if (transactionOpt.isEmpty()) {
-            log.warn("Payment transaction not found for Charge: {}", charge.getId());
-            return;
+            log.warn("No transaction found for Charge ID: {}. Trying Payment Intent ID: {}", chargeId, paymentIntentId);
+            transactionOpt = paymentTransactionRepository.findByStripePaymentIntentId(paymentIntentId);
+        }
+
+        if (transactionOpt.isEmpty()) {
+            log.error("Failed to locate PaymentTransaction for Charge ID: {} or Payment Intent ID: {}", chargeId, paymentIntentId);
+            throw new AppException("Payment transaction not found for Stripe charge event");
         }
 
         PaymentTransaction transaction = transactionOpt.get();
 
-        // Update transaction status
+        // Update the transaction status
         updateTransactionStatusFromCharge(transaction, PaymentTransaction.TransactionStatus.COMPLETED, charge);
 
-        // Update bill status
+        // Update the associated bill status
         updateBillStatusFromCharge(transaction.getBill(), BillingStatus.PAID, charge);
 
-        // Update related entities (appointment or delivery)
+        // Handle additional post-payment side effects
         processSuccessfulPaymentSideEffects(transaction.getBill());
 
-        // Extract receipt URL from charge
+        // Publish payment completed event (for receipt email, etc.)
         String receiptUrl = charge.getReceiptUrl();
-
-        // Publish payment completed event for receipt email with receipt URL
         PaymentCompletedEvent paymentEvent = PaymentCompletedEvent.builder()
                 .bill(transaction.getBill())
                 .transaction(transaction)
                 .receiptUrl(receiptUrl)
                 .build();
+
         eventPublisher.publishEvent(paymentEvent);
 
-        log.info("Successfully processed charge success for transaction: {} with receipt URL: {}",
+        log.info("Successfully processed payment for Transaction #: {} | Receipt URL: {}",
                 transaction.getTransactionNumber(), receiptUrl);
     }
 
@@ -338,8 +344,10 @@ public class PaymentWebhookService {
     private void processPrescriptionPaymentSuccess(java.util.UUID prescriptionId) {
         log.info("Processing prescription payment success for prescription: {}", prescriptionId);
 
-        // Find delivery associated with this prescription
-        Optional<MedicationDelivery> deliveryOpt = deliveryRepository.findByPrescriptionId(prescriptionId);
+        // Find the latest non-cancelled delivery for this prescription (OneToMany
+        // relationship)
+        Optional<MedicationDelivery> deliveryOpt = deliveryRepository
+                .findLatestNonCancelledByPrescriptionId(prescriptionId);
 
         if (deliveryOpt.isPresent()) {
             MedicationDelivery delivery = deliveryOpt.get();
@@ -353,6 +361,8 @@ public class PaymentWebhookService {
 
                 log.info("Updated delivery {} status to PAID after payment confirmation", delivery.getId());
             }
+        } else {
+            log.warn("No active delivery found for prescription {} during payment processing", prescriptionId);
         }
     }
 
@@ -372,6 +382,7 @@ public class PaymentWebhookService {
      * Updates bill status for refund
      */
     private void updateBillForRefund(Bill bill, Refund refund) {
+        bill.setBillingStatus(BillingStatus.REFUNDED); // Update main billing status
         bill.setRefundStatus(Bill.RefundStatus.REFUNDED);
         bill.setRefundAmount(BigDecimal.valueOf(refund.getAmount() / 100.0));
         bill.setStripeRefundId(refund.getId());

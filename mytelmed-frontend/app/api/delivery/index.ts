@@ -29,6 +29,24 @@ const DeliveryApi = {
     },
 
     /**
+     * Get all deliveries for a prescription ID (Patient and Pharmacist) - OneToMany support
+     */
+    getAllDeliveriesByPrescriptionId(prescriptionId: string): Promise<AxiosResponse<ApiResponse<MedicationDeliveryDto[]>>> {
+        return repository.get<ApiResponse<MedicationDeliveryDto[]>>(`${RESOURCE}/prescription/${prescriptionId}/all`);
+    },
+
+    /**
+     * Get latest delivery for a prescription ID (Patient and Pharmacist) - OneToMany support
+     */
+    getLatestDeliveryByPrescriptionId(
+        prescriptionId: string
+    ): Promise<AxiosResponse<ApiResponse<MedicationDeliveryDto | null>>> {
+        return repository.get<ApiResponse<MedicationDeliveryDto | null>>(
+            `${RESOURCE}/prescription/${prescriptionId}/latest`
+        );
+    },
+
+    /**
      * Get deliveries for specific patient by patient ID (Patient only)
      */
     getDeliveriesByPatient(

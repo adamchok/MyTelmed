@@ -197,9 +197,21 @@ public class PaymentService {
             if (existingBill.isPresent()) {
                 bill = existingBill.get();
 
-                // If bill is already paid, prevent duplicate payment
+                // If bill is already paid (but not refunded), prevent duplicate payment
                 if (bill.getBillingStatus() == BillingStatus.PAID) {
                     throw new AppException("Payment for this prescription has already been completed");
+                }
+
+                // If bill was refunded, reset it for new payment attempt
+                if (bill.getBillingStatus() == BillingStatus.REFUNDED) {
+                    bill.setBillingStatus(BillingStatus.UNPAID);
+                    bill.setRefundStatus(null);
+                    bill.setRefundAmount(BigDecimal.ZERO);
+                    bill.setStripeRefundId(null);
+                    bill.setRefundReason(null);
+                    bill.setRefundedAt(null);
+                    log.info("Resetting refunded bill {} for new payment attempt on prescription {}",
+                            bill.getBillNumber(), prescriptionId);
                 }
 
                 // If bill is unpaid, we can reuse it for retry
@@ -264,7 +276,6 @@ public class PaymentService {
             if ("succeeded".equals(paymentIntent.getStatus())) {
                 processSuccessfulPayment(transaction, paymentIntent);
             } else if ("requires_action".equals(paymentIntent.getStatus())) {
-                // Update transaction
                 transaction.setStripeChargeId(paymentIntent.getLatestCharge());
                 paymentTransactionRepository.save(transaction);
 
@@ -367,7 +378,8 @@ public class PaymentService {
         // Apply sorting
         String sortBy = pageable.getSort().iterator().hasNext() ? pageable.getSort().iterator().next().getProperty()
                 : "createdAt";
-        boolean isDescending = !pageable.getSort().iterator().hasNext() || pageable.getSort().iterator().next().getDirection().isDescending();
+        boolean isDescending = !pageable.getSort().iterator().hasNext()
+                || pageable.getSort().iterator().next().getDirection().isDescending();
 
         filteredBills.sort((b1, b2) -> {
             int comparison = switch (sortBy) {

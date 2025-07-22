@@ -13,7 +13,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,7 +26,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
-
 
 /**
  * Medication delivery entity for tracking delivery logistics in Malaysian
@@ -47,8 +46,8 @@ public class MedicationDelivery {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @OneToOne(optional = false)
-    @JoinColumn(name = "prescription_id", nullable = false, unique = true)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "prescription_id", nullable = false)
     private Prescription prescription;
 
     @Enumerated(EnumType.STRING)
@@ -61,7 +60,7 @@ public class MedicationDelivery {
     private DeliveryStatus status = DeliveryStatus.PENDING_PAYMENT;
 
     @Convert(converter = EncryptionConverter.class)
-    @Column(name = "delivery_address", length = 300)
+    @Column(name = "delivery_address", columnDefinition = "TEXT")
     private String deliveryAddress;
 
     @Convert(converter = EncryptionConverter.class)

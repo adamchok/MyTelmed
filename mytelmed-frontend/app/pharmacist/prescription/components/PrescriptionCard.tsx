@@ -53,6 +53,8 @@ export default function PrescriptionCard({
                 return { color: "blue", text: "Paid" };
             case DeliveryStatus.PREPARING:
                 return { color: "purple", text: "Preparing" };
+            case DeliveryStatus.PENDING_PICKUP:
+                return { color: "orange", text: "Pending Pickup" };
             case DeliveryStatus.READY_FOR_PICKUP:
                 return { color: "green", text: "Ready for Pickup" };
             case DeliveryStatus.OUT_FOR_DELIVERY:

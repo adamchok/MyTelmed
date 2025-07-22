@@ -3,7 +3,9 @@ package com.mytelmed.core.verification.service;
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.InvalidCredentialsException;
 import com.mytelmed.common.event.verify.model.EmailVerificationEvent;
+import com.mytelmed.common.utils.HashUtil;
 import com.mytelmed.core.auth.service.AccountService;
+import com.mytelmed.core.patient.repository.PatientRepository;
 import com.mytelmed.core.verification.entity.VerificationToken;
 import com.mytelmed.core.verification.repository.VerificationTokenRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -23,14 +25,17 @@ public class EmailVerificationService {
     private final long tokenExpirationMinutes;
     private final VerificationTokenRepository verificationTokenRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final PatientRepository patientRepository;
 
     public EmailVerificationService(
             VerificationTokenRepository verificationTokenRepository,
             AccountService accountService,
             ApplicationEventPublisher eventPublisher,
+            PatientRepository patientRepository,
             @Value("${security.email.verification.expiration}") long tokenExpiration) {
         this.verificationTokenRepository = verificationTokenRepository;
         this.eventPublisher = eventPublisher;
+        this.patientRepository = patientRepository;
         this.tokenExpirationMinutes = tokenExpiration;
     }
 
@@ -40,6 +45,13 @@ public class EmailVerificationService {
     @Transactional
     public void sendVerificationEmail(String email) throws AppException {
         log.debug("Sending verification email to: {}", email);
+
+        boolean existingPatientEmail = patientRepository.existsByHashedEmail(HashUtil.sha256(email));
+
+        if (existingPatientEmail) {
+            throw new InvalidCredentialsException("This email address has been has been by an existing account. Please try again with another " +
+                    "email address.");
+        }
 
         try {
             // Create a verification token with email

@@ -35,8 +35,6 @@ import {
     PhoneOutlined,
     MailOutlined,
     FileOutlined,
-    EditOutlined,
-    SaveOutlined,
     VideoCameraOutlined,
 } from "@ant-design/icons";
 import {
@@ -53,6 +51,7 @@ import dayjs from "dayjs";
 import AppointmentApi from "../../../api/appointment";
 import { AppointmentDto, AppointmentStatus, CancelAppointmentRequestDto } from "../../../api/appointment/props";
 import { AppointmentDocumentDto } from "@/app/api/props";
+import TranscriptionSummary from "@/app/components/TranscriptionSummary/TranscriptionSummary";
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -66,11 +65,6 @@ export default function DoctorAppointmentDetails() {
     const [loading, setLoading] = useState(true);
     const [appointment, setAppointment] = useState<AppointmentDto | null>(null);
     const [error, setError] = useState<string | null>(null);
-
-    // Doctor notes editing state
-    const [editingNotes, setEditingNotes] = useState(false);
-    const [doctorNotes, setDoctorNotes] = useState("");
-    const [savingNotes, setSavingNotes] = useState(false);
 
     // Document viewing states
     const [selectedDocument, setSelectedDocument] = useState<AppointmentDocumentDto | null>(null);
@@ -110,7 +104,6 @@ export default function DoctorAppointmentDetails() {
                         response.data.data.attachedDocuments && response.data.data.attachedDocuments.length > 0,
                 };
                 setAppointment(appointmentData);
-                setDoctorNotes(appointmentData.doctorNotes || "");
             } else {
                 setError(response.data.message || "Failed to load appointment details");
             }
@@ -196,27 +189,6 @@ export default function DoctorAppointmentDetails() {
                 return <CloseCircleOutlined />;
             default:
                 return <ExclamationCircleOutlined />;
-        }
-    };
-
-    // Save doctor notes
-    const handleSaveDoctorNotes = async () => {
-        if (!appointment) return;
-
-        try {
-            setSavingNotes(true);
-            await AppointmentApi.completeAppointment(appointment.id, doctorNotes);
-
-            message.success("Doctor notes saved successfully");
-            setEditingNotes(false);
-
-            // Reload appointment to get updated data
-            await loadAppointmentDetails();
-        } catch (error: any) {
-            console.error("Error saving doctor notes:", error);
-            message.error(error.response?.data?.message || "Failed to save doctor notes");
-        } finally {
-            setSavingNotes(false);
         }
     };
 
@@ -588,14 +560,14 @@ export default function DoctorAppointmentDetails() {
     }
 
     return (
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto">
             {/* Header */}
             <div className="mb-6">
                 <Button
                     type="text"
                     icon={<LeftOutlined />}
                     onClick={() => router.push("/doctor/appointment")}
-                    className="mb-4"
+                    className="px-0"
                 >
                     Back to Appointments
                 </Button>
@@ -817,75 +789,14 @@ export default function DoctorAppointmentDetails() {
 
                 {/* Right Column - Doctor Notes & Documents */}
                 <Col xs={24} lg={8}>
-                    {/* Doctor Notes Section */}
-                    <Card
-                        title={
-                            <div className="flex items-center">
-                                <FileTextOutlined className="mr-2 text-green-600" />
-                                Doctor Notes
-                            </div>
-                        }
-                        extra={
-                            !editingNotes ? (
-                                <Button
-                                    type="text"
-                                    icon={<EditOutlined />}
-                                    onClick={() => setEditingNotes(true)}
-                                    className="text-green-600 hover:text-green-700"
-                                    disabled={appointment.status === "CANCELLED"}
-                                >
-                                    Edit Notes
-                                </Button>
-                            ) : (
-                                <Space>
-                                    <Button
-                                        onClick={() => {
-                                            setEditingNotes(false);
-                                            setDoctorNotes(appointment.doctorNotes || "");
-                                        }}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        type="primary"
-                                        icon={<SaveOutlined />}
-                                        onClick={handleSaveDoctorNotes}
-                                        loading={savingNotes}
-                                        className="bg-green-600 border-green-600 hover:bg-green-700"
-                                    >
-                                        Save
-                                    </Button>
-                                </Space>
-                            )
-                        }
-                        className="mb-6"
-                    >
-                        {editingNotes ? (
-                            <TextArea
-                                value={doctorNotes}
-                                onChange={(e) => setDoctorNotes(e.target.value)}
-                                placeholder="Enter your notes about this appointment..."
-                                rows={6}
-                                maxLength={1000}
-                                showCount
-                            />
-                        ) : (
-                            <div className="min-h-[120px]">
-                                {appointment.doctorNotes ? (
-                                    <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
-                                        <Text>{appointment.doctorNotes}</Text>
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-8 text-gray-500">
-                                        <FileTextOutlined className="text-4xl text-gray-300 mb-2" />
-                                        <Text>
-                                            No doctor notes yet. Click &apos;Edit Notes&apos; to add your notes.
-                                        </Text>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </Card>
+                    {/* AI Transcription Summary */}
+                    {appointment.consultationMode === "VIRTUAL" && (
+                        <TranscriptionSummary
+                            transcriptionSummary={appointment.transcriptionSummary}
+                            userType="doctor"
+                            appointmentId={appointment.id}
+                        />
+                    )}
 
                     {/* Attached Documents */}
                     <Card

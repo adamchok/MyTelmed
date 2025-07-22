@@ -37,11 +37,11 @@ public class Address {
     private String addressName;
 
     @Convert(converter = EncryptionConverter.class)
-    @Column(name = "address1", length = 300, nullable = false)
+    @Column(name = "address1", nullable = false, columnDefinition = "TEXT")
     private String address1;
 
     @Convert(converter = EncryptionConverter.class)
-    @Column(name = "address2", length = 300)
+    @Column(name = "address2", columnDefinition = "TEXT")
     private String address2;
 
     @Convert(converter = EncryptionConverter.class)

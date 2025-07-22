@@ -51,13 +51,18 @@ public abstract class PrescriptionMapper {
     public abstract PrescriptionDto toDto(Prescription prescription, @Context AwsS3Service awsS3Service);
 
     /**
-     * Gets delivery information for a prescription using bidirectional relationship
+     * Gets the latest delivery information for a prescription from the OneToMany
+     * relationship
      */
     protected com.mytelmed.core.delivery.dto.MedicationDeliverySimpleDto getDeliveryInfo(Prescription prescription) {
-        if (prescription == null || prescription.getMedicationDelivery() == null) {
+        if (prescription == null || prescription.getMedicationDeliveries() == null
+                || prescription.getMedicationDeliveries().isEmpty()) {
             return null;
         }
 
-        return medicationDeliveryMapper.toSimpleDto(prescription.getMedicationDelivery());
+        // Get the latest delivery (most recently created)
+        return prescription.getLatestDelivery()
+                .map(medicationDeliveryMapper::toSimpleDto)
+                .orElse(null);
     }
 }

@@ -14,6 +14,9 @@ import {
     Divider,
     message,
     Image,
+    Modal,
+    Input,
+    Popconfirm,
 } from "antd";
 import {
     FileText,
@@ -27,16 +30,20 @@ import {
     Package,
     Truck,
     CreditCard,
-    ArrowLeft
+    ArrowLeft,
+    X
 } from "lucide-react";
 
 import PrescriptionApi from "@/app/api/prescription";
+import DeliveryApi from "@/app/api/delivery";
 import { PrescriptionDto, PrescriptionStatus } from "@/app/api/prescription/props";
+import { DeliveryStatus } from "@/app/api/delivery/props";
 import PaymentModal from "@/app/components/PaymentModal/PaymentModal";
 import dayjs from "dayjs";
 import MedicationCard from "../components/MedicationCard";
 
 const { Title, Text } = Typography;
+const { TextArea } = Input;
 
 const PrescriptionDetailPage = () => {
     const params = useParams();
@@ -50,6 +57,10 @@ const PrescriptionDetailPage = () => {
 
     // Modal states
     const [paymentModalVisible, setPaymentModalVisible] = useState<boolean>(false);
+    const [cancellationModalVisible, setCancellationModalVisible] = useState<boolean>(false);
+    const [cancellationReason, setCancellationReason] = useState<string>("");
+    const [isCancellingDelivery, setIsCancellingDelivery] = useState<boolean>(false);
+    const [deliveryCancellable, setDeliveryCancellable] = useState<boolean>(false);
 
     // Fetch prescription details
     const fetchPrescriptionDetails = async () => {
@@ -60,6 +71,20 @@ const PrescriptionDetailPage = () => {
             const response = await PrescriptionApi.getPrescriptionById(prescriptionId);
             if (response.data.isSuccess && response.data.data) {
                 setPrescription(response.data.data);
+
+                // Note: delivery field now contains the latest delivery due to OneToMany relationship
+                // Check if delivery is cancellable if it exists
+                const delivery = response.data.data.delivery;
+                if (delivery && delivery.deliveryMethod === "HOME_DELIVERY") {
+                    try {
+                        const cancellableResponse = await DeliveryApi.isDeliveryCancellableByPatient(delivery.id);
+                        setDeliveryCancellable(cancellableResponse.data.data || false);
+                    } catch {
+                        setDeliveryCancellable(false);
+                    }
+                } else {
+                    setDeliveryCancellable(false);
+                }
             } else {
                 throw new Error("Failed to fetch prescription details");
             }
@@ -110,13 +135,38 @@ const PrescriptionDetailPage = () => {
         if (!delivery) return;
 
         try {
-            // Need to import DeliveryApi for this action
-            const DeliveryApi = await import("@/app/api/delivery");
-            await DeliveryApi.default.markAsCompleted(delivery.id);
+            await DeliveryApi.markAsCompleted(delivery.id);
             message.success("Delivery marked as completed!");
             await fetchPrescriptionDetails();
         } catch (error: any) {
             message.error(error.response?.data?.message || "Failed to mark delivery as completed");
+        }
+    };
+
+    // Delivery cancellation handler
+    const handleCancelDelivery = async () => {
+        const delivery = prescription?.delivery;
+        if (!delivery) return;
+
+        if (!cancellationReason.trim()) {
+            message.error("Please provide a cancellation reason.");
+            return;
+        }
+
+        try {
+            setIsCancellingDelivery(true);
+            await DeliveryApi.cancelDeliveryByPatient({
+                deliveryId: delivery.id,
+                reason: cancellationReason.trim()
+            });
+            message.success("Delivery cancelled successfully!");
+            setCancellationModalVisible(false);
+            setCancellationReason("");
+            await fetchPrescriptionDetails();
+        } catch (error: any) {
+            message.error(error.response?.data?.message || "Failed to cancel delivery");
+        } finally {
+            setIsCancellingDelivery(false);
         }
     };
 
@@ -235,7 +285,7 @@ const PrescriptionDetailPage = () => {
 
     const statusConfig = getStatusConfig(prescription.status);
     const delivery = prescription?.delivery;
-    const isActionRequired = prescription.status === PrescriptionStatus.CREATED && !delivery;
+    const isActionRequired = prescription.status === PrescriptionStatus.CREATED && (!delivery || delivery.status === DeliveryStatus.CANCELLED);
 
     return (
         <div className="container mx-auto">
@@ -369,7 +419,7 @@ const PrescriptionDetailPage = () => {
 
                 {/* Right Column - Delivery Information */}
                 <Col xs={24} lg={8} className="order-2 lg:order-2">
-                    {delivery ? (
+                    {delivery && delivery.status !== DeliveryStatus.CANCELLED ? (
                         <Card title="Delivery Information" className="mb-4 sm:mb-6">
                             <div className="space-y-4">
                                 {/* Delivery Method & Status */}
@@ -498,7 +548,7 @@ const PrescriptionDetailPage = () => {
                                 )}
 
                                 {/* Cancellation Info */}
-                                {delivery.status === "CANCELLED" && delivery.cancellationReason && (
+                                {(delivery.status as string) === "CANCELLED" && delivery.cancellationReason && (
                                     <div className="bg-red-50 p-3 rounded-lg border border-red-200">
                                         <Text className="text-red-800">
                                             <strong>Cancellation Reason:</strong>
@@ -578,8 +628,78 @@ const PrescriptionDetailPage = () => {
                                         </Button>
                                     </div>
                                 )}
+
+                                {/* Cancel Delivery Button (only for Home Delivery) */}
+                                {deliveryCancellable && (
+                                    <div className="mt-4 pt-4 border-t border-gray-200">
+                                        <Popconfirm
+                                            title="Are you sure you want to cancel this delivery?"
+                                            description="This action cannot be undone."
+                                            onConfirm={() => setCancellationModalVisible(true)}
+                                            okText="Yes"
+                                            cancelText="No"
+                                        >
+                                            <Button
+                                                type="primary"
+                                                block
+                                                danger
+                                                icon={<X className="w-4 h-4" />}
+                                                className="bg-red-600 hover:bg-red-700 border-red-600"
+                                                size="middle"
+                                                loading={isCancellingDelivery}
+                                            >
+                                                <span className="hidden sm:inline">Cancel Delivery</span>
+                                                <span className="sm:hidden">Cancel</span>
+                                            </Button>
+                                        </Popconfirm>
+                                    </div>
+                                )}
                             </div>
                         </Card>
+                    ) : delivery && delivery.status === DeliveryStatus.CANCELLED ? (
+                        <>
+                            {/* Cancelled Delivery Information */}
+                            <Card title="Previous Delivery - Cancelled" className="mb-4 sm:mb-6 border-red-200">
+                                <div className="space-y-4">
+                                    <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                                        <div className="flex items-center space-x-2 mb-2">
+                                            <X className="w-5 h-5 text-red-600" />
+                                            <Text strong className="text-red-800">Delivery Cancelled</Text>
+                                        </div>
+                                        <Text className="text-red-700 text-sm">
+                                            Your {delivery.deliveryMethod === "PICKUP" ? "pickup" : "home delivery"} order was cancelled.
+                                        </Text>
+                                        {delivery.cancellationReason && (
+                                            <div className="mt-2">
+                                                <Text className="text-red-700 text-xs">
+                                                    <strong>Reason:</strong> {delivery.cancellationReason}
+                                                </Text>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </Card>
+
+                            {/* Choose New Delivery Method */}
+                            <Card title="Choose New Delivery Method" className="mb-4 sm:mb-6">
+                                <div className="text-center space-y-4">
+                                    <div className="text-gray-500 mb-4">
+                                        <Package className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 text-gray-400" />
+                                        <Text className="text-sm sm:text-base">Please choose how you&apos;d like to receive your prescription</Text>
+                                    </div>
+                                    <Button
+                                        type="primary"
+                                        block
+                                        onClick={handleChooseDeliveryMethod}
+                                        className="bg-green-600 hover:bg-green-700 border-green-600"
+                                        size="middle"
+                                    >
+                                        <span className="hidden sm:inline">Choose New Delivery Method</span>
+                                        <span className="sm:hidden">Choose Method</span>
+                                    </Button>
+                                </div>
+                            </Card>
+                        </>
                     ) : isActionRequired && (
                         <Card title="Delivery Method" className="mb-4 sm:mb-6">
                             <div className="text-center space-y-4">
@@ -658,6 +778,43 @@ const PrescriptionDetailPage = () => {
                     context={{ type: "prescription", data: prescription }}
                     onPaymentSuccess={handlePaymentSuccess}
                 />
+            )}
+
+            {/* Cancellation Modal */}
+            {cancellationModalVisible && (
+                <Modal
+                    title="Cancel Delivery"
+                    open={cancellationModalVisible}
+                    onCancel={() => setCancellationModalVisible(false)}
+                    onOk={handleCancelDelivery}
+                    okText="Confirm Cancel"
+                    cancelText="Back"
+                    okButtonProps={{ danger: true, loading: isCancellingDelivery }}
+                    cancelButtonProps={{ disabled: isCancellingDelivery }}
+                >
+                    <div className="space-y-4">
+                        <Alert
+                            message="Are you sure you want to cancel this delivery?"
+                            description="If you have already paid for this delivery, any applicable refunds will be processed within 3-5 business days."
+                            type="warning"
+                            showIcon
+                        />
+                        <div>
+                            <Text className="text-gray-700 block mb-2">
+                                <strong>Please provide a reason for cancelling this delivery:</strong>
+                            </Text>
+                            <TextArea
+                                rows={4}
+                                placeholder="Enter cancellation reason (required)"
+                                value={cancellationReason}
+                                onChange={(e) => setCancellationReason(e.target.value)}
+                                disabled={isCancellingDelivery}
+                                maxLength={500}
+                                showCount
+                            />
+                        </div>
+                    </div>
+                </Modal>
             )}
         </div>
     );

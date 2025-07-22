@@ -178,7 +178,6 @@ public class BillingEventListener {
             case CARD -> "Credit/Debit Card";
             case ONLINE_BANKING -> "Online Banking";
             case WALLET -> "Digital Wallet";
-            case CASH -> "Cash";
         };
     }
 

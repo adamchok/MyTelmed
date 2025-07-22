@@ -33,6 +33,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 @Getter
 @Setter
@@ -87,8 +88,9 @@ public class Prescription {
     @Builder.Default
     private List<PrescriptionItem> prescriptionItems = new ArrayList<>();
 
-    @OneToOne(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
-    private MedicationDelivery medicationDelivery;
+    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<MedicationDelivery> medicationDeliveries = new ArrayList<>();
 
     @Column(name = "expiry_date", nullable = false)
     private Instant expiryDate;
@@ -134,5 +136,32 @@ public class Prescription {
      */
     public boolean isCompleted() {
         return status == PrescriptionStatus.READY;
+    }
+
+    /**
+     * Gets the latest delivery for this prescription (most recently created)
+     */
+    public Optional<MedicationDelivery> getLatestDelivery() {
+        return medicationDeliveries.stream()
+                .max((d1, d2) -> d1.getCreatedAt().compareTo(d2.getCreatedAt()));
+    }
+
+    /**
+     * Gets the latest non-cancelled delivery for this prescription
+     */
+    public Optional<MedicationDelivery> getLatestNonCancelledDelivery() {
+        return medicationDeliveries.stream()
+                .filter(delivery -> delivery
+                        .getStatus() != com.mytelmed.common.constant.delivery.DeliveryStatus.CANCELLED)
+                .max((d1, d2) -> d1.getCreatedAt().compareTo(d2.getCreatedAt()));
+    }
+
+    /**
+     * Checks if prescription has any active (non-cancelled) delivery
+     */
+    public boolean hasActiveDelivery() {
+        return medicationDeliveries.stream()
+                .anyMatch(delivery -> delivery
+                        .getStatus() != com.mytelmed.common.constant.delivery.DeliveryStatus.CANCELLED);
     }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Card, Avatar, Typography, Tag, Space, Button } from "antd";
+import { Card, Avatar, Typography, Tag, Button } from "antd";
 import {
     Calendar,
     Clock,
@@ -83,11 +83,11 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
     }, []);
 
     return (
-        <Card className="mb-4 hover:shadow-lg transition-shadow duration-200 p-3 sm:p-4">
+        <Card className="mb-4 hover:shadow-lg transition-shadow duration-200 sm:p-4">
             <div className="space-y-3 sm:space-y-4">
                 {/* Header with Doctor Info and Status */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-                    <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="flex flex-row items-center space-x-2 sm:space-x-3 mb-2">
                         <Avatar
                             size={40}
                             className="sm:w-12 sm:h-12" // Responsive avatar size
@@ -97,7 +97,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
                         <div className="min-w-0 flex-1">
                             {" "}
                             {/* Prevent text overflow */}
-                            <Title level={5} className="mb-0 text-sm sm:text-base truncate">
+                            <Title level={5} className="mb-0 mt-0 text-sm sm:text-base truncate">
                                 Dr. {appointment.doctor.name}
                             </Title>
                             <Text className="text-gray-500 text-xs sm:text-sm truncate">
@@ -105,7 +105,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
                             </Text>
                         </div>
                     </div>
-                    <div className="flex flex-col items-start sm:items-end space-y-1 sm:space-y-2">
+                    <div className="flex flex-row">
                         <Tag
                             color={getStatusColor(appointment.status as AppointmentStatus)}
                             className="px-2 py-1 text-xs sm:text-sm"
@@ -194,33 +194,31 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
                     <div className="text-xs text-gray-500">
                         Created: {parseLocalDateTime(appointment.createdAt).format("MMM DD, YYYY")}
                     </div>
-                    <Space size="small" className="w-full sm:w-auto">
+                    <Button
+                        type="primary"
+                        size={isMobile ? "small" : "middle"}
+                        icon={<Eye className={isMobile ? "w-4 h-4" : "w-5 h-5"} />}
+                        onClick={() => onView(appointment)}
+                        className={`bg-blue-600 border-blue-600 ${isMobile ? "text-xs px-2 py-1" : "text-base px-4 py-2"
+                            } flex-1 sm:flex-none`}
+                    >
+                        <span className="hidden sm:inline">View Details</span>
+                        <span className="sm:hidden">View</span>
+                    </Button>
+                    {(appointment.status === "PENDING" || appointment.status === "PENDING_PAYMENT") && onCancel && (
                         <Button
                             type="primary"
-                            size={isMobile ? "small" : "large"}
-                            icon={<Eye className={isMobile ? "w-4 h-4" : "w-5 h-5"} />}
-                            onClick={() => onView(appointment)}
-                            className={`bg-blue-600 border-blue-600 ${isMobile ? "text-xs px-2 py-1" : "text-base px-4 py-2"
+                            danger
+                            size={isMobile ? "small" : "middle"}
+                            icon={<Trash2 className={isMobile ? "w-4 h-4" : "w-5 h-5"} />}
+                            onClick={() => onCancel(appointment)}
+                            className={`${isMobile ? "text-xs px-2 py-1" : "text-base px-4 py-2"
                                 } flex-1 sm:flex-none`}
                         >
-                            <span className="hidden sm:inline">View Details</span>
-                            <span className="sm:hidden">View</span>
+                            <span className="hidden sm:inline">Cancel</span>
+                            <span className="sm:hidden">Cancel</span>
                         </Button>
-                        {(appointment.status === "PENDING" || appointment.status === "PENDING_PAYMENT") && onCancel && (
-                            <Button
-                                type="primary"
-                                danger
-                                size={isMobile ? "small" : "large"}
-                                icon={<Trash2 className={isMobile ? "w-4 h-4" : "w-5 h-5"} />}
-                                onClick={() => onCancel(appointment)}
-                                className={`${isMobile ? "text-xs px-2 py-1" : "text-base px-4 py-2"
-                                    } flex-1 sm:flex-none`}
-                            >
-                                <span className="hidden sm:inline">Cancel</span>
-                                <span className="sm:hidden">Cancel</span>
-                            </Button>
-                        )}
-                    </Space>
+                    )}
                 </div>
             </div>
         </Card>

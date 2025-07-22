@@ -54,7 +54,7 @@ export default function CreateReferralPage() {
     };
 
     return (
-        <div className="container mx-auto p-4 space-y-6">
+        <div className="container mx-auto">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -77,11 +77,11 @@ export default function CreateReferralPage() {
 
             {/* Progress Steps */}
             <Card className="shadow-lg">
-                <Steps current={currentStep} size="small">
+                <Steps current={currentStep}>
                     {steps.map((step, index) => (
                         <Step
-                            key={index}
-                            title={<span className="text-xs sm:text-sm">{step.title}</span>}
+                            key={index + "-" + step.title}
+                            title={<span className="text-xs sm:text-base">{step.title}</span>}
                             description={<span className="text-xs hidden sm:block">{step.description}</span>}
                         />
                     ))}
@@ -89,7 +89,7 @@ export default function CreateReferralPage() {
             </Card>
 
             {/* Current Step Content */}
-            <Card className="shadow-lg min-h-[500px]">{steps[currentStep]?.component}</Card>
+            <Card className="shadow-lg">{steps[currentStep]?.component}</Card>
         </div>
     );
 }

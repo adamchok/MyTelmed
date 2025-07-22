@@ -32,7 +32,7 @@ public class PickupDeliveryHandler implements DeliveryHandler {
         return MedicationDelivery.builder()
                 .prescription(prescription)
                 .deliveryMethod(DeliveryMethod.PICKUP)
-                .status(DeliveryStatus.PREPARING) // Skip payment for pickup
+                .status(DeliveryStatus.PENDING_PICKUP) // Skip payment for pickup
                 .deliveryFee(BigDecimal.ZERO) // No delivery fee for pickup
                 .deliveryInstructions(
                         "Please collect your medication from the pharmacy during operating hours: 8:00 AM - 6:00 PM, Monday to Friday")
@@ -103,7 +103,8 @@ public class PickupDeliveryHandler implements DeliveryHandler {
     @Override
     public boolean canProcess(MedicationDelivery delivery) {
         return delivery.getDeliveryMethod() == DeliveryMethod.PICKUP &&
-                (delivery.getStatus() == DeliveryStatus.PAID || delivery.getStatus() == DeliveryStatus.PREPARING);
+                (delivery.getStatus() == DeliveryStatus.PENDING_PICKUP
+                        || delivery.getStatus() == DeliveryStatus.PREPARING);
     }
 
     /**

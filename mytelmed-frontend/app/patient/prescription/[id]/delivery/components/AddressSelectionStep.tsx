@@ -76,7 +76,7 @@ export default function AddressSelectionStep() {
             const createRequest: RequestAddressDto = {
                 addressName: values.addressName,
                 address1: values.address1,
-                address2: values.address2 || undefined,
+                address2: values.address2 || "",
                 city: values.city,
                 state: values.state,
                 postcode: values.postcode,

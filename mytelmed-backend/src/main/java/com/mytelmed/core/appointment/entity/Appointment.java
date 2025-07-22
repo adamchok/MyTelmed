@@ -4,6 +4,7 @@ import com.mytelmed.common.constant.appointment.AppointmentStatus;
 import com.mytelmed.common.constant.appointment.ConsultationMode;
 import com.mytelmed.core.doctor.entity.Doctor;
 import com.mytelmed.core.patient.entity.Patient;
+import com.mytelmed.core.referral.entity.Referral;
 import com.mytelmed.core.timeslot.entity.TimeSlot;
 import com.mytelmed.core.videocall.entity.VideoCall;
 import jakarta.persistence.CascadeType;
@@ -92,7 +93,7 @@ public class Appointment {
 
     @OneToOne
     @JoinColumn(name = "referral_id")
-    private com.mytelmed.core.referral.entity.Referral referral;
+    private Referral referral;
 
     @Column(name = "completed_at")
     private Instant completedAt;

@@ -505,6 +505,7 @@ const ArticleManagement = () => {
                 loading={createLoading}
                 form={createForm}
                 width={900}
+                centered={true}
             >
                 <Form.Item
                     label="Title"
@@ -550,6 +551,7 @@ const ArticleManagement = () => {
                 loading={editLoading}
                 form={editForm}
                 width={900}
+                centered={true}
             >
                 <Form.Item
                     label="Title"
@@ -606,6 +608,7 @@ const ArticleManagement = () => {
                     </Button>,
                 ]}
                 width={900}
+                centered={true}
             >
                 {selectedArticle && (
                     <div className="space-y-4">
@@ -619,9 +622,7 @@ const ArticleManagement = () => {
                                 <Image
                                     src={selectedArticle.thumbnailUrl}
                                     alt="Article thumbnail"
-                                    width={300}
-                                    height={169}
-                                    className="object-cover rounded border shadow-sm"
+                                    className="rounded border shadow-sm"
                                 />
                             </div>
                         )}
@@ -650,6 +651,7 @@ const ArticleManagement = () => {
                 }}
                 footer={null}
                 width={500}
+                centered={true}
             >
                 <div className="space-y-4">
                     <div>

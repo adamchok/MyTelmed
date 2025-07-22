@@ -18,6 +18,7 @@ import { Document } from "@/app/api/document/props";
 import { Patient } from "@/app/api/patient/props";
 import { DocumentType } from "@/app/api/props";
 import { useFamilyPermissions } from "@/app/hooks/useFamilyPermissions";
+import { formatFileSize } from "@/app/utils/FileSizeUtils";
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -399,14 +400,16 @@ export default function AppointmentDetailsStep() {
                                 renderItem={(doc) => (
                                     <List.Item
                                         key={doc.id}
+                                        className="flex"
                                         actions={[
                                             appointmentDetails.documentIds.includes(doc.id) ? (
                                                 <Button
                                                     type="link"
                                                     danger
                                                     onClick={() => handleDocumentRemove(doc.id)}
-                                                    icon={<X className="w-4 h-4" />}
+                                                    className="gap-1"
                                                 >
+                                                    <X className="w-4 h-4" />
                                                     Remove
                                                 </Button>
                                             ) : (
@@ -417,8 +420,9 @@ export default function AppointmentDetailsStep() {
                                         ]}
                                     >
                                         <List.Item.Meta
-                                            title={doc.documentName}
-                                            description={`${doc.documentType} • ${doc.documentSize}`}
+                                            title={<span className="text-sm sm:text-base truncate block" title={doc.documentName}>{doc.documentName}</span>}
+                                            className="flex-1 min-w-0"
+                                            description={<span className="text-xs sm:text-sm">{`${doc.documentType} • ${formatFileSize(doc.documentSize)}`}</span>}
                                         />
                                     </List.Item>
                                 )}
@@ -438,7 +442,7 @@ export default function AppointmentDetailsStep() {
                                         key={doc.id}
                                         className="flex items-center justify-between bg-white p-2 rounded"
                                     >
-                                        <Text className="text-sm">{doc.documentName}</Text>
+                                        <span className="text-sm sm:text-base truncate block mr-2" title={doc.documentName}>{doc.documentName}</span>
                                         <Button
                                             type="text"
                                             size="small"
@@ -455,12 +459,13 @@ export default function AppointmentDetailsStep() {
 
             {/* Navigation */}
             <Card className="shadow-lg">
-                <div className="flex justify-between">
+                <div className="flex flex-col md:flex-row gap-2 justify-between">
                     <Button onClick={handlePrevious} icon={<ArrowLeft className="w-4 h-4" />}>
                         Previous
                     </Button>
-                    <Button type="primary" size="large" onClick={handleNext} icon={<ArrowRight className="w-4 h-4" />}>
-                        Next: Confirm Booking
+                    <Button type="primary" size="middle" onClick={handleNext}>
+                        <ArrowRight className="w-4 h-4 " />
+                        Confirm Booking
                     </Button>
                 </div>
             </Card>

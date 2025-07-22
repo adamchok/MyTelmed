@@ -5,6 +5,5 @@ public enum ImageType {
     FACILITY,
     SPECIALITY,
     ARTICLE,
-    NOTIFICATION,
     TUTORIAL
 }

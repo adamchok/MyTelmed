@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Card, Row, Col, Button, Typography, Tag, List, message, Spin, Image } from "antd";
+import { Card, Row, Col, Button, Typography, Tag, List, message, Spin, Image, Avatar, Badge } from "antd";
 import {
     Clock,
     MapPin,
@@ -14,6 +14,8 @@ import {
     CheckCircle,
     Phone,
     Building2,
+    User,
+    Languages,
 } from "lucide-react";
 import dayjs from "dayjs";
 import { RootState } from "@/lib/store";
@@ -27,6 +29,7 @@ import {
 import AppointmentApi from "@/app/api/appointment";
 import { BookAppointmentRequestDto } from "@/app/api/appointment/props";
 import { ConsultationMode } from "@/app/api/props";
+import { formatFileSize } from "@/app/utils/FileSizeUtils";
 
 const { Title, Text } = Typography;
 
@@ -109,6 +112,21 @@ export default function BookingConfirmationStep() {
         }
     };
 
+    const formatLanguage = (language: string) => {
+        switch (language) {
+            case "english":
+                return "English";
+            case "mandarin":
+                return "Mandarin";
+            case "malay":
+                return "Bahasa Malaysia";
+            case "tamil":
+                return "Tamil";
+            default:
+                return language;
+        }
+    }
+
     if (isBooking) {
         return (
             <div className="text-center py-12">
@@ -144,105 +162,124 @@ export default function BookingConfirmationStep() {
                     </div>
                 }
                 className="shadow-lg border-0"
-                headStyle={{ borderBottom: "2px solid #f0f8ff", padding: "20px 24px" }}
-                bodyStyle={{ padding: "24px" }}
+                styles={{
+                    body: {
+                        padding: "24px",
+                    },
+                    header: {
+                        borderBottom: "2px solid #f0f8ff",
+                        padding: "20px 24px",
+                    }
+                }}
             >
-                <Row gutter={[24, 24]}>
-                    <Col xs={24} md={12}>
-                        <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
-                            <div className="relative">
-                                <Image
-                                    src={selectedDoctor?.profileImageUrl}
-                                    width={120}
-                                    height={120}
-                                    className="rounded-full border-4 border-blue-50 shadow-lg"
-                                    style={{
-                                        backgroundColor: "#f0f8ff",
-                                        objectFit: "cover",
-                                    }}
-                                    alt={selectedDoctor?.name}
-                                    fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiBmaWxsPSIjZjBmOGZmIi8+CjxjaXJjbGUgY3g9IjYwIiBjeT0iNDUiIHI9IjE1IiBmaWxsPSIjY2JkYmY2Ii8+CjxwYXRoIGQ9Ik0yMCA5MGMwLTE2LjU2OSAxMy40MzEtMzAgMzAtMzBzMzAgMTMuNDMxIDMwIDMwIiBmaWxsPSIjY2JkYmY2Ii8+Cjwvc3ZnPgo="
-                                />
+                <div className="flex flex-col md:flex-row md:items-start md:space-x-6 items-center text-center md:text-left space-y-3 md:space-y-0">
+                    <div className="flex-shrink-0">
+                        <Avatar
+                            src={selectedDoctor?.profileImageUrl}
+                            icon={<User className="w-6 h-6" />}
+                            size={80}
+                            className="border-2 border-blue-100"
+                        />
+                    </div>
+                    <div className="flex-1 space-y-3">
+                        <div>
+                            <Title level={4} className="mb-1 mt-0">
+                                {selectedDoctor?.name}
+                            </Title>
+                            <Text className="text-gray-600 text-sm">{selectedDoctor?.facility.name}</Text>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex flex-wrap gap-1 justify-center md:justify-start">
+                                {selectedDoctor?.specialityList.map((specialty) => (
+                                    <Badge
+                                        key={specialty}
+                                        count={specialty}
+                                        color="blue"
+                                        className="text-xs"
+                                    />
+                                ))}
                             </div>
-                            <div className="text-center sm:text-left flex-1">
-                                <Title level={3} className="mb-2 text-xl sm:text-2xl font-bold text-gray-900">
-                                    Dr. {selectedDoctor?.name}
-                                </Title>
-                                <div className="mb-3 gap-2">
-                                    <Tag color="blue" className="text-xs font-medium px-2 py-1 rounded-full">
-                                        {selectedDoctor?.specialityList.join(", ")}
-                                    </Tag>
-                                    {selectedDoctor?.languageList.map((language, index) => (
-                                        <Tag key={index} color="green" className="text-xs px-2 py-0.5 rounded-full">
-                                            {language}
-                                        </Tag>
-                                    ))}
+                            {selectedDoctor?.qualifications && (
+                                <div className="text-center md:text-left">
+                                    <Text className="text-gray-700 text-sm font-medium">Qualifications:</Text>
+                                    <Text className="text-gray-600 text-xs block mt-1" title={selectedDoctor.qualifications}>
+                                        {selectedDoctor.qualifications.length > 150
+                                            ? `${selectedDoctor.qualifications.substring(0, 150)}...`
+                                            : selectedDoctor.qualifications}
+                                    </Text>
                                 </div>
-                                <Text className="text-gray-600 text-sm leading-relaxed">
-                                    {selectedDoctor?.qualifications}
-                                </Text>
+                            )}
+                            <div className="flex items-center justify-center md:justify-start text-xs text-gray-500">
+                                <Languages className="w-3 h-3 mr-1" />
+                                {selectedDoctor?.languageList
+                                    .map((lang) => formatLanguage(lang))
+                                    .join(", ")}
                             </div>
                         </div>
-                    </Col>
-                </Row>
+                    </div>
+                </div>
             </Card>
 
             {/* Appointment Details */}
             <Card title="Appointment Details" className="shadow-lg">
                 <Row gutter={[16, 16]}>
                     <Col xs={24} md={12}>
-                        <div className="space-y-3">
-                            <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-2">
-                                <Calendar className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                                <div>
+                        <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-2 gap-2">
+                            <div className="flex flex-col gap-1">
+                                <div className="flex flex-row items-center gap-1">
+                                    <Calendar className="w-4 h-4 text-blue-600" />
                                     <Text className="font-medium text-sm sm:text-base">Date & Time</Text>
-                                    <br />
-                                    <Text className="text-gray-600 text-sm sm:text-base">
-                                        {selectedTimeSlot && formatDateTime(selectedTimeSlot.startTime)}
-                                    </Text>
                                 </div>
-                            </div>
-                            <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-2">
-                                <Clock className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                <div>
-                                    <Text className="font-medium text-sm sm:text-base">Duration</Text>
-                                    <br />
-                                    <Text className="text-gray-600 text-sm sm:text-base">
-                                        {selectedTimeSlot?.durationMinutes} minutes
-                                    </Text>
-                                </div>
+                                <Text className="text-gray-600 text-sm sm:text-base">
+                                    {selectedTimeSlot && formatDateTime(selectedTimeSlot.startTime)}
+                                </Text>
                             </div>
                         </div>
                     </Col>
                     <Col xs={24} md={12}>
-                        <div className="space-y-3 mt-4 md:mt-0">
-                            <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-2">
-                                {getConsultationModeIcon(
-                                    selectedTimeSlot?.consultationMode || ConsultationMode.PHYSICAL
-                                )}
-                                <div>
-                                    <Text className="font-medium text-sm sm:text-base">Consultation Mode</Text>
-                                    <br />
-                                    <Tag
-                                        color={getConsultationModeColor(
-                                            selectedTimeSlot?.consultationMode || ConsultationMode.PHYSICAL
-                                        )}
-                                        className="mt-1 text-xs sm:text-sm"
-                                    >
-                                        {selectedTimeSlot?.consultationMode}
-                                    </Tag>
+                        <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-2">
+                            <div className="flex flex-col gap-1">
+                                <div className="flex flex-row items-center gap-1">
+                                    <Clock className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                    <Text className="font-medium text-sm sm:text-base">Duration</Text>
                                 </div>
+                                <Text className="text-gray-600 text-sm sm:text-base">
+                                    {selectedTimeSlot?.durationMinutes} minutes
+                                </Text>
                             </div>
-                            <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-2">
-                                <Users className="w-5 h-5 text-purple-600 flex-shrink-0" />
-                                <div>
-                                    <Text className="font-medium text-sm sm:text-base">Patient</Text>
-                                    <br />
-                                    <Text className="text-gray-600 text-sm sm:text-base">
-                                        {appointmentDetails.patientName}
-                                        {appointmentDetails.isForSelf && " (You)"}
-                                    </Text>
+                        </div>
+                    </Col>
+                    <Col xs={24} md={12}>
+                        <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-2">
+                            <div className="flex flex-col gap-1">
+                                <div className="flex flex-row items-center gap-1">
+                                    {getConsultationModeIcon(
+                                        selectedTimeSlot?.consultationMode || ConsultationMode.PHYSICAL
+                                    )}
+                                    <Text className="font-medium text-sm sm:text-base">Consultation Mode</Text>
                                 </div>
+                                <Tag
+                                    color={getConsultationModeColor(
+                                        selectedTimeSlot?.consultationMode || ConsultationMode.PHYSICAL
+                                    )}
+                                    className="text-xs sm:text-sm w-fit py-1 px-2"
+                                >
+                                    {selectedTimeSlot?.consultationMode}
+                                </Tag>
+                            </div>
+                        </div>
+                    </Col>
+                    <Col xs={24} md={12}>
+                        <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-2">
+                            <div className="flex flex-col gap-1">
+                                <div className="flex flex-row items-center gap-1">
+                                    <Users className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                                    <Text className="font-medium text-sm sm:text-base">Patient</Text>
+                                </div>
+                                <Text className="text-gray-600 text-sm sm:text-base">
+                                    {appointmentDetails.patientName}
+                                    {appointmentDetails.isForSelf && " (You)"}
+                                </Text>
                             </div>
                         </div>
                     </Col>
@@ -278,8 +315,8 @@ export default function BookingConfirmationStep() {
                             <List.Item>
                                 <List.Item.Meta
                                     avatar={<FileText className="w-5 h-5 text-blue-600" />}
-                                    title={doc.documentName}
-                                    description={`${doc.documentType} • ${doc.documentSize}`}
+                                    title={<span className="text-sm sm:text-base truncate block" title={doc.documentName}>{doc.documentName}</span>}
+                                    description={`${doc.documentType} • ${formatFileSize(doc.documentSize)}`}
                                 />
                             </List.Item>
                         )}
@@ -290,7 +327,7 @@ export default function BookingConfirmationStep() {
             {/* Medical Facility */}
             {selectedDoctor?.facility && (
                 <Card title="Medical Facility" className="shadow-lg">
-                    <Row gutter={[16, 16]} align="top">
+                    <Row gutter={[16, 16]} align={"middle"}>
                         <Col xs={24} md={10}>
                             {selectedDoctor.facility.thumbnailUrl ? (
                                 <Image
@@ -299,52 +336,45 @@ export default function BookingConfirmationStep() {
                                     width="100%"
                                     height={200}
                                     className="w-full h-36 sm:h-48 object-cover rounded-lg"
-                                    preview={false}
-                                    fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDQwMCAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMTkyIiBmaWxsPSIjZjVmNWY1Ii8+Cjx0ZXh0IHg9IjIwMCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCI+Tm8gSW1hZ2UgQXZhaWxhYmxlPC90ZXh0Pgo8L3N2Zz4K"
-                                    onError={() => {
-                                        console.error(
-                                            "Facility image failed to load:",
-                                            selectedDoctor.facility.thumbnailUrl
-                                        );
-                                    }}
                                 />
                             ) : (
                                 <div className="w-full h-36 sm:h-48 bg-gray-100 rounded-lg flex items-center justify-center">
-                                    <div className="text-center">
-                                        <MapPin className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-2" />
+                                    <div className="text-center items-center justify-center flex gap-1">
+                                        <MapPin className="w-5 h-5 sm:w-12 sm:h-12 text-gray-400 mx-auto" />
                                         <Text className="text-gray-500 text-sm sm:text-base">No Image Available</Text>
                                     </div>
                                 </div>
                             )}
                         </Col>
                         <Col xs={24} md={14}>
-                            <div className="space-y-3 sm:space-y-4 mt-4 md:mt-0">
-                                <div>
-                                    <Title level={4} className="mb-2 text-blue-900 text-lg sm:text-xl">
-                                        {selectedDoctor.facility.name}
-                                    </Title>
-                                </div>
+                            <div className="space-y-3">
+                                <Title level={4} className="mt-0 text-blue-900 text-lg sm:text-xl">
+                                    {selectedDoctor.facility.name}
+                                </Title>
                                 <div className="space-y-2 sm:space-y-3">
-                                    <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-3">
-                                        <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mt-0.5 flex-shrink-0" />
-                                        <div>
-                                            <Text className="font-medium text-gray-700 text-sm sm:text-base">
-                                                Address
-                                            </Text>
-                                            <br />
+                                    <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-2">
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex flex-row items-center gap-1">
+                                                <MapPin className="w-4 h-4 text-gray-500" />
+                                                <Text className="font-medium text-gray-700 text-sm sm:text-base">
+                                                    Address
+                                                </Text>
+                                            </div>
                                             <Text className="text-gray-600 text-sm sm:text-base">
                                                 {selectedDoctor.facility.address}
                                             </Text>
                                         </div>
                                     </div>
+
                                     {selectedDoctor.facility.telephone && (
-                                        <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-3">
-                                            <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mt-0.5 flex-shrink-0" />
-                                            <div>
-                                                <Text className="font-medium text-gray-700 text-sm sm:text-base">
-                                                    Phone
-                                                </Text>
-                                                <br />
+                                        <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-2">
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex flex-row items-center gap-1">
+                                                    <Phone className="w-4 h-4 text-gray-500" />
+                                                    <Text className="font-medium text-gray-700 text-sm sm:text-base">
+                                                        Phone
+                                                    </Text>
+                                                </div>
                                                 <Text className="text-gray-600 text-sm sm:text-base">
                                                     {selectedDoctor.facility.telephone}
                                                 </Text>
@@ -352,14 +382,15 @@ export default function BookingConfirmationStep() {
                                         </div>
                                     )}
                                     {selectedDoctor.facility.facilityType && (
-                                        <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-3">
-                                            <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mt-0.5 flex-shrink-0" />
-                                            <div>
-                                                <Text className="font-medium text-gray-700 text-sm sm:text-base">
-                                                    Facility Type
-                                                </Text>
-                                                <br />
-                                                <Tag color="blue" className="mt-1 text-xs sm:text-sm">
+                                        <div className="flex flex-col sm:flex-row sm:items-start space-y-2 sm:space-y-0 sm:space-x-2">
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex flex-row items-center gap-1">
+                                                    <Building2 className="w-4 h-4 text-gray-500" />
+                                                    <Text className="font-medium text-gray-700 text-sm sm:text-base">
+                                                        Facility Type
+                                                    </Text>
+                                                </div>
+                                                <Tag color="blue" className="text-xs sm:text-sm w-fit py-1 px-2">
                                                     {selectedDoctor.facility.facilityType}
                                                 </Tag>
                                             </div>
@@ -385,14 +416,13 @@ export default function BookingConfirmationStep() {
                     </Button>
                     <Button
                         type="primary"
-                        size="large"
+                        size="middle"
                         onClick={handleBookAppointment}
                         loading={confirmationLoading}
-                        icon={<CheckCircle className="w-4 h-4" />}
-                        className="bg-green-600 hover:bg-green-700 border-green-600 w-full sm:w-auto text-sm sm:text-base"
+                        className="bg-blue-600 hover:bg-blue-700 border-blue-600 w-full sm:w-auto text-sm sm:text-base"
                     >
-                        <span className="hidden sm:inline">Confirm & Book Appointment</span>
-                        <span className="sm:hidden">Book Appointment</span>
+                        <CheckCircle className="w-4 h-4" />
+                        Book Appointment
                     </Button>
                 </div>
             </Card>

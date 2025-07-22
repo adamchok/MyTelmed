@@ -79,7 +79,11 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
     }, []);
 
     return (
-        <Card className="mb-4 hover:shadow-lg transition-shadow duration-200 p-3 sm:p-4 bg-white">
+        <Card className="mb-4 hover:shadow-lg transition-shadow duration-200 p-3 sm:p-4 bg-white" styles={{
+            body: {
+                padding: "12px",
+            },
+        }}>
             <div className="space-y-3 sm:space-y-4">
                 {/* Header with Patient Info and Status */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
@@ -93,15 +97,12 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
                         <div className="min-w-0 flex-1">
                             {" "}
                             {/* Prevent text overflow */}
-                            <Title level={5} className="mb-0 text-sm sm:text-base truncate">
+                            <Title level={5} className="my-0 text-sm sm:text-base truncate">
                                 {appointment.patient.name}
                             </Title>
-                            <Text className="text-gray-500 text-xs sm:text-sm truncate">
-                                Patient ID: {appointment.patient.id}
-                            </Text>
                         </div>
                     </div>
-                    <div className="flex flex-col items-start sm:items-end space-y-1 sm:space-y-2">
+                    <div className="flex flex-col md:flex-row items-start sm:items-end space-y-1 sm:space-y-2">
                         <Tag
                             color={getStatusColor(appointment.status as AppointmentStatus)}
                             className="px-2 py-1 text-xs sm:text-sm"
@@ -208,7 +209,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
                     <Space size="small" className="w-full sm:w-auto">
                         <Button
                             type="primary"
-                            size={isMobile ? "small" : "large"}
+                            size={isMobile ? "small" : "middle"}
                             icon={<Eye className={isMobile ? "w-4 h-4" : "w-5 h-5"} />}
                             onClick={() => onView(appointment)}
                             className={`bg-green-600 border-green-600 hover:bg-green-700 hover:border-green-700 ${isMobile ? "text-xs px-2 py-1" : "text-base px-4 py-2"

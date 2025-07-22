@@ -59,19 +59,18 @@ const BillCard: React.FC<BillCardProps> = ({ bill, showPatientInfo }) => {
     const getPaymentModeConfig = (mode?: PaymentMode) => {
         if (!mode) return null;
 
-        switch (mode) {
-            case "CARD":
-                return {
-                    color: "blue",
-                    text: "Card Payment",
-                    icon: <CreditCard className="w-4 h-4" />
-                };
-            default:
-                return {
-                    color: "default",
-                    text: mode,
-                    icon: <DollarSign className="w-4 h-4" />
-                };
+        if (mode === "CARD") {
+            return {
+                color: "blue",
+                text: "Card Payment",
+                icon: <CreditCard className="w-4 h-4" />
+            };
+        } else {
+            return {
+                color: "default",
+                text: mode,
+                icon: <DollarSign className="w-4 h-4" />
+            };
         }
     };
 
@@ -157,7 +156,7 @@ const BillCard: React.FC<BillCardProps> = ({ bill, showPatientInfo }) => {
                         <div>
                             <Text className="text-gray-600 text-xs block">Billed Date</Text>
                             <Text className="text-gray-800 text-sm">
-                                {dayjs(bill.billedAt).format('DD/MM/YYYY')}
+                                {dayjs(Number(bill.billedAt) * 1000).format('DD/MM/YYYY')}
                             </Text>
                         </div>
                     </div>
@@ -169,7 +168,7 @@ const BillCard: React.FC<BillCardProps> = ({ bill, showPatientInfo }) => {
                             <div>
                                 <Text className="text-gray-600 text-xs block">Paid Date</Text>
                                 <Text className="text-gray-800 text-sm">
-                                    {dayjs(bill.paidAt).format('DD/MM/YYYY')}
+                                    {dayjs(Number(bill.paidAt) * 1000).format('DD/MM/YYYY')}
                                 </Text>
                             </div>
                         </div>

@@ -40,6 +40,7 @@ const AddressFormModal = ({ visible, address, loading, onCancel, onSubmit }: Add
         // Ensure postcode is properly cleaned before submission
         const cleanedValues = {
             ...values,
+            address2: values.address2 || "",
             postcode: values.postcode ? values.postcode.replace(/\D/g, "").slice(0, 5) : values.postcode,
         };
 

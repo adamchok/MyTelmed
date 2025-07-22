@@ -17,6 +17,11 @@ public enum DeliveryStatus {
   PAID,
 
   /**
+   * Patient has chosen pickup and pick up is pending
+   */
+  PENDING_PICKUP,
+
+  /**
    * Pharmacy is preparing medication
    */
   PREPARING,

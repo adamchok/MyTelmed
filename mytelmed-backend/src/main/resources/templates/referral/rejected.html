@@ -357,7 +357,10 @@
             </div>
 
             <!-- Clinical Information (if available) -->
-            <div th:if="${clinicalSummary or currentMedications or allergies or investigationsDone}" class="doctor-info">
+            <div
+                th:if="${clinicalSummary != null or currentMedications != null or allergies != null or investigationsDone != null}"
+                class="doctor-info"
+            >
                 <h4 style="margin: 0 0 15px 0; color: #495057">Original Clinical Information</h4>
 
                 <div th:if="${clinicalSummary}">
@@ -406,8 +409,7 @@
                 <p>&copy; 2025 MyTelmed. All rights reserved.</p>
                 <p>
                     <a th:href="${uiHost + '/privacy'}">Privacy Policy</a> |
-                    <a th:href="${uiHost + '/terms'}">Terms of Service</a> |
-                    <a th:href="${uiHost + '/patient/support'}">Medical Support</a>
+                    <a th:href="${uiHost + '/terms'}">Terms of Service</a>
                 </p>
             </div>
         </div>
