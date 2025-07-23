@@ -26,7 +26,7 @@ import java.util.List;
  */
 @Slf4j
 @Service
-public class BedrockAiService implements AiService {
+public class BedrockAiService implements AiServiceStrategy {
     private final BedrockRuntimeClient bedrockClient;
     private final ObjectMapper objectMapper;
     private final String modelId;
@@ -141,10 +141,10 @@ public class BedrockAiService implements AiService {
 
         // Add inferenceConfig (valid keys under this object)
         ObjectNode inferenceConfig = objectMapper.createObjectNode();
-        inferenceConfig.put("maxTokens", 2048);       // Optional
-        inferenceConfig.put("temperature", 0.7);      // Optional
-        inferenceConfig.put("topP", 0.9);             // Optional
-        inferenceConfig.put("topK", 20);              // Optional
+        inferenceConfig.put("maxTokens", 2048); // Optional
+        inferenceConfig.put("temperature", 0.7); // Optional
+        inferenceConfig.put("topP", 0.9); // Optional
+        inferenceConfig.put("topK", 20); // Optional
         root.set("inferenceConfig", inferenceConfig);
 
         return objectMapper.writeValueAsString(root);

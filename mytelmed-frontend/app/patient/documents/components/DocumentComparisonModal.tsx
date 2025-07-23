@@ -97,7 +97,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             styles={{ body: { padding: "12px", height: "100%", display: "flex", flexDirection: "column" } }}
         >
             {/* Header */}
-            <div className="flex items-center justify-between mb-3 pb-2 border-b">
+            <div className="flex items-center justify-between border-b">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                     <FileText className="w-5 h-5 text-blue-500 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
@@ -147,9 +147,6 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
                             title="Retry Loading"
                         />
                     )}
-                </div>
-                <div className="flex items-center gap-2">
-                    <Text className="text-xs text-gray-500">{formatFileSize(document.documentSize)}</Text>
                 </div>
             </div>
 
@@ -282,7 +279,6 @@ const DocumentComparisonModal: React.FC<DocumentComparisonModalProps> = ({
                 footer={null}
                 width="100vw"
                 style={{
-                    maxWidth: "none",
                     margin: 0,
                     padding: 0,
                     top: 0,
@@ -306,12 +302,13 @@ const DocumentComparisonModal: React.FC<DocumentComparisonModalProps> = ({
                         backgroundColor: "rgba(0, 0, 0, 0.8)",
                     },
                 }}
-                centered={false}
+                centered={true}
                 destroyOnHidden={true}
                 maskClosable={true}
                 keyboard={true}
                 zIndex={1100}
                 getContainer={false}
+                closable={true}
             >
                 <div className="text-center py-8">
                     <FileText className="w-16 h-16 mx-auto text-gray-400 mb-4" />
@@ -334,7 +331,6 @@ const DocumentComparisonModal: React.FC<DocumentComparisonModalProps> = ({
                 footer={null}
                 width="100vw"
                 style={{
-                    maxWidth: "none",
                     margin: 0,
                     padding: 0,
                     top: 0,
@@ -357,12 +353,13 @@ const DocumentComparisonModal: React.FC<DocumentComparisonModalProps> = ({
                         backgroundColor: "rgba(0, 0, 0, 0.8)",
                     },
                 }}
-                centered={false}
+                centered={true}
                 destroyOnHidden={true}
                 maskClosable={true}
                 keyboard={true}
                 zIndex={1100}
                 getContainer={false}
+                closable={false}
             >
                 <div className="h-full flex flex-col bg-white">
                     {/* Header */}
@@ -385,7 +382,7 @@ const DocumentComparisonModal: React.FC<DocumentComparisonModalProps> = ({
                     </div>
 
                     {/* Document Grid */}
-                    <div className="flex-1 p-4">
+                    <div className="flex-1">
                         <div className={`grid ${getGridClass()} ${getGridRows()} gap-4 h-full`}>
                             {selectedDocuments.map((document) => (
                                 <DocumentViewer
@@ -400,7 +397,7 @@ const DocumentComparisonModal: React.FC<DocumentComparisonModalProps> = ({
                     </div>
 
                     {/* Footer with tips */}
-                    <div className="p-4 border-t bg-blue-50">
+                    <div className="p-4 mt-4 border-t bg-blue-50">
                         <Text className="text-sm text-blue-700">
                             <strong>Important:</strong> Document URLs expire after 10 minutes for security. If documents
                             fail to load, try refreshing the page or use the download button to view documents locally.
@@ -408,63 +405,65 @@ const DocumentComparisonModal: React.FC<DocumentComparisonModalProps> = ({
                         </Text>
                     </div>
                 </div>
-            </Modal>
+            </Modal >
 
             {/* Individual document fullscreen viewer */}
-            {fullscreenDocument && (
-                <Modal
-                    title={null}
-                    open={true}
-                    onCancel={() => setFullscreenDocument(null)}
-                    footer={null}
-                    width="100vw"
-                    style={{
-                        maxWidth: "none",
-                        margin: 0,
-                        padding: 0,
-                        top: 0,
-                        left: 0,
-                        height: "100vh",
-                    }}
-                    styles={{
-                        body: {
+            {
+                fullscreenDocument && (
+                    <Modal
+                        title={null}
+                        open={true}
+                        onCancel={() => setFullscreenDocument(null)}
+                        footer={null}
+                        width="100vw"
+                        style={{
+                            margin: 0,
                             padding: 0,
+                            top: 0,
+                            left: 0,
                             height: "100vh",
-                            display: "flex",
-                            flexDirection: "column",
-                        },
-                        content: {
-                            height: "100vh",
-                            display: "flex",
-                            flexDirection: "column",
-                        },
-                        mask: {
-                            backgroundColor: "rgba(0, 0, 0, 0.8)",
-                        },
-                    }}
-                    centered={false}
-                    destroyOnHidden={true}
-                    maskClosable={true}
-                    keyboard={true}
-                    zIndex={1100}
-                    getContainer={false}
-                >
-                    <div className="h-full flex flex-col bg-white">
-                        {selectedDocuments
-                            .filter((doc) => doc.id === fullscreenDocument)
-                            .map((document) => (
-                                <DocumentViewer
-                                    key={document.id}
-                                    document={document}
-                                    onRemove={() => setFullscreenDocument(null)}
-                                    onDownload={() => handleDownloadDocument(document.id)}
-                                    isFullscreen={true}
-                                    onToggleFullscreen={() => setFullscreenDocument(null)}
-                                />
-                            ))}
-                    </div>
-                </Modal>
-            )}
+                        }}
+                        styles={{
+                            body: {
+                                padding: 0,
+                                height: "100vh",
+                                display: "flex",
+                                flexDirection: "column",
+                            },
+                            content: {
+                                height: "100vh",
+                                display: "flex",
+                                flexDirection: "column",
+                            },
+                            mask: {
+                                backgroundColor: "rgba(0, 0, 0, 0.8)",
+                            },
+                        }}
+                        centered={true}
+                        destroyOnHidden={true}
+                        maskClosable={true}
+                        keyboard={true}
+                        zIndex={1100}
+                        getContainer={false}
+                        closable={false}
+                    >
+                        <div className="h-full flex flex-col bg-white">
+                            {selectedDocuments
+                                .filter((doc) => doc.id === fullscreenDocument)
+                                .map((document) => (
+                                    <DocumentViewer
+                                        key={document.id}
+                                        document={document}
+                                        onRemove={() => setFullscreenDocument(null)}
+                                        onDownload={() => handleDownloadDocument(document.id)}
+                                        isFullscreen={true}
+                                        onToggleFullscreen={() => setFullscreenDocument(null)}
+                                    />
+                                ))}
+                        </div>
+                    </Modal>
+                )
+            }
         </>
     );
 };

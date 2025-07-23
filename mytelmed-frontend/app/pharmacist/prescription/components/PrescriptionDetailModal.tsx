@@ -283,7 +283,7 @@ export default function PrescriptionDetailModal({
                 }
                 open={visible}
                 onCancel={onClose}
-                width="90%"
+                width="60%"
                 style={{ maxWidth: 1200 }}
                 footer={null}
                 className="prescription-detail-modal"
@@ -457,76 +457,73 @@ export default function PrescriptionDetailModal({
                         />
                     </Card>
 
-                    {/* Action Buttons */}
-                    <Card>
-                        <div className="flex flex-wrap gap-3 justify-center">
-                            {canStartProcessing && (
-                                <Button
-                                    type="primary"
-                                    icon={<Play className="w-4 h-4" />}
-                                    onClick={handleStartProcessing}
-                                    loading={loading}
-                                    className="bg-purple-500 hover:bg-purple-600"
-                                >
-                                    Start Processing
-                                </Button>
-                            )}
+                    <div className="flex flex-wrap gap-3 justify-center">
+                        {canStartProcessing && (
+                            <Button
+                                type="primary"
+                                icon={<Play className="w-4 h-4" />}
+                                onClick={handleStartProcessing}
+                                loading={loading}
+                                className="bg-purple-500 hover:bg-purple-600"
+                            >
+                                Start Processing
+                            </Button>
+                        )}
 
-                            {canMarkReady && (
-                                <Popconfirm
-                                    title="Mark Prescription as Ready"
-                                    description="Are you sure the prescription is ready for pickup/delivery?"
-                                    onConfirm={handleMarkReady}
-                                    okText="Yes, Mark Ready"
-                                    cancelText="Cancel"
-                                >
-                                    <Button
-                                        type="primary"
-                                        icon={<CheckCircle className="w-4 h-4" />}
-                                        loading={loading}
-                                        className="bg-green-500 hover:bg-green-600"
-                                    >
-                                        Mark as Ready
-                                    </Button>
-                                </Popconfirm>
-                            )}
-
-                            {canMarkReadyForPickup && (
+                        {canMarkReady && (
+                            <Popconfirm
+                                title="Mark Prescription as Ready"
+                                description="Are you sure the prescription is ready for pickup/delivery?"
+                                onConfirm={handleMarkReady}
+                                okText="Yes, Mark Ready"
+                                cancelText="Cancel"
+                            >
                                 <Button
                                     type="primary"
                                     icon={<CheckCircle className="w-4 h-4" />}
-                                    onClick={handleMarkReadyForPickup}
                                     loading={loading}
                                     className="bg-green-500 hover:bg-green-600"
                                 >
-                                    Mark Ready for Pickup
+                                    Mark as Ready
                                 </Button>
-                            )}
+                            </Popconfirm>
+                        )}
 
-                            {canMarkOutForDelivery && (
-                                <Button
-                                    type="primary"
-                                    icon={<Truck className="w-4 h-4" />}
-                                    onClick={handleMarkOutForDelivery}
-                                    className="bg-blue-500 hover:bg-blue-600"
-                                >
-                                    Mark Out for Delivery
-                                </Button>
-                            )}
+                        {canMarkReadyForPickup && (
+                            <Button
+                                type="primary"
+                                icon={<CheckCircle className="w-4 h-4" />}
+                                onClick={handleMarkReadyForPickup}
+                                loading={loading}
+                                className="bg-green-500 hover:bg-green-600"
+                            >
+                                Mark Ready for Pickup
+                            </Button>
+                        )}
 
-                            {canMarkDelivered && (
-                                <Button
-                                    type="primary"
-                                    icon={<CheckCircle className="w-4 h-4" />}
-                                    onClick={handleMarkDelivered}
-                                    loading={loading}
-                                    className="bg-green-500 hover:bg-green-600"
-                                >
-                                    Mark as Delivered
-                                </Button>
-                            )}
-                        </div>
-                    </Card>
+                        {canMarkOutForDelivery && (
+                            <Button
+                                type="primary"
+                                icon={<Truck className="w-4 h-4" />}
+                                onClick={handleMarkOutForDelivery}
+                                className="bg-blue-500 hover:bg-blue-600"
+                            >
+                                Mark Out for Delivery
+                            </Button>
+                        )}
+
+                        {canMarkDelivered && (
+                            <Button
+                                type="primary"
+                                icon={<CheckCircle className="w-4 h-4" />}
+                                onClick={handleMarkDelivered}
+                                loading={loading}
+                                className="bg-green-500 hover:bg-green-600"
+                            >
+                                Mark as Delivered
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </Modal>
 

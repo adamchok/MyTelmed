@@ -99,7 +99,7 @@ export default function DoctorPrescriptionPage() {
     }
 
     return (
-        <div className="container mx-auto">
+        <div className="container mx-auto space-y-4">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>

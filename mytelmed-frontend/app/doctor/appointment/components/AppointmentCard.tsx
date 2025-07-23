@@ -188,19 +188,6 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
                     </div>
                 )}
 
-                {/* Doctor's Notes (if available) */}
-                {appointment.doctorNotes && (
-                    <div className="bg-blue-50 p-2 sm:p-3 rounded-lg border border-blue-100">
-                        <Text strong className="text-blue-800 text-xs sm:text-sm">
-                            Doctor&apos;s Notes:
-                        </Text>
-                        <br />
-                        <Text className="text-blue-700 text-xs sm:text-sm line-clamp-2 sm:line-clamp-3">
-                            {appointment.doctorNotes}
-                        </Text>
-                    </div>
-                )}
-
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 pt-2 border-t border-gray-100">
                     <div className="text-xs text-gray-500">
@@ -222,7 +209,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
                             <Button
                                 type="primary"
                                 danger
-                                size={isMobile ? "small" : "large"}
+                                size={isMobile ? "small" : "middle"}
                                 icon={<Trash2 className={isMobile ? "w-4 h-4" : "w-5 h-5"} />}
                                 onClick={() => onCancel(appointment)}
                                 className={`${isMobile ? "text-xs px-2 py-1" : "text-base px-4 py-2"

@@ -207,7 +207,7 @@ export default function DeliveryFlowPage() {
     }
 
     return (
-        <div className="container mx-auto py-6">
+        <div className="container mx-auto">
             {/* Header with Back Button */}
             <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto mb-6">
                 <Button
@@ -224,7 +224,7 @@ export default function DeliveryFlowPage() {
             {/* Page Title */}
             <div className="flex items-center justify-center mb-6 sm:mb-8">
                 <div className="text-center">
-                    <Title level={2} className="text-blue-900 mb-2 text-xl sm:text-2xl md:text-2xl lg:text-3xl">
+                    <Title level={2} className="text-blue-900 mb-2 mt-0 text-xl sm:text-2xl md:text-2xl lg:text-3xl">
                         Choose Delivery Method
                     </Title>
                     <Text className="text-gray-600 text-sm sm:text-base md:text-base lg:text-lg">

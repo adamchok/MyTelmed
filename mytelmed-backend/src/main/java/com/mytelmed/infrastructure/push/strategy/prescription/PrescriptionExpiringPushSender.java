@@ -2,7 +2,7 @@ package com.mytelmed.infrastructure.push.strategy.prescription;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mytelmed.infrastructure.push.config.VapidConfiguration;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import com.mytelmed.infrastructure.push.strategy.BasePushNotificationStrategy;
 import nl.martijndwars.webpush.PushService;
 import org.springframework.stereotype.Component;
@@ -11,7 +11,6 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
-
 
 @Component
 public class PrescriptionExpiringPushSender extends BasePushNotificationStrategy {
@@ -23,8 +22,8 @@ public class PrescriptionExpiringPushSender extends BasePushNotificationStrategy
     }
 
     @Override
-    public NotificationType getNotificationType() {
-        return NotificationType.PRESCRIPTION_EXPIRING;
+    public PushNotificationType getNotificationType() {
+        return PushNotificationType.PRESCRIPTION_EXPIRING;
     }
 
     @Override
@@ -69,11 +68,11 @@ public class PrescriptionExpiringPushSender extends BasePushNotificationStrategy
 
     @Override
     protected Map<String, Object>[] buildActions(Map<String, Object> variables) {
-        return new Map[]{
+        return new Map[] {
                 Map.of(
                         "action", "view-prescription",
                         "title", "View Prescription",
-                        "icon", "/icons/mytelmed-icon-72.png")
+                        "icon", "/assets/logos/mytelmed-logo.png")
         };
     }
 }

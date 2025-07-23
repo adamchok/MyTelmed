@@ -2,13 +2,13 @@ package com.mytelmed.core.transcription.service;
 
 import com.mytelmed.common.advice.AppException;
 import com.mytelmed.common.advice.exception.ResourceNotFoundException;
-import com.mytelmed.common.constant.transcription.ProcessingStatus;
+import com.mytelmed.common.constant.transcription.TranscriptProcessingStatus;
 import com.mytelmed.core.appointment.entity.Appointment;
 import com.mytelmed.core.appointment.repository.AppointmentRepository;
 import com.mytelmed.core.transcription.entity.TranscriptionSummary;
 import com.mytelmed.infrastructure.ai.dto.TranscriptionSummaryRequest;
 import com.mytelmed.infrastructure.ai.dto.TranscriptionSummaryResponse;
-import com.mytelmed.infrastructure.ai.service.AiService;
+import com.mytelmed.infrastructure.ai.service.AiServiceStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -28,11 +28,11 @@ import java.util.UUID;
 @Service
 public class TranscriptionService {
     private final DynamoDbTable<TranscriptionSummary> transcriptionTable;
-    private final AiService aiService;
+    private final AiServiceStrategy aiService;
     private final AppointmentRepository appointmentRepository;
 
     public TranscriptionService(DynamoDbTable<TranscriptionSummary> transcriptionTable,
-            AiService aiService,
+            AiServiceStrategy aiService,
             AppointmentRepository appointmentRepository) {
         this.transcriptionTable = transcriptionTable;
         this.aiService = aiService;
@@ -78,7 +78,7 @@ public class TranscriptionService {
                 pendingSummary.setDoctorSummary(aiResponse.doctorSummary());
                 pendingSummary.setKeyPoints(aiResponse.keyPoints());
                 pendingSummary.setActionItems(aiResponse.actionItems());
-                pendingSummary.setProcessingStatus(ProcessingStatus.COMPLETED.getStatus());
+                pendingSummary.setProcessingStatus(TranscriptProcessingStatus.COMPLETED.getStatus());
                 pendingSummary.setAiModel(aiService.getModelIdentifier());
                 pendingSummary.setUpdatedAt(Instant.now());
 
@@ -160,7 +160,7 @@ public class TranscriptionService {
         return TranscriptionSummary.builder()
                 .appointmentId(appointmentId.toString())
                 .summaryId(summaryId)
-                .processingStatus(ProcessingStatus.PENDING.getStatus())
+                .processingStatus(TranscriptProcessingStatus.PENDING.getStatus())
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
@@ -175,7 +175,7 @@ public class TranscriptionService {
                             .build());
 
             if (summary != null) {
-                summary.setProcessingStatus(ProcessingStatus.PROCESSING.getStatus());
+                summary.setProcessingStatus(TranscriptProcessingStatus.PROCESSING.getStatus());
                 summary.setUpdatedAt(Instant.now());
                 transcriptionTable.putItem(summary);
             }
@@ -193,7 +193,7 @@ public class TranscriptionService {
                             .build());
 
             if (summary != null) {
-                summary.setProcessingStatus(ProcessingStatus.FAILED.getStatus());
+                summary.setProcessingStatus(TranscriptProcessingStatus.FAILED.getStatus());
                 summary.setErrorMessage(errorMessage);
                 summary.setUpdatedAt(Instant.now());
                 transcriptionTable.putItem(summary);

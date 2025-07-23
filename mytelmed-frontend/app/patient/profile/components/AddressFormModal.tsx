@@ -69,6 +69,7 @@ const AddressFormModal = ({ visible, address, loading, onCancel, onSubmit }: Add
             footer={null}
             width={600}
             destroyOnHidden={true}
+            centered
         >
             <Form
                 form={form}

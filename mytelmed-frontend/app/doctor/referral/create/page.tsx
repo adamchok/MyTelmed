@@ -25,6 +25,11 @@ export default function CreateReferralPage() {
         dispatch(resetReferralCreation());
     }, [dispatch]);
 
+    useEffect(() => {
+        // Auto scroll to top when step changes
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentStep]);
+
     const steps = [
         {
             title: "Select Patient",

@@ -49,6 +49,11 @@ export default function CreatePrescriptionPage() {
         dispatch(resetCreationState());
     }, [dispatch]);
 
+    useEffect(() => {
+        // Auto scroll to top when step changes
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentStep]);
+
     const handleBackToPrescriptions = () => {
         dispatch(resetCreationState());
         router.push("/doctor/prescription");

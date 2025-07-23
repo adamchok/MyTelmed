@@ -6,7 +6,7 @@ import com.mytelmed.core.auth.entity.Account;
 import com.mytelmed.core.notification.dto.PushSubscriptionRequestDto;
 import com.mytelmed.core.notification.entity.PushSubscription;
 import com.mytelmed.core.notification.repository.PushSubscriptionRepository;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import com.mytelmed.infrastructure.push.factory.PushNotificationFactoryRegistry;
 import com.mytelmed.infrastructure.push.strategy.PushNotificationStrategy;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 public class PushSubscriptionService {
@@ -28,7 +27,7 @@ public class PushSubscriptionService {
     private final static int MAX_SUBSCRIPTIONS_PER_USER = 10;
 
     public PushSubscriptionService(PushSubscriptionRepository subscriptionRepository,
-                                   PushNotificationFactoryRegistry notificationRegistry) {
+            PushNotificationFactoryRegistry notificationRegistry) {
         this.subscriptionRepository = subscriptionRepository;
         this.notificationRegistry = notificationRegistry;
     }
@@ -60,7 +59,8 @@ public class PushSubscriptionService {
         // Check subscription limit
         long activeSubscriptions = subscriptionRepository.countActiveSubscriptionsByAccountId(account.getId());
         if (activeSubscriptions >= MAX_SUBSCRIPTIONS_PER_USER) {
-            log.warn("Account {} has reached maximum subscription limit: {}", account.getId(), MAX_SUBSCRIPTIONS_PER_USER);
+            log.warn("Account {} has reached maximum subscription limit: {}", account.getId(),
+                    MAX_SUBSCRIPTIONS_PER_USER);
             throw new AppException("Maximum number of push subscriptions reached");
         }
 
@@ -142,8 +142,8 @@ public class PushSubscriptionService {
 
     @Async
     @Transactional
-    public void sendNotificationByAccountId(UUID accountId, NotificationType notificationType,
-                                            Map<String, Object> variables) {
+    public void sendNotificationByAccountId(UUID accountId, PushNotificationType notificationType,
+            Map<String, Object> variables) {
         try {
             // Validate inputs
             if (accountId == null) {
@@ -216,8 +216,8 @@ public class PushSubscriptionService {
         }
     }
 
-    private void sendNotificationToSubscription(PushSubscription subscription, NotificationType notificationType,
-                                                Map<String, Object> variables) {
+    private void sendNotificationToSubscription(PushSubscription subscription, PushNotificationType notificationType,
+            Map<String, Object> variables) {
         log.debug("Sending {} notification to subscription: {}", notificationType, subscription.getId());
 
         try {

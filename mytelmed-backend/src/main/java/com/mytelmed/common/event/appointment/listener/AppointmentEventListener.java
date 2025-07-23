@@ -7,7 +7,7 @@ import com.mytelmed.common.event.appointment.model.AppointmentReminderEvent;
 import com.mytelmed.core.notification.service.PushSubscriptionService;
 import com.mytelmed.infrastructure.email.constant.EmailType;
 import com.mytelmed.infrastructure.email.factory.EmailSenderFactoryRegistry;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
@@ -319,10 +319,10 @@ public class AppointmentEventListener {
             Map<String, Object> providerVariables) {
         try {
             sendPushNotification(event.patient().getAccount().getId(),
-                    NotificationType.APPOINTMENT_BOOKED_PATIENT, patientVariables);
+                    PushNotificationType.APPOINTMENT_BOOKED_PATIENT, patientVariables);
 
             sendPushNotification(event.doctor().getAccount().getId(),
-                    NotificationType.APPOINTMENT_BOOKED_PROVIDER, providerVariables);
+                    PushNotificationType.APPOINTMENT_BOOKED_PROVIDER, providerVariables);
 
             log.debug("Sent {} appointment booking push notifications for appointment: {}",
                     event.consultationMode(), event.appointmentId());
@@ -355,10 +355,10 @@ public class AppointmentEventListener {
             Map<String, Object> providerVariables) {
         try {
             sendPushNotification(event.patient().getAccount().getId(),
-                    NotificationType.APPOINTMENT_CANCEL_PATIENT, patientVariables);
+                    PushNotificationType.APPOINTMENT_CANCEL_PATIENT, patientVariables);
 
             sendPushNotification(event.doctor().getAccount().getId(),
-                    NotificationType.APPOINTMENT_CANCEL_PROVIDER, providerVariables);
+                    PushNotificationType.APPOINTMENT_CANCEL_PROVIDER, providerVariables);
 
             log.debug("Sent {} appointment cancellation push notifications for appointment: {}",
                     event.consultationMode(), event.appointmentId());
@@ -388,10 +388,10 @@ public class AppointmentEventListener {
             Map<String, Object> providerVariables) {
         try {
             sendPushNotification(event.patient().getAccount().getId(),
-                    NotificationType.APPOINTMENT_REMINDER_PATIENT, patientVariables);
+                    PushNotificationType.APPOINTMENT_REMINDER_PATIENT, patientVariables);
 
             sendPushNotification(event.doctor().getAccount().getId(),
-                    NotificationType.APPOINTMENT_REMINDER_PROVIDER, providerVariables);
+                    PushNotificationType.APPOINTMENT_REMINDER_PROVIDER, providerVariables);
         } catch (Exception e) {
             log.error("Failed to send reminder push notifications for appointment ID: {}",
                     event.appointmentId(), e);
@@ -423,18 +423,18 @@ public class AppointmentEventListener {
             Map<String, Object> providerVariables) {
         try {
             sendPushNotification(event.patient().getAccount().getId(),
-                    NotificationType.APPOINTMENT_CONFIRMATION_PATIENT, patientVariables);
+                    PushNotificationType.APPOINTMENT_CONFIRMATION_PATIENT, patientVariables);
 
             // Send to provider
             sendPushNotification(event.doctor().getAccount().getId(),
-                    NotificationType.APPOINTMENT_CONFIRMATION_PROVIDER, providerVariables);
+                    PushNotificationType.APPOINTMENT_CONFIRMATION_PROVIDER, providerVariables);
         } catch (Exception e) {
             log.error("Failed to send confirmation push notifications for appointment ID: {}",
                     event.appointmentId(), e);
         }
     }
 
-    private void sendPushNotification(UUID accountId, NotificationType notificationType,
+    private void sendPushNotification(UUID accountId, PushNotificationType notificationType,
             Map<String, Object> variables) {
         try {
             if (accountId == null) {

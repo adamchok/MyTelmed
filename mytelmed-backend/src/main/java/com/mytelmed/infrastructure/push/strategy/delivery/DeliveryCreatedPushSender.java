@@ -2,7 +2,7 @@ package com.mytelmed.infrastructure.push.strategy.delivery;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mytelmed.infrastructure.push.config.VapidConfiguration;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import com.mytelmed.infrastructure.push.strategy.BasePushNotificationStrategy;
 import nl.martijndwars.webpush.PushService;
 import org.springframework.stereotype.Component;
@@ -19,8 +19,8 @@ public class DeliveryCreatedPushSender extends BasePushNotificationStrategy {
     }
 
     @Override
-    public NotificationType getNotificationType() {
-        return NotificationType.DELIVERY_CREATED;
+    public PushNotificationType getNotificationType() {
+        return PushNotificationType.DELIVERY_CREATED;
     }
 
     @Override
@@ -52,8 +52,7 @@ public class DeliveryCreatedPushSender extends BasePushNotificationStrategy {
         return Map.of(
                 "url", url,
                 "prescriptionId", prescriptionId,
-                "deliveryMethod", variables.get("deliveryMethod")
-        );
+                "deliveryMethod", variables.get("deliveryMethod"));
     }
 
     @Override
@@ -76,7 +75,7 @@ public class DeliveryCreatedPushSender extends BasePushNotificationStrategy {
 
     @Override
     protected Map<String, Object>[] buildActions(Map<String, Object> variables) {
-        return new Map[]{
+        return new Map[] {
                 Map.of(
                         "action", "track-delivery",
                         "title", "Track Delivery",
@@ -87,4 +86,4 @@ public class DeliveryCreatedPushSender extends BasePushNotificationStrategy {
                         "icon", "/icons/mytelmed-icon-72.png")
         };
     }
-} 
+}

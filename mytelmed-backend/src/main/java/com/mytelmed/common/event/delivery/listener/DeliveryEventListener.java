@@ -11,7 +11,7 @@ import com.mytelmed.core.delivery.entity.MedicationDelivery;
 import com.mytelmed.core.notification.service.PushSubscriptionService;
 import com.mytelmed.infrastructure.email.constant.EmailType;
 import com.mytelmed.infrastructure.email.factory.EmailSenderFactoryRegistry;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
@@ -21,7 +21,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
 
 /**
  * Event listener for medication delivery events in Malaysian public healthcare
@@ -38,8 +37,8 @@ public class DeliveryEventListener {
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
 
     public DeliveryEventListener(EmailSenderFactoryRegistry emailService,
-                                 PushSubscriptionService pushSubscriptionService,
-                                 @Value("${application.frontend.url}") String frontendUrl) {
+            PushSubscriptionService pushSubscriptionService,
+            @Value("${application.frontend.url}") String frontendUrl) {
         this.emailService = emailService;
         this.pushSubscriptionService = pushSubscriptionService;
         this.frontendUrl = frontendUrl;
@@ -60,7 +59,7 @@ public class DeliveryEventListener {
 
             // Send push notification to patient
             sendPushNotification(event.delivery().getPrescription().getPatient().getAccount().getId(),
-                    NotificationType.DELIVERY_CREATED, pushVariables);
+                    PushNotificationType.DELIVERY_CREATED, pushVariables);
 
             log.info("Successfully sent delivery created notifications for delivery: {}",
                     event.delivery().getId());
@@ -85,7 +84,7 @@ public class DeliveryEventListener {
 
             // Send push notification to patient
             sendPushNotification(event.delivery().getPrescription().getPatient().getAccount().getId(),
-                    NotificationType.DELIVERY_OUT, pushVariables);
+                    PushNotificationType.DELIVERY_OUT, pushVariables);
 
             log.info("Successfully sent out-for-delivery notifications for delivery: {}",
                     event.delivery().getId());
@@ -110,7 +109,7 @@ public class DeliveryEventListener {
 
             // Send push notification to patient
             sendPushNotification(event.delivery().getPrescription().getPatient().getAccount().getId(),
-                    NotificationType.DELIVERY_COMPLETED, pushVariables);
+                    PushNotificationType.DELIVERY_COMPLETED, pushVariables);
 
             log.info("Successfully sent delivery completed notifications for delivery: {}",
                     event.delivery().getId());
@@ -135,7 +134,7 @@ public class DeliveryEventListener {
 
             // Send push notification to patient
             sendPushNotification(event.delivery().getPrescription().getPatient().getAccount().getId(),
-                    NotificationType.DELIVERY_CANCELLED, pushVariables);
+                    PushNotificationType.DELIVERY_CANCELLED, pushVariables);
 
             log.info("Successfully sent delivery cancelled notifications for delivery: {}",
                     event.delivery().getId());
@@ -161,7 +160,7 @@ public class DeliveryEventListener {
 
             // Send push notification
             Map<String, Object> pushVariables = buildDeliveryPaymentConfirmedPushVariables(event);
-            sendPushNotification(patientAccountId, NotificationType.DELIVERY_PAYMENT_CONFIRMED, pushVariables);
+            sendPushNotification(patientAccountId, PushNotificationType.DELIVERY_PAYMENT_CONFIRMED, pushVariables);
 
             log.info("Successfully sent delivery payment confirmed notifications for delivery: {}",
                     event.delivery().getId());
@@ -187,7 +186,7 @@ public class DeliveryEventListener {
 
             // Send push notification
             Map<String, Object> pushVariables = buildDeliveryProcessingStartedPushVariables(event);
-            sendPushNotification(patientAccountId, NotificationType.DELIVERY_PROCESSING_STARTED, pushVariables);
+            sendPushNotification(patientAccountId, PushNotificationType.DELIVERY_PROCESSING_STARTED, pushVariables);
 
             log.info("Successfully sent delivery processing started notifications for delivery: {}",
                     event.delivery().getId());
@@ -213,7 +212,7 @@ public class DeliveryEventListener {
 
             // Send push notification
             Map<String, Object> pushVariables = buildDeliveryReadyForPickupPushVariables(event);
-            sendPushNotification(patientAccountId, NotificationType.DELIVERY_READY_FOR_PICKUP, pushVariables);
+            sendPushNotification(patientAccountId, PushNotificationType.DELIVERY_READY_FOR_PICKUP, pushVariables);
 
             log.info("Successfully sent delivery ready for pickup notifications for delivery: {}",
                     event.delivery().getId());
@@ -251,9 +250,9 @@ public class DeliveryEventListener {
         variables.put("trackingReference", event.delivery().getTrackingReference());
         variables.put("courierName", event.delivery().getCourierName());
         variables.put("deliveryAddress", buildDeliveryAddress(event.delivery()));
-        variables.put("estimatedDeliveryDate", event.delivery().getEstimatedDeliveryDate() != null ? 
-                event.delivery().getEstimatedDeliveryDate().atZone(java.time.ZoneId.systemDefault()).format(dateFormatter) : 
-                "1-3 business days");
+        variables.put("estimatedDeliveryDate",
+                event.delivery().getEstimatedDeliveryDate() != null ? event.delivery().getEstimatedDeliveryDate()
+                        .atZone(java.time.ZoneId.systemDefault()).format(dateFormatter) : "1-3 business days");
         variables.put("uiHost", frontendUrl);
         return variables;
     }
@@ -371,7 +370,8 @@ public class DeliveryEventListener {
         }
     }
 
-    private void sendPushNotification(UUID accountId, NotificationType notificationType, Map<String, Object> variables) {
+    private void sendPushNotification(UUID accountId, PushNotificationType notificationType,
+            Map<String, Object> variables) {
         try {
             if (accountId == null) {
                 log.warn("Cannot send push notification: account ID is null for type: {}", notificationType);

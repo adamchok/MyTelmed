@@ -353,6 +353,7 @@ export default function PrescriptionConfirmationStep() {
                 onCancel={() => setShowConfirmModal(false)}
                 footer={null}
                 className="prescription-confirm-modal"
+                centered
             >
                 <div className="text-center py-4">
                     <CheckCircle className="w-16 h-16 mx-auto text-green-500 mb-4" />
@@ -360,8 +361,8 @@ export default function PrescriptionConfirmationStep() {
                         Create Prescription?
                     </Title>
                     <Text className="text-gray-600 block mb-6">
-                        Are you sure you want to create this prescription for {getPatientName()}?
-                        This action cannot be undone, but you can modify or cancel the prescription later.
+                        Are you sure you want to create this prescription for {getPatientName()}?<br></br>
+                        <span className="font-bold">This action cannot be undone and you cannot modify or cancel the prescription later.</span>
                     </Text>
                     <div className="flex justify-center space-x-3">
                         <Button

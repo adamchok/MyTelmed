@@ -395,6 +395,7 @@ export default function DoctorTimeSlotPage() {
                 footer={null}
                 width={600}
                 destroyOnHidden={true}
+                centered
             >
                 <TimeSlotForm
                     onSubmit={handleCreateTimeSlot}

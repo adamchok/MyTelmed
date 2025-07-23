@@ -234,7 +234,7 @@ export default function PharmacistLayout({ children }: Readonly<{ children: Reac
                     </Space>
                 </Header>
                 {/* Main content area as a card */}
-                <Content className="p-8 bg-white min-h-screen overflow-y-auto">{children}</Content>
+                <Content className="p-8 bg-white overflow-y-auto">{children}</Content>
             </Layout>
         </Layout>
     );

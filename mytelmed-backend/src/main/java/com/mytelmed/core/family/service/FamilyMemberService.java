@@ -161,7 +161,7 @@ public class FamilyMemberService {
             FamilyMember savedMember = familyMemberRepository.save(familyMember);
 
             FamilyMemberJoinedEvent event = FamilyMemberJoinedEvent.builder()
-                    .memberEmail(savedMember.getEmail())
+                    .memberEmail(savedMember.getPatient().getEmail())
                     .memberName(savedMember.getName())
                     .patientName(savedMember.getPatient().getName())
                     .build();
@@ -169,6 +169,27 @@ public class FamilyMemberService {
             applicationEventPublisher.publishEvent(event);
 
             log.info("Family member {} confirmed", savedMember.getId());
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while confirming family member: {}", familyMember.getId(), e);
+            throw new AppException("Failed to confirm family member");
+        }
+    }
+
+    @Transactional
+    public void decline(FamilyMember familyMember) throws AppException {
+        log.debug("Declining family member with ID: {}", familyMember.getId());
+
+        try {
+            if (!familyMember.isPending()) {
+                log.info("Family member {} is already confirmed", familyMember.getId());
+                throw new AppException("Family member is already confirmed");
+            }
+
+            familyMemberRepository.delete(familyMember);
+
+            log.info("Family member invite {} declined", familyMember.getId());
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {

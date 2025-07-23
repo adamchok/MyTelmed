@@ -194,31 +194,33 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
                     <div className="text-xs text-gray-500">
                         Created: {parseLocalDateTime(appointment.createdAt).format("MMM DD, YYYY")}
                     </div>
-                    <Button
-                        type="primary"
-                        size={isMobile ? "small" : "middle"}
-                        icon={<Eye className={isMobile ? "w-4 h-4" : "w-5 h-5"} />}
-                        onClick={() => onView(appointment)}
-                        className={`bg-blue-600 border-blue-600 ${isMobile ? "text-xs px-2 py-1" : "text-base px-4 py-2"
-                            } flex-1 sm:flex-none`}
-                    >
-                        <span className="hidden sm:inline">View Details</span>
-                        <span className="sm:hidden">View</span>
-                    </Button>
-                    {(appointment.status === "PENDING" || appointment.status === "PENDING_PAYMENT") && onCancel && (
+                    <div className="flex flex-col sm:flex-row gap-2">
                         <Button
                             type="primary"
-                            danger
                             size={isMobile ? "small" : "middle"}
-                            icon={<Trash2 className={isMobile ? "w-4 h-4" : "w-5 h-5"} />}
-                            onClick={() => onCancel(appointment)}
-                            className={`${isMobile ? "text-xs px-2 py-1" : "text-base px-4 py-2"
+                            icon={<Eye className={isMobile ? "w-4 h-4" : "w-5 h-5"} />}
+                            onClick={() => onView(appointment)}
+                            className={`bg-blue-600 border-blue-600 ${isMobile ? "text-xs px-2 py-1" : "text-base px-4 py-2"
                                 } flex-1 sm:flex-none`}
                         >
-                            <span className="hidden sm:inline">Cancel</span>
-                            <span className="sm:hidden">Cancel</span>
+                            <span className="hidden sm:inline">View Details</span>
+                            <span className="sm:hidden">View</span>
                         </Button>
-                    )}
+                        {(appointment.status === "PENDING" || appointment.status === "PENDING_PAYMENT") && onCancel && (
+                            <Button
+                                type="primary"
+                                danger
+                                size={isMobile ? "small" : "middle"}
+                                icon={<Trash2 className={isMobile ? "w-4 h-4" : "w-5 h-5"} />}
+                                onClick={() => onCancel(appointment)}
+                                className={`${isMobile ? "text-xs px-2 py-1" : "text-base px-4 py-2"
+                                    } flex-1 sm:flex-none`}
+                            >
+                                <span className="hidden sm:inline">Cancel</span>
+                                <span className="sm:hidden">Cancel</span>
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
         </Card>

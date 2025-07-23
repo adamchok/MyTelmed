@@ -156,7 +156,7 @@ const FamilyAccessPage = () => {
     // Handle decline invitation
     const handleDeclineInvitation = async (memberId: string) => {
         try {
-            const response = await FamilyMemberApi.deleteFamilyMember(memberId);
+            const response = await FamilyMemberApi.declineFamilyMember(memberId);
             const responseData = response.data;
 
             if (responseData.isSuccess) {

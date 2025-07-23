@@ -8,7 +8,7 @@ import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.patient.service.PatientService;
 import com.mytelmed.infrastructure.email.constant.EmailType;
 import com.mytelmed.infrastructure.email.factory.EmailSenderFactoryRegistry;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
@@ -19,13 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Event listener for refund-related events in Malaysian public healthcare
- * telemedicine.
- * Handles sending of refund notification emails and push notifications to
- * patients
- * and their authorized family members.
- */
 @Slf4j
 @Component
 public class RefundEventListener {
@@ -70,13 +63,13 @@ public class RefundEventListener {
 
             // Send push notification to patient
             UUID patientAccountId = event.bill().getPatient().getAccount().getId();
-            sendPushNotification(patientAccountId, NotificationType.REFUND_SUCCESS, pushVariables);
+            sendPushNotification(patientAccountId, PushNotificationType.REFUND_SUCCESS, pushVariables);
             log.debug("Sent refund success push notification to patient account: {}", patientAccountId);
 
             // Send notifications to authorized family members with MANAGE_APPOINTMENTS
             // permission
             sendNotificationsToAuthorizedFamilyMembers(event.bill().getPatient().getId(),
-                    emailVariables, pushVariables, EmailType.REFUND_SUCCESS, NotificationType.REFUND_SUCCESS);
+                    emailVariables, pushVariables, EmailType.REFUND_SUCCESS, PushNotificationType.REFUND_SUCCESS);
 
             log.info("Successfully sent refund completed notifications for bill: {}",
                     event.bill().getBillNumber());
@@ -143,7 +136,7 @@ public class RefundEventListener {
      */
     private void sendNotificationsToAuthorizedFamilyMembers(UUID patientId,
             Map<String, Object> emailVariables, Map<String, Object> pushVariables,
-            EmailType emailType, NotificationType pushType) {
+            EmailType emailType, PushNotificationType pushType) {
         try {
             // Find family members with MANAGE_APPOINTMENTS permission (includes billing
             // access)
@@ -195,7 +188,7 @@ public class RefundEventListener {
     /**
      * Sends push notification using the push notification factory registry
      */
-    private void sendPushNotification(UUID accountId, NotificationType notificationType,
+    private void sendPushNotification(UUID accountId, PushNotificationType notificationType,
             Map<String, Object> variables) {
         try {
             pushSubscriptionService.sendNotificationByAccountId(accountId, notificationType, variables);

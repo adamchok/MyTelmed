@@ -631,7 +631,7 @@ const PrescriptionDetailPage = () => {
 
                                 {/* Cancel Delivery Button (only for Home Delivery) */}
                                 {deliveryCancellable && (
-                                    <div className="mt-4 pt-4 border-t border-gray-200">
+                                    <div className="border-t border-gray-200">
                                         <Popconfirm
                                             title="Are you sure you want to cancel this delivery?"
                                             description="This action cannot be undone."
@@ -791,11 +791,11 @@ const PrescriptionDetailPage = () => {
                     cancelText="Back"
                     okButtonProps={{ danger: true, loading: isCancellingDelivery }}
                     cancelButtonProps={{ disabled: isCancellingDelivery }}
+                    centered
                 >
                     <div className="space-y-4">
                         <Alert
                             message="Are you sure you want to cancel this delivery?"
-                            description="If you have already paid for this delivery, any applicable refunds will be processed within 3-5 business days."
                             type="warning"
                             showIcon
                         />

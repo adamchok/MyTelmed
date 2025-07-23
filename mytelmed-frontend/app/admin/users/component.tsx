@@ -310,7 +310,7 @@ const UserManagementComponent: React.FC<UserManagementComponentProps> = ({
         return actions;
     };
 
-    const getCreateFormFields = () => {
+    const getCreateFormFields = (isEditMode = false) => {
         const baseFields = [
             <Form.Item
                 key="name"
@@ -369,7 +369,7 @@ const UserManagementComponent: React.FC<UserManagementComponentProps> = ({
                 label={
                     <span className="text-sm font-medium text-gray-700 flex items-center">
                         Email Address
-                        <Tooltip title="This email will be used for account notifications and password recovery">
+                        <Tooltip title={isEditMode ? "Email address cannot be changed for security reasons" : "This email will be used for account notifications and password recovery"}>
                             <InfoCircleOutlined className="text-blue-500 ml-2 cursor-pointer hover:text-blue-600 transition-colors" />
                         </Tooltip>
                     </span>
@@ -388,8 +388,12 @@ const UserManagementComponent: React.FC<UserManagementComponentProps> = ({
                 <Input
                     placeholder="Enter email address"
                     prefix={<MailOutlined className="text-gray-400" />}
-                    className="rounded-xl border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors"
+                    className={`rounded-xl border-gray-200 transition-colors ${isEditMode
+                        ? "bg-gray-50 cursor-not-allowed border-gray-300"
+                        : "hover:border-blue-400 focus:border-blue-500"
+                        }`}
                     autoComplete="email"
+                    disabled={isEditMode}
                 />
             </Form.Item>,
             <Form.Item
@@ -717,14 +721,14 @@ const UserManagementComponent: React.FC<UserManagementComponentProps> = ({
                         {activeTab === "doctor" ? (
                             <Row gutter={[16, 0]}>
                                 <Col xs={24} md={12}>
-                                    {getCreateFormFields().slice(0, Math.ceil(getCreateFormFields().length / 2))}
+                                    {getCreateFormFields(true).slice(0, Math.ceil(getCreateFormFields(true).length / 2))}
                                 </Col>
                                 <Col xs={24} md={12}>
-                                    {getCreateFormFields().slice(Math.ceil(getCreateFormFields().length / 2))}
+                                    {getCreateFormFields(true).slice(Math.ceil(getCreateFormFields(true).length / 2))}
                                 </Col>
                             </Row>
                         ) : (
-                            getCreateFormFields()
+                            getCreateFormFields(true)
                         )}
                     </div>
                 </FormModal>

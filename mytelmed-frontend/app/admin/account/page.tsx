@@ -1,189 +1,114 @@
 "use client";
 
-import React, { useState } from "react";
-import { Card, Form, Input, Button, Typography, message, Space } from "antd";
-import { UserOutlined, LockOutlined, SaveOutlined, EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
+import { useState } from "react";
+import { message, Form } from "antd";
 import AccountApi from "@/app/api/account";
+import { UpdateAccountPasswordRequest } from "@/app/api/account/props";
+import { AccountComponentProps } from "./props";
+import AccountComponent from "./component";
 
-const { Title, Text } = Typography;
+const AdminAccount = () => {
+    const [form] = Form.useForm();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-const AdminAccountDetailsPage = () => {
-    const [usernameForm] = Form.useForm();
-    const [passwordForm] = Form.useForm();
-    const [passwordLoading, setPasswordLoading] = useState(false);
-    const [usernameLoading, setUsernameLoading] = useState(false);
+    // Password strength states
+    const [passwordStrength, setPasswordStrength] = useState(0);
+    const [passwordStrengthText, setPasswordStrengthText] = useState("");
+    const [passwordStrengthColor, setPasswordStrengthColor] = useState("");
+    const [newPassword, setNewPassword] = useState("");
 
-    const handleUpdateUsername = async () => {
-        setUsernameLoading(true);
-        try {
-            const values = await usernameForm.validateFields();
-            const response = await AccountApi.updateUsername({
-                newUsername: values.username,
-                currentPassword: values.currentPassword,
-            });
-            if (response.data.isSuccess) {
-                message.success("Username updated successfully");
-                usernameForm.resetFields(["currentPassword"]);
-            } else {
-                message.error(response.data.message || "Failed to update username");
-            }
-        } catch {
-            message.error("Failed to update username");
-        } finally {
-            setUsernameLoading(false);
+    // Calculate password strength
+    const calculatePasswordStrength = (password: string) => {
+        setNewPassword(password);
+        let score = 0;
+        let text = "";
+        let color = "";
+
+        if (password.length >= 8) score += 20;
+        if (/[a-z]/.test(password)) score += 20;
+        if (/[A-Z]/.test(password)) score += 20;
+        if (/\d/.test(password)) score += 20;
+        if (/[@$!%*?&]/.test(password)) score += 20;
+
+        if (score <= 20) {
+            text = "Very Weak";
+            color = "#ff4d4f";
+        } else if (score <= 40) {
+            text = "Weak";
+            color = "#fa8c16";
+        } else if (score <= 60) {
+            text = "Fair";
+            color = "#faad14";
+        } else if (score <= 80) {
+            text = "Good";
+            color = "#52c41a";
+        } else {
+            text = "Strong";
+            color = "#1890ff";
         }
+
+        setPasswordStrength(score);
+        setPasswordStrengthText(text);
+        setPasswordStrengthColor(color);
     };
 
-    const handleUpdatePassword = async () => {
-        setPasswordLoading(true);
+    // Reset password strength states
+    const resetPasswordStates = () => {
+        setPasswordStrength(0);
+        setPasswordStrengthText("");
+        setPasswordStrengthColor("");
+        setNewPassword("");
+    };
+
+    // Handle password update
+    const handleUpdatePassword = async (values: any) => {
         try {
-            const values = await passwordForm.validateFields();
-            if (values.newPassword !== values.confirmPassword) {
-                message.error("Passwords do not match");
-                setPasswordLoading(false);
-                return;
-            }
-            const response = await AccountApi.updatePassword({
-                currentPassword: values.currentPassword,
+            setLoading(true);
+            setError(null);
+
+            const updateData: UpdateAccountPasswordRequest = {
                 newPassword: values.newPassword,
-            });
-            if (response.data.isSuccess) {
+                currentPassword: values.currentPassword,
+            };
+
+            const response = await AccountApi.updatePassword(updateData);
+
+            if (response.data?.isSuccess) {
                 message.success("Password updated successfully");
-                passwordForm.resetFields();
+                form.resetFields();
+                resetPasswordStates(); // Reset password strength states
             } else {
-                message.error(response.data.message || "Failed to update password");
+                setError(response.data?.message || "Failed to update password");
             }
-        } catch {
-            message.error("Failed to update password");
+        } catch (err: any) {
+            console.error("Failed to update password:", err);
+            setError(err.response?.data?.message || "Failed to update password");
         } finally {
-            setPasswordLoading(false);
+            setLoading(false);
         }
     };
 
-    return (
-        <div>
-            <div className="mb-6">
-                <Title level={2} className="mb-2">
-                    Account Settings
-                </Title>
-                <Text type="secondary">Update your username and password</Text>
-            </div>
+    // Handle clear messages
+    const handleClearError = () => {
+        setError(null);
+    };
 
-            <Card
-                title={
-                    <Space>
-                        <UserOutlined /> <span>Update Username</span>
-                    </Space>
-                }
-                className="mb-6"
-            >
-                <Form form={usernameForm} layout="vertical" onFinish={handleUpdateUsername} autoComplete="off">
-                    <Form.Item
-                        label="Username"
-                        name="username"
-                        rules={[
-                            { required: true, message: "Please enter your username" },
-                            { min: 3, max: 20, message: "Username must be between 3 and 20 characters" },
-                        ]}
-                    >
-                        <Input
-                            placeholder="Enter new username"
-                            autoComplete="off"
-                            autoCorrect="off"
-                            autoCapitalize="off"
-                            spellCheck={false}
-                        />
-                    </Form.Item>
-                    <Form.Item
-                        label="Current Password"
-                        name="currentPassword"
-                        rules={[{ required: true, message: "Please enter your current password to confirm" }]}
-                    >
-                        <Input.Password
-                            placeholder="Enter current password"
-                            autoComplete="current-password"
-                            iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
-                        />
-                    </Form.Item>
-                    <Form.Item>
-                        <Button type="primary" htmlType="submit" loading={usernameLoading} icon={<SaveOutlined />}>
-                            Update Username
-                        </Button>
-                    </Form.Item>
-                </Form>
-            </Card>
+    // Prepare props for component
+    const componentProps: AccountComponentProps = {
+        form,
+        loading,
+        error,
+        onUpdatePassword: handleUpdatePassword,
+        onClearError: handleClearError,
+        passwordStrength,
+        passwordStrengthText,
+        passwordStrengthColor,
+        newPassword,
+        onCalculatePasswordStrength: calculatePasswordStrength,
+    };
 
-            <Card
-                title={
-                    <Space>
-                        <LockOutlined /> <span>Change Password</span>
-                    </Space>
-                }
-            >
-                <Form form={passwordForm} layout="vertical" onFinish={handleUpdatePassword} autoComplete="off">
-                    <Form.Item
-                        label="Current Password"
-                        name="currentPassword"
-                        rules={[{ required: true, message: "Please enter your current password" }]}
-                    >
-                        <Input.Password
-                            placeholder="Enter current password"
-                            autoComplete="current-password"
-                            iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
-                        />
-                    </Form.Item>
-                    <Form.Item
-                        label="New Password"
-                        name="newPassword"
-                        rules={[
-                            { required: true, message: "Please enter your new password" },
-                            {
-                                min: 8,
-                                message: "Password must be at least 8 characters long",
-                            },
-                            {
-                                pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-                                message: "Password must include uppercase, lowercase, digit, and special character",
-                            },
-                        ]}
-                    >
-                        <Input.Password
-                            placeholder="Enter new password"
-                            autoComplete="new-password"
-                            iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
-                        />
-                    </Form.Item>
-                    <Form.Item
-                        label="Confirm New Password"
-                        name="confirmPassword"
-                        dependencies={["newPassword"]}
-                        rules={[
-                            { required: true, message: "Please confirm your new password" },
-                            ({ getFieldValue }) => ({
-                                validator(_, value) {
-                                    if (!value || getFieldValue("newPassword") === value) {
-                                        return Promise.resolve();
-                                    }
-                                    return Promise.reject(new Error("Passwords do not match!"));
-                                },
-                            }),
-                        ]}
-                    >
-                        <Input.Password
-                            placeholder="Confirm new password"
-                            autoComplete="new-password"
-                            iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
-                        />
-                    </Form.Item>
-                    <Form.Item>
-                        <Button type="primary" htmlType="submit" loading={passwordLoading} icon={<SaveOutlined />}>
-                            Update Password
-                        </Button>
-                    </Form.Item>
-                </Form>
-            </Card>
-        </div>
-    );
+    return <AccountComponent {...componentProps} />;
 };
 
-export default AdminAccountDetailsPage;
+export default AdminAccount;

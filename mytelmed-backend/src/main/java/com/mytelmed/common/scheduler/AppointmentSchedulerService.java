@@ -105,7 +105,6 @@ public class AppointmentSchedulerService {
         // TODO: Uncomment for production:
 //        LocalDateTime now = LocalDateTime.now();
 //        LocalDateTime confirmationThreshold = now.plusHours(12);
-//
 //        List<Appointment> pendingAppointments = appointmentRepository
 //                .findByStatusAndTimeSlotStartTimeBefore(
 //                        AppointmentStatus.PENDING,

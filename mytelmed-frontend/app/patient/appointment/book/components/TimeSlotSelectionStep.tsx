@@ -51,8 +51,8 @@ export default function TimeSlotSelectionStep() {
         try {
             setLoadingDates(true);
             const startDate = dayjs().startOf("day").format("YYYY-MM-DDTHH:mm:ss");
-            // Load next 60 days to show available dates
-            const endDate = dayjs().add(60, "day").endOf("day").format("YYYY-MM-DDTHH:mm:ss");
+            // Load next 3 weeks (21 days) to show available dates
+            const endDate = dayjs().add(3, "week").endOf("day").format("YYYY-MM-DDTHH:mm:ss");
 
             const response = await TimeSlotApi.getAvailableTimeSlots(selectedDoctor.id, startDate, endDate);
 
@@ -68,8 +68,9 @@ export default function TimeSlotSelectionStep() {
                 const uniqueDates = new Set<string>();
                 slots.forEach((slot) => {
                     const slotDate = dayjs(slot.startTime).format("YYYY-MM-DD");
-                    // Only include future dates
-                    if (dayjs(slot.startTime).isAfter(dayjs(), "minute")) {
+                    // Only include dates that are at least 24 hours ahead and within 3 weeks
+                    if (dayjs(slot.startTime).isAfter(dayjs().add(24, 'hour'), "minute") &&
+                        dayjs(slot.startTime).isBefore(dayjs().add(3, 'week').endOf('day'), "minute")) {
                         uniqueDates.add(slotDate);
                     }
                 });
@@ -108,11 +109,12 @@ export default function TimeSlotSelectionStep() {
                     slots = slots.filter((slot) => slot.consultationMode === timeSlotFilters.consultationMode);
                 }
 
-                // Filter by selected date and only future slots
+                // Filter by selected date and only slots that are at least 24 hours ahead and within 3 weeks
                 slots = slots.filter(
                     (slot) =>
                         dayjs(slot.startTime).isSame(selectedDate, "day") &&
-                        dayjs(slot.startTime).isAfter(dayjs(), "minute")
+                        dayjs(slot.startTime).isAfter(dayjs().add(24, 'hour'), "minute") &&
+                        dayjs(slot.startTime).isBefore(dayjs().add(3, 'week').endOf('day'), "minute")
                 );
 
                 setTimeSlots(slots);
@@ -183,11 +185,15 @@ export default function TimeSlotSelectionStep() {
     };
 
     const isTimeSlotPast = (startTime: string) => {
-        return dayjs(startTime).isBefore(dayjs());
+        return dayjs(startTime).isBefore(dayjs().add(24, 'hour'));
     };
 
     const disabledDate = (current: dayjs.Dayjs) => {
         if (current?.isBefore(dayjs(), "day")) {
+            return true;
+        }
+        // Disable dates more than 3 weeks in advance
+        if (current?.isAfter(dayjs().add(3, "week"), "day")) {
             return true;
         }
         // Disable dates that don't have available slots

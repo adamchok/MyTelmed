@@ -6,7 +6,7 @@ import com.mytelmed.core.notification.service.PushSubscriptionService;
 import com.mytelmed.core.prescription.entity.Prescription;
 import com.mytelmed.infrastructure.email.constant.EmailType;
 import com.mytelmed.infrastructure.email.factory.EmailSenderFactoryRegistry;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
@@ -175,7 +175,7 @@ public class PrescriptionEventListener {
             Map<String, Object> patientVariables) {
         try {
             sendPushNotification(prescription.getPatient().getAccount().getId(),
-                    NotificationType.PRESCRIPTION_CREATED, patientVariables);
+                    PushNotificationType.PRESCRIPTION_CREATED, patientVariables);
         } catch (Exception e) {
             log.error("Failed to send prescription creation push notifications for prescription ID: {}",
                     prescription.getId(), e);
@@ -197,7 +197,7 @@ public class PrescriptionEventListener {
             Map<String, Object> patientVariables) {
         try {
             sendPushNotification(event.prescription().getPatient().getAccount().getId(),
-                    NotificationType.PRESCRIPTION_EXPIRING, patientVariables);
+                    PushNotificationType.PRESCRIPTION_EXPIRING, patientVariables);
         } catch (Exception e) {
             log.error("Failed to send prescription expiring push notifications for prescription ID: {}",
                     event.prescription().getId(), e);
@@ -211,7 +211,7 @@ public class PrescriptionEventListener {
     // UTILITY METHODS
     // ===================================================================
 
-    private void sendPushNotification(UUID accountId, NotificationType notificationType,
+    private void sendPushNotification(UUID accountId, PushNotificationType notificationType,
             Map<String, Object> variables) {
         try {
             if (accountId == null) {

@@ -2,7 +2,7 @@ package com.mytelmed.infrastructure.push.strategy.appointment.doctor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mytelmed.infrastructure.push.config.VapidConfiguration;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import com.mytelmed.infrastructure.push.strategy.BasePushNotificationStrategy;
 import nl.martijndwars.webpush.PushService;
 import org.springframework.stereotype.Component;
@@ -21,8 +21,8 @@ public class AppointmentConfirmationDoctorPushSender extends BasePushNotificatio
     }
 
     @Override
-    public NotificationType getNotificationType() {
-        return NotificationType.APPOINTMENT_CONFIRMATION_PROVIDER;
+    public PushNotificationType getNotificationType() {
+        return PushNotificationType.APPOINTMENT_CONFIRMATION_PROVIDER;
     }
 
     @Override

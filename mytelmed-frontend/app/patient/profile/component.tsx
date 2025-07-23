@@ -62,7 +62,7 @@ const ProfilePageComponent = ({
                 name: patient.name,
                 email: patient.email,
                 phone: patient.phone,
-                dateOfBirth: patient.dateOfBirth ? dayjs(patient.dateOfBirth) : null,
+                dateOfBirth: patient.dateOfBirth ? dayjs(patient.dateOfBirth, "DD/MM/YYYY") : null,
                 gender: patient.gender,
             });
         }
@@ -334,7 +334,7 @@ const ProfilePageComponent = ({
                                         <DatePicker
                                             placeholder="Select date of birth"
                                             className="w-full h-10 sm:h-12 rounded-xl border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors"
-                                            format="YYYY-MM-DD"
+                                            format="DD/MM/YYYY"
                                             disabledDate={(current) => {
                                                 return current && current > dayjs().endOf("day");
                                             }}

@@ -74,6 +74,8 @@ const PrescriptionCard: React.FC<PrescriptionCardProps> = ({
                 return { color: "orange", text: "Payment Pending" };
             case DeliveryStatus.PAID:
                 return { color: "blue", text: "Paid" };
+            case DeliveryStatus.PENDING_PICKUP:
+                return { color: "orange", text: "Pending Pickup" };
             case DeliveryStatus.PREPARING:
                 return { color: "purple", text: "Preparing" };
             case DeliveryStatus.READY_FOR_PICKUP:
@@ -91,122 +93,127 @@ const PrescriptionCard: React.FC<PrescriptionCardProps> = ({
 
     return (
         <Card
-            className="w-full shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200"
-            styles={{ body: { padding: "20px" } }}
+            className="w-full h-full shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 flex flex-col"
+            styles={{ body: { padding: "20px", display: "flex", flexDirection: "column", height: "100%" } }}
         >
-            {/* Header */}
-            <div className="flex-col items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                    <Avatar
-                        size="large"
-                        className="bg-blue-100 text-blue-600"
-                        icon={<FileText className="w-5 h-5" />}
-                    />
-                    <div>
-                        <Title level={5} className="mb-1 mt-0 text-gray-800">
-                            {prescription.prescriptionNumber}
-                        </Title>
-                        <Text className="text-gray-500 text-sm">
-                            {prescription.diagnosis}
-                        </Text>
-                    </div>
-                </div>
-                <div className="mt-4">
-                    <Tag
-                        color={statusConfig.color}
-                        icon={statusConfig.icon}
-                        className="px-3 py-1 flex gap-1 items-center w-fit"
-                    >
-                        {statusConfig.text}
-                    </Tag>
-                </div>
-            </div>
-
-            {/* Patient Info (if needed for family members) */}
-            {showPatientInfo && (
-                <div className="flex items-center space-x-2 mb-3 p-2 bg-gray-50 rounded-lg">
-                    <User className="w-4 h-4 text-gray-500" />
-                    <Text className="text-gray-700 font-medium">
-                        {prescription.appointment.patient.name}
-                    </Text>
-                </div>
-            )}
-
-            {/* Appointment Info */}
-            <div className="space-y-2 mb-4">
-                <div className="flex items-center space-x-2">
-                    <Stethoscope className="w-4 h-4 text-gray-500" />
-                    <Text className="text-gray-700">
-                        Dr. {prescription.appointment.doctor.name}
-                    </Text>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4 text-gray-500" />
-                    <Text className="text-gray-700">
-                        {formatDate(prescription.appointment.appointmentDateTime)} at {formatTime(prescription.appointment.appointmentDateTime)}
-                    </Text>
-                </div>
-            </div>
-
-            {/* Medication Count */}
-            <div className="mb-4">
-                <Text className="text-gray-600">
-                    <Pill className="w-4 h-4 inline mr-1" />
-                    {prescription.prescriptionItems.length} medication{prescription.prescriptionItems.length !== 1 ? 's' : ''}
-                </Text>
-            </div>
-
-            {/* Expiry Date */}
-            <div className="mb-4">
-                <Text className="text-gray-600 text-sm">
-                    Expires: {dayjs(Number(prescription.expiryDate) * 1000).format("MMM DD, YYYY")}
-                </Text>
-            </div>
-
-            {/* Delivery Status */}
-            {delivery && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                            {delivery.deliveryMethod === "PICKUP" ? (
-                                <Package className="w-4 h-4 text-blue-500" />
-                            ) : (
-                                <Truck className="w-4 h-4 text-green-500" />
-                            )}
-                            <Text className="text-gray-700 font-medium text-sm">
-                                {delivery.deliveryMethod === "PICKUP" ? "Pickup" : "Home Delivery"}
+            {/* Content Area */}
+            <div className="flex-1">
+                {/* Header */}
+                <div className="flex-col items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                        <Avatar
+                            size="large"
+                            className="bg-blue-100 text-blue-600"
+                            icon={<FileText className="w-5 h-5" />}
+                        />
+                        <div>
+                            <Title level={5} className="mb-1 mt-0 text-gray-800">
+                                {prescription.prescriptionNumber}
+                            </Title>
+                            <Text className="text-gray-500 text-sm">
+                                {prescription.diagnosis}
                             </Text>
                         </div>
+                    </div>
+                    <div className="mt-4">
                         <Tag
-                            color={getDeliveryStatusConfig(delivery.status).color}
-                            className="px-2 py-1 text-xs"
+                            color={statusConfig.color}
+                            icon={statusConfig.icon}
+                            className="px-3 py-1 flex gap-1 items-center w-fit"
                         >
-                            {getDeliveryStatusConfig(delivery.status).text}
+                            {statusConfig.text}
                         </Tag>
                     </div>
                 </div>
-            )}
 
-            {/* Actions */}
-            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 lg:gap-0">
-                <div className="flex space-x-2">
-                    {isActionable && (
-                        <Tooltip title="This prescription needs your action - choose delivery method">
-                            <Tag color="orange" className="px-2 py-1">
-                                Action Required
-                            </Tag>
-                        </Tooltip>
-                    )}
+                {/* Patient Info (if needed for family members) */}
+                {showPatientInfo && (
+                    <div className="flex items-center space-x-2 mb-3 p-2 bg-gray-50 rounded-lg">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <Text className="text-gray-700 font-medium">
+                            {prescription.appointment.patient.name}
+                        </Text>
+                    </div>
+                )}
+
+                {/* Appointment Info */}
+                <div className="space-y-2 mb-4">
+                    <div className="flex items-center space-x-2">
+                        <Stethoscope className="w-4 h-4 text-gray-500" />
+                        <Text className="text-gray-700">
+                            Dr. {prescription.appointment.doctor.name}
+                        </Text>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                        <Text className="text-gray-700">
+                            {formatDate(prescription.appointment.appointmentDateTime)} at {formatTime(prescription.appointment.appointmentDateTime)}
+                        </Text>
+                    </div>
                 </div>
 
-                <Button
-                    type="primary"
-                    icon={<Eye className="w-4 h-4" />}
-                    onClick={() => onViewDetails(prescription)}
-                    className="bg-green-600 hover:bg-green-700 border-green-600 w-full sm:w-auto"
-                >
-                    View Details
-                </Button>
+                {/* Medication Count */}
+                <div className="mb-4">
+                    <Text className="text-gray-600">
+                        <Pill className="w-4 h-4 inline mr-1" />
+                        {prescription.prescriptionItems.length} medication{prescription.prescriptionItems.length !== 1 ? 's' : ''}
+                    </Text>
+                </div>
+
+                {/* Expiry Date */}
+                <div className="mb-4">
+                    <Text className="text-gray-600 text-sm">
+                        Expires: {dayjs(Number(prescription.expiryDate) * 1000).format("MMM DD, YYYY")}
+                    </Text>
+                </div>
+
+                {/* Delivery Status */}
+                {delivery && (
+                    <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between flex-wrap">
+                            <div className="flex items-center space-x-2">
+                                {delivery.deliveryMethod === "PICKUP" ? (
+                                    <Package className="w-4 h-4 text-blue-500" />
+                                ) : (
+                                    <Truck className="w-4 h-4 text-green-500" />
+                                )}
+                                <Text className="text-gray-700 font-medium text-sm">
+                                    {delivery.deliveryMethod === "PICKUP" ? "Pickup" : "Home Delivery"}
+                                </Text>
+                            </div>
+                            <Tag
+                                color={getDeliveryStatusConfig(delivery.status).color}
+                                className="px-2 py-1 text-xs"
+                            >
+                                {getDeliveryStatusConfig(delivery.status).text}
+                            </Tag>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Actions - Pushed to bottom */}
+            <div className="border-t border-gray-100">
+                <div className="flex flex-col xl:flex-row xl:justify-end lg:items-center gap-3 xl:gap-0">
+                    <div className="flex space-x-2">
+                        {isActionable && (
+                            <Tooltip title="This prescription needs your action - choose delivery method">
+                                <Tag color="orange" className="px-2 py-1">
+                                    Action Required
+                                </Tag>
+                            </Tooltip>
+                        )}
+                    </div>
+
+                    <Button
+                        type="primary"
+                        icon={<Eye className="w-4 h-4" />}
+                        onClick={() => onViewDetails(prescription)}
+                        className="bg-green-600 hover:bg-green-700 border-green-600 w-full sm:w-auto"
+                    >
+                        View Details
+                    </Button>
+                </div>
             </div>
         </Card>
     );

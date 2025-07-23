@@ -328,14 +328,13 @@ export default function BookingConfirmationStep() {
             {selectedDoctor?.facility && (
                 <Card title="Medical Facility" className="shadow-lg">
                     <Row gutter={[16, 16]} align={"middle"}>
-                        <Col xs={24} md={10}>
+                        <Col xs={24} md={8}>
                             {selectedDoctor.facility.thumbnailUrl ? (
                                 <Image
                                     src={selectedDoctor.facility.thumbnailUrl}
                                     alt={selectedDoctor.facility.name}
                                     width="100%"
-                                    height={200}
-                                    className="w-full h-36 sm:h-48 object-cover rounded-lg"
+                                    className="object-cover rounded-lg"
                                 />
                             ) : (
                                 <div className="w-full h-36 sm:h-48 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -346,7 +345,7 @@ export default function BookingConfirmationStep() {
                                 </div>
                             )}
                         </Col>
-                        <Col xs={24} md={14}>
+                        <Col xs={24} md={16}>
                             <div className="space-y-3">
                                 <Title level={4} className="mt-0 text-blue-900 text-lg sm:text-xl">
                                     {selectedDoctor.facility.name}

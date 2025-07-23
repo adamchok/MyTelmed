@@ -402,8 +402,8 @@ export default function DoctorAppointmentDetails() {
                 )}
                 {!documentError && isValidUrl && (
                     <div className="h-full">
-                        <iframe
-                            src={selectedDocument.documentUrl}
+                        <embed
+                            src={selectedDocument.documentUrl + "#toolbar=0"}
                             className="w-full h-full border-0"
                             title={selectedDocument.documentName}
                         />
@@ -604,7 +604,7 @@ export default function DoctorAppointmentDetails() {
                                 danger
                                 icon={<Trash2 className="w-4 h-4" />}
                                 onClick={handleCancelAppointment}
-                                size="large"
+                                size="middle"
                             >
                                 Cancel Appointment
                             </Button>
@@ -828,7 +828,7 @@ export default function DoctorAppointmentDetails() {
                                                     Compare
                                                 </Button>
                                             ) : (
-                                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-1">
+                                                <div className="flex flex-col xl:flex-row gap-2 xl:gap-3 flex-wrap">
                                                     <Button
                                                         type="primary"
                                                         size="small"
@@ -839,29 +839,27 @@ export default function DoctorAppointmentDetails() {
                                                     >
                                                         Compare ({selectedForComparison.length})
                                                     </Button>
-                                                    <div className="flex gap-1">
-                                                        {selectedForComparison.length > 0 && (
-                                                            <Button
-                                                                type="text"
-                                                                size="small"
-                                                                icon={<CloseCircleOutlined />}
-                                                                onClick={handleClearAllComparison}
-                                                                className="text-sm"
-                                                            >
-                                                                Clear All
-                                                            </Button>
-                                                        )}
+                                                    {selectedForComparison.length > 0 && (
                                                         <Button
                                                             type="text"
                                                             size="small"
-                                                            danger
                                                             icon={<CloseCircleOutlined />}
-                                                            onClick={handleExitComparisonMode}
+                                                            onClick={handleClearAllComparison}
                                                             className="text-sm"
                                                         >
-                                                            Exit Mode
+                                                            Clear All
                                                         </Button>
-                                                    </div>
+                                                    )}
+                                                    <Button
+                                                        type="text"
+                                                        size="small"
+                                                        danger
+                                                        icon={<CloseCircleOutlined />}
+                                                        onClick={handleExitComparisonMode}
+                                                        className="text-sm"
+                                                    >
+                                                        Exit Mode
+                                                    </Button>
                                                 </div>
                                             )}
                                         </div>
@@ -1024,7 +1022,7 @@ export default function DoctorAppointmentDetails() {
                                                                 <Button
                                                                     icon={<Lock className="w-4 h-4" />}
                                                                     disabled
-                                                                    size="large"
+                                                                    size="middle"
                                                                     className="h-10 w-10 flex items-center justify-center rounded-lg"
                                                                 />
                                                             </Tooltip>
@@ -1032,7 +1030,7 @@ export default function DoctorAppointmentDetails() {
                                                             <Tooltip title="View Document">
                                                                 <Button
                                                                     type="text"
-                                                                    size="large"
+                                                                    size="middle"
                                                                     icon={<EyeOutlined />}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
@@ -1118,6 +1116,7 @@ export default function DoctorAppointmentDetails() {
                 width="80vw"
                 style={{ maxWidth: "1200px" }}
                 centered
+                closable={false}
             >
                 {selectedDocument && (
                     <div className="space-y-4">
@@ -1175,7 +1174,6 @@ export default function DoctorAppointmentDetails() {
                         footer={null}
                         width="100vw"
                         style={{
-                            maxWidth: "none",
                             margin: 0,
                             padding: 0,
                             top: 0,
@@ -1198,25 +1196,23 @@ export default function DoctorAppointmentDetails() {
                                 backgroundColor: "rgba(0, 0, 0, 0.8)",
                             },
                         }}
-                        centered={false}
+                        centered={true}
                         destroyOnHidden={true}
                         maskClosable={true}
                         keyboard={true}
                         zIndex={1100}
                         getContainer={false}
+                        closable={false}
                     >
                         <div className="h-full flex flex-col bg-white">
                             {/* Fullscreen Header */}
-                            <div className="flex items-center justify-between p-4 border-b bg-white">
+                            <div className="flex items-center justify-between border-b bg-white mb-4">
                                 <div className="flex items-center gap-3">
                                     <FileOutlined className="w-6 h-6 text-green-500" />
                                     <div>
                                         <Title level={4} className="m-0">
                                             {selectedDocument.documentName}
                                         </Title>
-                                        <Tag color="green" className="text-sm mt-1">
-                                            {getDocumentTypeDisplayName(selectedDocument.documentType)}
-                                        </Tag>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1240,7 +1236,7 @@ export default function DoctorAppointmentDetails() {
                             </div>
 
                             {/* Fullscreen Document Viewer */}
-                            <div className="flex-1 p-4">{renderDocumentViewer()}</div>
+                            <div className="flex-1">{renderDocumentViewer()}</div>
                         </div>
                     </Modal>
                 )
@@ -1254,7 +1250,6 @@ export default function DoctorAppointmentDetails() {
                 footer={null}
                 width="100vw"
                 style={{
-                    maxWidth: "none",
                     margin: 0,
                     padding: 0,
                     top: 0,
@@ -1277,16 +1272,17 @@ export default function DoctorAppointmentDetails() {
                         backgroundColor: "rgba(0, 0, 0, 0.8)",
                     },
                 }}
-                centered={false}
+                centered={true}
                 destroyOnHidden={true}
                 maskClosable={true}
                 keyboard={true}
                 zIndex={1100}
                 getContainer={false}
+                closable={false}
             >
                 <div className="h-full flex flex-col bg-white">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b bg-white">
+                    <div className="flex items-center justify-between mb-4 border-b bg-white">
                         <div className="flex items-center gap-3">
                             <FileOutlined className="w-6 h-6 text-green-500" />
                             <Title level={4} className="m-0">
@@ -1298,14 +1294,14 @@ export default function DoctorAppointmentDetails() {
                             icon={<X className="w-5 h-5" />}
                             onClick={() => setComparisonModalVisible(false)}
                             className="hover:bg-gray-100"
-                            size="large"
+                            size="middle"
                         >
                             Close Comparison
                         </Button>
                     </div>
 
                     {/* Document Grid */}
-                    <div className="flex-1 p-4">
+                    <div className="flex-1">
                         <div
                             className={`grid ${selectedForComparison.length === 1
                                 ? "grid-cols-1"
@@ -1333,19 +1329,11 @@ export default function DoctorAppointmentDetails() {
                                     <div className="flex items-center justify-between mb-3 border-b pb-2">
                                         <div className="flex items-center gap-2 flex-1 min-w-0">
                                             <div className="text-lg flex-shrink-0">{getFileIcon("pdf")}</div>
-                                            <div className="min-w-0 flex-1">
-                                                <Tooltip title={docItem.documentName}>
-                                                    <Text strong className="block truncate text-sm">
-                                                        {docItem.documentName}
-                                                    </Text>
-                                                </Tooltip>
-                                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                                    <Tag color="green" className="text-xs">
-                                                        {getDocumentTypeDisplayName(docItem.documentType)}
-                                                    </Tag>
-                                                    <span>{formatFileSize(docItem.documentSize)}</span>
-                                                </div>
-                                            </div>
+                                            <Tooltip title={docItem.documentName}>
+                                                <Text strong className="block truncate text-sm">
+                                                    {docItem.documentName}
+                                                </Text>
+                                            </Tooltip>
                                         </div>
                                         <Button
                                             type="text"
@@ -1360,8 +1348,8 @@ export default function DoctorAppointmentDetails() {
                                     <div className="flex-1 overflow-auto border rounded bg-gray-50 relative">
                                         {docItem.documentUrl ? (
                                             <div className="h-full">
-                                                <iframe
-                                                    src={docItem.documentUrl}
+                                                <embed
+                                                    src={docItem.documentUrl + "#toolbar=0"}
                                                     className="w-full h-full border-0"
                                                     title={docItem.documentName}
                                                 />
@@ -1383,22 +1371,13 @@ export default function DoctorAppointmentDetails() {
                                             </Text>
                                         </div>
                                     )}
-
-                                    {/* Document Info */}
-                                    <div className="mt-2 pt-2 border-t">
-                                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                                            <Text className="text-xs">
-                                                Uploaded: {parseTimestamp(docItem.createdAt).format("MMM DD, YYYY")}
-                                            </Text>
-                                        </div>
-                                    </div>
                                 </Card>
                             ))}
                         </div>
                     </div>
 
                     {/* Footer with tips */}
-                    <div className="p-4 border-t bg-green-50">
+                    <div className="p-4 border-t mt-4 bg-green-50">
                         <Text className="text-sm text-green-700">
                             <strong>Tip:</strong> Document URLs expire after 10 minutes for security. If documents fail
                             to load, try refreshing the page. Some PDFs may not display properly in browsers due to
@@ -1435,7 +1414,7 @@ export default function DoctorAppointmentDetails() {
                         </div>
                         <div className="mt-2 text-sm text-red-700">
                             This action cannot be undone. The appointment with {appointment.patient.name} on{" "}
-                            {parseTimestamp(appointment.appointmentDateTime).format("MMMM DD, YYYY at h:mm A")}{" "}
+                            {parseTimestamp(appointment.appointmentDateTime).format("MMMM DD, YYYY")} at {parseTimestamp(appointment.appointmentDateTime).format("h:mm A")}{" "}
                             will be permanently cancelled.
                         </div>
                     </div>

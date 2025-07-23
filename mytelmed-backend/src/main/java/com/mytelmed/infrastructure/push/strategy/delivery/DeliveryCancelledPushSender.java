@@ -2,7 +2,7 @@ package com.mytelmed.infrastructure.push.strategy.delivery;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mytelmed.infrastructure.push.config.VapidConfiguration;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import com.mytelmed.infrastructure.push.strategy.BasePushNotificationStrategy;
 import nl.martijndwars.webpush.PushService;
 import org.springframework.stereotype.Component;
@@ -19,8 +19,8 @@ public class DeliveryCancelledPushSender extends BasePushNotificationStrategy {
     }
 
     @Override
-    public NotificationType getNotificationType() {
-        return NotificationType.DELIVERY_CANCELLED;
+    public PushNotificationType getNotificationType() {
+        return PushNotificationType.DELIVERY_CANCELLED;
     }
 
     @Override
@@ -49,8 +49,7 @@ public class DeliveryCancelledPushSender extends BasePushNotificationStrategy {
                 "url", url,
                 "prescriptionId", prescriptionId,
                 "deliveryMethod", variables.get("deliveryMethod"),
-                "cancellationReason", variables.get("cancellationReason")
-        );
+                "cancellationReason", variables.get("cancellationReason"));
     }
 
     @Override
@@ -73,7 +72,7 @@ public class DeliveryCancelledPushSender extends BasePushNotificationStrategy {
 
     @Override
     protected Map<String, Object>[] buildActions(Map<String, Object> variables) {
-        return new Map[]{
+        return new Map[] {
                 Map.of(
                         "action", "reschedule-delivery",
                         "title", "Reschedule",
@@ -84,4 +83,4 @@ public class DeliveryCancelledPushSender extends BasePushNotificationStrategy {
                         "icon", "/icons/mytelmed-icon-72.png")
         };
     }
-} 
+}

@@ -203,6 +203,7 @@ const ReferralDetailModal: React.FC<ReferralDetailModalProps> = ({ referral, isV
                     </Button>
                 ),
             ]}
+            centered
         >
             <div className="py-2">
                 {/* Header with Status and Priority */}

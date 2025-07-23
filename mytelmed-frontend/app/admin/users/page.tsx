@@ -186,7 +186,7 @@ const UserManagement = () => {
                     const adminData: UpdateAdminRequest = {
                         name: values.name,
                         nric: values.nric,
-                        email: values.email,
+                        email: selectedUser.email, // Use original email from selected user
                         phone: values.phone,
                     };
                     response = await AdminApi.updateAdmin(selectedUser.id, adminData);
@@ -196,7 +196,7 @@ const UserManagement = () => {
                     const doctorData: UpdateDoctorRequest = {
                         name: values.name,
                         nric: values.nric,
-                        email: values.email,
+                        email: selectedUser.email, // Use original email from selected user
                         phone: values.phone,
                         dateOfBirth: values.dateOfBirth.format("DD/MM/YYYY"),
                         gender: values.gender,
@@ -212,7 +212,7 @@ const UserManagement = () => {
                     const pharmacistData: UpdatePharmacistRequest = {
                         name: values.name,
                         nric: values.nric,
-                        email: values.email,
+                        email: selectedUser.email, // Use original email from selected user
                         phone: values.phone,
                         dateOfBirth: values.dateOfBirth.format("DD/MM/YYYY"),
                         gender: values.gender,
@@ -287,6 +287,7 @@ const UserManagement = () => {
                     message.error("Failed to reset password");
                 }
             },
+            centered: true
         });
     };
 
@@ -332,6 +333,7 @@ const UserManagement = () => {
                     message.error(`Failed to activate ${activeTab}`);
                 }
             },
+            centered: true
         });
     };
 
@@ -377,6 +379,7 @@ const UserManagement = () => {
                     message.error(`Failed to deactivate ${activeTab}`);
                 }
             },
+            centered: true
         });
     };
 

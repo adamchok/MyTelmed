@@ -14,7 +14,7 @@ interface AddressCardProps {
 const AddressCard = ({ address, onEdit, onDelete, isDeleting }: AddressCardProps) => {
     return (
         <Card
-            className="shadow-md border-gray-200 hover:shadow-lg transition-shadow duration-200"
+            className="shadow-md h-full w-full border-gray-200 hover:shadow-lg transition-shadow duration-200"
             styles={{
                 body: {
                     padding: "16px",

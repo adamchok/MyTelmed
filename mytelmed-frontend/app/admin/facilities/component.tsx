@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Typography, Tag, Form, Input, Select, Modal, Upload, Button, Tooltip, Row, Col, Image } from "antd";
+import { Typography, Tag, Form, Input, Select, Modal, Upload, Button, Tooltip, Row, Col, Image, message } from "antd";
 import {
     EditOutlined,
     EyeOutlined,
@@ -565,6 +565,20 @@ const FacilityManagementComponent: React.FC<FacilityManagementComponentProps> = 
                     <Upload
                         accept="image/*"
                         beforeUpload={(file) => {
+                            // File size validation (5MB = 5 * 1024 * 1024 bytes)
+                            const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+                            if (file.size > maxSize) {
+                                message.error('File size must be less than 5MB');
+                                return false;
+                            }
+
+                            // File type validation
+                            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                            if (!allowedTypes.includes(file.type)) {
+                                message.error('Only JPG and PNG files are allowed');
+                                return false;
+                            }
+
                             onImageUpload(file);
                             return false;
                         }}

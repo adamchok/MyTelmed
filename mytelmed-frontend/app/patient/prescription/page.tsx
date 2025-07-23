@@ -389,7 +389,7 @@ const PrescriptionListingPage = () => {
             <>
                 <Row gutter={[16, 16]}>
                     {prescriptions.map((prescription) => (
-                        <Col xs={24} sm={12} md={8} lg={8} xl={8} key={prescription.id}>
+                        <Col xs={24} sm={12} md={8} lg={8} xl={8} xxl={6} key={prescription.id}>
                             <PrescriptionCard
                                 prescription={prescription}
                                 delivery={prescription.delivery}
@@ -429,7 +429,7 @@ const PrescriptionListingPage = () => {
     }
 
     return (
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 space-y-4 sm:space-y-0">
                 <div>

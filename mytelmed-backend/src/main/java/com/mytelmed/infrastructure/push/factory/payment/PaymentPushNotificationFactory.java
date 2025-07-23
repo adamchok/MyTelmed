@@ -1,7 +1,7 @@
 package com.mytelmed.infrastructure.push.factory.payment;
 
-import com.mytelmed.infrastructure.push.constant.NotificationFamily;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationFamily;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import com.mytelmed.infrastructure.push.factory.AbstractPushNotificationFactory;
 import com.mytelmed.infrastructure.push.strategy.PushNotificationStrategy;
 import lombok.extern.slf4j.Slf4j;
@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class PaymentPushNotificationFactory extends AbstractPushNotificationFactory {
-    private final Map<NotificationType, PushNotificationStrategy> paymentNotificationStrategyMap;
+    private final Map<PushNotificationType, PushNotificationStrategy> paymentNotificationStrategyMap;
 
     public PaymentPushNotificationFactory(List<PushNotificationStrategy> strategies) {
         this.paymentNotificationStrategyMap = strategies.stream()
-                .filter(strategy -> strategy.getNotificationType().getFamily() == NotificationFamily.PAYMENT)
+                .filter(strategy -> strategy.getNotificationType().getFamily() == PushNotificationFamily.PAYMENT)
                 .collect(Collectors.toMap(PushNotificationStrategy::getNotificationType, Function.identity()));
 
         log.info("Initialized PaymentPushNotificationFactory with {} payment notification strategies: {}",
@@ -30,12 +30,12 @@ public class PaymentPushNotificationFactory extends AbstractPushNotificationFact
     }
 
     @Override
-    public boolean supports(NotificationFamily family) {
-        return family == NotificationFamily.PAYMENT;
+    public boolean supports(PushNotificationFamily family) {
+        return family == PushNotificationFamily.PAYMENT;
     }
 
     @Override
-    public PushNotificationStrategy getNotificationSender(NotificationType type) {
+    public PushNotificationStrategy getNotificationSender(PushNotificationType type) {
         PushNotificationStrategy strategy = paymentNotificationStrategyMap.get(type);
         if (strategy == null) {
             throw new IllegalArgumentException("No push notification strategy found for payment type: " + type);

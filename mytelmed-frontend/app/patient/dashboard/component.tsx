@@ -12,10 +12,18 @@ import PrescriptionApi from "@/app/api/prescription";
 import PatientApi from "@/app/api/patient";
 import { AppointmentDto } from "@/app/api/appointment/props";
 import { ReferralDto, ReferralStatus } from "@/app/api/referral/props";
-import { PrescriptionDto } from "@/app/api/prescription/props";
+import { PrescriptionDto, PrescriptionStatus } from "@/app/api/prescription/props";
 import { Patient } from "@/app/api/patient/props";
+import { AppointmentStatus } from "@/app/api/props";
 
 const { Title, Text } = Typography;
+
+// Status mapping interfaces
+interface StatusMapping {
+    label: string;
+    color: string;
+    description?: string;
+}
 
 // Dashboard data interfaces
 interface DashboardData {
@@ -29,6 +37,145 @@ interface DashboardData {
         activePrescriptions: number;
     };
 }
+
+// Status mapping functions
+const getAppointmentStatusMapping = (status: string): StatusMapping => {
+    const mappings: Record<string, StatusMapping> = {
+        [AppointmentStatus.PENDING]: {
+            label: "Pending Confirmation",
+            color: "orange",
+            description: "Waiting for confirmation"
+        },
+        [AppointmentStatus.PENDING_PAYMENT]: {
+            label: "Payment Required",
+            color: "red",
+            description: "Payment required to confirm"
+        },
+        [AppointmentStatus.CONFIRMED]: {
+            label: "Confirmed",
+            color: "green",
+            description: "Appointment confirmed"
+        },
+        [AppointmentStatus.READY_FOR_CALL]: {
+            label: "Ready for Call",
+            color: "blue",
+            description: "Ready to join video call"
+        },
+        [AppointmentStatus.IN_PROGRESS]: {
+            label: "In Progress",
+            color: "purple",
+            description: "Consultation in progress"
+        },
+        [AppointmentStatus.COMPLETED]: {
+            label: "Completed",
+            color: "green",
+            description: "Consultation completed"
+        },
+        [AppointmentStatus.CANCELLED]: {
+            label: "Cancelled",
+            color: "red",
+            description: "Appointment cancelled"
+        },
+        [AppointmentStatus.NO_SHOW]: {
+            label: "No Show",
+            color: "volcano",
+            description: "Patient did not attend"
+        }
+    };
+
+    return mappings[status] || {
+        label: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase(),
+        color: "default",
+        description: ""
+    };
+};
+
+const getReferralStatusMapping = (status: ReferralStatus): StatusMapping => {
+    const mappings: Record<ReferralStatus, StatusMapping> = {
+        [ReferralStatus.PENDING]: {
+            label: "Pending Review",
+            color: "orange",
+            description: "Waiting for doctor review"
+        },
+        [ReferralStatus.ACCEPTED]: {
+            label: "Accepted",
+            color: "green",
+            description: "Referral accepted by specialist"
+        },
+        [ReferralStatus.REJECTED]: {
+            label: "Rejected",
+            color: "red",
+            description: "Referral declined by specialist"
+        },
+        [ReferralStatus.SCHEDULED]: {
+            label: "Scheduled",
+            color: "blue",
+            description: "Appointment scheduled"
+        },
+        [ReferralStatus.COMPLETED]: {
+            label: "Completed",
+            color: "green",
+            description: "Referral consultation completed"
+        },
+        [ReferralStatus.EXPIRED]: {
+            label: "Expired",
+            color: "volcano",
+            description: "Referral has expired"
+        },
+        [ReferralStatus.CANCELLED]: {
+            label: "Cancelled",
+            color: "red",
+            description: "Referral cancelled"
+        }
+    };
+
+    return mappings[status] || {
+        label: status,
+        color: "default",
+        description: ""
+    };
+};
+
+const getPrescriptionStatusMapping = (status: string): StatusMapping => {
+    const mappings: Record<string, StatusMapping> = {
+        [PrescriptionStatus.CREATED]: {
+            label: "Issued",
+            color: "blue",
+            description: "Prescription created by doctor"
+        },
+        [PrescriptionStatus.READY_FOR_PROCESSING]: {
+            label: "Ready for Processing",
+            color: "orange",
+            description: "Ready for pharmacy processing"
+        },
+        [PrescriptionStatus.PROCESSING]: {
+            label: "Processing",
+            color: "purple",
+            description: "Being prepared by pharmacist"
+        },
+        [PrescriptionStatus.READY]: {
+            label: "Ready",
+            color: "green",
+            description: "Medication ready for pickup/delivery"
+        },
+        [PrescriptionStatus.EXPIRED]: {
+            label: "Expired",
+            color: "volcano",
+            description: "Prescription has expired"
+        },
+        [PrescriptionStatus.CANCELLED]: {
+            label: "Cancelled",
+            color: "red",
+            description: "Prescription cancelled"
+        }
+    };
+
+    return mappings[status] || {
+        label: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase(),
+        color: "default",
+        description: ""
+    };
+};
 
 const Component = () => {
     const [loading, setLoading] = useState(true);
@@ -143,36 +290,6 @@ const Component = () => {
     // Format time for display
     const formatTime = (dateTimeString: string): string => {
         return dayjs(dateTimeString).format("h:mm A");
-    };
-
-    // Get appointment status color
-    const getAppointmentStatusColor = (status: string): string => {
-        switch (status) {
-            case "CONFIRMED":
-                return "green";
-            case "PENDING":
-                return "orange";
-            case "CANCELLED":
-                return "red";
-            default:
-                return "default";
-        }
-    };
-
-    // Get referral status color
-    const getReferralStatusColor = (status: ReferralStatus): string => {
-        switch (status) {
-            case ReferralStatus.ACCEPTED:
-                return "green";
-            case ReferralStatus.PENDING:
-                return "orange";
-            case ReferralStatus.REJECTED:
-                return "red";
-            case ReferralStatus.SCHEDULED:
-                return "blue";
-            default:
-                return "default";
-        }
     };
 
     // Calculate days remaining for referral
@@ -307,7 +424,7 @@ const Component = () => {
                                     <div className="flex flex-col items-center justify-center">
                                         <FileText className="w-12 h-12 text-green-500 mb-4" />
                                         <Text strong className="text-gray-800 text-sm md:text-lg">
-                                            Medical Records
+                                            Manage Documents
                                         </Text>
                                         <Text className="text-gray-500 text-xs md:text-sm mt-2">
                                             View your health data
@@ -403,11 +520,10 @@ const Component = () => {
                                                         Dr. {appointment.doctor.name}
                                                     </span>
                                                     <Tag
-                                                        color={getAppointmentStatusColor(appointment.status)}
+                                                        color={getAppointmentStatusMapping(appointment.status).color}
                                                         className="ml-3"
                                                     >
-                                                        {appointment.status.charAt(0).toUpperCase() +
-                                                            appointment.status.slice(1).toLowerCase()}
+                                                        {getAppointmentStatusMapping(appointment.status).label}
                                                     </Tag>
                                                 </div>
                                             }
@@ -481,8 +597,8 @@ const Component = () => {
                                                     <Text strong className="text-gray-800">
                                                         {referral.reasonForReferral}
                                                     </Text>
-                                                    <Tag color={getReferralStatusColor(referral.status)}>
-                                                        {referral.status}
+                                                    <Tag color={getReferralStatusMapping(referral.status).color}>
+                                                        {getReferralStatusMapping(referral.status).label}
                                                     </Tag>
                                                 </div>
                                                 <div className="text-sm text-gray-600">
@@ -540,12 +656,12 @@ const Component = () => {
                                     <List.Item className="border-b border-gray-100 last:border-b-0">
                                         <List.Item.Meta
                                             title={
-                                                <div className="flex items-center">
+                                                <div className="flex items-center justify-between">
                                                     <span className="font-semibold text-gray-800">
                                                         {prescription.prescriptionNumber}
                                                     </span>
-                                                    <Tag color="purple" className="ml-2">
-                                                        {prescription.status}
+                                                    <Tag color={getPrescriptionStatusMapping(prescription.status).color} className="ml-2">
+                                                        {getPrescriptionStatusMapping(prescription.status).label}
                                                     </Tag>
                                                 </div>
                                             }
@@ -553,7 +669,7 @@ const Component = () => {
                                                 <div className="space-y-1">
                                                     <div className="flex items-center text-gray-600">
                                                         <Calendar className="w-4 h-4 mr-1" />
-                                                        {formatDate(prescription.createdAt)}
+                                                        {dayjs(Number(prescription.createdAt) * 1000).format("DD/MM/YYYY")}
                                                     </div>
                                                     <div className="flex items-center text-gray-600">
                                                         <User className="w-4 h-4 mr-1" />

@@ -23,7 +23,6 @@ import {
     CheckCircle,
     TrendingUp,
     FileText,
-    Truck,
     ArrowRight
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -468,48 +467,6 @@ export default function PharmacistDashboard() {
                                 image={Empty.PRESENTED_IMAGE_SIMPLE}
                             />
                         )}
-                    </Card>
-                </Col>
-            </Row>
-
-            {/* Performance Overview */}
-            <Row gutter={[24, 24]} className="mt-6">
-                <Col xs={24} lg={24}>
-                    <Card
-                        title={
-                            <span className="flex items-center">
-                                <Truck className="mr-2 text-purple-600" />
-                                Delivery Overview
-                            </span>
-                        }
-                        className="shadow-lg"
-                    >
-                        <Row gutter={16}>
-                            <Col span={12}>
-                                <Statistic
-                                    title="Total Deliveries"
-                                    value={stats.totalDeliveries}
-                                    prefix={<Package className="text-blue-500" />}
-                                />
-                            </Col>
-                            <Col span={12}>
-                                <Statistic
-                                    title="Out for Delivery"
-                                    value={stats.outForDelivery}
-                                    prefix={<Truck className="text-orange-500" />}
-                                />
-                            </Col>
-                        </Row>
-                        <div className="mt-4">
-                            <Button
-                                block
-                                type="primary"
-                                ghost
-                                onClick={() => router.push('/pharmacist/prescription?filter=delivery')}
-                            >
-                                Manage All Deliveries
-                            </Button>
-                        </div>
                     </Card>
                 </Col>
             </Row>

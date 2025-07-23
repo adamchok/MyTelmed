@@ -1,6 +1,6 @@
 package com.mytelmed.infrastructure.push.constant;
 
-public enum NotificationFamily {
+public enum PushNotificationFamily {
     APPOINTMENT,
     PRESCRIPTION,
     DELIVERY,

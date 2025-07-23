@@ -1045,17 +1045,6 @@ export default function AppointmentDetails() {
                             </div>
                         )}
 
-                        {appointment.doctorNotes && (
-                            <div>
-                                <Text strong className="text-orange-600">
-                                    Doctor Notes:
-                                </Text>
-                                <Paragraph className="mt-1 p-3 bg-orange-50 border border-orange-200 rounded">
-                                    {appointment.doctorNotes}
-                                </Paragraph>
-                            </div>
-                        )}
-
                         {!appointment.reasonForVisit && !appointment.patientNotes && !appointment.doctorNotes && (
                             <div className="text-center py-4">
                                 <FileTextOutlined className="text-4xl text-gray-300 mb-2" />
@@ -1459,7 +1448,6 @@ export default function AppointmentDetails() {
                 footer={null}
                 width="100vw"
                 style={{
-                    maxWidth: "none",
                     margin: 0,
                     padding: 0,
                     top: 0,
@@ -1482,16 +1470,17 @@ export default function AppointmentDetails() {
                         backgroundColor: "rgba(0, 0, 0, 0.8)",
                     },
                 }}
-                centered={false}
+                centered={true}
                 destroyOnHidden={true}
                 maskClosable={true}
                 keyboard={true}
                 zIndex={1100}
                 getContainer={false}
+                closable={false}
             >
                 <div className="h-full flex flex-col bg-white">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b bg-white">
+                    <div className="flex items-center justify-between border-b mb-4 bg-white">
                         <div className="flex items-center gap-3">
                             <FileOutlined className="w-6 h-6 text-blue-500" />
                             <Title level={4} className="m-0">
@@ -1503,14 +1492,14 @@ export default function AppointmentDetails() {
                             icon={<X className="w-5 h-5" />}
                             onClick={() => setComparisonModalVisible(false)}
                             className="hover:bg-gray-100"
-                            size="large"
+                            size="middle"
                         >
                             Close Comparison
                         </Button>
                     </div>
 
                     {/* Document Grid */}
-                    <div className="flex-1 p-4">
+                    <div className="flex-1">
                         <div
                             className={`grid ${selectedForComparison.length === 1
                                 ? "grid-cols-1"
@@ -1535,22 +1524,14 @@ export default function AppointmentDetails() {
                                     }}
                                 >
                                     {/* Document Header */}
-                                    <div className="flex items-center justify-between mb-3 border-b pb-2">
+                                    <div className="flex items-center justify-between mb-3 border-b">
                                         <div className="flex items-center gap-2 flex-1 min-w-0">
                                             <div className="text-lg flex-shrink-0">{getFileIcon("pdf")}</div>
-                                            <div className="min-w-0 flex-1">
-                                                <Tooltip title={docItem.documentName}>
-                                                    <Text strong className="block truncate text-sm">
-                                                        {docItem.documentName}
-                                                    </Text>
-                                                </Tooltip>
-                                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                                    <Tag color="blue" className="text-xs">
-                                                        {getDocumentTypeDisplayName(docItem.documentType)}
-                                                    </Tag>
-                                                    <span>{formatFileSize(docItem.documentSize)}</span>
-                                                </div>
-                                            </div>
+                                            <Tooltip title={docItem.documentName}>
+                                                <Text strong className="block truncate text-sm">
+                                                    {docItem.documentName}
+                                                </Text>
+                                            </Tooltip>
                                         </div>
                                         <Button
                                             type="text"
@@ -1588,22 +1569,13 @@ export default function AppointmentDetails() {
                                             </Text>
                                         </div>
                                     )}
-
-                                    {/* Document Info */}
-                                    <div className="mt-2 pt-2 border-t">
-                                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                                            <Text className="text-xs">
-                                                Uploaded: {parseTimestamp(docItem.createdAt).format("MMM DD, YYYY")}
-                                            </Text>
-                                        </div>
-                                    </div>
                                 </Card>
                             ))}
                         </div>
                     </div>
 
                     {/* Footer with tips */}
-                    <div className="p-4 border-t bg-blue-50">
+                    <div className="p-4 mt-4 border-t bg-blue-50">
                         <Text className="text-sm text-blue-700">
                             <strong>Tip:</strong> Document URLs expire after 10 minutes for security. If documents fail
                             to load, try refreshing the page. Some PDFs may not display properly in browsers due to
@@ -1719,7 +1691,7 @@ export default function AppointmentDetails() {
                                             filterOption={(input, option) =>
                                                 (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
                                             }
-                                            options={availableDocuments.map((doc) => ({
+                                            options={availableDocuments.filter(doc => doc.documentAccess.canAttach).map((doc) => ({
                                                 value: doc.id,
                                                 label: doc.documentName,
                                                 key: doc.id,

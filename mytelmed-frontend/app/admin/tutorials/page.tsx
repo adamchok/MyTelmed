@@ -207,6 +207,7 @@ const TutorialManagement = () => {
                     message.error("Failed to delete tutorial");
                 }
             },
+            centered: true
         });
     };
 
@@ -242,10 +243,38 @@ const TutorialManagement = () => {
 
         if (!selectedTutorial) return false;
 
+        // File size validation (500MB = 500 * 1024 * 1024 bytes)
+        const maxSize = 500 * 1024 * 1024; // 500MB in bytes
+        if (file.size > maxSize) {
+            message.error('File size must be less than 500MB');
+            return false;
+        }
+
+        // File type validation
+        const allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/webm'];
+        if (!allowedTypes.includes(file.type)) {
+            message.error('Only MP4, AVI, MOV, and WebM video files are allowed');
+            return false;
+        }
+
         try {
-            setUploadProgress(10);
+            // Start progress simulation
+            setUploadProgress(5);
+
+            // Simulate upload progress
+            const progressInterval = setInterval(() => {
+                setUploadProgress((prev) => {
+                    if (prev >= 90) {
+                        clearInterval(progressInterval);
+                        return prev;
+                    }
+                    return Math.min(90, Math.floor(prev + Math.random() * 15 + 5)); // Random increment between 5-20, integer only
+                });
+            }, 200);
 
             const response = await TutorialApi.uploadTutorialVideo(selectedTutorial.id, file);
+
+            clearInterval(progressInterval);
 
             if (response.data.isSuccess) {
                 setUploadProgress(100);
@@ -273,24 +302,38 @@ const TutorialManagement = () => {
 
         if (!selectedTutorial) return false;
 
-        // Validate file type
-        const isImage = file.type.startsWith("image/");
-        if (!isImage) {
-            message.error("Please upload an image file (JPG, PNG, etc.)");
+        // File size validation (5MB = 5 * 1024 * 1024 bytes)
+        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+        if (file.size > maxSize) {
+            message.error('File size must be less than 5MB');
             return false;
         }
 
-        // Validate file size (5MB limit)
-        const isLt5M = file.size / 1024 / 1024 < 5;
-        if (!isLt5M) {
-            message.error("Image must be smaller than 5MB");
+        // File type validation
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            message.error('Only JPG, PNG, and WEBP files are allowed');
             return false;
         }
 
         try {
-            setThumbnailUploadProgress(20);
+            // Start progress simulation
+            setThumbnailUploadProgress(10);
+
+            // Simulate upload progress
+            const progressInterval = setInterval(() => {
+                setThumbnailUploadProgress((prev) => {
+                    if (prev >= 85) {
+                        clearInterval(progressInterval);
+                        return prev;
+                    }
+                    return Math.min(85, Math.floor(prev + Math.random() * 20 + 10)); // Random increment between 10-30, integer only
+                });
+            }, 150);
 
             const response = await TutorialApi.uploadTutorialThumbnail(selectedTutorial.id, file);
+
+            clearInterval(progressInterval);
 
             if (response.data.isSuccess) {
                 setThumbnailUploadProgress(100);
@@ -778,7 +821,7 @@ const TutorialManagement = () => {
                     )}
 
                     <div className="text-sm text-gray-500">
-                        <p>Supported formats: MP4, AVI, MOV</p>
+                        <p>Supported formats: MP4, AVI, MOV, WebM</p>
                         <p>Maximum file size: 500MB</p>
                     </div>
                 </div>
@@ -828,7 +871,7 @@ const TutorialManagement = () => {
                     )}
 
                     <div className="text-sm text-gray-500">
-                        <p>Supported formats: JPG, PNG, GIF, WebP</p>
+                        <p>Supported formats: JPG, PNG, WebP</p>
                         <p>Maximum file size: 5MB</p>
                         <p>Recommended size: 1280x720 pixels</p>
                     </div>

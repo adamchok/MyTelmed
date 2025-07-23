@@ -12,7 +12,7 @@ import com.mytelmed.core.patient.entity.Patient;
 import com.mytelmed.core.patient.service.PatientService;
 import com.mytelmed.infrastructure.email.constant.EmailType;
 import com.mytelmed.infrastructure.email.factory.EmailSenderFactoryRegistry;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
@@ -72,13 +72,13 @@ public class ReferralEventListener {
 
             // Send push notification to patient
             UUID patientAccountId = event.referral().getPatient().getAccount().getId();
-            sendPushNotification(patientAccountId, NotificationType.REFERRAL_CREATED, pushVariables);
+            sendPushNotification(patientAccountId, PushNotificationType.REFERRAL_CREATED, pushVariables);
             log.debug("Sent referral push notification to patient account: {}", patientAccountId);
 
             // Send notifications to authorized family members with VIEW_REFERRALS
             // permission
             sendNotificationsToAuthorizedFamilyMembers(event.referral().getPatient().getId(),
-                    emailVariables, pushVariables, EmailType.REFERRAL_CREATED, NotificationType.REFERRAL_CREATED);
+                    emailVariables, pushVariables, EmailType.REFERRAL_CREATED, PushNotificationType.REFERRAL_CREATED);
 
             log.info("Successfully sent referral created notifications for referral: {}",
                     event.referral().getReferralNumber());
@@ -109,12 +109,12 @@ public class ReferralEventListener {
 
             // Send push notification to patient
             UUID patientAccountId = event.referral().getPatient().getAccount().getId();
-            sendPushNotification(patientAccountId, NotificationType.REFERRAL_ACCEPTED, pushVariables);
+            sendPushNotification(patientAccountId, PushNotificationType.REFERRAL_ACCEPTED, pushVariables);
             log.debug("Sent referral accepted push notification to patient account: {}", patientAccountId);
 
             // Send notifications to authorized family members
             sendNotificationsToAuthorizedFamilyMembers(event.referral().getPatient().getId(),
-                    emailVariables, pushVariables, EmailType.REFERRAL_ACCEPTED, NotificationType.REFERRAL_ACCEPTED);
+                    emailVariables, pushVariables, EmailType.REFERRAL_ACCEPTED, PushNotificationType.REFERRAL_ACCEPTED);
 
             log.info("Successfully sent referral accepted notifications for referral: {}",
                     event.referral().getReferralNumber());
@@ -145,12 +145,12 @@ public class ReferralEventListener {
 
             // Send push notification to patient
             UUID patientAccountId = event.referral().getPatient().getAccount().getId();
-            sendPushNotification(patientAccountId, NotificationType.REFERRAL_REJECTED, pushVariables);
+            sendPushNotification(patientAccountId, PushNotificationType.REFERRAL_REJECTED, pushVariables);
             log.debug("Sent referral rejected push notification to patient account: {}", patientAccountId);
 
             // Send notifications to authorized family members
             sendNotificationsToAuthorizedFamilyMembers(event.referral().getPatient().getId(),
-                    emailVariables, pushVariables, EmailType.REFERRAL_REJECTED, NotificationType.REFERRAL_REJECTED);
+                    emailVariables, pushVariables, EmailType.REFERRAL_REJECTED, PushNotificationType.REFERRAL_REJECTED);
 
             log.info("Successfully sent referral rejected notifications for referral: {}",
                     event.referral().getReferralNumber());
@@ -181,12 +181,13 @@ public class ReferralEventListener {
 
             // Send push notification to patient
             UUID patientAccountId = event.referral().getPatient().getAccount().getId();
-            sendPushNotification(patientAccountId, NotificationType.REFERRAL_SCHEDULED, pushVariables);
+            sendPushNotification(patientAccountId, PushNotificationType.REFERRAL_SCHEDULED, pushVariables);
             log.debug("Sent referral scheduled push notification to patient account: {}", patientAccountId);
 
             // Send notifications to authorized family members
             sendNotificationsToAuthorizedFamilyMembers(event.referral().getPatient().getId(),
-                    emailVariables, pushVariables, EmailType.REFERRAL_SCHEDULED, NotificationType.REFERRAL_SCHEDULED);
+                    emailVariables, pushVariables, EmailType.REFERRAL_SCHEDULED,
+                    PushNotificationType.REFERRAL_SCHEDULED);
 
             log.info("Successfully sent referral scheduled notifications for referral: {}",
                     event.referral().getReferralNumber());
@@ -609,7 +610,8 @@ public class ReferralEventListener {
                                 familyMemberEmail);
 
                         // Send push notification
-                        sendPushNotification(familyMemberAccountId, NotificationType.REFERRAL_CREATED, pushVariables);
+                        sendPushNotification(familyMemberAccountId, PushNotificationType.REFERRAL_CREATED,
+                                pushVariables);
                         pushNotificationsSent++;
                         log.debug("Sent referral push notification to authorized family member account: {}",
                                 familyMemberAccountId);
@@ -638,7 +640,7 @@ public class ReferralEventListener {
             Map<String, Object> emailVariables,
             Map<String, Object> pushVariables,
             EmailType emailType,
-            NotificationType notificationType) {
+            PushNotificationType notificationType) {
         try {
             // Find all family members for this patient
             List<FamilyMember> familyMembers = familyMemberRepository.findAllByPatientId(patientId);
@@ -717,7 +719,7 @@ public class ReferralEventListener {
     /**
      * Sends push notification using the push subscription service
      */
-    private void sendPushNotification(UUID accountId, NotificationType notificationType,
+    private void sendPushNotification(UUID accountId, PushNotificationType notificationType,
             Map<String, Object> variables) {
         try {
             if (accountId == null) {

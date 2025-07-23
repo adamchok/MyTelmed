@@ -54,7 +54,7 @@ export default function PharmacistPrescriptionPage() {
     // Pagination
     const [currentPage] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
-    const pageSize = 12;
+    const pageSize = 2;
 
     // Load pharmacist facility on mount
     useEffect(() => {

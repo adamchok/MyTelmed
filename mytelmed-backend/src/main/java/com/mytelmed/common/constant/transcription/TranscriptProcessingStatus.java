@@ -3,7 +3,7 @@ package com.mytelmed.common.constant.transcription;
 /**
  * Constants for transcription processing status
  */
-public enum ProcessingStatus {
+public enum TranscriptProcessingStatus {
     PENDING("pending"),
     PROCESSING("processing"),
     COMPLETED("completed"),
@@ -11,7 +11,7 @@ public enum ProcessingStatus {
 
     private final String status;
 
-    ProcessingStatus(String status) {
+    TranscriptProcessingStatus(String status) {
         this.status = status;
     }
 

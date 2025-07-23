@@ -293,9 +293,8 @@ export default function PaymentStep() {
                         </Title>
                         <div className="space-y-2 text-yellow-700">
                             <div>• Payment must be completed to confirm your delivery</div>
-                            <div>• You&apos;ll receive tracking information via email and SMS</div>
+                            <div>• You&apos;ll receive tracking information via email and Push Notification</div>
                             <div>• Delivery is available Monday to Friday, 9 AM to 6 PM</div>
-                            <div>• Contact customer service if you need to change your delivery details</div>
                         </div>
                     </div>
                 </div>

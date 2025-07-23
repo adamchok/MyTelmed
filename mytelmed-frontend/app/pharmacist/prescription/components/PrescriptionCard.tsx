@@ -70,7 +70,7 @@ export default function PrescriptionCard({
 
     return (
         <Card
-            className="w-full shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 cursor-pointer"
+            className="w-full h-full shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 cursor-pointer"
             styles={{ body: { padding: "20px" } }}
             onClick={() => onPrescriptionClick(prescription)}
         >

@@ -2,12 +2,11 @@ package com.mytelmed.infrastructure.push.strategy.prescription;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mytelmed.infrastructure.push.config.VapidConfiguration;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import com.mytelmed.infrastructure.push.strategy.BasePushNotificationStrategy;
 import nl.martijndwars.webpush.PushService;
 import org.springframework.stereotype.Component;
 import java.util.Map;
-
 
 @Component
 public class PrescriptionOutForDeliveryPushSender extends BasePushNotificationStrategy {
@@ -20,8 +19,8 @@ public class PrescriptionOutForDeliveryPushSender extends BasePushNotificationSt
     }
 
     @Override
-    public NotificationType getNotificationType() {
-        return NotificationType.PRESCRIPTION_OUT_FOR_DELIVERY;
+    public PushNotificationType getNotificationType() {
+        return PushNotificationType.PRESCRIPTION_OUT_FOR_DELIVERY;
     }
 
     @Override
@@ -58,7 +57,7 @@ public class PrescriptionOutForDeliveryPushSender extends BasePushNotificationSt
 
     @Override
     protected Map<String, Object>[] buildActions(Map<String, Object> variables) {
-        return new Map[]{
+        return new Map[] {
                 Map.of(
                         "action", "view-prescription",
                         "title", "View Prescription",

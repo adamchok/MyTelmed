@@ -221,6 +221,7 @@ export default function TimeSlotModal({
             destroyOnHidden={true}
             maskClosable={!loading}
             closable={!loading}
+            centered
         >
             {currentMode === "view" ? renderViewMode() : renderEditMode()}
         </Modal>

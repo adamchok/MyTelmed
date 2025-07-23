@@ -1,7 +1,7 @@
 package com.mytelmed.infrastructure.push.factory.referral;
 
-import com.mytelmed.infrastructure.push.constant.NotificationFamily;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationFamily;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import com.mytelmed.infrastructure.push.factory.AbstractPushNotificationFactory;
 import com.mytelmed.infrastructure.push.strategy.PushNotificationStrategy;
 import lombok.extern.slf4j.Slf4j;
@@ -21,11 +21,11 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 public class ReferralPushNotificationFactory extends AbstractPushNotificationFactory {
-    private final Map<NotificationType, PushNotificationStrategy> referralPushStrategyMap;
+    private final Map<PushNotificationType, PushNotificationStrategy> referralPushStrategyMap;
 
     public ReferralPushNotificationFactory(List<PushNotificationStrategy> strategies) {
         this.referralPushStrategyMap = strategies.stream()
-                .filter(strategy -> strategy.getNotificationType().getFamily() == NotificationFamily.REFERRAL)
+                .filter(strategy -> strategy.getNotificationType().getFamily() == PushNotificationFamily.REFERRAL)
                 .collect(Collectors.toMap(PushNotificationStrategy::getNotificationType, Function.identity()));
 
         log.info("Initialized ReferralPushNotificationFactory with {} referral push strategies",
@@ -36,12 +36,12 @@ public class ReferralPushNotificationFactory extends AbstractPushNotificationFac
     }
 
     @Override
-    public boolean supports(NotificationFamily family) {
-        return family == NotificationFamily.REFERRAL;
+    public boolean supports(PushNotificationFamily family) {
+        return family == PushNotificationFamily.REFERRAL;
     }
 
     @Override
-    public PushNotificationStrategy getNotificationSender(NotificationType type) {
+    public PushNotificationStrategy getNotificationSender(PushNotificationType type) {
         return Optional.ofNullable(referralPushStrategyMap.get(type))
                 .orElseThrow(() -> {
                     log.error("No push notification sender found for referral type: {}", type);

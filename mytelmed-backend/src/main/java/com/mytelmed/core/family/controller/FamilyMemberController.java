@@ -126,6 +126,27 @@ public class FamilyMemberController {
         return ResponseEntity.ok(ApiResponse.success("Family member confirmed successfully"));
     }
 
+    @GetMapping("/decline/{familyMemberId}")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<Void>> declineFamilyMember(
+            @PathVariable UUID familyMemberId,
+            @AuthenticationPrincipal Account account
+    ) {
+        log.debug("Received request to decline family member invite: {} by account: {}", familyMemberId, account.getId());
+
+        // Verify the family member invitation belongs to the authenticated account
+        FamilyMember familyMember = familyMemberService.findById(familyMemberId);
+        if (!familyMember.getNric().equals(account.getUsername()) &&
+                (familyMember.getMemberAccount() == null || !familyMember.getMemberAccount().getId().equals(account.getId()))) {
+            log.warn("Unauthorized decline attempt: Account {} tried to confirm family member {} with email {}",
+                    account.getId(), familyMemberId, familyMember.getEmail());
+            return ResponseEntity.status(403).body(ApiResponse.failure("Unauthorized to decline this family member invitation"));
+        }
+
+        familyMemberService.decline(familyMember);
+        return ResponseEntity.ok(ApiResponse.success("Invite declined successfully"));
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<Void>> inviteFamilyMember(

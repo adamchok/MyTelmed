@@ -1,12 +1,7 @@
 import { AxiosResponse } from "axios";
 import repository from "../RepositoryManager";
 import { ApiResponse } from "../props";
-import {
-    FamilyMember,
-    CreateFamilyMemberRequest,
-    UpdateFamilyMemberRequest,
-    UpdateFamilyPermissionsRequest,
-} from "./props";
+import { FamilyMember, CreateFamilyMemberRequest, UpdateFamilyMemberRequest, UpdateFamilyPermissionsRequest } from "./props";
 
 const FAMILY_RESOURCE: string = "/api/v1/family";
 const FAMILY_PERMISSIONS_RESOURCE: string = "/api/v1/family/permissions";
@@ -38,6 +33,13 @@ const FamilyMemberApi = {
      */
     confirmFamilyMember(familyMemberId: string): Promise<AxiosResponse<ApiResponse<void>>> {
         return repository.get<ApiResponse<void>>(`${FAMILY_RESOURCE}/confirm/${familyMemberId}`);
+    },
+
+    /**
+     * Decline family member invitation
+     */
+    declineFamilyMember(familyMemberId: string): Promise<AxiosResponse<ApiResponse<void>>> {
+        return repository.get<ApiResponse<void>>(`${FAMILY_RESOURCE}/decline/${familyMemberId}`);
     },
 
     /**

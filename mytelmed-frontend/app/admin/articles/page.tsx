@@ -106,6 +106,21 @@ const ArticleManagement = () => {
         loadArticles();
     }, []);
 
+    // Force Quill editor re-initialization when edit modal opens
+    useEffect(() => {
+        if (editModalVisible && selectedArticle) {
+            // Small delay to ensure modal is fully rendered
+            const timer = setTimeout(() => {
+                // Trigger a re-render of the Quill editor
+                editForm.setFieldsValue({
+                    content: selectedArticle.content
+                });
+            }, 100);
+
+            return () => clearTimeout(timer);
+        }
+    }, [editModalVisible, selectedArticle]);
+
     const loadArticles = async () => {
         setLoading(true);
         try {
@@ -233,6 +248,7 @@ const ArticleManagement = () => {
                     message.error("Failed to delete article");
                 }
             },
+            centered: true
         });
     };
 
@@ -534,7 +550,10 @@ const ArticleManagement = () => {
                     name="content"
                     rules={[{ required: true, message: "Please enter article content" }]}
                 >
-                    <QuillEditor placeholder="Write your article content here..." />
+                    <QuillEditor
+                        key="create-quill"
+                        placeholder="Write your article content here..."
+                    />
                 </Form.Item>
             </FormModal>
 
@@ -580,7 +599,10 @@ const ArticleManagement = () => {
                     name="content"
                     rules={[{ required: true, message: "Please enter article content" }]}
                 >
-                    <QuillEditor placeholder="Write your article content here..." />
+                    <QuillEditor
+                        key={`edit-quill-${selectedArticle?.id || 'new'}`}
+                        placeholder="Write your article content here..."
+                    />
                 </Form.Item>
             </FormModal>
 

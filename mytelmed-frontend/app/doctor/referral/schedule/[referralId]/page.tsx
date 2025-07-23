@@ -232,7 +232,7 @@ export default function ScheduleAppointmentPage() {
     };
 
     const getConsultationModeColor = (mode: ConsultationMode) => {
-        return mode === ConsultationMode.VIRTUAL ? "green" : "emerald";
+        return mode === ConsultationMode.VIRTUAL ? "orange" : "green";
     };
 
     const disabledDate = (current: dayjs.Dayjs) => {
@@ -288,19 +288,21 @@ export default function ScheduleAppointmentPage() {
     }
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto p-6">
+        <div className="container mx-auto space-y-3">
+            <Button
+                icon={<ArrowLeft className="w-4 h-4" />}
+                onClick={handleBack}
+                size="large"
+                type="text"
+                className="px-0"
+            >
+                Back to Referrals
+            </Button>
             {/* Page Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                    <Button
-                        icon={<ArrowLeft className="w-4 h-4" />}
-                        onClick={handleBack}
-                        size="large"
-                    >
-                        Back to Referrals
-                    </Button>
-                    <div>
-                        <Title level={2} className="mb-0">Schedule Appointment</Title>
+            <div className="flex items-center justify-center mb-4">
+                <div className="flex items-center justify-center space-x-4">
+                    <div className="flex flex-col items-center justify-center mb-4">
+                        <Title level={2} className="mb-2 mt-0">Schedule Appointment</Title>
                         <Text className="text-gray-600">Schedule appointment for referral #{referral.referralNumber}</Text>
                     </div>
                 </div>
@@ -309,7 +311,7 @@ export default function ScheduleAppointmentPage() {
             {/* Patient & Referral Info */}
             <Card
                 className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-sm"
-                bodyStyle={{ padding: '24px' }}
+                styles={{ body: { padding: "24px" } }}
             >
                 <Row gutter={[24, 16]} align="middle">
                     <Col xs={24} sm={12}>
@@ -469,7 +471,7 @@ export default function ScheduleAppointmentPage() {
                                         <Tag
                                             icon={getConsultationModeIcon(slot.consultationMode)}
                                             color={getConsultationModeColor(slot.consultationMode)}
-                                            className="text-xs"
+                                            className="text-xs inline-flex flex-row justify-center items-center w-fit p-1"
                                         >
                                             {slot.consultationMode}
                                         </Tag>
@@ -488,7 +490,7 @@ export default function ScheduleAppointmentPage() {
             {selectedTimeSlot && (
                 <Card
                     className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-md"
-                    bodyStyle={{ padding: '24px' }}
+                    styles={{ body: { padding: "24px" } }}
                 >
                     <Row gutter={[24, 16]} align="middle">
                         <Col xs={24} lg={16}>
@@ -511,12 +513,9 @@ export default function ScheduleAppointmentPage() {
                                     <Col xs={24} sm={8}>
                                         <Text className="text-sm text-gray-600">Type:</Text>
                                         <div>
-                                            <Tag
-                                                color={getConsultationModeColor(selectedTimeSlot.consultationMode)}
-                                                icon={getConsultationModeIcon(selectedTimeSlot.consultationMode)}
-                                            >
+                                            <div className="font-medium">
                                                 {selectedTimeSlot.consultationMode === ConsultationMode.VIRTUAL ? 'Virtual Consultation' : 'Physical Consultation'}
-                                            </Tag>
+                                            </div>
                                         </div>
                                     </Col>
                                 </Row>

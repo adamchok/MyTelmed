@@ -28,8 +28,16 @@ import { AppointmentDto } from "@/app/api/appointment/props";
 import { ReferralDto, ReferralStatus, ReferralStatisticsDto } from "@/app/api/referral/props";
 import { PrescriptionDto } from "@/app/api/prescription/props";
 import { Doctor } from "@/app/api/doctor/props";
+import { AppointmentStatus } from "@/app/api/props";
 
 const { Title, Text } = Typography;
+
+// Status mapping interfaces
+interface StatusMapping {
+    label: string;
+    color: string;
+    description?: string;
+}
 
 // Dashboard data interfaces
 interface DoctorDashboardData {
@@ -46,6 +54,104 @@ interface DoctorDashboardData {
     };
     referralStatistics?: ReferralStatisticsDto;
 }
+
+// Status mapping functions
+const getAppointmentStatusMapping = (status: string): StatusMapping => {
+    const mappings: Record<string, StatusMapping> = {
+        [AppointmentStatus.PENDING]: {
+            label: "Pending Confirmation",
+            color: "orange",
+            description: "Waiting for confirmation"
+        },
+        [AppointmentStatus.PENDING_PAYMENT]: {
+            label: "Payment Required",
+            color: "red",
+            description: "Payment required to confirm"
+        },
+        [AppointmentStatus.CONFIRMED]: {
+            label: "Confirmed",
+            color: "green",
+            description: "Appointment confirmed"
+        },
+        [AppointmentStatus.READY_FOR_CALL]: {
+            label: "Ready for Call",
+            color: "blue",
+            description: "Ready to join video call"
+        },
+        [AppointmentStatus.IN_PROGRESS]: {
+            label: "In Progress",
+            color: "purple",
+            description: "Consultation in progress"
+        },
+        [AppointmentStatus.COMPLETED]: {
+            label: "Completed",
+            color: "green",
+            description: "Consultation completed"
+        },
+        [AppointmentStatus.CANCELLED]: {
+            label: "Cancelled",
+            color: "red",
+            description: "Appointment cancelled"
+        },
+        [AppointmentStatus.NO_SHOW]: {
+            label: "No Show",
+            color: "volcano",
+            description: "Patient did not attend"
+        }
+    };
+
+    return mappings[status] || {
+        label: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase(),
+        color: "default",
+        description: ""
+    };
+};
+
+const getReferralStatusMapping = (status: ReferralStatus): StatusMapping => {
+    const mappings: Record<ReferralStatus, StatusMapping> = {
+        [ReferralStatus.PENDING]: {
+            label: "Pending Review",
+            color: "orange",
+            description: "Waiting for doctor review"
+        },
+        [ReferralStatus.ACCEPTED]: {
+            label: "Accepted",
+            color: "green",
+            description: "Referral accepted by specialist"
+        },
+        [ReferralStatus.REJECTED]: {
+            label: "Rejected",
+            color: "red",
+            description: "Referral declined by specialist"
+        },
+        [ReferralStatus.SCHEDULED]: {
+            label: "Scheduled",
+            color: "blue",
+            description: "Appointment scheduled"
+        },
+        [ReferralStatus.COMPLETED]: {
+            label: "Completed",
+            color: "green",
+            description: "Referral consultation completed"
+        },
+        [ReferralStatus.EXPIRED]: {
+            label: "Expired",
+            color: "volcano",
+            description: "Referral has expired"
+        },
+        [ReferralStatus.CANCELLED]: {
+            label: "Cancelled",
+            color: "red",
+            description: "Referral cancelled"
+        }
+    };
+
+    return mappings[status] || {
+        label: status,
+        color: "default",
+        description: ""
+    };
+};
 
 const DoctorDashboardComponent = () => {
     const [loading, setLoading] = useState(true);
@@ -175,62 +281,6 @@ const DoctorDashboardComponent = () => {
     // Format time for display
     const formatTime = (dateTimeString: string): string => {
         return dayjs(dateTimeString).format("h:mm A");
-    };
-
-    // Get appointment status color
-    const getAppointmentStatusColor = (status: string): string => {
-        switch (status) {
-            case "CONFIRMED":
-                return "green";
-            case "PENDING":
-                return "orange";
-            case "CANCELLED":
-                return "red";
-            case "COMPLETED":
-                return "blue";
-            default:
-                return "default";
-        }
-    };
-
-    // Get referral status color
-    const getReferralStatusColor = (status: ReferralStatus): string => {
-        switch (status) {
-            case ReferralStatus.PENDING:
-                return "orange";
-            case ReferralStatus.ACCEPTED:
-                return "blue";
-            case ReferralStatus.SCHEDULED:
-                return "purple";
-            case ReferralStatus.COMPLETED:
-                return "green";
-            case ReferralStatus.REJECTED:
-                return "red";
-            case ReferralStatus.EXPIRED:
-                return "red";
-            case ReferralStatus.CANCELLED:
-                return "red";
-            default:
-                return "default";
-        }
-    };
-
-    // Get prescription status color
-    const getPrescriptionStatusColor = (status: string): string => {
-        switch (status) {
-            case "ACTIVE":
-                return "green";
-            case "FILLED":
-                return "blue";
-            case "PARTIALLY_FILLED":
-                return "orange";
-            case "EXPIRED":
-                return "red";
-            case "CANCELLED":
-                return "red";
-            default:
-                return "default";
-        }
     };
 
     if (error) {
@@ -466,8 +516,8 @@ const DoctorDashboardComponent = () => {
                                                     <Text strong className="text-gray-800 text-sm md:text-base">
                                                         {appointment.patient?.name || "Unknown Patient"}
                                                     </Text>
-                                                    <Tag color={getAppointmentStatusColor(appointment.status)}>
-                                                        {appointment.status}
+                                                    <Tag color={getAppointmentStatusMapping(appointment.status).color}>
+                                                        {getAppointmentStatusMapping(appointment.status).label}
                                                     </Tag>
                                                 </div>
                                             }
@@ -532,9 +582,11 @@ const DoctorDashboardComponent = () => {
                                 renderItem={(referral) => (
                                     <List.Item
                                         actions={[
-                                            <Button key="view" type="link" className="text-blue-500">
-                                                View Details
-                                            </Button>,
+                                            <Link key="view" href={`/doctor/referral`}>
+                                                <Button type="link" className="text-blue-500">
+                                                    View Details
+                                                </Button>
+                                            </Link>
                                         ]}
                                         className="border-b border-gray-100 last:border-b-0"
                                     >
@@ -552,8 +604,8 @@ const DoctorDashboardComponent = () => {
                                                     <Text strong className="text-gray-800 text-sm md:text-base">
                                                         {referral.patient?.name || "Unknown Patient"}
                                                     </Text>
-                                                    <Tag color={getReferralStatusColor(referral.status)}>
-                                                        {referral.status}
+                                                    <Tag color={getReferralStatusMapping(referral.status).color}>
+                                                        {getReferralStatusMapping(referral.status).label}
                                                     </Tag>
                                                 </div>
                                             }
@@ -563,7 +615,7 @@ const DoctorDashboardComponent = () => {
                                                         To: {referral.referredDoctor?.name || referral.externalDoctorName || "External Doctor"}
                                                     </div>
                                                     <div className="text-xs md:text-sm">
-                                                        {formatDate(referral.createdAt)}
+                                                        {dayjs(Number(referral.createdAt) * 1000).format("DD/MM/YYYY")}
                                                     </div>
                                                 </div>
                                             }
@@ -633,7 +685,7 @@ const DoctorDashboardComponent = () => {
                                                 <div className="text-gray-600 text-xs">
                                                     From: Dr. {referral.referringDoctor?.name || "Unknown Doctor"}
                                                     <br />
-                                                    {formatDate(referral.createdAt)}
+                                                    {dayjs(Number(referral.createdAt) * 1000).format("DD/MM/YYYY")}
                                                 </div>
                                             }
                                         />
@@ -682,15 +734,12 @@ const DoctorDashboardComponent = () => {
                                                     <Text strong className="text-gray-800 text-sm">
                                                         {prescription.appointment?.patient?.name || "Unknown Patient"}
                                                     </Text>
-                                                    <Tag color={getPrescriptionStatusColor(prescription.status)}>
-                                                        {prescription.status}
-                                                    </Tag>
                                                 </div>
                                             }
                                             description={
                                                 <div className="text-gray-600 text-xs">
                                                     <div>#{prescription.prescriptionNumber}</div>
-                                                    <div>{formatDate(prescription.createdAt)}</div>
+                                                    <div>{dayjs(Number(prescription.createdAt) * 1000).format("DD/MM/YYYY")}</div>
                                                     {prescription.prescriptionItems && prescription.prescriptionItems.length > 0 && (
                                                         <div className="mt-1">
                                                             {prescription.prescriptionItems.length} item(s)

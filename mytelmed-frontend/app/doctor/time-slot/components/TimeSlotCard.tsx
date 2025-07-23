@@ -126,7 +126,6 @@ export default function TimeSlotCard({
                             placement="bottomRight"
                         >
                             <Button
-                                type="text"
                                 size="small"
                                 icon={<MoreVertical className="w-3 h-3 sm:w-4 sm:h-4" />}
                                 className="opacity-70 hover:opacity-100 min-w-[32px] h-8 flex-shrink-0"
@@ -204,7 +203,6 @@ export default function TimeSlotCard({
                 {/* Mobile: Stack buttons vertically on very small screens, horizontal on larger */}
                 <div className="flex flex-col xs:flex-row gap-1 xs:gap-2 w-full xs:w-auto">
                     <Button
-                        type="text"
                         size="small"
                         icon={<Calendar className="w-3 h-3 sm:w-4 sm:h-4" />}
                         onClick={handleView}
@@ -216,7 +214,6 @@ export default function TimeSlotCard({
                     {canEdit && (
                         <>
                             <Button
-                                type="text"
                                 size="small"
                                 icon={<Edit className="w-3 h-3 sm:w-4 sm:h-4" />}
                                 onClick={handleEdit}
@@ -233,7 +230,6 @@ export default function TimeSlotCard({
                                 }
                             >
                                 <Button
-                                    type="text"
                                     size="small"
                                     icon={
                                         timeSlot.isAvailable ?

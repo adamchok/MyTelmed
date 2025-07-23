@@ -220,7 +220,7 @@ public class PaymentService {
             } else {
                 // Create new bill for standardized delivery fee (RM 10)
                 bill = createBill(patient, BillType.MEDICATION, deliveryFee,
-                        "Medication delivery fee for prescription: " + prescription.getId(),
+                        "Medication delivery fee for prescription: " + prescription.getPrescriptionNumber(),
                         null, prescription);
                 log.info("Created new bill {} for prescription {}", bill.getBillNumber(), prescriptionId);
             }

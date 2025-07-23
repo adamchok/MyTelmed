@@ -2,7 +2,7 @@ package com.mytelmed.infrastructure.push.strategy.delivery;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mytelmed.infrastructure.push.config.VapidConfiguration;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import com.mytelmed.infrastructure.push.strategy.BasePushNotificationStrategy;
 import nl.martijndwars.webpush.PushService;
 import org.springframework.stereotype.Component;
@@ -19,8 +19,8 @@ public class DeliveryProcessingStartedPushSender extends BasePushNotificationStr
     }
 
     @Override
-    public NotificationType getNotificationType() {
-        return NotificationType.DELIVERY_PROCESSING_STARTED;
+    public PushNotificationType getNotificationType() {
+        return PushNotificationType.DELIVERY_PROCESSING_STARTED;
     }
 
     @Override

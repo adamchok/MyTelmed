@@ -2,7 +2,7 @@ package com.mytelmed.infrastructure.push.strategy.referral;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mytelmed.infrastructure.push.config.VapidConfiguration;
-import com.mytelmed.infrastructure.push.constant.NotificationType;
+import com.mytelmed.infrastructure.push.constant.PushNotificationType;
 import com.mytelmed.infrastructure.push.strategy.BasePushNotificationStrategy;
 import nl.martijndwars.webpush.PushService;
 import org.springframework.stereotype.Component;
@@ -28,8 +28,8 @@ public class ReferralScheduledPushSender extends BasePushNotificationStrategy {
     }
 
     @Override
-    public NotificationType getNotificationType() {
-        return NotificationType.REFERRAL_SCHEDULED;
+    public PushNotificationType getNotificationType() {
+        return PushNotificationType.REFERRAL_SCHEDULED;
     }
 
     @Override

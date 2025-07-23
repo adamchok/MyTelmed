@@ -6,7 +6,7 @@ import com.mytelmed.infrastructure.ai.dto.TranscriptionSummaryResponse;
 /**
  * Interface for AI service to generate transcription summaries
  */
-public interface AiService {
+public interface AiServiceStrategy {
 
     /**
      * Generate summary from video call transcription

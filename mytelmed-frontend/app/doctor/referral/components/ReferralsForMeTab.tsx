@@ -184,6 +184,7 @@ const ReferralsForMeTab: React.FC<ReferralsForMeTabProps> = ({ refreshTrigger, o
                         {actionLoading === selectedReferral?.id ? "Rejecting..." : "Reject Referral"}
                     </button>,
                 ]}
+                centered
             >
                 <div className="space-y-4">
                     <Text>Please provide a reason for rejecting this referral:</Text>

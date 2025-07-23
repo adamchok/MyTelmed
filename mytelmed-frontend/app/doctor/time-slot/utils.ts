@@ -173,19 +173,23 @@ export class TimeSlotUtils {
     static generateTimeOptions(): Array<{ label: string; value: string }> {
         const options: Array<{ label: string; value: string }> = [];
 
-        for (let hour = 0; hour < 24; hour++) {
-            for (let minute = 0; minute < 60; minute += 15) {
-                const timeString = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-                const displayTime = new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-MY", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                });
-                options.push({
-                    label: displayTime,
-                    value: timeString,
-                });
-            }
+        // Generate time options only between 08:00 AM and 06:00 PM (inclusive) at 15-minute intervals
+        const startMinutes = 8 * 60; // 08:00 AM
+        const endMinutes = 18 * 60; // 06:00 PM
+
+        for (let totalMinutes = startMinutes; totalMinutes <= endMinutes; totalMinutes += 15) {
+            const hour = Math.floor(totalMinutes / 60);
+            const minute = totalMinutes % 60;
+            const timeString = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+            const displayTime = new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-MY", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+            });
+            options.push({
+                label: displayTime,
+                value: timeString,
+            });
         }
 
         return options;

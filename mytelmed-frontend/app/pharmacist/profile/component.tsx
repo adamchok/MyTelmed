@@ -42,14 +42,14 @@ const ProfilePageComponent = ({
 }: ProfileComponentProps) => {
     const [form] = Form.useForm();
 
-    // Set form values when doctor data changes
+    // Set form values when pharmacist data changes
     useEffect(() => {
         if (pharmacist) {
             form.setFieldsValue({
                 name: pharmacist.name,
                 email: pharmacist.email,
                 phone: pharmacist.phone,
-                dateOfBirth: pharmacist.dateOfBirth ? dayjs(pharmacist.dateOfBirth) : null,
+                dateOfBirth: pharmacist.dateOfBirth ? dayjs(pharmacist.dateOfBirth, "DD/MM/YYYY") : null,
                 gender: pharmacist.gender.toUpperCase(),
             });
         }
@@ -314,7 +314,7 @@ const ProfilePageComponent = ({
                                         <DatePicker
                                             placeholder="Select date of birth"
                                             className="w-full h-10 sm:h-12 rounded-xl border-gray-200 hover:border-purple-700 focus:border-purple-700 transition-colors"
-                                            format="YYYY-MM-DD"
+                                            format="DD/MM/YYYY"
                                             disabledDate={(current) => {
                                                 return current && current > dayjs().endOf("day");
                                             }}

@@ -7,7 +7,6 @@ import {
     Typography,
     Row,
     Col,
-    Tag,
     Space,
     List,
     Badge,
@@ -21,7 +20,7 @@ import {
     Stethoscope,
 } from "lucide-react";
 import dayjs from "dayjs";
-import { PrescriptionDto, PrescriptionStatus, PrescriptionItemDto } from "@/app/api/prescription/props";
+import { PrescriptionDto, PrescriptionItemDto } from "@/app/api/prescription/props";
 
 const { Text, Paragraph } = Typography;
 
@@ -40,44 +39,6 @@ const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = ({
     if (!prescription) {
         return null;
     }
-
-    const getStatusColor = (status: PrescriptionStatus) => {
-        switch (status) {
-            case PrescriptionStatus.CREATED:
-                return "blue";
-            case PrescriptionStatus.READY_FOR_PROCESSING:
-                return "orange";
-            case PrescriptionStatus.PROCESSING:
-                return "purple";
-            case PrescriptionStatus.READY:
-                return "green";
-            case PrescriptionStatus.EXPIRED:
-                return "red";
-            case PrescriptionStatus.CANCELLED:
-                return "default";
-            default:
-                return "default";
-        }
-    };
-
-    const getStatusText = (status: PrescriptionStatus) => {
-        switch (status) {
-            case PrescriptionStatus.CREATED:
-                return "Created";
-            case PrescriptionStatus.READY_FOR_PROCESSING:
-                return "Ready for Processing";
-            case PrescriptionStatus.PROCESSING:
-                return "Processing";
-            case PrescriptionStatus.READY:
-                return "Ready";
-            case PrescriptionStatus.EXPIRED:
-                return "Expired";
-            case PrescriptionStatus.CANCELLED:
-                return "Cancelled";
-            default:
-                return status;
-        }
-    };
 
     return (
         <Modal
@@ -98,25 +59,12 @@ const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = ({
                 {/* Header Information */}
                 <Card className="bg-blue-50 border-blue-200">
                     <Row gutter={[24, 16]}>
-                        <Col xs={24} sm={12}>
-                            <Space direction="vertical" size={1}>
-                                <Text className="text-sm text-gray-600">Prescription Number</Text>
-                                <Text className="text-lg font-semibold text-blue-800">
-                                    {prescription.prescriptionNumber}
-                                </Text>
-                            </Space>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                            <Space direction="vertical" size={1}>
-                                <Text className="text-sm text-gray-600">Status</Text>
-                                <Tag
-                                    color={getStatusColor(prescription.status)}
-                                    className="text-sm px-3 py-1"
-                                >
-                                    {getStatusText(prescription.status)}
-                                </Tag>
-                            </Space>
-                        </Col>
+                        <Space direction="vertical" size={1}>
+                            <Text className="text-sm text-gray-600">Prescription Number</Text>
+                            <Text className="text-lg font-semibold text-blue-800">
+                                {prescription.prescriptionNumber}
+                            </Text>
+                        </Space>
                     </Row>
                 </Card>
 

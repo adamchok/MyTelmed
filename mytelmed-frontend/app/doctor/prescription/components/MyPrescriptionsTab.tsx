@@ -8,9 +8,7 @@ import {
     Button,
     Empty,
     Input,
-    Select,
     Row,
-    Col,
 } from "antd";
 import {
     Calendar,
@@ -18,15 +16,13 @@ import {
     User,
     Eye,
     Search,
-    Filter,
 } from "lucide-react";
 import dayjs from "dayjs";
-import { PrescriptionDto, PrescriptionStatus } from "@/app/api/prescription/props";
+import { PrescriptionDto } from "@/app/api/prescription/props";
 import PrescriptionDetailModal from "./PrescriptionDetailModal";
 
 const { Text } = Typography;
 const { Search: AntSearch } = Input;
-const { Option } = Select;
 
 interface MyPrescriptionsTabProps {
     prescriptions: PrescriptionDto[];
@@ -39,7 +35,6 @@ const MyPrescriptionsTab: React.FC<MyPrescriptionsTabProps> = ({
     onRefresh
 }) => {
     const [searchTerm, setSearchTerm] = useState("");
-    const [statusFilter, setStatusFilter] = useState<string>("");
     const [selectedPrescription, setSelectedPrescription] = useState<PrescriptionDto | null>(null);
     const [detailModalVisible, setDetailModalVisible] = useState(false);
 
@@ -50,9 +45,7 @@ const MyPrescriptionsTab: React.FC<MyPrescriptionsTabProps> = ({
             prescription.appointment.patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             prescription.diagnosis.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const matchesStatus = statusFilter === "" || statusFilter === undefined || prescription.status === statusFilter;
-
-        return matchesSearch && matchesStatus;
+        return matchesSearch;
     });
 
     const handleViewDetails = (prescription: PrescriptionDto) => {
@@ -65,32 +58,13 @@ const MyPrescriptionsTab: React.FC<MyPrescriptionsTabProps> = ({
             {/* Search and Filter Controls */}
             <Card className="bg-gray-50">
                 <Row gutter={[16, 16]} align="middle">
-                    <Col xs={24} sm={12} md={16}>
-                        <AntSearch
-                            placeholder="Search by prescription number, patient name, or diagnosis..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            prefix={<Search className="w-4 h-4 text-gray-400" />}
-                            className="w-full"
-                        />
-                    </Col>
-                    <Col xs={24} sm={12} md={8}>
-                        <Select
-                            placeholder="Filter by status"
-                            value={statusFilter}
-                            onChange={setStatusFilter}
-                            className="w-full"
-                            allowClear
-                            suffixIcon={<Filter className="w-4 h-4" />}
-                        >
-                            <Option value={PrescriptionStatus.CREATED}>Created</Option>
-                            <Option value={PrescriptionStatus.READY_FOR_PROCESSING}>Ready for Processing</Option>
-                            <Option value={PrescriptionStatus.PROCESSING}>Processing</Option>
-                            <Option value={PrescriptionStatus.READY}>Ready</Option>
-                            <Option value={PrescriptionStatus.EXPIRED}>Expired</Option>
-                            <Option value={PrescriptionStatus.CANCELLED}>Cancelled</Option>
-                        </Select>
-                    </Col>
+                    <AntSearch
+                        placeholder="Search by prescription number, patient name, or diagnosis..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        prefix={<Search className="w-4 h-4 text-gray-400" />}
+                        className="w-full"
+                    />
                 </Row>
             </Card>
 
@@ -107,7 +81,7 @@ const MyPrescriptionsTab: React.FC<MyPrescriptionsTabProps> = ({
                     <Empty
                         image={Empty.PRESENTED_IMAGE_SIMPLE}
                         description={
-                            searchTerm || statusFilter
+                            searchTerm
                                 ? "No prescriptions found matching your criteria"
                                 : "No prescriptions created yet"
                         }

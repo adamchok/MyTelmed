@@ -227,7 +227,7 @@ export default function DeliveryMethodStep() {
                 <div className="flex items-start space-x-3">
                     <Clock className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
                     <div>
-                        <Title level={4} className="text-blue-800 mb-2">
+                        <Title level={4} className="text-blue-800 mb-2 mt-0">
                             Processing Time
                         </Title>
                         <Text className="text-blue-700">
@@ -238,25 +238,22 @@ export default function DeliveryMethodStep() {
                 </div>
             </Card>
 
-            {/* Navigation */}
-            <Card>
-                <div className="flex justify-end">
-                    <Button
-                        type="primary"
-                        size="large"
-                        onClick={handleNext}
-                        loading={creatingDelivery}
-                        disabled={!selectedMethod}
-                        icon={<ArrowRight className="w-4 h-4" />}
-                        className="bg-blue-600 border-blue-600 hover:bg-blue-700"
-                    >
-                        {selectedMethod === DeliveryMethodOption.PICKUP
-                            ? (creatingDelivery ? "Confirming Pickup..." : "Confirm Pickup")
-                            : "Continue to Address Selection"
-                        }
-                    </Button>
-                </div>
-            </Card>
+            <div className="flex justify-end">
+                <Button
+                    type="primary"
+                    size="large"
+                    onClick={handleNext}
+                    loading={creatingDelivery}
+                    disabled={!selectedMethod}
+                    icon={<ArrowRight className="w-4 h-4" />}
+                    className="bg-blue-600 border-blue-600 hover:bg-blue-700"
+                >
+                    {selectedMethod === DeliveryMethodOption.PICKUP
+                        ? (creatingDelivery ? "Confirming Pickup..." : "Confirm Pickup")
+                        : "Continue to Address Selection"
+                    }
+                </Button>
+            </div>
         </div>
     );
-} 
+}

@@ -79,7 +79,6 @@ export default function PatientAppointments() {
         getAuthorizedPatientsForAppointments,
         getPatientOption,
         loading: familyLoading,
-        currentPatient: hookCurrentPatient
     } = useFamilyPermissions();
 
     // State variables
@@ -165,13 +164,6 @@ export default function PatientAppointments() {
     useEffect(() => {
         loadAllAppointments();
     }, []);
-
-    // Set default patient selection when hook loads
-    useEffect(() => {
-        if (!familyLoading && hookCurrentPatient && selectedPatientId === "all") {
-            setSelectedPatientId(hookCurrentPatient.id);
-        }
-    }, [familyLoading, hookCurrentPatient, selectedPatientId]);
 
     // Reset current page when switching views or changing filters
     useEffect(() => {
@@ -311,16 +303,49 @@ export default function PatientAppointments() {
         }
     };
 
-    // Calculate statistics
+    // Get appointments filtered by everything except tab selection
+    const getBaseFilteredAppointments = () => {
+        return allAppointments.filter((appointment) => {
+            // Only apply filters in table view
+            if (viewMode === "calendar") {
+                return true; // No filtering for calendar view
+            }
+
+            // Patient filter
+            const matchesPatient = selectedPatientId === "all" || appointment.patient.id === selectedPatientId;
+
+            // Text search filter
+            const matchesSearch =
+                searchTerm === "" ||
+                appointment.doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                appointment.reasonForVisit?.toLowerCase().includes(searchTerm.toLowerCase());
+
+            // Status filter
+            const matchesStatus = selectedStatus === "all" || appointment.status === selectedStatus;
+
+            // Date range filter
+            const matchesDateRange =
+                !dateRange?.[0] ||
+                !dateRange?.[1] ||
+                (parseLocalDateTime(appointment.appointmentDateTime).isAfter(dateRange[0]) &&
+                    parseLocalDateTime(appointment.appointmentDateTime).isBefore(dateRange[1].add(1, "day")));
+
+            return matchesPatient && matchesSearch && matchesStatus && matchesDateRange;
+        });
+    };
+
+    // Calculate statistics based on filtered appointments
     const getAppointmentStats = () => {
+        const baseFiltered = getBaseFilteredAppointments();
         const today = dayjs();
-        const todayAppointments = allAppointments.filter(
+
+        const todayAppointments = baseFiltered.filter(
             (apt) =>
                 parseLocalDateTime(apt.appointmentDateTime).isSame(today, "day") &&
                 apt.status !== "CANCELLED" &&
                 apt.status !== "NO_SHOW"
         );
-        const upcomingAppointments = allAppointments.filter(
+        const upcomingAppointments = baseFiltered.filter(
             (apt) =>
                 parseLocalDateTime(apt.appointmentDateTime).isAfter(today) &&
                 apt.status !== "CANCELLED" &&
@@ -328,22 +353,23 @@ export default function PatientAppointments() {
                 apt.status !== "COMPLETED"
         );
 
-        const pendingAppointments = allAppointments.filter((apt) => apt.status === "PENDING");
-        const completedToday = allAppointments.filter(
+        const pendingAppointments = baseFiltered.filter((apt) => apt.status === "PENDING");
+        const completedToday = baseFiltered.filter(
             (apt) => parseLocalDateTime(apt.appointmentDateTime).isSame(today, "day") && apt.status === "COMPLETED"
         );
 
-        const pendingPaymentAppointments = allAppointments.filter((apt) => apt.status === "PENDING_PAYMENT");
+        const pendingPaymentAppointments = baseFiltered.filter((apt) => apt.status === "PENDING_PAYMENT");
 
-        const confirmedAppointments = allAppointments.filter((apt) => apt.status === "CONFIRMED");
-        const readyForCallAppointments = allAppointments.filter((apt) => apt.status === "READY_FOR_CALL");
-        const inProgressAppointments = allAppointments.filter((apt) => apt.status === "IN_PROGRESS");
-        const cancelledAppointments = allAppointments.filter(
+        const confirmedAppointments = baseFiltered.filter((apt) => apt.status === "CONFIRMED");
+        const readyForCallAppointments = baseFiltered.filter((apt) => apt.status === "READY_FOR_CALL");
+        const inProgressAppointments = baseFiltered.filter((apt) => apt.status === "IN_PROGRESS");
+        const cancelledAppointments = baseFiltered.filter(
             (apt) => apt.status === "CANCELLED" || apt.status === "NO_SHOW"
         );
+        const completedAppointments = baseFiltered.filter((apt) => apt.status === "COMPLETED");
 
         return {
-            total: allAppointments.length,
+            total: baseFiltered.length,
             today: todayAppointments.length,
             upcoming: upcomingAppointments.length,
             pending: pendingAppointments.length,
@@ -352,6 +378,7 @@ export default function PatientAppointments() {
             readyForCall: readyForCallAppointments.length,
             inProgress: inProgressAppointments.length,
             completedToday: completedToday.length,
+            completed: completedAppointments.length,
             cancelled: cancelledAppointments.length,
         };
     };
@@ -903,8 +930,7 @@ export default function PatientAppointments() {
                                 },
                                 {
                                     key: "completed",
-                                    label: `Completed (${allAppointments.filter((apt) => apt.status === "COMPLETED").length
-                                        })`,
+                                    label: `Completed (${stats.completed})`,
                                     children: null,
                                 },
                                 {
