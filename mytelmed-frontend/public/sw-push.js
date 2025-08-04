@@ -19,27 +19,14 @@ const API_BASE_URL = self.location.origin;
 const FALLBACK_ICON = "/assets/logos/mytelmed-logo.png";
 const FALLBACK_BADGE = "/assets/logos/mytelmed-logo.png";
 
-// Notification action handlers
-const NOTIFICATION_ACTIONS = {
-    view: "View Details",
-    dismiss: "Dismiss",
-    calendar: "Add to Calendar",
-    order: "Order Now",
-    renew: "Renew Now",
-    remind: "Remind Later",
-    track: "Track Delivery",
-    contact: "Contact Support",
-};
-
 // URL mappings for different notification types
 const NOTIFICATION_URLS = {
-    APPOINTMENT_REMINDER_PATIENT: "/appointments",
-    APPOINTMENT_CONFIRMATION_PATIENT: "/appointments",
-    APPOINTMENT_CANCEL_PATIENT: "/appointments",
-    APPOINTMENT_BOOKED_PATIENT: "/appointments",
-    PRESCRIPTION_CREATED: "/prescriptions",
-    PRESCRIPTION_EXPIRING: "/prescriptions",
-    PRESCRIPTION_OUT_FOR_DELIVERY: "/prescriptions/delivery",
+    APPOINTMENT_REMINDER_PATIENT: "/patient/appointment",
+    APPOINTMENT_CONFIRMATION_PATIENT: "/patient/appointment",
+    APPOINTMENT_CANCEL_PATIENT: "/patient/appointment",
+    APPOINTMENT_BOOKED_PATIENT: "/patient/appointment",
+    PRESCRIPTION_CREATED: "/patient/prescription",
+    PRESCRIPTION_EXPIRING: "/patient/prescription",
 };
 
 /**
@@ -136,7 +123,7 @@ async function showNotification(payload) {
             },
             actions: actions.map((action) => ({
                 action: action.action,
-                title: NOTIFICATION_ACTIONS[action.action] || action.title,
+                title: action.title,
                 icon: action.icon,
             })),
             requireInteraction,

@@ -2,7 +2,6 @@ package com.mytelmed.common.event.reset.model;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
 
@@ -16,9 +15,6 @@ public record PasswordResetEvent(
         String name,
 
         @NotBlank(message = "Reset token is required")
-        String resetToken,
-
-        @NotNull(message = "Expiration minutes is required")
-        long expirationMinutes
+        String resetToken
 ) {
 }

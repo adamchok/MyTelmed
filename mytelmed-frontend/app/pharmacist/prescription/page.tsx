@@ -12,7 +12,8 @@ import {
     message,
     Spin,
     Empty,
-    MenuProps
+    MenuProps,
+    Pagination
 } from "antd";
 import {
     Pill,
@@ -28,7 +29,7 @@ import PrescriptionApi from "@/app/api/prescription";
 import { PrescriptionDto, PrescriptionStatus } from "@/app/api/prescription/props";
 import PharmacistApi from "@/app/api/pharmacist";
 import DeliveryApi from "@/app/api/delivery";
-import { DeliveryStatus } from "@/app/api/delivery/props";
+import { DeliveryStatus, DeliveryMethod } from "@/app/api/delivery/props";
 import PrescriptionDetailModal from "./components/PrescriptionDetailModal";
 import PrescriptionCard from "./components/PrescriptionCard";
 
@@ -43,6 +44,8 @@ export default function PharmacistPrescriptionPage() {
 
     // Filter and search states
     const [statusFilter, setStatusFilter] = useState<PrescriptionStatus | "ALL">("ALL");
+    const [deliveryMethodFilter, setDeliveryMethodFilter] = useState<DeliveryMethod | "ALL">("ALL");
+    const [deliveryStatusFilter, setDeliveryStatusFilter] = useState<DeliveryStatus | "ALL">("ALL");
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState<"createdAt" | "updatedAt" | "status">("createdAt");
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -52,9 +55,10 @@ export default function PharmacistPrescriptionPage() {
     const [detailModalVisible, setDetailModalVisible] = useState(false);
 
     // Pagination
-    const [currentPage] = useState(0);
+    const [currentPage, setCurrentPage] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
-    const pageSize = 2;
+    const [totalPages, setTotalPages] = useState(0);
+    const pageSize = 12;
 
     // Load pharmacist facility on mount
     useEffect(() => {
@@ -66,7 +70,8 @@ export default function PharmacistPrescriptionPage() {
         if (currentFacilityId) {
             loadPrescriptions();
         }
-    }, [currentFacilityId, statusFilter, searchQuery, sortBy, sortDirection, currentPage]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentFacilityId, statusFilter, deliveryMethodFilter, deliveryStatusFilter, searchQuery, sortBy, sortDirection, currentPage]);
 
     const loadPharmacistFacility = async () => {
         try {
@@ -100,15 +105,30 @@ export default function PharmacistPrescriptionPage() {
                 // Apply search filter on frontend if needed
                 if (searchQuery.trim()) {
                     const query = searchQuery.toLowerCase();
-                    filteredPrescriptions = data.content.filter(prescription =>
+                    filteredPrescriptions = filteredPrescriptions.filter(prescription =>
                         prescription.prescriptionNumber.toLowerCase().includes(query) ||
                         prescription.appointment.patient.name.toLowerCase().includes(query) ||
                         prescription.diagnosis.toLowerCase().includes(query)
                     );
                 }
 
+                // Apply delivery method filter
+                if (deliveryMethodFilter !== "ALL") {
+                    filteredPrescriptions = filteredPrescriptions.filter(prescription =>
+                        prescription.delivery && prescription.delivery.deliveryMethod === deliveryMethodFilter
+                    );
+                }
+
+                // Apply delivery status filter
+                if (deliveryStatusFilter !== "ALL") {
+                    filteredPrescriptions = filteredPrescriptions.filter(prescription =>
+                        prescription.delivery && prescription.delivery.status === deliveryStatusFilter
+                    );
+                }
+
                 setPrescriptions(filteredPrescriptions);
                 setTotalElements(data.totalElements);
+                setTotalPages(data.totalPages);
             }
         } catch (error: any) {
             message.error("Failed to load prescriptions");
@@ -128,6 +148,15 @@ export default function PharmacistPrescriptionPage() {
     const handleStatusUpdate = () => {
         loadPrescriptions(); // Reload prescriptions after status update
     };
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page - 1); // Convert to 0-based indexing for API
+    };
+
+    // Reset to first page when filters change
+    useEffect(() => {
+        setCurrentPage(0);
+    }, [statusFilter, deliveryMethodFilter, deliveryStatusFilter, searchQuery, sortBy, sortDirection]);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-MY', {
@@ -299,12 +328,22 @@ export default function PharmacistPrescriptionPage() {
                     ))}
                 </Row>
 
-                {/* Pagination Info */}
-                <div className="mt-6 text-center">
-                    <Text className="text-gray-500">
-                        Showing {prescriptions.length} of {totalElements} prescriptions
-                    </Text>
-                </div>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="mt-8 flex justify-center">
+                        <Pagination
+                            current={currentPage + 1} // Convert from 0-based to 1-based
+                            total={totalElements}
+                            pageSize={pageSize}
+                            onChange={handlePageChange}
+                            showSizeChanger={false}
+                            showQuickJumper
+                            showTotal={(total, range) =>
+                                `${range[0]}-${range[1]} of ${total} prescriptions`
+                            }
+                        />
+                    </div>
+                )}
             </>
         );
     };
@@ -324,7 +363,7 @@ export default function PharmacistPrescriptionPage() {
 
             {/* Filters and Search */}
             <Card className="filter-section mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                     <div>
                         <Text className="block text-sm font-medium text-gray-700 mb-1">
                             Search
@@ -355,6 +394,44 @@ export default function PharmacistPrescriptionPage() {
                             <Option value={PrescriptionStatus.READY}>Ready</Option>
                             <Option value={PrescriptionStatus.EXPIRED}>Expired</Option>
                             <Option value={PrescriptionStatus.CANCELLED}>Cancelled</Option>
+                        </Select>
+                    </div>
+
+                    <div>
+                        <Text className="block text-sm font-medium text-gray-700 mb-1">
+                            Delivery Method
+                        </Text>
+                        <Select
+                            value={deliveryMethodFilter}
+                            onChange={setDeliveryMethodFilter}
+                            className="w-full"
+                            suffixIcon={<Truck className="w-4 h-4 text-gray-400" />}
+                        >
+                            <Option value="ALL">All Methods</Option>
+                            <Option value={DeliveryMethod.PICKUP}>Pickup</Option>
+                            <Option value={DeliveryMethod.HOME_DELIVERY}>Home Delivery</Option>
+                        </Select>
+                    </div>
+
+                    <div>
+                        <Text className="block text-sm font-medium text-gray-700 mb-1">
+                            Delivery Status
+                        </Text>
+                        <Select
+                            value={deliveryStatusFilter}
+                            onChange={setDeliveryStatusFilter}
+                            className="w-full"
+                            suffixIcon={<Package className="w-4 h-4 text-gray-400" />}
+                        >
+                            <Option value="ALL">All Status</Option>
+                            <Option value={DeliveryStatus.PENDING_PAYMENT}>Pending Payment</Option>
+                            <Option value={DeliveryStatus.PAID}>Paid</Option>
+                            <Option value={DeliveryStatus.PREPARING}>Preparing</Option>
+                            <Option value={DeliveryStatus.PENDING_PICKUP}>Pending Pickup</Option>
+                            <Option value={DeliveryStatus.READY_FOR_PICKUP}>Ready for Pickup</Option>
+                            <Option value={DeliveryStatus.OUT_FOR_DELIVERY}>Out for Delivery</Option>
+                            <Option value={DeliveryStatus.DELIVERED}>Delivered</Option>
+                            <Option value={DeliveryStatus.CANCELLED}>Cancelled</Option>
                         </Select>
                     </div>
 

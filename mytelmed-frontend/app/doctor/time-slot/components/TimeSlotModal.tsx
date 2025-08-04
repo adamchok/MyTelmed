@@ -15,6 +15,7 @@ interface TimeSlotModalProps {
     onClose: () => void;
     onUpdate?: (updatedTimeSlot: TimeSlotDto) => void;
     mode?: "view" | "edit";
+    existingTimeSlots?: TimeSlotDto[];
 }
 
 export default function TimeSlotModal({
@@ -23,6 +24,7 @@ export default function TimeSlotModal({
     onClose,
     onUpdate,
     mode = "view",
+    existingTimeSlots = [],
 }: Readonly<TimeSlotModalProps>) {
     const [currentMode, setCurrentMode] = useState<"view" | "edit">(mode);
     const [loading, setLoading] = useState(false);
@@ -191,6 +193,7 @@ export default function TimeSlotModal({
             onSubmit={handleUpdateTimeSlot}
             onCancel={handleCancelEdit}
             loading={loading}
+            existingTimeSlots={existingTimeSlots}
         />
     );
 

@@ -38,17 +38,27 @@ public class AccountDeletedEmailSender extends BaseEmailSenderStrategy {
 
     @Override
     protected void validateRequiredVariables(Map<String, Object> variables) {
-        String username = (String) variables.get("name");
+        String name = (String) variables.get("name");
+        String username = (String) variables.get("username");
+        String role = (String) variables.get("role");
         String uiHost = (String) variables.get("uiHost");
+
+        if (!StringUtils.hasText(name)) {
+            throw new IllegalArgumentException("Name is required and cannot be empty");
+        }
 
         if (!StringUtils.hasText(username)) {
             throw new IllegalArgumentException("Username is required and cannot be empty");
+        }
+
+        if (!StringUtils.hasText(role)) {
+            throw new IllegalArgumentException("Role is required and cannot be empty");
         }
 
         if (!StringUtils.hasText(uiHost)) {
             throw new IllegalArgumentException("UI host is required and cannot be empty");
         }
 
-        log.debug("Validation passed for account deleted email for user: {}", username);
+        log.debug("Validation passed for account deleted email for user: {}", name);
     }
 }

@@ -30,6 +30,10 @@ interface DoctorReferralCardProps {
     onScheduleAppointment?: (referral: ReferralDto) => void;
     actionLoading?: string | null;
     isIncoming?: boolean; // true for referrals received by doctor, false for referrals sent by doctor
+    getStatusColor?: (status: ReferralStatus) => string;
+    getStatusIcon?: (status: ReferralStatus) => React.ReactNode;
+    getPriorityColor?: (priority: ReferralPriority) => string;
+    getPriorityIcon?: (priority: ReferralPriority) => React.ReactNode;
 }
 
 const DoctorReferralCard: React.FC<DoctorReferralCardProps> = ({
@@ -40,6 +44,10 @@ const DoctorReferralCard: React.FC<DoctorReferralCardProps> = ({
     onScheduleAppointment,
     actionLoading,
     isIncoming = false,
+    getStatusColor,
+    getStatusIcon,
+    getPriorityColor,
+    getPriorityIcon,
 }) => {
     const {
         id,
@@ -63,7 +71,8 @@ const DoctorReferralCard: React.FC<DoctorReferralCardProps> = ({
         scheduledAppointment,
     } = referral;
 
-    const getStatusColor = (status: ReferralStatus) => {
+    // Use provided functions or fall back to default logic
+    const getStatusColorFn = getStatusColor || ((status: ReferralStatus) => {
         switch (status) {
             case ReferralStatus.ACCEPTED:
                 return "green";
@@ -82,9 +91,9 @@ const DoctorReferralCard: React.FC<DoctorReferralCardProps> = ({
             default:
                 return "blue";
         }
-    };
+    });
 
-    const getStatusIcon = (status: ReferralStatus) => {
+    const getStatusIconFn = getStatusIcon || ((status: ReferralStatus) => {
         switch (status) {
             case ReferralStatus.ACCEPTED:
                 return <CheckCircle className="w-3 h-3" />;
@@ -103,9 +112,9 @@ const DoctorReferralCard: React.FC<DoctorReferralCardProps> = ({
             default:
                 return <Info className="w-3 h-3" />;
         }
-    };
+    });
 
-    const getPriorityColor = (priority: ReferralPriority) => {
+    const getPriorityColorFn = getPriorityColor || ((priority: ReferralPriority) => {
         switch (priority) {
             case ReferralPriority.EMERGENCY:
                 return "red";
@@ -116,9 +125,9 @@ const DoctorReferralCard: React.FC<DoctorReferralCardProps> = ({
             default:
                 return "default";
         }
-    };
+    });
 
-    const getPriorityIcon = (priority: ReferralPriority) => {
+    const getPriorityIconFn = getPriorityIcon || ((priority: ReferralPriority) => {
         switch (priority) {
             case ReferralPriority.EMERGENCY:
                 return <AlertCircle className="w-3 h-3" />;
@@ -129,7 +138,9 @@ const DoctorReferralCard: React.FC<DoctorReferralCardProps> = ({
             default:
                 return <Star className="w-3 h-3" />;
         }
-    };
+    });
+
+
 
     // Format dates for better display
     const formatDate = (dateString: string) => {
@@ -227,15 +238,15 @@ const DoctorReferralCard: React.FC<DoctorReferralCardProps> = ({
                         </div>
                         <div className="flex items-center gap-2">
                             <Tag
-                                color={getStatusColor(status)}
-                                icon={getStatusIcon(status)}
+                                color={getStatusColorFn(status)}
+                                icon={getStatusIconFn(status)}
                                 className="text-xs sm:text-sm font-medium"
                             >
                                 {status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()}
                             </Tag>
                             <Tag
-                                color={getPriorityColor(priority)}
-                                icon={getPriorityIcon(priority)}
+                                color={getPriorityColorFn(priority)}
+                                icon={getPriorityIconFn(priority)}
                                 className="text-xs sm:text-sm font-medium"
                             >
                                 {priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase()}
@@ -441,4 +452,4 @@ const DoctorReferralCard: React.FC<DoctorReferralCardProps> = ({
     );
 };
 
-export default DoctorReferralCard; 
+export default DoctorReferralCard;

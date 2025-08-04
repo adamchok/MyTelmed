@@ -44,14 +44,6 @@
                 line-height: 1.3;
             }
 
-            .logo {
-                width: 192px;
-                height: auto;
-                max-width: 100%;
-                display: block;
-                margin: 0 auto;
-            }
-
             .credentials-box {
                 background-color: #f8f9fa;
                 border-left: 4px solid #28a745;
@@ -61,7 +53,6 @@
             }
 
             .credentials-item {
-                font-family: monospace;
                 margin-bottom: 12px;
                 padding: 8px 0;
                 display: flex;
@@ -79,8 +70,6 @@
             }
 
             .credentials-value {
-                font-family: monospace;
-                background-color: #e9ecef;
                 padding: 4px 8px;
                 border-radius: 4px;
                 word-break: break-all;
@@ -90,22 +79,6 @@
             .action-buttons {
                 text-align: center;
                 margin: 25px 0;
-            }
-
-            .btn {
-                display: inline-block;
-                padding: 12px 24px;
-                margin: 0 10px;
-                background-color: #007bff;
-                color: #ffffff;
-                text-decoration: none;
-                border-radius: 5px;
-                font-weight: bold;
-                transition: background-color 0.3s ease;
-            }
-
-            .btn:hover {
-                background-color: #0056b3;
             }
 
             .security-note {
@@ -165,11 +138,6 @@
                 .credentials-label {
                     min-width: 90px;
                 }
-
-                .btn {
-                    padding: 10px 20px;
-                    margin: 5px;
-                }
             }
 
             /* Mobile Styles (< 600px) */
@@ -226,14 +194,6 @@
 
                 .action-buttons {
                     margin: 20px 0;
-                }
-
-                .btn {
-                    display: block;
-                    width: 100%;
-                    margin: 10px 0;
-                    padding: 12px;
-                    box-sizing: border-box;
                 }
 
                 .content-text {
@@ -306,7 +266,10 @@
             <p class="content-text">Please log in to the platform and change your password as soon as possible.</p>
 
             <div class="action-buttons">
-                <a th:href="${uiHost + '/login'}" class="btn"> Login to Your Account </a>
+                <a th:href="${uiHost + '/login/' + role.toLowerCase()}'"
+                   style="display:inline-block; padding:12px 24px; margin:0 10px; background-color:#007bff; color:#ffffff; text-decoration:none; border-radius:5px; font-weight:bold;">
+                    Login to Your Account
+                </a>
             </div>
 
             <div class="security-note">

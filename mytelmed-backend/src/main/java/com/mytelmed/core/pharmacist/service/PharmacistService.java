@@ -395,6 +395,8 @@ public class PharmacistService {
 
             AccountActivatedEvent event = AccountActivatedEvent.builder()
                     .email(pharmacist.getEmail())
+                    .username(pharmacist.getAccount().getUsername())
+                    .role(pharmacist.getAccount().getPermission().getAccess())
                     .name(pharmacist.getName())
                     .build();
 
@@ -423,6 +425,8 @@ public class PharmacistService {
 
             AccountDeactivatedEvent event = AccountDeactivatedEvent.builder()
                     .email(pharmacist.getEmail())
+                    .username(pharmacist.getAccount().getUsername())
+                    .role(pharmacist.getAccount().getPermission().getAccess())
                     .name(pharmacist.getName())
                     .build();
 
@@ -453,6 +457,7 @@ public class PharmacistService {
                     .email(pharmacist.getEmail())
                     .name(pharmacist.getName())
                     .username(pharmacist.getAccount().getUsername())
+                    .role(pharmacist.getAccount().getPermission().getAccess())
                     .password(newPassword)
                     .build();
 

@@ -143,16 +143,92 @@ export class TimeSlotUtils {
     }
 
     /**
-     * Check if a time slot can be edited
+     * Check if a time slot is in the past
+     */
+    static isTimeSlotInPast(timeSlot: TimeSlotDto): boolean {
+        const now = new Date();
+        const slotStartTime = new Date(timeSlot.startTime);
+        return slotStartTime < now;
+    }
+
+    /**
+     * Check if a time slot can be edited (not booked and not in the past)
      */
     static canEditTimeSlot(timeSlot: TimeSlotDto): boolean {
-        return !timeSlot.isBooked;
+        return !timeSlot.isBooked && !this.isTimeSlotInPast(timeSlot);
+    }
+
+    /**
+     * Check if two time slots overlap
+     */
+    static doTimeSlotsOverlap(slot1Start: string, slot1End: string, slot2Start: string, slot2End: string): boolean {
+        const start1 = new Date(slot1Start);
+        const end1 = new Date(slot1End);
+        const start2 = new Date(slot2Start);
+        const end2 = new Date(slot2End);
+
+        return start1 < end2 && end1 > start2;
+    }
+
+    /**
+     * Check for overlapping time slots in existing slots array
+     */
+    static checkForOverlaps(
+        newSlotStart: string,
+        newSlotEnd: string,
+        existingSlots: TimeSlotDto[],
+        excludeSlotId?: string
+    ): TimeSlotDto[] {
+        return existingSlots.filter((slot) => {
+            // Skip the slot being edited
+            if (excludeSlotId && slot.id === excludeSlotId) {
+                return false;
+            }
+
+            return this.doTimeSlotsOverlap(newSlotStart, newSlotEnd, slot.startTime, slot.endTime);
+        });
+    }
+
+    /**
+     * Validate time slot for overlaps and other constraints
+     */
+    static validateTimeSlotWithOverlapCheck(
+        timeSlot: Partial<TimeSlotDto>,
+        existingSlots: TimeSlotDto[],
+        excludeSlotId?: string
+    ): string[] {
+        const errors = this.validateTimeSlot(timeSlot);
+
+        // Check for overlaps if we have start and end times
+        if (timeSlot.startTime && timeSlot.endTime) {
+            const overlappingSlots = this.checkForOverlaps(
+                timeSlot.startTime,
+                timeSlot.endTime,
+                existingSlots,
+                excludeSlotId
+            );
+
+            if (overlappingSlots.length > 0) {
+                const overlappingTimes = overlappingSlots
+                    .map(
+                        (slot) => `${this.formatTimeForDisplay(slot.startTime)} - ${this.formatTimeForDisplay(slot.endTime)}`
+                    )
+                    .join(", ");
+                errors.push(`Time slot overlaps with existing appointments: ${overlappingTimes}`);
+            }
+        }
+
+        return errors;
     }
 
     /**
      * Get time slot status text
      */
     static getTimeSlotStatus(timeSlot: TimeSlotDto): string {
+        if (this.isTimeSlotInPast(timeSlot)) {
+            if (timeSlot.isBooked) return "Booked";
+            return "Past";
+        }
         if (timeSlot.isBooked) return "Booked";
         if (!timeSlot.isAvailable) return "Disabled";
         return "Available";
@@ -162,6 +238,10 @@ export class TimeSlotUtils {
      * Get time slot status color
      */
     static getTimeSlotStatusColor(timeSlot: TimeSlotDto): string {
+        if (this.isTimeSlotInPast(timeSlot)) {
+            if (timeSlot.isBooked) return "#722ed1"; // Purple for completed
+            return "#8c8c8c"; // Gray for past
+        }
         if (timeSlot.isBooked) return "#ff4d4f"; // Red
         if (!timeSlot.isAvailable) return "#faad14"; // Orange
         return "#52c41a"; // Green

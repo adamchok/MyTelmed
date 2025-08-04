@@ -36,6 +36,7 @@ interface TimeSlotFormProps {
     onCancel?: () => void;
     loading?: boolean;
     isEdit?: boolean;
+    existingTimeSlots?: TimeSlotDto[];
 }
 
 export default function TimeSlotForm({
@@ -44,6 +45,7 @@ export default function TimeSlotForm({
     onCancel,
     loading = false,
     isEdit = false,
+    existingTimeSlots = [],
 }: Readonly<TimeSlotFormProps>) {
     const [form] = Form.useForm();
     const [errors, setErrors] = useState<string[]>([]);
@@ -153,8 +155,12 @@ export default function TimeSlotForm({
                 consultationMode: values.consultationMode,
             };
 
-            // Validate the data
-            const validationErrors = TimeSlotUtils.validateTimeSlot(formData);
+            // Validate the data including overlap check
+            const validationErrors = TimeSlotUtils.validateTimeSlotWithOverlapCheck(
+                formData,
+                existingTimeSlots,
+                isEdit ? timeSlot?.id : undefined
+            );
             if (validationErrors.length > 0) {
                 setErrors(validationErrors);
                 return;
@@ -186,13 +192,7 @@ export default function TimeSlotForm({
             {errors.length > 0 && (
                 <Alert
                     message="Validation Errors"
-                    description={
-                        <ul className="list-disc list-inside">
-                            {errors.map((error) => (
-                                <li key={error}>{error}</li>
-                            ))}
-                        </ul>
-                    }
+                    description={errors.join(", ")}
                     type="error"
                     showIcon
                     closable

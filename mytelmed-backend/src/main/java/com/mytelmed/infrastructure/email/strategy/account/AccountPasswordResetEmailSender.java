@@ -41,6 +41,7 @@ public class AccountPasswordResetEmailSender extends BaseEmailSenderStrategy {
         String name = (String) variables.get("name");
         String username = (String) variables.get("username");
         String password = (String) variables.get("password");
+        String role = (String) variables.get("role");
         String uiHost = (String) variables.get("uiHost");
 
         if (!StringUtils.hasText(name)) {
@@ -53,6 +54,10 @@ public class AccountPasswordResetEmailSender extends BaseEmailSenderStrategy {
 
         if (!StringUtils.hasText(password)) {
             throw new IllegalArgumentException("Password is required and cannot be empty");
+        }
+
+        if (!StringUtils.hasText(role)) {
+            throw new IllegalArgumentException("Role is required and cannot be empty");
         }
 
         if (!StringUtils.hasText(uiHost)) {

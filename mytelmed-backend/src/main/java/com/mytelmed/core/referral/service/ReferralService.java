@@ -7,8 +7,8 @@ import com.mytelmed.common.constant.appointment.AppointmentStatus;
 import com.mytelmed.common.constant.family.FamilyPermissionType;
 import com.mytelmed.common.constant.referral.ReferralStatus;
 import com.mytelmed.common.constant.referral.ReferralType;
-import com.mytelmed.common.event.referral.model.ReferralCreatedEvent;
 import com.mytelmed.common.event.referral.model.ReferralAcceptedEvent;
+import com.mytelmed.common.event.referral.model.ReferralCreatedEvent;
 import com.mytelmed.common.event.referral.model.ReferralRejectedEvent;
 import com.mytelmed.common.event.referral.model.ReferralScheduledEvent;
 import com.mytelmed.common.utils.DateTimeUtil;
@@ -278,6 +278,9 @@ public class ReferralService {
             throw new InvalidInputException("Can only schedule appointments for accepted referrals");
         }
 
+        // Validate time slot
+
+
         // Use thread-safe time slot booking
         TimeSlot timeSlot = timeSlotService.bookTimeSlotSafely(timeSlotId);
 
@@ -287,8 +290,7 @@ public class ReferralService {
         }
 
         try {
-            // Create appointment with PENDING status (automated scheduler will handle
-            // transitions)
+            // Create appointment with PENDING status (automated scheduler will handle transitions)
             Appointment appointment = Appointment.builder()
                     .patient(referral.getPatient())
                     .doctor(doctor)
@@ -323,21 +325,6 @@ public class ReferralService {
             log.error("Failed to schedule appointment for referral: {}", referralId, e);
             throw new AppException("Failed to schedule appointment for referral");
         }
-    }
-
-    @Transactional
-    public void processExpiredReferrals() {
-        log.info("Processing expired referrals");
-
-        List<Referral> expiredReferrals = referralRepository.findExpiredReferrals(LocalDate.now());
-
-        for (Referral referral : expiredReferrals) {
-            referral.setStatus(ReferralStatus.EXPIRED);
-            referralRepository.save(referral);
-            log.info("Expired referral marked: {}", maskReferralNumber(referral.getReferralNumber()));
-        }
-
-        log.info("Processed {} expired referrals", expiredReferrals.size());
     }
 
     @Transactional(readOnly = true)

@@ -44,30 +44,6 @@
                 line-height: 1.3;
             }
 
-            .logo {
-                width: 192px;
-                height: auto;
-                max-width: 100%;
-                display: block;
-                margin: 0 auto;
-            }
-
-            .deactivation-status {
-                background-color: #f8d7da;
-                border: 1px solid #f5c6cb;
-                border-radius: 8px;
-                padding: 20px;
-                margin: 20px 0;
-                text-align: center;
-            }
-
-            .deactivation-status .status-icon {
-                font-size: 48px;
-                color: #dc3545;
-                margin-bottom: 10px;
-                display: block;
-            }
-
             .deactivation-status h3 {
                 color: #721c24;
                 margin: 0 0 10px 0;
@@ -95,8 +71,22 @@
             }
 
             .account-details div {
-                margin-bottom: 8px;
-                line-height: 1.5;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 10px;
+            }
+
+            .account-details strong {
+                min-width: 110px;
+                text-align: right;
+                color: #495057;
+                font-weight: 700;
+            }
+
+            .account-details span {
+                flex: 1;
+                word-break: break-word;
             }
 
             .warning-note {
@@ -109,35 +99,6 @@
 
             .warning-note strong {
                 color: #856404;
-            }
-
-            .action-buttons {
-                text-align: center;
-                margin: 25px 0;
-            }
-
-            .btn {
-                display: inline-block;
-                padding: 12px 24px;
-                margin: 0 10px;
-                background-color: #007bff;
-                color: #ffffff;
-                text-decoration: none;
-                border-radius: 5px;
-                font-weight: bold;
-                transition: background-color 0.3s ease;
-            }
-
-            .btn:hover {
-                background-color: #0056b3;
-            }
-
-            .btn-danger {
-                background-color: #dc3545;
-            }
-
-            .btn-danger:hover {
-                background-color: #c82333;
             }
 
             .content-text {
@@ -182,17 +143,8 @@
                     font-size: 22px;
                 }
 
-                .deactivation-status .status-icon {
-                    font-size: 42px;
-                }
-
                 .deactivation-status h3 {
                     font-size: 18px;
-                }
-
-                .btn {
-                    padding: 10px 20px;
-                    margin: 5px;
                 }
             }
 
@@ -218,15 +170,6 @@
                     line-height: 1.2;
                 }
 
-                .deactivation-status {
-                    padding: 15px;
-                    margin: 15px 0;
-                }
-
-                .deactivation-status .status-icon {
-                    font-size: 36px;
-                }
-
                 .deactivation-status h3 {
                     font-size: 16px;
                 }
@@ -246,26 +189,24 @@
                 }
 
                 .account-details div {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+
+                .account-details strong {
+                    text-align: left;
+                    min-width: auto;
                     font-size: 14px;
-                    margin-bottom: 6px;
+                }
+
+                .account-details span {
+                    font-size: 14px;
                 }
 
                 .warning-note {
                     padding: 12px;
                     margin: 15px 0;
                     font-size: 14px;
-                }
-
-                .action-buttons {
-                    margin: 20px 0;
-                }
-
-                .btn {
-                    display: block;
-                    width: 100%;
-                    margin: 10px 0;
-                    padding: 12px;
-                    box-sizing: border-box;
                 }
 
                 .content-text {
@@ -295,10 +236,6 @@
                     font-size: 18px;
                 }
 
-                .deactivation-status .status-icon {
-                    font-size: 32px;
-                }
-
                 .content-text {
                     font-size: 13px;
                 }
@@ -318,13 +255,7 @@
                 <h2>Account Deactivated</h2>
             </div>
 
-            <div class="deactivation-status">
-                <div class="status-icon">⛔</div>
-                <h3>Account Deactivated</h3>
-                <p>Your MyTelmed account has been deactivated and access has been restricted.</p>
-            </div>
-
-            <p class="content-text">Dear <strong th:text="${name}">User</strong>,</p>
+            <p class="content-text">Dear <span th:text="${name}">User</span>,</p>
 
             <p class="content-text">
                 We are writing to inform you that your MyTelmed account has been deactivated by an administrator.
@@ -333,20 +264,12 @@
             <div class="account-details">
                 <h4>Deactivation Details</h4>
                 <div>
-                    <strong>Account:</strong>
+                    <strong>Account Type: </strong>
+                    <span th:text="${role}">Role</span>
+                </div>
+                <div>
+                    <strong>Username: </strong>
                     <span th:text="${username}">Username</span>
-                </div>
-                <div>
-                    <strong>Email:</strong>
-                    <span th:text="${email}">Email</span>
-                </div>
-                <div>
-                    <strong>Deactivation Date:</strong>
-                    <span th:text="${#temporals.format(deactivationDate, 'dd/MM/yyyy HH:mm')}">Date</span>
-                </div>
-                <div th:if="${reason}">
-                    <strong>Reason:</strong>
-                    <span th:text="${reason}">Reason</span>
                 </div>
             </div>
 
@@ -357,12 +280,9 @@
 
             <p class="content-text">
                 If you believe this deactivation was made in error or if you have any questions, please contact our support
-                team immediately.
+                team immediately at
+                <a href="mailto:support@mytelmed.live" style="color: #007bff; text-decoration: none;">support@mytelmed.live</a>.
             </p>
-
-            <div class="action-buttons">
-                <a th:href="${uiHost + '/contact'}" class="btn"> Contact Support </a>
-            </div>
 
             <p class="content-text">
                 Best regards,<br />

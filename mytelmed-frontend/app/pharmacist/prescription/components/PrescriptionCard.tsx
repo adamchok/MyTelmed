@@ -155,8 +155,13 @@ export default function PrescriptionCard({
                 </Text>
             </div>
 
-            {/* Expiry Date */}
-            <div className="mb-4">
+            <div className="flex flex-col gap-2 md:flex-row md:gap-4 mb-4">
+                {/* Created Date */}
+                <Text className="text-gray-600 text-sm">
+                    Created: {dayjs(Number(prescription.createdAt) * 1000).format("MMM DD, YYYY")}
+                </Text>
+
+                {/* Expiry Date */}
                 <Text className="text-gray-600 text-sm">
                     Expires: {dayjs(Number(prescription.expiryDate) * 1000).format("MMM DD, YYYY")}
                 </Text>

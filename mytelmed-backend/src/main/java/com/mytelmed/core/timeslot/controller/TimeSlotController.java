@@ -66,8 +66,7 @@ public class TimeSlotController {
                 log.info("Received request to get time slots (PHYSICAL & VIRTUAL) by doctor account {}",
                                 account.getId());
 
-                LocalDateTime searchFromDate = fromDate != null ? fromDate : LocalDateTime.now();
-                List<TimeSlot> timeSlots = timeSlotService.findByAccount(account, searchFromDate);
+                List<TimeSlot> timeSlots = timeSlotService.findByAccount(account, fromDate);
                 List<TimeSlotDto> timeSlotDtoList = timeSlots.stream()
                                 .map(timeSlotMapper::toDto)
                                 .toList();

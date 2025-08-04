@@ -767,14 +767,6 @@ public class AppointmentService {
         }
     }
 
-    private void validateAppointmentScheduling(Appointment appointment) throws AppException {
-        LocalDateTime now = LocalDateTime.now();
-
-        if (appointment.getTimeSlot().getStartTime().isBefore(now.plusWeeks(1))) {
-            throw new AppException("Appointment must be scheduled at least 1 week in advance");
-        }
-    }
-
     private void attachDocumentsToAppointment(Appointment appointment,
             List<AddAppointmentDocumentRequestDto> requestList,
             Account requestingAccount) throws AppException {

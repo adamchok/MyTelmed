@@ -580,16 +580,7 @@ const DoctorDashboardComponent = () => {
                                 itemLayout="horizontal"
                                 dataSource={dashboardData.outgoingReferrals}
                                 renderItem={(referral) => (
-                                    <List.Item
-                                        actions={[
-                                            <Link key="view" href={`/doctor/referral`}>
-                                                <Button type="link" className="text-blue-500">
-                                                    View Details
-                                                </Button>
-                                            </Link>
-                                        ]}
-                                        className="border-b border-gray-100 last:border-b-0"
-                                    >
+                                    <List.Item className="border-b border-gray-100 last:border-b-0">
                                         <List.Item.Meta
                                             avatar={
                                                 <Avatar

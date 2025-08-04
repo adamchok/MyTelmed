@@ -108,14 +108,12 @@ public class EmailResetService {
             // Create reset token
             ResetToken token = createEmailResetToken(account);
 
-            // Get user name for email
-            String userName = request.name();
+            // Get name for email
+            String name = request.name();
 
             EmailResetEvent event = EmailResetEvent.builder()
                     .email(request.email())
-                    .username(account.getUsername())
-                    .name(userName)
-                    .expirationMinutes(tokenExpirationMinutes)
+                    .name(name)
                     .resetToken(token.getToken())
                     .build();
 

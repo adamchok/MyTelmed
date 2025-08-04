@@ -26,11 +26,17 @@ import {
     X,
     Pill,
     TrendingUp,
-    Clock
+    Clock,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
+    Building2,
+    Truck
 } from "lucide-react";
 
 import PrescriptionApi from "@/app/api/prescription";
 import { PrescriptionDto, PrescriptionStatus } from "@/app/api/prescription/props";
+import { DeliveryMethod, DeliveryStatus } from "@/app/api/delivery/props";
 import { useFamilyPermissions } from "@/app/hooks/useFamilyPermissions";
 import PrescriptionCard from "./components/PrescriptionCard";
 
@@ -60,6 +66,13 @@ const PrescriptionListingPage = () => {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [selectedPatientId, setSelectedPatientId] = useState<string>("all");
     const [selectedStatus, setSelectedStatus] = useState<PrescriptionStatus | "ALL">("ALL");
+    const [selectedFacility, setSelectedFacility] = useState<string>("all");
+    const [selectedDeliveryMode, setSelectedDeliveryMode] = useState<DeliveryMethod | "ALL">("ALL");
+    const [selectedDeliveryStatus, setSelectedDeliveryStatus] = useState<DeliveryStatus | "ALL">("ALL");
+
+    // Sorting
+    const [sortField, setSortField] = useState<"expiryDate" | "createdAt">("createdAt");
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
     // Patient options for dropdown
     const getPatientOptions = () => {
@@ -78,6 +91,27 @@ const PrescriptionListingPage = () => {
                     label: patient.name
                 });
             }
+        });
+
+        return options;
+    };
+
+    // Get unique facilities from prescriptions for dropdown
+    const getFacilityOptions = () => {
+        const uniqueFacilities = new Set<string>();
+        const options = [{ value: "all", label: "All Facilities" }];
+
+        prescriptions.forEach(prescription => {
+            if (prescription.appointment?.doctor?.facility?.name) {
+                uniqueFacilities.add(prescription.appointment.doctor.facility.name);
+            }
+        });
+
+        Array.from(uniqueFacilities).sort((a, b) => a.localeCompare(b)).forEach(facilityName => {
+            options.push({
+                value: facilityName,
+                label: facilityName
+            });
         });
 
         return options;
@@ -111,8 +145,8 @@ const PrescriptionListingPage = () => {
             if (response.data.isSuccess && response.data.data) {
                 const allPrescriptions = response.data.data.content || [];
 
-                // Apply client-side filtering
-                const filteredPrescriptions = allPrescriptions.filter(prescription => {
+                // Apply client-side filtering and sorting
+                let filteredPrescriptions = allPrescriptions.filter(prescription => {
                     // Filter by search query
                     if (searchQuery.trim()) {
                         const query = searchQuery.toLowerCase();
@@ -127,12 +161,59 @@ const PrescriptionListingPage = () => {
                         if (prescription.status !== selectedStatus) return false;
                     }
 
+                    // Filter by facility
+                    if (selectedFacility !== "all") {
+                        if (prescription.appointment?.doctor?.facility?.name !== selectedFacility) return false;
+                    }
+
+                    // Filter by delivery mode
+                    if (selectedDeliveryMode !== "ALL") {
+                        if (!prescription.delivery || prescription.delivery.deliveryMethod !== selectedDeliveryMode) return false;
+                    }
+
+                    // Filter by delivery status
+                    if (selectedDeliveryStatus !== "ALL") {
+                        if (!prescription.delivery || prescription.delivery.status !== selectedDeliveryStatus) return false;
+                    }
+
                     return true;
                 });
 
-                setPrescriptions(filteredPrescriptions);
-                setTotalItems(response.data.data.totalElements || 0);
-                setTotalPages(response.data.data.totalPages || 0);
+                // Apply sorting
+                filteredPrescriptions = filteredPrescriptions.sort((a, b) => {
+                    let aValue: string;
+                    let bValue: string;
+
+                    switch (sortField) {
+                        case "expiryDate":
+                            aValue = a.expiryDate;
+                            bValue = b.expiryDate;
+                            break;
+                        case "createdAt":
+                        default:
+                            aValue = a.createdAt;
+                            bValue = b.createdAt;
+                            break;
+                    }
+
+                    const dateA = new Date(aValue).getTime();
+                    const dateB = new Date(bValue).getTime();
+
+                    if (sortDirection === "asc") {
+                        return dateA - dateB;
+                    } else {
+                        return dateB - dateA;
+                    }
+                });
+
+                // Apply client-side pagination
+                const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+                const endIndex = startIndex + ITEMS_PER_PAGE;
+                const paginatedPrescriptions = filteredPrescriptions.slice(startIndex, endIndex);
+
+                setPrescriptions(paginatedPrescriptions);
+                setTotalItems(filteredPrescriptions.length);
+                setTotalPages(Math.ceil(filteredPrescriptions.length / ITEMS_PER_PAGE));
             } else {
                 throw new Error("Failed to fetch prescriptions");
             }
@@ -140,27 +221,26 @@ const PrescriptionListingPage = () => {
             const errorMessage = err.response?.data?.message || err.message || "Failed to load prescriptions";
             setError(errorMessage);
             message.error(errorMessage);
+            setPrescriptions([]);
+            setTotalItems(0);
+            setTotalPages(0);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Load prescriptions on component mount and when dependencies change
-    useEffect(() => {
-        fetchPrescriptions();
-    }, [familyLoading, currentPage, selectedPatientId]);
-
     // Reset page when filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, selectedStatus]);
+    }, [searchQuery, selectedPatientId, selectedStatus, selectedFacility, selectedDeliveryMode, selectedDeliveryStatus, sortField, sortDirection]);
 
     // Apply client-side filtering when search or status filter changes
     useEffect(() => {
-        if (!isLoading) {
+        if (!familyLoading) {
             fetchPrescriptions();
         }
-    }, [searchQuery, selectedStatus]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentPage, selectedPatientId, searchQuery, selectedStatus, selectedFacility, selectedDeliveryMode, selectedDeliveryStatus, sortField, sortDirection, familyLoading]);
 
     // Event handlers
     const handleSearchChange = (value: string) => {
@@ -175,6 +255,26 @@ const PrescriptionListingPage = () => {
         setSelectedStatus(status);
     };
 
+    const handleFacilityChange = (facility: string) => {
+        setSelectedFacility(facility);
+    };
+
+    const handleDeliveryModeChange = (deliveryMode: DeliveryMethod | "ALL") => {
+        setSelectedDeliveryMode(deliveryMode);
+    };
+
+    const handleDeliveryStatusChange = (deliveryStatus: DeliveryStatus | "ALL") => {
+        setSelectedDeliveryStatus(deliveryStatus);
+    };
+
+    const handleSortFieldChange = (field: "expiryDate" | "createdAt") => {
+        setSortField(field);
+    };
+
+    const handleSortDirectionToggle = () => {
+        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    };
+
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
     };
@@ -187,6 +287,11 @@ const PrescriptionListingPage = () => {
         setSearchQuery("");
         setSelectedPatientId("all");
         setSelectedStatus("ALL");
+        setSelectedFacility("all");
+        setSelectedDeliveryMode("ALL");
+        setSelectedDeliveryStatus("ALL");
+        setSortField("createdAt");
+        setSortDirection("desc");
         setCurrentPage(1);
     };
 
@@ -200,6 +305,9 @@ const PrescriptionListingPage = () => {
         if (searchQuery) count++;
         if (selectedPatientId !== "all") count++;
         if (selectedStatus !== "ALL") count++;
+        if (selectedFacility !== "all") count++;
+        if (selectedDeliveryMode !== "ALL") count++;
+        if (selectedDeliveryStatus !== "ALL") count++;
         return count;
     };
 
@@ -277,9 +385,9 @@ const PrescriptionListingPage = () => {
             <div className="flex flex-col space-y-4">
                 {/* Search and Main Filters Row */}
                 <Row gutter={[16, 16]} align="middle">
-                    <Col xs={24} sm={8} md={6}>
+                    <Col xs={24} sm={12} md={6}>
                         <Input
-                            placeholder="Search prescriptions..."
+                            placeholder="Search prescriptions, diagnosis, doctor..."
                             prefix={<Search className="w-4 h-4 text-gray-400" />}
                             value={searchQuery}
                             onChange={(e) => handleSearchChange(e.target.value)}
@@ -288,7 +396,7 @@ const PrescriptionListingPage = () => {
                     </Col>
 
                     {getPatientOptions().length > 1 && (
-                        <Col xs={24} sm={8} md={4}>
+                        <Col xs={24} sm={12} md={4}>
                             <Select
                                 placeholder="Select Patient"
                                 value={selectedPatientId}
@@ -299,7 +407,7 @@ const PrescriptionListingPage = () => {
                         </Col>
                     )}
 
-                    <Col xs={24} sm={8} md={4}>
+                    <Col xs={24} sm={12} md={4}>
                         <Select
                             placeholder="Status"
                             value={selectedStatus}
@@ -316,7 +424,85 @@ const PrescriptionListingPage = () => {
                             ]}
                         />
                     </Col>
+
+                    <Col xs={24} sm={12} md={4}>
+                        <Select
+                            placeholder="Facility"
+                            value={selectedFacility}
+                            onChange={handleFacilityChange}
+                            style={{ width: "100%" }}
+                            options={getFacilityOptions()}
+                            suffixIcon={<Building2 className="w-4 h-4 text-gray-400" />}
+                        />
+                    </Col>
+
+                    <Col xs={24} sm={12} md={4}>
+                        <Select
+                            placeholder="Delivery Mode"
+                            value={selectedDeliveryMode}
+                            onChange={handleDeliveryModeChange}
+                            style={{ width: "100%" }}
+                            options={[
+                                { value: "ALL", label: "All Delivery" },
+                                { value: DeliveryMethod.PICKUP, label: "Pickup" },
+                                { value: DeliveryMethod.HOME_DELIVERY, label: "Home Delivery" },
+                            ]}
+                            suffixIcon={<Truck className="w-4 h-4 text-gray-400" />}
+                        />
+                    </Col>
                 </Row>
+
+                {/* Second Row of Filters */}
+                <Row gutter={[16, 16]} align="middle" className="mt-4">
+                    <Col xs={24} sm={12} md={4}>
+                        <Select
+                            placeholder="Delivery Status"
+                            value={selectedDeliveryStatus}
+                            onChange={handleDeliveryStatusChange}
+                            style={{ width: "100%" }}
+                            options={[
+                                { value: "ALL", label: "All Status" },
+                                { value: DeliveryStatus.PENDING_PAYMENT, label: "Pending Payment" },
+                                { value: DeliveryStatus.PAID, label: "Paid" },
+                                { value: DeliveryStatus.PREPARING, label: "Preparing" },
+                                { value: DeliveryStatus.PENDING_PICKUP, label: "Pending Pickup" },
+                                { value: DeliveryStatus.READY_FOR_PICKUP, label: "Ready for Pickup" },
+                                { value: DeliveryStatus.OUT_FOR_DELIVERY, label: "Out for Delivery" },
+                                { value: DeliveryStatus.DELIVERED, label: "Delivered" },
+                                { value: DeliveryStatus.CANCELLED, label: "Cancelled" },
+                            ]}
+                            suffixIcon={<Truck className="w-4 h-4 text-gray-400" />}
+                        />
+                    </Col>
+                </Row>
+
+                {/* Sort Controls */}
+                <div className="flex flex-col md:flex-row md:items-center gap-4 mt-4 pt-4 border-t">
+                    <div className="flex items-center space-x-2">
+                        <ArrowUpDown className="w-4 h-4 text-gray-500" />
+                        <Text className="text-sm font-medium text-gray-700">Sort by:</Text>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <Select
+                            value={sortField}
+                            onChange={handleSortFieldChange}
+                            className="sm:flex-1"
+                            options={[
+                                { value: "createdAt", label: "Created Date" },
+                                { value: "expiryDate", label: "Expiry Date" },
+                            ]}
+                        />
+
+                        <Button
+                            onClick={handleSortDirectionToggle}
+                            icon={sortDirection === "asc" ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                            className="sm:w-auto"
+                        >
+                            {sortDirection === "asc" ? "Oldest First" : "Newest First"}
+                        </Button>
+                    </div>
+                </div>
 
                 {/* Action Buttons */}
                 {getActiveFiltersCount() > 0 && (

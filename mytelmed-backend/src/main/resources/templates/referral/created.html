@@ -30,14 +30,6 @@
                 margin-bottom: 30px;
             }
 
-            .logo {
-                width: 192px;
-                height: auto;
-                max-width: 100%;
-                display: block;
-                margin: 0 auto;
-            }
-
             .referral-status {
                 background-color: #e3f2fd;
                 border: 1px solid #2196f3;
@@ -71,34 +63,6 @@
                 font-weight: bold;
                 color: #007bff;
                 margin-bottom: 10px;
-            }
-
-            .priority-badge {
-                display: inline-block;
-                padding: 4px 12px;
-                border-radius: 12px;
-                font-size: 12px;
-                font-weight: bold;
-                text-transform: uppercase;
-                margin-bottom: 10px;
-            }
-
-            .priority-routine {
-                background-color: #e8f5e8;
-                color: #2e7d32;
-                border: 1px solid #4caf50;
-            }
-
-            .priority-urgent {
-                background-color: #fff3e0;
-                color: #ef6c00;
-                border: 1px solid #ff9800;
-            }
-
-            .priority-emergency {
-                background-color: #ffebee;
-                color: #c62828;
-                border: 1px solid #f44336;
             }
 
             .doctor-info {
@@ -370,7 +334,7 @@
             </div>
 
             <div class="action-buttons">
-                <a th:href="${uiHost + '/patient/referral/' + referralId}" class="btn btn-primary">
+                <a th:href="${uiHost + '/patient/referrals/' + referralId}" class="btn btn-primary">
                     View Full Referral Details
                 </a>
                 <a th:if="${referralType == 'INTERNAL'}" th:href="${uiHost + '/patient/appointment/book'}" class="btn">

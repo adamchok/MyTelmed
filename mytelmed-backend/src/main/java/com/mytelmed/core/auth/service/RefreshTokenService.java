@@ -16,7 +16,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 public class RefreshTokenService {
@@ -50,7 +49,6 @@ public class RefreshTokenService {
                 });
     }
 
-    @Transactional
     protected RefreshToken createRefreshToken(Account account) {
         UUID tokenValue = UUID.randomUUID();
         Instant expiryDate = Instant.now().plus(refreshTokenDurationMs, ChronoUnit.MILLIS);
@@ -67,7 +65,6 @@ public class RefreshTokenService {
         return savedToken;
     }
 
-    @Transactional
     public RefreshToken createOrGetRefreshToken(String username) throws UsernameNotFoundException {
         log.debug("Creating or retrieving refresh token for user: {}", username);
 
@@ -76,8 +73,16 @@ public class RefreshTokenService {
 
             Optional<RefreshToken> existingToken = refreshTokenRepository.findByAccountId(account.getId());
             if (existingToken.isPresent()) {
-                log.debug("Found existing refresh token for user: {}", username);
-                return existingToken.get();
+                RefreshToken token = existingToken.get();
+                // Check if existing token is expired
+                if (token.getExpiredAt().isBefore(Instant.now())) {
+                    log.debug("Found expired refresh token for user: {}, creating new token", username);
+                    refreshTokenRepository.delete(token);
+                    return createRefreshToken(account);
+                } else {
+                    log.debug("Found valid existing refresh token for user: {}", username);
+                    return token;
+                }
             } else {
                 log.info("Creating new refresh token for user: {}", username);
                 return createRefreshToken(account);

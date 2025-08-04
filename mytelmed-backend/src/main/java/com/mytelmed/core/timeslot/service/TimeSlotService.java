@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 public class TimeSlotService {
@@ -51,7 +50,12 @@ public class TimeSlotService {
 
         try {
             Doctor doctor = doctorService.findByAccount(account);
-            return timeSlotRepository.findSlotsByDoctorId(doctor.getId(), fromDate);
+
+            // If no fromDate is provided, return all time slots (starting from a very early
+            // date)
+            LocalDateTime searchFromDate = fromDate != null ? fromDate : LocalDateTime.now().minusYears(1);
+
+            return timeSlotRepository.findSlotsByDoctorId(doctor.getId(), searchFromDate);
         } catch (Exception e) {
             log.error("Error getting time slots for doctor account {}", account.getId(), e);
             throw new AppException("Failed to get time slots");
@@ -71,7 +75,19 @@ public class TimeSlotService {
         // Check for overlapping time slots with pessimistic locking
         if (timeSlotRepository
                 .hasOverlappingTimeSlotsWithLock(doctor.getId(), request.startTime(), request.endTime())) {
-            throw new AppException("Overlapping time slot exists for this time period");
+            // Get details about overlapping slots for better error reporting
+            List<TimeSlot> overlappingSlots = timeSlotRepository.findOverlappingTimeSlots(
+                    doctor.getId(), request.startTime(), request.endTime());
+
+            log.warn("Attempted to create overlapping time slot for doctor {} from {} to {}. " +
+                    "Found {} overlapping slots: {}",
+                    doctor.getId(), request.startTime(), request.endTime(),
+                    overlappingSlots.size(),
+                    overlappingSlots.stream()
+                            .map(ts -> String.format("[%s to %s]", ts.getStartTime(), ts.getEndTime()))
+                            .toList());
+
+            throw new AppException("Time slot overlaps with existing appointments. Please choose a different time.");
         }
 
         try {
@@ -171,6 +187,8 @@ public class TimeSlotService {
         // Check for overlapping time slots (excluding the current one)
         if (timeSlotRepository.hasOverlappingTimeSlotsExcluding(
                 doctor.getId(), request.startTime(), request.endTime(), timeSlotId)) {
+            log.warn("Attempted to update time slot {} with overlapping time period for doctor {} from {} to {}",
+                    timeSlotId, doctor.getId(), request.startTime(), request.endTime());
             throw new AppException("Overlapping time slot exists for this time period");
         }
 

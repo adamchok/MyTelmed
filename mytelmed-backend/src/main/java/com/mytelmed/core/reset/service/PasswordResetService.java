@@ -123,13 +123,12 @@ public class PasswordResetService {
             // Create reset token
             ResetToken token = renewOrCreateAndGetPasswordResetToken(account);
 
-            // Get user name for email
-            String userName = getUserName(account, request.userType());
+            // Get name for email
+            String name = getUserName(account, request.userType());
 
             PasswordResetEvent event = PasswordResetEvent.builder()
                     .email(request.email())
-                    .name(userName)
-                    .expirationMinutes(tokenExpirationMinutes)
+                    .name(name)
                     .resetToken(token.getToken())
                     .build();
 

@@ -290,6 +290,8 @@ public class AdminService {
             // Notify admin about their account deletion
             AccountDeletionEvent event = AccountDeletionEvent.builder()
                     .email(admin.getEmail())
+                    .username(admin.getAccount().getUsername())
+                    .role(admin.getAccount().getPermission().getAccess())
                     .name(admin.getName())
                     .build();
 
@@ -318,6 +320,8 @@ public class AdminService {
 
             AccountActivatedEvent event = AccountActivatedEvent.builder()
                     .email(admin.getEmail())
+                    .username(admin.getAccount().getUsername())
+                    .role(admin.getAccount().getPermission().getAccess())
                     .name(admin.getName())
                     .build();
 
@@ -346,6 +350,8 @@ public class AdminService {
 
             AccountDeactivatedEvent event = AccountDeactivatedEvent.builder()
                     .email(admin.getEmail())
+                    .username(admin.getAccount().getUsername())
+                    .role(admin.getAccount().getPermission().getAccess())
                     .name(admin.getName())
                     .build();
 

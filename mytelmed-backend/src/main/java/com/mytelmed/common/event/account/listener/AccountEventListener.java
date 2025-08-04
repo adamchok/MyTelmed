@@ -45,6 +45,8 @@ public class AccountEventListener {
     public void handleAccountDeactivated(AccountDeactivatedEvent event) {
         Map<String, Object> variables = new HashMap<>();
         variables.put("name", event.name());
+        variables.put("username", event.username());
+        variables.put("role", event.role());
         variables.put("uiHost", frontendUrl);
 
         emailService.getEmailSender(EmailType.ACCOUNT_DEACTIVATED).sendEmail(event.email(), variables);
@@ -55,6 +57,8 @@ public class AccountEventListener {
     public void handleAccountActivated(AccountActivatedEvent event) {
         Map<String, Object> variables = new HashMap<>();
         variables.put("name", event.name());
+        variables.put("username", event.username());
+        variables.put("role", event.role());
         variables.put("uiHost", frontendUrl);
 
         emailService.getEmailSender(EmailType.ACCOUNT_ACTIVATED).sendEmail(event.email(), variables);
@@ -65,6 +69,8 @@ public class AccountEventListener {
     public void handleAccountDeletion(AccountDeletionEvent event) {
         Map<String, Object> variables = new HashMap<>();
         variables.put("name", event.name());
+        variables.put("username", event.username());
+        variables.put("role", event.role());
         variables.put("uiHost", frontendUrl);
 
         emailService.getEmailSender(EmailType.ACCOUNT_DELETED).sendEmail(event.email(), variables);
@@ -77,6 +83,7 @@ public class AccountEventListener {
         variables.put("name", event.name());
         variables.put("username", event.username());
         variables.put("password", event.password());
+        variables.put("role", event.role());
         variables.put("uiHost", frontendUrl);
 
         emailService.getEmailSender(EmailType.ACCOUNT_PASSWORD_RESET).sendEmail(event.email(), variables);

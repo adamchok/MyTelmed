@@ -17,6 +17,9 @@ public record AccountPasswordResetEvent(
         @NotBlank(message = "Username is required")
         String username,
 
+        @NotBlank(message = "Role is required")
+        String role,
+
         @NotBlank(message = "Password is required")
         String password
 ) {

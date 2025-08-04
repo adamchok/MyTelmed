@@ -42,6 +42,9 @@ import {
     List as ListIcon,
     RotateCw,
     FileText,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
 } from "lucide-react";
 
 import type { Dayjs } from "dayjs";
@@ -125,6 +128,10 @@ export default function PatientAppointments() {
     const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus | "all">("all");
     const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
 
+    // Sorting states
+    const [sortField, setSortField] = useState<"appointmentDateTime" | "createdAt" | "completedAt">("appointmentDateTime");
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
     // Get patient options from the hook
     const getPatientOptions = (): PatientOption[] => {
         const authorizedPatients = getAuthorizedPatientsForAppointments();
@@ -168,7 +175,55 @@ export default function PatientAppointments() {
     // Reset current page when switching views or changing filters
     useEffect(() => {
         setCurrentPage(0);
-    }, [viewMode, activeTab, searchTerm, selectedStatus, dateRange, selectedPatientId]);
+    }, [viewMode, activeTab, searchTerm, selectedStatus, dateRange, selectedPatientId, sortField, sortDirection]);
+
+    // Get sort value from appointment based on sort field
+    const getSortValue = (appointment: AppointmentDto) => {
+        switch (sortField) {
+            case "appointmentDateTime":
+                return appointment.appointmentDateTime;
+            case "createdAt":
+                return appointment.createdAt;
+            default:
+                return appointment.appointmentDateTime;
+        }
+    };
+
+    // Handle undefined values in sorting
+    const handleUndefinedSortValues = (aValue: string | undefined, bValue: string | undefined) => {
+        if (!aValue && !bValue) return 0;
+        if (!aValue) return sortDirection === "asc" ? 1 : -1;
+        if (!bValue) return sortDirection === "asc" ? -1 : 1;
+        return null; // Both values exist, continue with date comparison
+    };
+
+    // Compare two date values for sorting
+    const compareDates = (aValue: string | undefined, bValue: string | undefined) => {
+        const undefinedResult = handleUndefinedSortValues(aValue, bValue);
+        if (undefinedResult !== null) return undefinedResult;
+
+        const dateA = dayjs(aValue);
+        const dateB = dayjs(bValue);
+
+        if (dateA.isSame(dateB)) return 0;
+
+        const isABefore = dateA.isBefore(dateB);
+
+        if (sortDirection === "asc") {
+            return isABefore ? -1 : 1;
+        } else {
+            return isABefore ? 1 : -1;
+        }
+    };
+
+    // Sorting function
+    const sortAppointments = (appointments: AppointmentDto[]) => {
+        return [...appointments].sort((a, b) => {
+            const aValue = getSortValue(a);
+            const bValue = getSortValue(b);
+            return compareDates(aValue, bValue);
+        });
+    };
 
     // Get appointments for a specific date
     const getAppointmentsForDate = (date: Dayjs) => {
@@ -248,11 +303,12 @@ export default function PatientAppointments() {
         return matchesPatient && matchesSearch && matchesStatus && matchesDateRange && matchesTab;
     });
 
-    // Get paginated data for table view
+    // Get sorted and paginated data for table view
     const getPaginatedAppointments = () => {
+        const sortedAppointments = sortAppointments(filteredAppointments);
         const startIndex = currentPage * pageSize;
         const endIndex = startIndex + pageSize;
-        return filteredAppointments.slice(startIndex, endIndex);
+        return sortedAppointments.slice(startIndex, endIndex);
     };
 
     // Get status color for all status types
@@ -318,7 +374,8 @@ export default function PatientAppointments() {
             const matchesSearch =
                 searchTerm === "" ||
                 appointment.doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                appointment.reasonForVisit?.toLowerCase().includes(searchTerm.toLowerCase());
+                appointment.reasonForVisit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                appointment.doctor.facility.name.toLowerCase().includes(searchTerm.toLowerCase());
 
             // Status filter
             const matchesStatus = selectedStatus === "all" || appointment.status === selectedStatus;
@@ -386,7 +443,7 @@ export default function PatientAppointments() {
     const stats = getAppointmentStats();
 
     // Get appointments for selected date in calendar
-    const selectedDateAppointments = getAppointmentsForDate(calendarValue);
+    const selectedDateAppointments = sortAppointments(getAppointmentsForDate(calendarValue));
 
     // Calendar cell renderer
     const cellRender = (current: Dayjs) => {
@@ -566,6 +623,8 @@ export default function PatientAppointments() {
                                 setSelectedStatus("all");
                                 setDateRange(null);
                                 setSelectedPatientId("all");
+                                setSortField("appointmentDateTime");
+                                setSortDirection("desc");
                             }}
                             className={`w-full sm:w-auto ${viewMode === "calendar" ? "bg-blue-600 border-blue-600" : ""
                                 }`}
@@ -667,7 +726,7 @@ export default function PatientAppointments() {
                     <Row gutter={[16, 16]} align="middle">
                         <Col xs={24} sm={12} md={6}>
                             <Input
-                                placeholder="Search doctor or reason..."
+                                placeholder="Search doctor, facility, or reason"
                                 prefix={<Search />}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -720,6 +779,31 @@ export default function PatientAppointments() {
                             />
                         </Col>
                     </Row>
+
+                    {/* Sort Controls */}
+                    <div className="flex flex-col md:flex-row md:items-center gap-4 mt-4">
+                        <div className="flex items-center space-x-2">
+                            <ArrowUpDown className="w-4 h-4 text-gray-500" />
+                            <Text className="text-sm font-medium text-gray-700">Sort by:</Text>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <Select
+                                value={sortField}
+                                onChange={setSortField}
+                            >
+                                <Option value="appointmentDateTime">Appointment Date</Option>
+                                <Option value="createdAt">Created Date</Option>
+                            </Select>
+
+                            <Button
+                                onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")}
+                                icon={sortDirection === "asc" ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                            >
+                                {sortDirection === "asc" ? "Oldest First" : "Newest First"}
+                            </Button>
+                        </div>
+                    </div>
                 </Card>
             )}
 

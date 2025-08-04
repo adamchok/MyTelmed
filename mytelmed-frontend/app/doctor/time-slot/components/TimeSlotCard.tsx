@@ -3,7 +3,6 @@
 import React from "react";
 import { Card, Tag, Button, Tooltip, Dropdown } from "antd";
 import {
-    Clock,
     Monitor,
     MapPin,
     Edit,
@@ -75,6 +74,7 @@ export default function TimeSlotCard({
         label: "Edit Time Slot",
         icon: <Edit className="w-4 h-4" />,
         onClick: handleEdit,
+        disabled: !canEdit,
     };
 
     const toggleMenuItem = {
@@ -82,6 +82,7 @@ export default function TimeSlotCard({
         label: timeSlot.isAvailable ? "Disable" : "Enable",
         icon: timeSlot.isAvailable ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />,
         onClick: handleToggleAvailability,
+        disabled: !canEdit,
     };
 
     const menuItems = [
@@ -113,7 +114,6 @@ export default function TimeSlotCard({
                 {/* Row 1: Time and actions */}
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1 text-xs sm:text-sm font-medium text-gray-800 truncate min-w-0 flex-1">
-                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" />
                         <span className="truncate">
                             {TimeSlotUtils.formatTimeForDisplay(timeSlot.startTime)} -
                             {TimeSlotUtils.formatTimeForDisplay(timeSlot.endTime)}
@@ -126,9 +126,8 @@ export default function TimeSlotCard({
                             placement="bottomRight"
                         >
                             <Button
-                                size="small"
-                                icon={<MoreVertical className="w-3 h-3 sm:w-4 sm:h-4" />}
-                                className="opacity-70 hover:opacity-100 min-w-[32px] h-8 flex-shrink-0"
+                                icon={<MoreVertical className="w-4 h-4" />}
+                                className="opacity-70 hover:opacity-100 flex-shrink-0"
                             />
                         </Dropdown>
                     )}
@@ -160,7 +159,6 @@ export default function TimeSlotCard({
                 {/* Row 1: Time and date */}
                 <div className="flex-1 min-w-0">
                     <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2 mb-1">
-                        <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
                         <span className="font-semibold text-base sm:text-lg lg:text-xl text-gray-800 truncate">
                             {TimeSlotUtils.formatTimeForDisplay(timeSlot.startTime)} -
                             {TimeSlotUtils.formatTimeForDisplay(timeSlot.endTime)}
@@ -203,25 +201,25 @@ export default function TimeSlotCard({
                 {/* Mobile: Stack buttons vertically on very small screens, horizontal on larger */}
                 <div className="flex flex-col xs:flex-row gap-1 xs:gap-2 w-full xs:w-auto">
                     <Button
-                        size="small"
-                        icon={<Calendar className="w-3 h-3 sm:w-4 sm:h-4" />}
+                        icon={<Calendar className="w-4 h-4" />}
                         onClick={handleView}
-                        className="text-gray-600 hover:text-blue-600 text-xs sm:text-sm h-8 sm:h-auto justify-start xs:justify-center"
+                        className="text-gray-600 hover:text-blue-600 text-xs sm:text-sm justify-start xs:justify-center"
                     >
                         <span className="xs:hidden sm:inline">View Details</span>
                         <span className="hidden xs:inline sm:hidden">View</span>
                     </Button>
                     {canEdit && (
                         <>
-                            <Button
-                                size="small"
-                                icon={<Edit className="w-3 h-3 sm:w-4 sm:h-4" />}
-                                onClick={handleEdit}
-                                className="text-gray-600 hover:text-green-600 text-xs sm:text-sm h-8 sm:h-auto justify-start xs:justify-center"
-                            >
-                                <span className="xs:hidden sm:inline">Edit Time Slot</span>
-                                <span className="hidden xs:inline sm:hidden">Edit</span>
-                            </Button>
+                            <Tooltip title="Edit this time slot">
+                                <Button
+                                    icon={<Edit className="w-4 h-4" />}
+                                    onClick={handleEdit}
+                                    className="text-gray-600 hover:text-green-600 text-xs sm:text-sm justify-start xs:justify-center"
+                                >
+                                    <span className="xs:hidden sm:inline">Edit Time Slot</span>
+                                    <span className="hidden xs:inline sm:hidden">Edit</span>
+                                </Button>
+                            </Tooltip>
                             <Tooltip
                                 title={
                                     timeSlot.isAvailable
@@ -230,15 +228,14 @@ export default function TimeSlotCard({
                                 }
                             >
                                 <Button
-                                    size="small"
                                     icon={
                                         timeSlot.isAvailable ?
-                                            <EyeOff className="w-3 h-3 sm:w-4 sm:h-4" /> :
-                                            <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                                            <EyeOff className="w-4 h-4" /> :
+                                            <Eye className="w-4 h-4" />
                                     }
                                     onClick={handleToggleAvailability}
                                     className={
-                                        `text-xs sm:text-sm h-8 sm:h-auto justify-start xs:justify-center ${timeSlot.isAvailable
+                                        `text-xs sm:text-sm justify-start xs:justify-center ${timeSlot.isAvailable
                                             ? "text-gray-600 hover:text-orange-600"
                                             : "text-gray-600 hover:text-green-600"
                                         }`
@@ -253,6 +250,11 @@ export default function TimeSlotCard({
                                 </Button>
                             </Tooltip>
                         </>
+                    )}
+                    {!canEdit && (TimeSlotUtils.isTimeSlotInPast(timeSlot) || timeSlot.isBooked) && (
+                        <div className="text-xs text-gray-500 italic">
+                            {TimeSlotUtils.isTimeSlotInPast(timeSlot) ? "Past time slot - view only" : "Booked time slot - view only"}
+                        </div>
                     )}
                 </div>
             </div>

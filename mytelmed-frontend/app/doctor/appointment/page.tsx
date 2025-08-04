@@ -42,6 +42,8 @@ import {
     List as ListIcon,
     RotateCw,
     FileText,
+    ArrowUp,
+    ArrowDown,
 } from "lucide-react";
 
 import type { Dayjs } from "dayjs";
@@ -60,6 +62,8 @@ const { RangePicker } = DatePicker;
 const { TextArea } = Input;
 
 type ViewMode = "calendar" | "table";
+type SortField = "createdAt" | "appointmentDateTime";
+type SortDirection = "asc" | "desc";
 
 export default function DoctorAppointments() {
     const router = useRouter();
@@ -82,6 +86,10 @@ export default function DoctorAppointments() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus | "all">("all");
     const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
+
+    // Sorting states
+    const [sortField, setSortField] = useState<SortField>("appointmentDateTime");
+    const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
     // Cancel appointment modal state
     const [cancelModalVisible, setCancelModalVisible] = useState(false);
@@ -187,11 +195,45 @@ export default function DoctorAppointments() {
         return matchesSearch && matchesStatus && matchesDateRange && matchesTab;
     });
 
+    // Sort appointments based on selected criteria
+    const sortedAppointments = [...filteredAppointments].sort((a, b) => {
+        let aValue: string | Date;
+        let bValue: string | Date;
+
+        if (sortField === "createdAt") {
+            aValue = new Date(a.createdAt);
+            bValue = new Date(b.createdAt);
+        } else {
+            aValue = new Date(a.appointmentDateTime);
+            bValue = new Date(b.appointmentDateTime);
+        }
+
+        let comparison = 0;
+        if (aValue < bValue) {
+            comparison = -1;
+        } else if (aValue > bValue) {
+            comparison = 1;
+        }
+        return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    // Handle sort field change
+    const handleSortFieldChange = (field: SortField) => {
+        setSortField(field);
+        setCurrentPage(0); // Reset to first page when sorting changes
+    };
+
+    // Handle sort direction toggle
+    const handleSortDirectionToggle = () => {
+        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+        setCurrentPage(0); // Reset to first page when sorting changes
+    };
+
     // Get paginated data for table view
     const getPaginatedAppointments = () => {
         const startIndex = currentPage * pageSize;
         const endIndex = startIndex + pageSize;
-        return filteredAppointments.slice(startIndex, endIndex);
+        return sortedAppointments.slice(startIndex, endIndex);
     };
 
     // Get status color for all status types - using green theme
@@ -282,8 +324,27 @@ export default function DoctorAppointments() {
 
     const stats = getAppointmentStats();
 
-    // Get appointments for selected date in calendar
-    const selectedDateAppointments = getAppointmentsForDate(calendarValue);
+    // Get appointments for selected date in calendar (with sorting applied)
+    const selectedDateAppointments = getAppointmentsForDate(calendarValue).sort((a, b) => {
+        let aValue: string | Date;
+        let bValue: string | Date;
+
+        if (sortField === "createdAt") {
+            aValue = new Date(a.createdAt);
+            bValue = new Date(b.createdAt);
+        } else {
+            aValue = new Date(a.appointmentDateTime);
+            bValue = new Date(b.appointmentDateTime);
+        }
+
+        let comparison = 0;
+        if (aValue < bValue) {
+            comparison = -1;
+        } else if (aValue > bValue) {
+            comparison = 1;
+        }
+        return sortDirection === "asc" ? comparison : -comparison;
+    });
 
     // Calendar cell renderer
     const cellRender = (current: Dayjs) => {
@@ -453,6 +514,9 @@ export default function DoctorAppointments() {
                                 setSearchTerm("");
                                 setSelectedStatus("all");
                                 setDateRange(null);
+                                // Reset sorting to default
+                                setSortField("appointmentDateTime");
+                                setSortDirection("asc");
                             }}
                             className={`w-full sm:w-auto ${viewMode === "calendar" ? "bg-green-600 border-green-600" : ""
                                 }`}
@@ -489,6 +553,32 @@ export default function DoctorAppointments() {
                                     Showing all {allAppointments.length} appointments across all dates. Click on any
                                     date to view details.
                                 </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Text className="text-sm text-gray-600">Sort selected date by:</Text>
+                                <Select
+                                    value={sortField}
+                                    onChange={handleSortFieldChange}
+                                    size="small"
+                                    style={{ width: 140 }}
+                                >
+                                    <Option value="appointmentDateTime">Appointment Time</Option>
+                                    <Option value="createdAt">Created Date</Option>
+                                </Select>
+                                <Button
+                                    size="small"
+                                    icon={
+                                        sortDirection === "asc" ? (
+                                            <ArrowUp className="w-3 h-3" />
+                                        ) : (
+                                            <ArrowDown className="w-3 h-3" />
+                                        )
+                                    }
+                                    onClick={handleSortDirectionToggle}
+                                    title={`Sort ${sortDirection === "asc" ? "Ascending" : "Descending"}`}
+                                >
+                                    {sortDirection === "asc" ? "Asc" : "Desc"}
+                                </Button>
                             </div>
                         </div>
 
@@ -571,7 +661,7 @@ export default function DoctorAppointments() {
                                 <Option value="NO_SHOW">No Show</Option>
                             </Select>
                         </Col>
-                        <Col xs={24} sm={12} md={8}>
+                        <Col xs={24} sm={12} md={6}>
                             <RangePicker
                                 value={dateRange}
                                 onChange={setDateRange}
@@ -579,6 +669,33 @@ export default function DoctorAppointments() {
                                 placeholder={["Start Date", "End Date"]}
                                 allowClear
                             />
+                        </Col>
+                        <Col xs={24} sm={12} md={4}>
+                            <Select
+                                placeholder="Sort by"
+                                value={sortField}
+                                onChange={handleSortFieldChange}
+                                style={{ width: "100%" }}
+                            >
+                                <Option value="appointmentDateTime">Appointment Date</Option>
+                                <Option value="createdAt">Created Date</Option>
+                            </Select>
+                        </Col>
+                        <Col xs={24} sm={12} md={3}>
+                            <Button
+                                icon={
+                                    sortDirection === "asc" ? (
+                                        <ArrowUp className="w-4 h-4" />
+                                    ) : (
+                                        <ArrowDown className="w-4 h-4" />
+                                    )
+                                }
+                                onClick={handleSortDirectionToggle}
+                                style={{ width: "100%" }}
+                                title={`Sort ${sortDirection === "asc" ? "Ascending" : "Descending"}`}
+                            >
+                                {sortDirection === "asc" ? "Asc" : "Desc"}
+                            </Button>
                         </Col>
                     </Row>
                 </Card>
@@ -783,7 +900,7 @@ export default function DoctorAppointments() {
                                 );
                             }
 
-                            if (filteredAppointments.length === 0) {
+                            if (sortedAppointments.length === 0) {
                                 return (
                                     <Empty description="No appointments found" image={Empty.PRESENTED_IMAGE_SIMPLE} />
                                 );
@@ -815,11 +932,11 @@ export default function DoctorAppointments() {
                                             </Button>
                                             <span className="text-sm text-gray-600">
                                                 Page {currentPage + 1} of{" "}
-                                                {Math.ceil(filteredAppointments.length / pageSize)}
+                                                {Math.ceil(sortedAppointments.length / pageSize)}
                                             </span>
                                             <Button
                                                 disabled={
-                                                    currentPage >= Math.ceil(filteredAppointments.length / pageSize) - 1
+                                                    currentPage >= Math.ceil(sortedAppointments.length / pageSize) - 1
                                                 }
                                                 onClick={() => setCurrentPage(currentPage + 1)}
                                             >

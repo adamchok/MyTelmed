@@ -1,4 +1,4 @@
-package com.mytelmed.infrastructure.email.strategy.prescription;
+package com.mytelmed.infrastructure.email.strategy.delivery;
 
 import com.mailgun.api.v3.MailgunMessagesApi;
 import com.mytelmed.infrastructure.email.constant.EmailType;
@@ -12,8 +12,8 @@ import java.util.Map;
 
 @Slf4j
 @Component
-public class PrescriptionOutForDeliveryEmailSender extends BaseEmailSenderStrategy {
-    public PrescriptionOutForDeliveryEmailSender(
+public class DeliveryReadyForPickupEmailSender extends BaseEmailSenderStrategy {
+    public DeliveryReadyForPickupEmailSender(
             MailgunMessagesApi mailgunApi,
             SpringTemplateEngine templateEngine,
             @Value("${mailgun.api.domain}") String mailGunDomain) {
@@ -22,25 +22,25 @@ public class PrescriptionOutForDeliveryEmailSender extends BaseEmailSenderStrate
 
     @Override
     public EmailType getEmailType() {
-        return EmailType.PRESCRIPTION_OUT_FOR_DELIVERY;
+        return EmailType.DELIVERY_READY_FOR_PICKUP;
     }
 
     @Override
     protected String getTemplatePath() {
-        return "prescription/out-for-delivery";
+        return "delivery/ready-for-pickup";
     }
 
     @Override
     protected String buildSubject(Map<String, Object> variables) {
-        return "MyTelmed - Your Prescription is Out for Delivery";
+        return "MyTelmed - Medication Ready for Pickup";
     }
 
     @Override
     protected void validateRequiredVariables(Map<String, Object> variables) {
-        validateRequiredVariable(variables, "prescriptionId", "Prescription ID is required");
         validateRequiredVariable(variables, "patientName", "Patient name is required");
-        validateRequiredVariable(variables, "deliveryAddress", "Delivery address is required");
-        validateRequiredVariable(variables, "uiHost", "UI host is required");
+        validateRequiredVariable(variables, "prescriptionNumber", "Prescription number is required");
+        validateRequiredVariable(variables, "facilityName", "Facility name is required");
+        validateRequiredVariable(variables, "facilityAddress", "Faclity address is required");
     }
 
     private void validateRequiredVariable(Map<String, Object> variables, String key, String errorMessage) {

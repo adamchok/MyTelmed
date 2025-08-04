@@ -1,12 +1,12 @@
 package com.mytelmed.core.timeslot.repository;
 
 import com.mytelmed.core.timeslot.entity.TimeSlot;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -58,6 +58,14 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, UUID> {
                         "AND ts.startTime < :endTime " +
                         "AND ts.endTime > :startTime")
         boolean hasOverlappingTimeSlotsWithLock(
+                        @Param("doctorId") UUID doctorId,
+                        @Param("startTime") LocalDateTime startTime,
+                        @Param("endTime") LocalDateTime endTime);
+
+        @Query("SELECT ts FROM TimeSlot ts WHERE ts.doctor.id = :doctorId " +
+                        "AND ts.startTime < :endTime " +
+                        "AND ts.endTime > :startTime")
+        List<TimeSlot> findOverlappingTimeSlots(
                         @Param("doctorId") UUID doctorId,
                         @Param("startTime") LocalDateTime startTime,
                         @Param("endTime") LocalDateTime endTime);

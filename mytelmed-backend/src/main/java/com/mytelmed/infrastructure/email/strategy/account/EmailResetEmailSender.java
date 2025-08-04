@@ -39,25 +39,15 @@ public class EmailResetEmailSender extends BaseEmailSenderStrategy {
     @Override
     protected void validateRequiredVariables(Map<String, Object> variables) {
         String name = (String) variables.get("name");
-        String username = (String) variables.get("username");
         String resetToken = (String) variables.get("resetToken");
-        String expiration = (String) variables.get("expiration");
         String uiHost = (String) variables.get("uiHost");
 
         if (!StringUtils.hasText(name)) {
             throw new IllegalArgumentException("Name is required and cannot be empty");
         }
 
-        if (!StringUtils.hasText(username)) {
-            throw new IllegalArgumentException("Username is required and cannot be empty");
-        }
-
         if (!StringUtils.hasText(resetToken)) {
             throw new IllegalArgumentException("Reset token is required and cannot be empty");
-        }
-
-        if (!StringUtils.hasText(expiration)) {
-            throw new IllegalArgumentException("Expiration time is required and cannot be empty");
         }
 
         if (!StringUtils.hasText(uiHost)) {

@@ -1,4 +1,4 @@
-package com.mytelmed.infrastructure.push.strategy.prescription;
+package com.mytelmed.infrastructure.push.strategy.delivery;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mytelmed.infrastructure.push.config.VapidConfiguration;
@@ -8,10 +8,11 @@ import nl.martijndwars.webpush.PushService;
 import org.springframework.stereotype.Component;
 import java.util.Map;
 
-@Component
-public class PrescriptionOutForDeliveryPushSender extends BasePushNotificationStrategy {
 
-    public PrescriptionOutForDeliveryPushSender(
+@Component
+public class DeliveryReadyForPickupPushSender extends BasePushNotificationStrategy {
+
+    public DeliveryReadyForPickupPushSender(
             PushService pushService,
             VapidConfiguration vapidConfiguration,
             ObjectMapper objectMapper) {
@@ -20,29 +21,32 @@ public class PrescriptionOutForDeliveryPushSender extends BasePushNotificationSt
 
     @Override
     public PushNotificationType getNotificationType() {
-        return PushNotificationType.PRESCRIPTION_OUT_FOR_DELIVERY;
+        return PushNotificationType.DELIVERY_READY_FOR_PICKUP;
     }
 
     @Override
     protected String buildTitle(Map<String, Object> variables) {
-        return "Your Medication is Out for Delivery";
+        return "Medication Ready for Pickup";
     }
 
     @Override
     protected String buildBody(Map<String, Object> variables) {
-        String facilityName = (String) variables.get("facilityName");
+        String prescriptionNumber = (String) variables.get("prescriptionNumber");
 
         return String.format(
-                "Good news! Your medication from %s is on its way. It typically delivers within 1 to 3 business days.",
-                facilityName);
+                "Great news! Your medication is ready for pickup. Track your prescription using reference: %s", prescriptionNumber);
     }
 
     @Override
     protected Map<String, Object> buildNotificationData(Map<String, Object> variables) {
         String prescriptionId = (String) variables.get("prescriptionId");
-        String url = String.format("/patient/prescription/%s", prescriptionId);
+        String prescriptionNumber = (String) variables.get("prescriptionNumber");
+        String url = "/patient/prescription";
 
-        return Map.of("url", url);
+        return Map.of(
+                "url", url,
+                "prescriptionId", prescriptionId,
+                "prescriptionNumber", prescriptionNumber);
     }
 
     @Override
@@ -50,18 +54,23 @@ public class PrescriptionOutForDeliveryPushSender extends BasePushNotificationSt
         if (!variables.containsKey("prescriptionId")) {
             throw new IllegalArgumentException("prescriptionId is required");
         }
-        if (!variables.containsKey("facilityName")) {
-            throw new IllegalArgumentException("facilityName is required");
+        if (!variables.containsKey("prescriptionNumber")) {
+            throw new IllegalArgumentException("prescriptionNumber is required");
         }
+    }
+
+    @Override
+    protected boolean requireInteraction() {
+        return true;
     }
 
     @Override
     protected Map<String, Object>[] buildActions(Map<String, Object> variables) {
         return new Map[] {
                 Map.of(
-                        "action", "view-prescription",
-                        "title", "View Prescription",
-                        "icon", "/icons/mytelmed-icon-72.png")
+                        "action", "track-prescription",
+                        "title", "Track Prescription",
+                        "icon", "/icons/mytelmed-icon-72.png"),
         };
     }
 }

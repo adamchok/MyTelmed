@@ -8,6 +8,7 @@ import { TimeSlotDto } from "@/app/api/timeslot/props";
 import { ConsultationMode } from "@/app/api/props";
 import { TimeSlotUtils } from "../utils";
 import TimeSlotCard from "./TimeSlotCard";
+import DayTimeSlotsModal from "./DayTimeSlotsModal";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -22,7 +23,7 @@ interface TimeSlotGridProps {
 }
 
 type ViewMode = "week" | "month";
-type StatusFilter = "all" | "available" | "booked" | "disabled";
+type StatusFilter = "all" | "available" | "booked" | "disabled" | "past";
 type ConsultationFilter = "all" | ConsultationMode.VIRTUAL | ConsultationMode.PHYSICAL;
 
 export default function TimeSlotGrid({
@@ -37,14 +38,20 @@ export default function TimeSlotGrid({
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
     const [consultationFilter, setConsultationFilter] = useState<ConsultationFilter>("all");
 
+    // Modal state for viewing all day slots
+    const [dayModalVisible, setDayModalVisible] = useState(false);
+    const [selectedDayDate, setSelectedDayDate] = useState<Dayjs | null>(null);
+    const [selectedDaySlots, setSelectedDaySlots] = useState<TimeSlotDto[]>([]);
+
     // Filter time slots based on current filters
     const filteredTimeSlots = useMemo(() => {
         return timeSlots.filter((slot) => {
             // Status filter
             if (statusFilter !== "all") {
-                if (statusFilter === "available" && (!slot.isAvailable || slot.isBooked)) return false;
+                if (statusFilter === "available" && (!slot.isAvailable || slot.isBooked || TimeSlotUtils.isTimeSlotInPast(slot))) return false;
                 if (statusFilter === "booked" && !slot.isBooked) return false;
-                if (statusFilter === "disabled" && slot.isAvailable) return false;
+                if (statusFilter === "disabled" && (slot.isAvailable || TimeSlotUtils.isTimeSlotInPast(slot))) return false;
+                if (statusFilter === "past" && !TimeSlotUtils.isTimeSlotInPast(slot)) return false;
             }
 
             // Consultation mode filter
@@ -136,6 +143,18 @@ export default function TimeSlotGrid({
         return TimeSlotUtils.sortTimeSlots(daySlots);
     };
 
+    const handleViewAllSlots = (date: Dayjs, slots: TimeSlotDto[]) => {
+        setSelectedDayDate(date);
+        setSelectedDaySlots(slots);
+        setDayModalVisible(true);
+    };
+
+    const handleCloseDayModal = () => {
+        setDayModalVisible(false);
+        setSelectedDayDate(null);
+        setSelectedDaySlots([]);
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-[400px]">
@@ -156,12 +175,12 @@ export default function TimeSlotGrid({
                                 type="text"
                                 icon={<ChevronLeft className="w-4 h-4" />}
                                 onClick={navigatePrevious}
-                                size="small"
+                                size="middle"
                             />
                             <Button
                                 type="default"
                                 onClick={navigateToday}
-                                size="small"
+                                size="middle"
                                 className="min-w-[70px]"
                             >
                                 Today
@@ -170,7 +189,7 @@ export default function TimeSlotGrid({
                                 type="text"
                                 icon={<ChevronRight className="w-4 h-4" />}
                                 onClick={navigateNext}
-                                size="small"
+                                size="middle"
                             />
                         </Space>
                         <Title level={4} className="mb-0 mt-0">
@@ -184,7 +203,7 @@ export default function TimeSlotGrid({
                             value={currentDate}
                             onChange={handleDateChange}
                             picker={viewMode === "week" ? "week" : "month"}
-                            size="small"
+                            size="middle"
                             allowClear={false}
                             suffixIcon={<Calendar className="w-4 h-4" />}
                         />
@@ -192,8 +211,7 @@ export default function TimeSlotGrid({
                         <Select
                             value={viewMode}
                             onChange={setViewMode}
-                            size="small"
-                            style={{ width: 80 }}
+                            size="middle"
                         >
                             <Option value="week">Week</Option>
                             <Option value="month">Month</Option>
@@ -202,21 +220,20 @@ export default function TimeSlotGrid({
                         <Select
                             value={statusFilter}
                             onChange={setStatusFilter}
-                            size="small"
-                            style={{ width: 100 }}
+                            size="middle"
                             suffixIcon={<Filter className="w-4 h-4" />}
                         >
                             <Option value="all">All Status</Option>
                             <Option value="available">Available</Option>
                             <Option value="booked">Booked</Option>
                             <Option value="disabled">Disabled</Option>
+                            <Option value="past">Past</Option>
                         </Select>
 
                         <Select
                             value={consultationFilter}
                             onChange={setConsultationFilter}
-                            size="small"
-                            style={{ width: 120 }}
+                            size="middle"
                         >
                             <Option value="all">All Types</Option>
                             <Option value={ConsultationMode.VIRTUAL}>Virtual</Option>
@@ -259,7 +276,11 @@ export default function TimeSlotGrid({
                                                 </span>
                                                 {daySlots.length > 0 && (
                                                     <span className="text-xs text-gray-500">
-                                                        {daySlots.length} slot{daySlots.length !== 1 ? "s" : ""}
+                                                        {daySlots.length > 2 ? (
+                                                            <>2 of {daySlots.length} slots</>
+                                                        ) : (
+                                                            <>{daySlots.length} slot{daySlots.length !== 1 ? "s" : ""}</>
+                                                        )}
                                                     </span>
                                                 )}
                                             </div>
@@ -275,16 +296,33 @@ export default function TimeSlotGrid({
                                                     No time slots
                                                 </div>
                                             ) : (
-                                                daySlots.map((slot) => (
-                                                    <TimeSlotCard
-                                                        key={slot.id}
-                                                        timeSlot={slot}
-                                                        onEdit={onEditTimeSlot}
-                                                        onView={onViewTimeSlot}
-                                                        onToggleAvailability={onToggleAvailability}
-                                                        compact={true}
-                                                    />
-                                                ))
+                                                <>
+                                                    {/* Show first 2 time slots */}
+                                                    {daySlots.slice(0, 2).map((slot) => (
+                                                        <TimeSlotCard
+                                                            key={slot.id}
+                                                            timeSlot={slot}
+                                                            onEdit={onEditTimeSlot}
+                                                            onView={onViewTimeSlot}
+                                                            onToggleAvailability={onToggleAvailability}
+                                                            compact={true}
+                                                        />
+                                                    ))}
+
+                                                    {/* Show "View All" button if more than 2 slots */}
+                                                    {daySlots.length > 2 && (
+                                                        <div className="pt-1 border-t border-gray-100">
+                                                            <Button
+                                                                type="link"
+                                                                size="small"
+                                                                className="w-full text-center text-blue-600 hover:text-blue-800 text-xs h-6 p-0 font-medium"
+                                                                onClick={() => handleViewAllSlots(date, daySlots)}
+                                                            >
+                                                                +{daySlots.length - 2} more slots
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     </Card>
@@ -301,7 +339,7 @@ export default function TimeSlotGrid({
                     <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                            <span>Available: {currentPeriodSlots.filter(s => s.isAvailable && !s.isBooked).length}</span>
+                            <span>Available: {currentPeriodSlots.filter(s => s.isAvailable && !s.isBooked && !TimeSlotUtils.isTimeSlotInPast(s)).length}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-red-500 rounded-full"></div>
@@ -309,7 +347,11 @@ export default function TimeSlotGrid({
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                            <span>Disabled: {currentPeriodSlots.filter(s => !s.isAvailable).length}</span>
+                            <span>Disabled: {currentPeriodSlots.filter(s => !s.isAvailable && !TimeSlotUtils.isTimeSlotInPast(s)).length}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                            <span>Past: {currentPeriodSlots.filter(s => TimeSlotUtils.isTimeSlotInPast(s)).length}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <span className="font-medium">Total: {currentPeriodSlots.length}</span>
@@ -317,6 +359,17 @@ export default function TimeSlotGrid({
                     </div>
                 </Card>
             )}
+
+            {/* Day Time Slots Modal */}
+            <DayTimeSlotsModal
+                visible={dayModalVisible}
+                onClose={handleCloseDayModal}
+                date={selectedDayDate}
+                timeSlots={selectedDaySlots}
+                onEditTimeSlot={onEditTimeSlot}
+                onViewTimeSlot={onViewTimeSlot}
+                onToggleAvailability={onToggleAvailability}
+            />
         </div>
     );
 }

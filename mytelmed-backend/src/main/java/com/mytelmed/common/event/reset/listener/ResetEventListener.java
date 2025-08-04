@@ -33,7 +33,6 @@ public class ResetEventListener {
         Map<String, Object> variables = new HashMap<>();
         variables.put("name", event.name());
         variables.put("resetToken", event.resetToken());
-        variables.put("expiration", String.valueOf(event.expirationMinutes()));
         variables.put("uiHost", frontendUrl);
 
         emailService.getEmailSender(EmailType.PASSWORD_RESET).sendEmail(event.email(), variables);
@@ -48,9 +47,7 @@ public class ResetEventListener {
 
         Map<String, Object> variables = new HashMap<>();
         variables.put("name", event.name());
-        variables.put("username", event.username());
         variables.put("resetToken", event.resetToken());
-        variables.put("expiration", String.valueOf(event.expirationMinutes()));
         variables.put("uiHost", frontendUrl);
 
         emailService.getEmailSender(EmailType.EMAIL_RESET).sendEmail(event.email(), variables);

@@ -230,12 +230,6 @@ public class MedicationDeliveryService {
         DeliveryProcessingStartedEvent processingEvent = new DeliveryProcessingStartedEvent(delivery);
         applicationEventPublisher.publishEvent(processingEvent);
 
-        // For pickup deliveries, also publish ready for pickup event
-        if (delivery.getDeliveryMethod() == DeliveryMethod.PICKUP) {
-            DeliveryReadyForPickupEvent readyEvent = new DeliveryReadyForPickupEvent(delivery);
-            applicationEventPublisher.publishEvent(readyEvent);
-        }
-
         log.info("Delivery {} processed by pharmacist", deliveryId);
     }
 

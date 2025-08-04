@@ -1,0 +1,79 @@
+.day-timeslots-modal .ant-modal-header {
+    border-bottom: 2px solid #f0f0f0;
+    padding: 16px 20px;
+}
+
+.day-timeslots-modal .ant-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.day-timeslots-modal .ant-modal-body {
+    padding: 16px 20px;
+    overflow-x: hidden;
+}
+
+.day-timeslots-modal .ant-modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Optimized grid layout */
+.day-timeslots-modal .ant-row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100%;
+}
+
+.day-timeslots-modal .ant-col {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+}
+
+/* Scrollbar styling for the time slots area */
+.day-timeslots-modal .max-h-\[500px\] {
+    scrollbar-width: thin;
+    scrollbar-color: #d4d4d8 #f4f4f5;
+}
+
+.day-timeslots-modal .max-h-\[500px\]::-webkit-scrollbar {
+    width: 6px;
+}
+
+.day-timeslots-modal .max-h-\[500px\]::-webkit-scrollbar-track {
+    background: #f4f4f5;
+    border-radius: 3px;
+}
+
+.day-timeslots-modal .max-h-\[500px\]::-webkit-scrollbar-thumb {
+    background: #d4d4d8;
+    border-radius: 3px;
+}
+
+.day-timeslots-modal .max-h-\[500px\]::-webkit-scrollbar-thumb:hover {
+    background: #a1a1aa;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 1024px) {
+    .day-timeslots-modal .ant-modal {
+        width: 95vw !important;
+        max-width: 900px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .day-timeslots-modal .ant-modal {
+        width: 98vw !important;
+        max-width: none !important;
+        margin: 10px !important;
+    }
+
+    .day-timeslots-modal .ant-modal-body {
+        padding: 12px 16px;
+    }
+
+    .day-timeslots-modal .ant-modal-header {
+        padding: 12px 16px;
+    }
+}

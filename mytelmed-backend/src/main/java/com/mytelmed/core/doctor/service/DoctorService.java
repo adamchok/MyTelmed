@@ -391,6 +391,8 @@ public class DoctorService {
 
             AccountActivatedEvent event = AccountActivatedEvent.builder()
                     .email(doctor.getEmail())
+                    .username(doctor.getAccount().getUsername())
+                    .role(doctor.getAccount().getPermission().getAccess())
                     .name(doctor.getName())
                     .build();
 
@@ -419,6 +421,8 @@ public class DoctorService {
 
             AccountDeactivatedEvent event = AccountDeactivatedEvent.builder()
                     .email(doctor.getEmail())
+                    .username(doctor.getAccount().getUsername())
+                    .role(doctor.getAccount().getPermission().getAccess())
                     .name(doctor.getName())
                     .build();
 

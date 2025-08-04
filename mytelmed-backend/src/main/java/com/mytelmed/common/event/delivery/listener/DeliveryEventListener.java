@@ -246,6 +246,7 @@ public class DeliveryEventListener {
     private Map<String, Object> buildOutForDeliveryEmailVariables(DeliveryOutForDeliveryEvent event) {
         Map<String, Object> variables = new HashMap<>();
         variables.put("patientName", event.delivery().getPrescription().getPatient().getName());
+        variables.put("prescriptionId", event.delivery().getPrescription().getId().toString());
         variables.put("prescriptionNumber", event.delivery().getPrescription().getPrescriptionNumber());
         variables.put("trackingReference", event.delivery().getTrackingReference());
         variables.put("courierName", event.delivery().getCourierName());
@@ -313,7 +314,7 @@ public class DeliveryEventListener {
     private Map<String, Object> buildDeliveryPaymentConfirmedPushVariables(DeliveryPaymentConfirmedEvent event) {
         Map<String, Object> variables = new HashMap<>();
         variables.put("prescriptionId", event.delivery().getPrescription().getId().toString());
-        variables.put("deliveryMethod", event.delivery().getDeliveryMethod().toString());
+        variables.put("prescriptionNumber", event.delivery().getPrescription().getPrescriptionNumber());
         return variables;
     }
 
@@ -347,7 +348,7 @@ public class DeliveryEventListener {
     private Map<String, Object> buildDeliveryReadyForPickupPushVariables(DeliveryReadyForPickupEvent event) {
         Map<String, Object> variables = new HashMap<>();
         variables.put("prescriptionId", event.delivery().getPrescription().getId().toString());
-        variables.put("facilityName", event.delivery().getPrescription().getFacility().getName());
+        variables.put("prescriptionNumber", event.delivery().getPrescription().getPrescriptionNumber());
         return variables;
     }
 

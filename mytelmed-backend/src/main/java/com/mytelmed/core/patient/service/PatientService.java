@@ -244,6 +244,8 @@ public class PatientService {
 
             AccountActivatedEvent event = AccountActivatedEvent.builder()
                     .email(patient.getEmail())
+                    .username(patient.getAccount().getUsername())
+                    .role(patient.getAccount().getPermission().getAccess())
                     .name(patient.getName())
                     .build();
 
@@ -272,6 +274,8 @@ public class PatientService {
 
             AccountDeactivatedEvent event = AccountDeactivatedEvent.builder()
                     .email(patient.getEmail())
+                    .username(patient.getAccount().getUsername())
+                    .role(patient.getAccount().getPermission().getAccess())
                     .name(patient.getName())
                     .build();
 

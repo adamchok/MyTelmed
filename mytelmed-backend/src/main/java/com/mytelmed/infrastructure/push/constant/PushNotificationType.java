@@ -19,7 +19,6 @@ public enum PushNotificationType {
 
     PRESCRIPTION_CREATED(PushNotificationFamily.PRESCRIPTION),
     PRESCRIPTION_EXPIRING(PushNotificationFamily.PRESCRIPTION),
-    PRESCRIPTION_OUT_FOR_DELIVERY(PushNotificationFamily.PRESCRIPTION),
 
     DELIVERY_CREATED(PushNotificationFamily.DELIVERY),
     DELIVERY_PAYMENT_CONFIRMED(PushNotificationFamily.DELIVERY),

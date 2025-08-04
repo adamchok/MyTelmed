@@ -27,7 +27,7 @@ const BillCard: React.FC<BillCardProps> = ({ bill, showPatientInfo }) => {
             case "CANCELLED":
                 return { color: "red", text: "Cancelled", icon: "✗" };
             default:
-                return { color: "default", text: status, icon: "?" };
+                return { color: "default", text: status, icon: "" };
         }
     };
 

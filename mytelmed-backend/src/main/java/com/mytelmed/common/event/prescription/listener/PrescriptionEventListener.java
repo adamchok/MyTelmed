@@ -56,9 +56,6 @@ public class PrescriptionEventListener {
         }
     }
 
-    // Note: Out-for-delivery events are now handled by DeliveryEventListener
-    // since delivery concerns have been separated from prescription concerns
-
     @Async
     @EventListener
     public void handlePrescriptionExpiring(PrescriptionExpiringEvent event) {
