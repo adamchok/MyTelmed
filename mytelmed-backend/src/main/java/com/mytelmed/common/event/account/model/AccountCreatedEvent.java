@@ -14,6 +14,9 @@ public record AccountCreatedEvent(
         @NotBlank(message = "Name is required")
         String name,
 
+        @NotBlank(message = "Role is required")
+        String role,
+
         @NotBlank(message = "Username is required")
         String username,
 

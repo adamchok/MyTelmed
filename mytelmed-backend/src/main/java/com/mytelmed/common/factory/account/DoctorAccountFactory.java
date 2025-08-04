@@ -29,7 +29,7 @@ public class DoctorAccountFactory implements AccountAbstractFactory {
                 .type(AccountType.DOCTOR)
                 .build();
 
-        applicationEventPublisher.publishEvent(new AccountCreatedEvent(email, name, email, rawPassword));
+        applicationEventPublisher.publishEvent(new AccountCreatedEvent(email, name, AccountType.DOCTOR.name(), email, rawPassword));
 
         return Account.builder()
                 .username(email)

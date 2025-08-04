@@ -39,12 +39,17 @@ public class AccountCreatedEmailSender extends BaseEmailSenderStrategy {
     @Override
     protected void validateRequiredVariables(Map<String, Object> variables) {
         String name = (String) variables.get("name");
+        String role = (String) variables.get("role");
         String username = (String) variables.get("username");
         String password = (String) variables.get("password");
         String uiHost = (String) variables.get("uiHost");
 
         if (!StringUtils.hasText(name)) {
             throw new IllegalArgumentException("Name is required and cannot be empty");
+        }
+
+        if (!StringUtils.hasText(role)) {
+            throw new IllegalArgumentException("Role is required and cannot be empty");
         }
 
         if (!StringUtils.hasText(username)) {

@@ -29,7 +29,7 @@ public class PharmacistAccountFactory implements AccountAbstractFactory {
                 .type(AccountType.PHARMACIST)
                 .build();
 
-        applicationEventPublisher.publishEvent(new AccountCreatedEvent(email, name, email, rawPassword));
+        applicationEventPublisher.publishEvent(new AccountCreatedEvent(email, name, AccountType.PHARMACIST.name(),email, rawPassword));
 
         return Account.builder()
                 .username(email)
