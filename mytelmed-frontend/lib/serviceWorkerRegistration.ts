@@ -25,6 +25,11 @@ export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration
             updateViaCache: "none", // Always check for updates
         });
 
+        // Force update in development
+        if (process.env.NODE_ENV === "development") {
+            registration.update();
+        }
+
         console.log("Service worker registered successfully:", registration.scope);
 
         // Handle service worker updates

@@ -15,7 +15,6 @@ if (typeof self.__WB_MANIFEST !== "undefined") {
 // Constants
 const NOTIFICATION_TAG_PREFIX = "mytelmed-";
 const CACHE_NAME = "mytelmed-notifications-v1";
-const API_BASE_URL = self.location.origin;
 const FALLBACK_ICON = "/assets/logos/mytelmed-logo.png";
 const FALLBACK_BADGE = "/assets/logos/mytelmed-logo.png";
 
@@ -119,7 +118,7 @@ async function showNotification(payload) {
             data: {
                 ...data,
                 timestamp: Date.now(),
-                url: getNotificationUrl(data.notificationType, data),
+                url: data.url ?? getNotificationUrl(data.notificationType || payload.tag, data),
             },
             actions: actions.map((action) => ({
                 action: action.action,
@@ -219,11 +218,13 @@ async function openNotificationUrl(data) {
  * Get notification URL based on type and data
  */
 function getNotificationUrl(notificationType, data = {}) {
-    if (data.actionUrl) {
-        return data.actionUrl;
+    console.log("Getting notification URL for:", { notificationType, data });
+
+    if (data.url) {
+        return data.url;
     }
 
-    const baseUrl = NOTIFICATION_URLS[notificationType] || "/dashboard";
+    const baseUrl = NOTIFICATION_URLS[notificationType] || "/";
 
     // Add specific IDs if available
     if (data.appointmentId && baseUrl.includes("appointments")) {
@@ -257,14 +258,6 @@ async function trackNotificationEvent(event, data) {
 
         // Store in IndexedDB or localStorage
         await storeNotificationEvent(eventData);
-
-        // Try to send to backend (with background sync fallback)
-        try {
-            await sendEventToBackend(eventData);
-        } catch (error) {
-            console.log("Failed to send event to backend, will retry later:", error);
-            // Could implement background sync here
-        }
     } catch (error) {
         console.error("Error tracking notification event:", error);
     }
@@ -292,30 +285,6 @@ async function storeNotificationEvent(eventData) {
 }
 
 /**
- * Send event to backend
- */
-async function sendEventToBackend(eventData) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/notification-events`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(eventData),
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        console.log("Event sent to backend successfully");
-    } catch (error) {
-        console.error("Error sending event to backend:", error);
-        throw error;
-    }
-}
-
-/**
  * Background sync for offline events (optional)
  */
 self.addEventListener("sync", (event) => {
@@ -338,8 +307,6 @@ async function syncNotificationEvents() {
                 try {
                     const response = await cache.match(request);
                     const eventData = await response.json();
-
-                    await sendEventToBackend(eventData);
                     await cache.delete(request);
 
                     console.log("Synced notification event:", eventData.event);

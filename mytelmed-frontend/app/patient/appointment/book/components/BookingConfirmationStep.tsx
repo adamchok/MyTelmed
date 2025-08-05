@@ -42,6 +42,8 @@ export default function BookingConfirmationStep() {
     const [confirmationLoading, setConfirmationLoading] = useState(false);
 
     const handleBookAppointment = async () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
         if (!selectedDoctor || !selectedTimeSlot) {
             message.error("Missing required booking information");
             return;
