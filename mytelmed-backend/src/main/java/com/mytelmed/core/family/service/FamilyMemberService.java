@@ -77,7 +77,6 @@ public class FamilyMemberService {
         return familyMemberRepository.findAllByHashedNricAndPendingTrue(hashedUsername);
     }
 
-    @Transactional
     public void invite(Account patientAccount, CreateFamilyMemberRequestDto request) throws AppException {
         log.debug("Inviting new family member for patient account with ID: {}", patientAccount.getId());
 
@@ -265,6 +264,6 @@ public class FamilyMemberService {
 
     private String generateInvitationUrl(UUID familyMemberId) {
         log.debug("Generating invitation URL for family member with ID: {}", familyMemberId);
-        return frontendUrl + "/patient/family/" + familyMemberId;
+        return frontendUrl + "/patient/family";
     }
 }

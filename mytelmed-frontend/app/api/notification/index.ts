@@ -10,12 +10,10 @@ class PushNotificationAPI {
     private static _notificationOptions: { userVisibleOnly: boolean; applicationServerKey: Uint8Array } | null = null;
 
     private static getNotificationOptions(): { userVisibleOnly: boolean; applicationServerKey: Uint8Array } {
-        if (!this._notificationOptions) {
-            this._notificationOptions = {
-                userVisibleOnly: true,
-                applicationServerKey: PushNotificationAPI.urlBase64ToUint8Array(PushNotificationAPI.VAPID_PUBLIC_KEY),
-            };
-        }
+        this._notificationOptions ??= {
+            userVisibleOnly: true,
+            applicationServerKey: PushNotificationAPI.urlBase64ToUint8Array(PushNotificationAPI.VAPID_PUBLIC_KEY),
+        };
         return this._notificationOptions;
     }
 
@@ -59,9 +57,7 @@ class PushNotificationAPI {
             };
         } catch (error: any) {
             console.error("Failed to subscribe to push notifications:", error);
-            throw new Error(
-                error.response?.data?.message || "Failed to subscribe to push notifications. Please try again."
-            );
+            throw new Error(error.response?.data?.message || "Failed to subscribe to push notifications. Please try again.");
         }
     }
 

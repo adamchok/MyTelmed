@@ -33,7 +33,7 @@ public class AccountEventListener {
     public void handleAccountCreated(AccountCreatedEvent event) {
         Map<String, Object> variables = new HashMap<>();
         variables.put("name", event.name());
-        variables.put("role", event.name());
+        variables.put("role", event.role());
         variables.put("username", event.username());
         variables.put("password", event.password());
         variables.put("uiHost", frontendUrl);

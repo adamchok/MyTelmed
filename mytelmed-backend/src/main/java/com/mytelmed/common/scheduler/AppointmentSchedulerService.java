@@ -25,7 +25,6 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
-
 /**
  * Comprehensive appointment scheduler service for Malaysian public healthcare
  * telemedicine system.
@@ -69,7 +68,7 @@ public class AppointmentSchedulerService {
      * tasks.
      * Scheduled to align with 15-minute appointment intervals.
      */
-    @Scheduled(cron = "*/15 * * * * *")
+    @Scheduled(cron = "0 */15 * * * *")
     @Async("schedulerExecutor")
     @Transactional
     public void processAppointmentScheduling() {
@@ -86,6 +85,7 @@ public class AppointmentSchedulerService {
             processAppointmentReminders();
             processNoShowAppointments();
             processExpiredAppointmentCleanup();
+            processEmergencyAppointmentTasks();
 
             log.info("Completed appointment scheduling process");
         } catch (Exception e) {
@@ -102,23 +102,13 @@ public class AppointmentSchedulerService {
     public void processAppointmentAutoConfirmation() {
         log.debug("Processing appointment auto-confirmation (PENDING → CONFIRMED)");
 
-        // TODO: Uncomment for production:
-//        LocalDateTime now = LocalDateTime.now();
-//        LocalDateTime confirmationThreshold = now.plusHours(12);
-//        List<Appointment> pendingAppointments = appointmentRepository
-//                .findByStatusAndTimeSlotStartTimeBefore(
-//                        AppointmentStatus.PENDING,
-//                        confirmationThreshold);
-
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime oneHourFromNow = now.plusWeeks(2);
+        LocalDateTime confirmationThreshold = now.plusHours(12);
 
         List<Appointment> pendingAppointments = appointmentRepository
-                .findByStatusAndStartTimeBetween(
+                .findByStatusAndTimeSlotStartTimeBefore(
                         AppointmentStatus.PENDING,
-                        now,
-                        oneHourFromNow);
-
+                        confirmationThreshold);
 
         for (Appointment appointment : pendingAppointments) {
             try {
@@ -223,21 +213,14 @@ public class AppointmentSchedulerService {
     public void processVirtualAppointmentReadyForCall() {
         log.debug("Processing READY_FOR_CALL transition (CONFIRMED → READY_FOR_CALL for virtual appointments)");
 
-        // TODO: Uncomment for production:
-//        LocalDateTime now = LocalDateTime.now();
-//        LocalDateTime readyThreshold = now.plusMinutes(15);
-//
-//        List<Appointment> confirmedVirtualAppointments = appointmentRepository
-//                .findByStatusAndConsultationModeAndTimeSlotStartTimeBefore(
-//                        AppointmentStatus.CONFIRMED,
-//                        ConsultationMode.VIRTUAL,
-//                        readyThreshold);
-
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime readyWindowEnd = now.plusWeeks(2);
+        LocalDateTime readyThreshold = now.plusMinutes(15);
 
-        List<Appointment> confirmedVirtualAppointments = appointmentRepository.findByStatusAndStartTimeBetween(
-                AppointmentStatus.CONFIRMED, now, readyWindowEnd);
+        List<Appointment> confirmedVirtualAppointments = appointmentRepository
+                .findByStatusAndConsultationModeAndTimeSlotStartTimeBefore(
+                        AppointmentStatus.CONFIRMED,
+                        ConsultationMode.VIRTUAL,
+                        readyThreshold);
 
         for (Appointment appointment : confirmedVirtualAppointments) {
             try {
@@ -250,7 +233,8 @@ public class AppointmentSchedulerService {
                 appointment.setStatus(AppointmentStatus.READY_FOR_CALL);
                 appointmentRepository.save(appointment);
 
-                log.info("Marked virtual appointment as READY_FOR_CALL: {} (CONFIRMED → READY_FOR_CALL)", appointment.getId());
+                log.info("Marked virtual appointment as READY_FOR_CALL: {} (CONFIRMED → READY_FOR_CALL)",
+                        appointment.getId());
             } catch (Exception e) {
                 log.error("Error marking virtual appointment as READY_FOR_CALL: {}", appointment.getId(), e);
             }
@@ -285,7 +269,8 @@ public class AppointmentSchedulerService {
                 appointment.setStatus(AppointmentStatus.IN_PROGRESS);
                 appointmentRepository.save(appointment);
 
-                log.info("Marked physical appointment as IN_PROGRESS: {} (CONFIRMED → IN_PROGRESS)", appointment.getId());
+                log.info("Marked physical appointment as IN_PROGRESS: {} (CONFIRMED → IN_PROGRESS)",
+                        appointment.getId());
             } catch (Exception e) {
                 log.error("Error marking physical appointment as IN_PROGRESS: {}", appointment.getId(), e);
             }
@@ -392,12 +377,10 @@ public class AppointmentSchedulerService {
     }
 
     /**
-     * Emergency scheduler that runs every 5 minutes for critical tasks.
+     * Emergency scheduler that runs every 15 minutes for critical tasks.
      * Handles urgent appointment status transitions and system health checks.
      */
     @Transactional
-    @Scheduled(cron = "0 */5 * * * *") // Every 5 minutes
-    @Async("schedulerExecutor")
     public void processEmergencyAppointmentTasks() {
         log.debug("Running emergency appointment tasks");
 
@@ -464,7 +447,8 @@ public class AppointmentSchedulerService {
                         stuckThreshold.atZone(ZoneId.systemDefault()).toInstant());
 
         for (Appointment appointment : stuckPendingPayment) {
-            log.warn("Found stuck appointment in PENDING_PAYMENT state: {} - will be handled by 3-hour cancellation process",
+            log.warn(
+                    "Found stuck appointment in PENDING_PAYMENT state: {} - will be handled by 3-hour cancellation process",
                     appointment.getId());
             // These will be handled by the regular 3-hour cancellation process
         }

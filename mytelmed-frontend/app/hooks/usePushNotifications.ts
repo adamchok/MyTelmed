@@ -256,7 +256,7 @@ function getDeviceInfo(): string {
 
 async function storeSubscriptionLocally(subscription: PushSubscriptionRequest): Promise<void> {
     try {
-        localStorage.setItem("diaconnect-push-subscription", JSON.stringify(subscription));
+        localStorage.setItem("mytelmed-push-subscription", JSON.stringify(subscription));
     } catch (error) {
         console.warn("Failed to store subscription locally:", error);
     }
@@ -264,7 +264,7 @@ async function storeSubscriptionLocally(subscription: PushSubscriptionRequest): 
 
 async function removeSubscriptionLocally(): Promise<void> {
     try {
-        localStorage.removeItem("diaconnect-push-subscription");
+        localStorage.removeItem("mytelmed-push-subscription");
     } catch (error) {
         console.warn("Failed to remove subscription locally:", error);
     }

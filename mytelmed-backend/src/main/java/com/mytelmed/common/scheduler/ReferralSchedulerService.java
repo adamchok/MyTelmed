@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
-
 @Slf4j
 @Service
 public class ReferralSchedulerService {
@@ -26,7 +25,7 @@ public class ReferralSchedulerService {
      * tasks.
      * Scheduled to align with 15-minute appointment intervals.
      */
-    @Scheduled(cron = "* */15 * * * *")
+    @Scheduled(cron = "0 */15 * * * *")
     @Async("schedulerExecutor")
     @Transactional
     public void processReferralScheduling() {

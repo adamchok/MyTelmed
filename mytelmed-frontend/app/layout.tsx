@@ -9,6 +9,7 @@ import "./globals.css";
 import MainLayout from "./layout/MainLayout";
 import PushNotificationProvider from "./components/Notification/PushNotificationProvider";
 import { NotificationDisplay } from "./components/Notification/NotificationDisplay";
+import AuthGuard from "./components/AuthGuard";
 
 const inter = Inter({ subsets: ["latin"] });
 const APP_NAME = "MyTelmed - Telemedicine Application";
@@ -159,9 +160,11 @@ export default function RootLayout({
                 <AntdRegistry>
                     <StoreProvider>
                         <React.Suspense fallback="Loading...">
-                            <MainLayout>{children}</MainLayout>
-                            <PushNotificationProvider />
-                            <NotificationDisplay />
+                            <AuthGuard>
+                                <MainLayout>{children}</MainLayout>
+                                <PushNotificationProvider />
+                                <NotificationDisplay />
+                            </AuthGuard>
                         </React.Suspense>
                     </StoreProvider>
                 </AntdRegistry>

@@ -61,14 +61,14 @@ const PharmacistLogin = () => {
                         <Form.Item
                             label={
                                 <span className="text-sm font-medium text-gray-700 flex items-center">
-                                    <User className="mr-2 text-purple-700" size={18} strokeWidth={2.2} /> Username
+                                    <User className="mr-2 text-purple-700" size={18} strokeWidth={2.2} /> Email
                                 </span>
                             }
                             name="username"
-                            rules={[{ required: true, message: "Username is required" }]}
+                            rules={[{ required: true, message: "Email is required" }]}
                         >
                             <Input
-                                placeholder="Enter your username"
+                                placeholder="Enter your email"
                                 className="h-12 rounded-xl border-gray-200 hover:border-purple-700 focus:border-purple-800 transition-colors"
                                 size="large"
                                 autoFocus

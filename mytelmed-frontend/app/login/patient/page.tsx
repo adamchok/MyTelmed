@@ -61,14 +61,14 @@ const PatientLogin = () => {
                         <Form.Item
                             label={
                                 <span className="text-sm font-medium text-gray-700 flex items-center">
-                                    <User className="mr-2 text-blue-700" size={18} strokeWidth={2.2} /> Username
+                                    <User className="mr-2 text-blue-700" size={18} strokeWidth={2.2} /> IC Number
                                 </span>
                             }
                             name="username"
-                            rules={[{ required: true, message: "Username is required" }]}
+                            rules={[{ required: true, message: "IC number is required" }]}
                         >
                             <Input
-                                placeholder="Enter your username"
+                                placeholder="Enter your IC number"
                                 className="h-12 rounded-xl border-gray-200 hover:border-blue-700 focus:border-blue-800 transition-colors"
                                 size="large"
                                 autoFocus
