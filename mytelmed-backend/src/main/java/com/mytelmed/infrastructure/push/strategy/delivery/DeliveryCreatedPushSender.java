@@ -25,7 +25,7 @@ public class DeliveryCreatedPushSender extends BasePushNotificationStrategy {
 
     @Override
     protected String buildTitle(Map<String, Object> variables) {
-        return "Delivery Confirmed";
+        return "Delivery Created";
     }
 
     @Override
@@ -35,11 +35,12 @@ public class DeliveryCreatedPushSender extends BasePushNotificationStrategy {
 
         if ("HOME_DELIVERY".equals(deliveryMethod)) {
             return String.format(
-                    "Your medication delivery from %s has been confirmed. We'll prepare your prescription for home delivery within 1-3 business days.",
+                    "Your medication delivery from %s has been created. We'll prepare your prescription for home delivery within 1-3 business " +
+                            "days after you have made payment.",
                     facilityName);
         } else {
             return String.format(
-                    "Your medication pickup from %s has been confirmed. Your prescription will be ready for collection within 1-2 business days.",
+                    "Your medication pickup from %s has been created. Your prescription will be ready for collection when it is ready.",
                     facilityName);
         }
     }
@@ -47,7 +48,7 @@ public class DeliveryCreatedPushSender extends BasePushNotificationStrategy {
     @Override
     protected Map<String, Object> buildNotificationData(Map<String, Object> variables) {
         String prescriptionId = (String) variables.get("prescriptionId");
-        String url = String.format("/patient/delivery");
+        String url = String.format("/patient/prescription/%s", prescriptionId);
 
         return Map.of(
                 "url", url,
@@ -66,11 +67,6 @@ public class DeliveryCreatedPushSender extends BasePushNotificationStrategy {
         if (!variables.containsKey("facilityName")) {
             throw new IllegalArgumentException("facilityName is required");
         }
-    }
-
-    @Override
-    protected boolean requireInteraction() {
-        return false;
     }
 
     @Override

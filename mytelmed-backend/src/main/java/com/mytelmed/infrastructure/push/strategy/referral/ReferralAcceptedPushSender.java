@@ -59,15 +59,7 @@ public class ReferralAcceptedPushSender extends BasePushNotificationStrategy {
         data.put("referralId", variables.get("referralId"));
         data.put("referralNumber", variables.get("referralNumber"));
         data.put("referralType", variables.get("referralType"));
-
-        // Add navigation data for scheduling
-        if ("INTERNAL".equals(variables.get("referralType"))) {
-            data.put("navigationUrl", "/patient/referrals");
-            data.put("actionRequired", "schedule_appointment");
-        } else {
-            data.put("navigationUrl", "/patient/referrals");
-            data.put("actionRequired", "view_details");
-        }
+        data.put("url", "/patient/referrals");
 
         return data;
     }
@@ -84,12 +76,6 @@ public class ReferralAcceptedPushSender extends BasePushNotificationStrategy {
             validateRequiredVariable(variables, "referredDoctorName",
                     "Referred doctor name is required for internal referrals");
         }
-    }
-
-    @Override
-    protected boolean requireInteraction() {
-        // Require interaction as this may need user action (scheduling appointment)
-        return true;
     }
 
     private void validateRequiredVariable(Map<String, Object> variables, String key, String errorMessage) {

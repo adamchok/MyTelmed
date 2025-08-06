@@ -42,7 +42,7 @@ public class DeliveryOutPushSender extends BasePushNotificationStrategy {
     protected Map<String, Object> buildNotificationData(Map<String, Object> variables) {
         String prescriptionId = (String) variables.get("prescriptionId");
         String trackingReference = (String) variables.get("trackingReference");
-        String url = String.format("/patient/delivery");
+        String url = String.format("/patient/prescription/%s", prescriptionId);
 
         return Map.of(
                 "url", url,

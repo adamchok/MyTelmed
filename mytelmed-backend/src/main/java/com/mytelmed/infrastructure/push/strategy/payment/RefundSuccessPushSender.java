@@ -70,8 +70,7 @@ public class RefundSuccessPushSender extends BasePushNotificationStrategy {
         data.put("billType", variables.get("billType"));
 
         // Add URL for deep linking to refund details
-        String uiHost = (String) variables.get("uiHost");
-        data.put("url", uiHost + "/patient/billing");
+        data.put("url", "/patient/billing");
 
         return data;
     }

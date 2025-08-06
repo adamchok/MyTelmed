@@ -72,8 +72,7 @@ public class ReferralRejectedPushSender extends BasePushNotificationStrategy {
         }
 
         // Navigation to referral details
-        data.put("navigationUrl", "/patient/referrals");
-        data.put("actionRequired", "contact_referring_doctor");
+        data.put("url", "/patient/referrals");
 
         return data;
     }
@@ -85,12 +84,6 @@ public class ReferralRejectedPushSender extends BasePushNotificationStrategy {
         validateRequiredVariable(variables, "referralType", "Referral type is required");
 
         // Rejection reason is optional but helpful
-    }
-
-    @Override
-    protected boolean requireInteraction() {
-        // Require interaction as this needs user action (contacting referring doctor)
-        return true;
     }
 
     private void validateRequiredVariable(Map<String, Object> variables, String key, String errorMessage) {

@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>MyTelmed - Medication Delivery Confirmed</title>
+        <title>MyTelmed - Medication Delivery Created</title>
         <style>
             body {
                 font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -181,13 +181,13 @@
     <body>
         <div class="container">
             <div class="header">
-                <h2 style="color: #495057; margin: 0">Medication Delivery Confirmed! ✅</h2>
+                <h2 style="color: #495057; margin: 0">Medication Delivery Created! ✅</h2>
             </div>
 
             <p>Dear <strong th:text="${patientName}">Patient Name</strong>,</p>
 
             <p>
-                Great news! Your medication delivery has been successfully confirmed. We're now preparing your
+                Great news! Your medication delivery has been successfully created. We will prepare your
                 prescription for delivery according to your selected method.
             </p>
 
@@ -199,7 +199,8 @@
                     >
                 </div>
                 <p style="margin: 5px 0 0 0; color: #155724">
-                    Your prescription is being processed and will be ready soon.
+                    <span th:text="${deliveryMethod == 'HOME_DELIVERY' ? 'After you have made payment, your prescription will be processed' : ''}">
+                    </span>
                 </p>
             </div>
 

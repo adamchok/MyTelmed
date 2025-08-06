@@ -41,7 +41,7 @@ public class DeliveryPaymentConfirmedPushSender extends BasePushNotificationStra
     protected Map<String, Object> buildNotificationData(Map<String, Object> variables) {
         String prescriptionId = (String) variables.get("prescriptionId");
         String prescriptionNumber = (String) variables.get("prescriptionNumber");
-        String url = "/patient/prescription";
+        String url = String.format("/patient/prescription/%s", prescriptionId);
 
         return Map.of(
                 "url", url,

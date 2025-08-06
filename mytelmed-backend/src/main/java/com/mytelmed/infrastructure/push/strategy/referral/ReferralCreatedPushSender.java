@@ -52,7 +52,6 @@ public class ReferralCreatedPushSender extends BasePushNotificationStrategy {
         String referralNumber = (String) variables.get("referralNumber");
         String referringDoctorName = (String) variables.get("referringDoctorName");
         String referralType = (String) variables.get("referralType");
-        String priority = (String) variables.get("priority");
         LocalDate expiryDate = (LocalDate) variables.get("expiryDate");
 
         StringBuilder body = new StringBuilder();
@@ -91,9 +90,9 @@ public class ReferralCreatedPushSender extends BasePushNotificationStrategy {
 
         // Add navigation data
         if ("INTERNAL".equals(variables.get("referralType"))) {
-            data.put("navigationUrl", "/patient/referrals");
+            data.put("url", "/patient/referrals");
         } else {
-            data.put("navigationUrl", "/patient/referrals");
+            data.put("url", "/patient/referrals");
         }
 
         return data;
@@ -116,13 +115,6 @@ public class ReferralCreatedPushSender extends BasePushNotificationStrategy {
         } else if ("EXTERNAL".equals(referralType)) {
             // External doctor name and facility name are optional but preferred
         }
-    }
-
-    @Override
-    protected boolean requireInteraction() {
-        // Make referral notifications require interaction for important medical
-        // information
-        return true;
     }
 
     private void validateRequiredVariable(Map<String, Object> variables, String key, String errorMessage) {

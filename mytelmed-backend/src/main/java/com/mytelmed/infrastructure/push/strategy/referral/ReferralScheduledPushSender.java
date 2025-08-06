@@ -90,9 +90,9 @@ public class ReferralScheduledPushSender extends BasePushNotificationStrategy {
         // Navigation to appointment details
         String appointmentId = (String) variables.get("appointmentId");
         if (appointmentId != null) {
-            data.put("navigationUrl", "/patient/appointment/" + appointmentId);
+            data.put("url", "/patient/appointment/" + appointmentId);
         } else {
-            data.put("navigationUrl", "/patient/referrals");
+            data.put("url", "/patient/referrals");
         }
 
         return data;
@@ -108,12 +108,6 @@ public class ReferralScheduledPushSender extends BasePushNotificationStrategy {
         validateRequiredVariable(variables, "appointmentId", "Appointment ID is required");
 
         // facilityName is optional but commonly used in push notifications
-    }
-
-    @Override
-    protected boolean requireInteraction() {
-        // Require interaction as patient may need to prepare for appointment
-        return true;
     }
 
     private void validateRequiredVariable(Map<String, Object> variables, String key, String errorMessage) {
