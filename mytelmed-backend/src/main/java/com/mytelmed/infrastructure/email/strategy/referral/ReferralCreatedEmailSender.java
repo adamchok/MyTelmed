@@ -64,9 +64,15 @@ public class ReferralCreatedEmailSender extends BaseEmailSenderStrategy {
     validateRequiredVariable(variables, "referringDoctorName", "Referring doctor name is required");
     validateRequiredVariable(variables, "reasonForReferral", "Reason for referral is required");
     validateRequiredVariable(variables, "clinicalSummary", "Clinical summary is required");
-    validateRequiredVariable(variables, "expiryDate", "Expiry date is required");
-    validateRequiredVariable(variables, "createdAt", "Created date is required");
     validateRequiredVariable(variables, "uiHost", "UI host is required");
+
+    if (variables.get("createdAt") == null) {
+      throw new IllegalArgumentException("Created date is required");
+    }
+
+    if (variables.get("expiryDate") == null) {
+      throw new IllegalArgumentException("Expiry date is required");
+    }
 
     // Validate type-specific requirements
     String referralType = (String) variables.get("referralType");

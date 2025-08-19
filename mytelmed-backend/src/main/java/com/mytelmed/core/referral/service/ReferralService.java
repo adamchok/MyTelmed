@@ -198,6 +198,14 @@ public class ReferralService {
         // Save referral
         Referral referral = referralRepository.save(referralBuilder.build());
 
+        // Eagerly fetch lazy collections before publishing async event
+        // This ensures all required data is loaded while Hibernate session is active
+        if (referral.getReferredDoctor() != null && referral.getReferredDoctor().getSpecialityList() != null) {
+            // Access the lazy collection to trigger loading
+            referral.getReferredDoctor().getSpecialityList().size();
+            log.debug("Eagerly loaded specialityList for referral created event: {}", referral.getId());
+        }
+
         // Publish referral created event for notification emails
         ReferralCreatedEvent referralEvent = ReferralCreatedEvent.builder()
                 .referral(referral)
@@ -280,7 +288,6 @@ public class ReferralService {
 
         // Validate time slot
 
-
         // Use thread-safe time slot booking
         TimeSlot timeSlot = timeSlotService.bookTimeSlotSafely(timeSlotId);
 
@@ -290,7 +297,8 @@ public class ReferralService {
         }
 
         try {
-            // Create appointment with PENDING status (automated scheduler will handle transitions)
+            // Create appointment with PENDING status (automated scheduler will handle
+            // transitions)
             Appointment appointment = Appointment.builder()
                     .patient(referral.getPatient())
                     .doctor(doctor)
@@ -309,6 +317,13 @@ public class ReferralService {
             referral.setStatus(ReferralStatus.SCHEDULED);
             referral.setScheduledAppointment(savedAppointment);
             referralRepository.save(referral);
+
+            // Eagerly fetch lazy collections before publishing async event
+            if (referral.getReferredDoctor() != null && referral.getReferredDoctor().getSpecialityList() != null) {
+                // Access the lazy collection to trigger loading
+                referral.getReferredDoctor().getSpecialityList().size();
+                log.debug("Eagerly loaded specialityList for referral scheduled event: {}", referral.getId());
+            }
 
             // Publish referral scheduled event
             ReferralScheduledEvent scheduledEvent = ReferralScheduledEvent.builder()
@@ -380,6 +395,15 @@ public class ReferralService {
         try {
             switch (newStatus) {
                 case ACCEPTED -> {
+                    // Eagerly fetch lazy collections before publishing async event
+                    // This ensures all required data is loaded while Hibernate session is active
+                    if (referral.getReferredDoctor() != null
+                            && referral.getReferredDoctor().getSpecialityList() != null) {
+                        // Access the lazy collection to trigger loading
+                        referral.getReferredDoctor().getSpecialityList().size();
+                        log.debug("Eagerly loaded specialityList for referral accepted event: {}", referral.getId());
+                    }
+
                     ReferralAcceptedEvent acceptedEvent = ReferralAcceptedEvent.builder()
                             .referral(referral)
                             .build();
@@ -387,6 +411,14 @@ public class ReferralService {
                     log.debug("Published ReferralAcceptedEvent for referral: {}", referral.getId());
                 }
                 case REJECTED -> {
+                    // Eagerly fetch lazy collections before publishing async event
+                    if (referral.getReferredDoctor() != null
+                            && referral.getReferredDoctor().getSpecialityList() != null) {
+                        // Access the lazy collection to trigger loading
+                        referral.getReferredDoctor().getSpecialityList().size();
+                        log.debug("Eagerly loaded specialityList for referral rejected event: {}", referral.getId());
+                    }
+
                     ReferralRejectedEvent rejectedEvent = ReferralRejectedEvent.builder()
                             .referral(referral)
                             .build();
