@@ -5,7 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 
 @SpringBootTest
-class MytelmedBackendApplicationTests {
+class MyTelmedBackendApplicationTests {
 
     @Test
     void contextLoads() {

@@ -1,0 +1,51 @@
+# Build artifacts
+build/
+target/
+.gradle/
+*.jar
+*.war
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# Docker files
+Dockerfile*
+.dockerignore
+
+# Logs
+logs/
+*.log
+
+# Test files
+src/test/
+
+# Environment files (security)
+.env
+.env.*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*~
+
+# Application Environment Variables
+application-local.properties

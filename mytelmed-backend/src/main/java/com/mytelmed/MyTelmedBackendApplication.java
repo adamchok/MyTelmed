@@ -13,14 +13,14 @@ import java.util.TimeZone;
 @EnableAsync
 @EnableScheduling
 @EnableRetry
-public class MytelmedBackendApplication {
+public class MyTelmedBackendApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(MyTelmedBackendApplication.class, args);
+    }
+
     @PostConstruct
     public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Kuala_Lumpur"));
-    }
-
-    public static void main(String[] args) {
-        SpringApplication.run(MytelmedBackendApplication.class, args);
     }
 
 }

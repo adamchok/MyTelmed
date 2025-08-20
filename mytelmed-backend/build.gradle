@@ -44,6 +44,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.retry:spring-retry'
 
     // JWT
@@ -95,7 +96,7 @@ dependencies {
     implementation "com.stripe:stripe-java:${stripeVersion}"
 
     // Java Audio Video Encoder
-    implementation 'ws.schild:jave-core:2.6.0'
+    implementation 'ws.schild:jave-core:3.5.0'
     implementation 'ws.schild:jave-nativebin-linux64:3.1.1'
     implementation 'ws.schild:jave-nativebin-win64:3.1.1'
 }
@@ -115,6 +116,10 @@ tasks.withType(JavaCompile).configureEach {
 
     // Ensure annotation processors are available on the classpath
     options.annotationProcessorPath = configurations.annotationProcessor
+}
+
+bootJar {
+    archiveFileName = "app.jar"
 }
 
 // Spring Boot plugin configuration
