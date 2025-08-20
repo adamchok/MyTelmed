@@ -15,8 +15,8 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import ws.schild.jave.EncoderException;
-import ws.schild.jave.MultimediaInfo;
 import ws.schild.jave.MultimediaObject;
+import ws.schild.jave.info.MultimediaInfo;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
@@ -36,7 +36,7 @@ public class VideoService {
 
     @Transactional
     public Video saveAndGetVideo(VideoType videoType, UUID entityId, MultipartFile videoFile)
-            throws IOException, S3Exception, AppException, EncoderException {
+        throws IOException, S3Exception, AppException, EncoderException {
         String videoKey = null;
 
         if (videoFile == null || videoFile.isEmpty()) {
@@ -46,10 +46,10 @@ public class VideoService {
 
         try {
             S3StorageOptions storageOptions = S3StorageOptions.builder()
-                    .fileType(FileType.VIDEO)
-                    .folderName(videoType.name().toLowerCase())
-                    .entityId(entityId.toString())
-                    .build();
+                .fileType(FileType.VIDEO)
+                .folderName(videoType.name().toLowerCase())
+                .entityId(entityId.toString())
+                .build();
 
             log.debug("Uploading video for entity: {} of type: {}", entityId, videoType);
             videoKey = awsS3Service.uploadFileAndGetKey(storageOptions, videoFile);
@@ -57,12 +57,12 @@ public class VideoService {
             long videoDuration = getVideoDurationSeconds(videoFile);
 
             Video video = Video.builder()
-                    .videoKey(videoKey)
-                    .videoType(videoType)
-                    .entityId(entityId)
-                    .fileSize(videoFile.getSize())
-                    .durationSeconds(videoDuration)
-                    .build();
+                .videoKey(videoKey)
+                .videoType(videoType)
+                .entityId(entityId)
+                .fileSize(videoFile.getSize())
+                .durationSeconds(videoDuration)
+                .build();
 
             video = videoRepository.save(video);
             log.info("Saved video to database for entity: {}", entityId);
