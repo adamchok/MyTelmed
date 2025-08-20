@@ -17,9 +17,3 @@ services:
     volumes:
       - ./logs:/app/logs
     restart: unless-stopped
-    networks:
-      - mytelmed-network
-
-networks:
-  mytelmed-network:
-    driver: bridge
